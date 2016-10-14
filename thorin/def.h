@@ -86,8 +86,8 @@ protected:
         , type_(type)
         , ops_(num_ops)
         , gid_(gid_counter_++)
-        , is_nominal_(true)
         , name_(name)
+        , is_nominal_(true)
     {}
 
     /// Use for structural @p Def%s.
@@ -97,8 +97,8 @@ protected:
         , type_(type)
         , ops_(ops.size())
         , gid_(gid_counter_++)
-        , is_nominal_(false)
         , name_(name)
+        , is_nominal_(false)
     {
         for (size_t i = 0, e = num_ops(); i != e; ++i) {
             if (auto op = ops[i])
@@ -153,11 +153,6 @@ public:
     const Def* rebuild(World& to, Defs ops) const;
     const Def* rebuild(Defs ops) const { return rebuild(world(), ops); }
 
-#ifdef HENK_CONTINUATION
-    Continuation* as_continuation() const;
-    Continuation* isa_continuation() const;
-#endif
-
     static size_t gid_counter() { return gid_counter_; }
 
 protected:
@@ -173,17 +168,16 @@ protected:
 private:
     virtual const Def* vrebuild(World& to, Defs ops) const = 0;
 
+    static size_t gid_counter_;
+
     mutable World* world_;
     int tag_;
     const Def* type_;
     std::vector<const Def*> ops_;
     mutable size_t gid_;
-    static size_t gid_counter_;
     mutable Uses uses_;
-    mutable bool is_nominal_;
-
-public:
     mutable std::string name_;
+    mutable bool is_nominal_;
 
     friend class World;
     friend class Cleaner;
