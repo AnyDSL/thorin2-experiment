@@ -197,13 +197,13 @@ const Def* Sigma::vreduce(int depth, const Def* def, Def2Def& map) const {
     }
 }
 
-const Def* Var::vreduce(int depth, const Def* def, Def2Def&) const {
+const Def* Var::vreduce(int depth, const Def* def, Def2Def& map) const {
     if (this->depth() == depth)
         return def;
-    else if (this->depth() > depth)
-        return world().var(type(), this->depth()-1, name()); // this is a free variable - shift by one
-    else
-        return this;                                                // this variable is not free - don't adjust
+    else if (this->depth() > depth) // this is a free variable - shift by one
+        return world().var(type(), this->depth()-1, name());
+    else                            // this variable is not free - keep depth, reduce type
+        return world().var(type()->reduce(depth, def, map), this->depth(), name());
 }
 
 const Def* App::vreduce(int depth, const Def* def, Def2Def& map) const {
