@@ -40,13 +40,24 @@ void Def::unset(size_t i) {
     ops_[i] = nullptr;
 }
 
-std::string Def::unique_name() const {
-    return name() + '_' + std::to_string(gid());
+std::string Def::unique_name() const { return name() + '_' + std::to_string(gid()); }
+
+Array<const Def*> types(Defs defs) {
+    Array<const Def*> result(defs.size());
+    for (size_t i = 0, e = result.size(); i != e; ++i)
+        result[i] = defs[i]->type();
+    return  result;
 }
 
 /*
  * constructors
  */
+
+App::App(World& world, const Def* callee, Defs args, const std::string& name)
+    : Def(world, Node_App, callee->type()->as<Quantifier>()->reduce(1, args), concat(callee, args), name)
+{
+    assert(world.tuple(domain(), types(args)));
+}
 
 Lambda::Lambda(World& world, const Def* domain, const Def* body, const std::string& name)
     : Connective(world, Node_Lambda, world.pi(domain, body->type()), {domain, body}, name)
@@ -56,31 +67,19 @@ Pi::Pi(World& world, const Def* domain, const Def* body, const std::string& name
     : Quantifier(world, Node_Pi, body->type(), {domain, body}, name)
 {}
 
-Tuple::Tuple(World& world, Defs ops, const std::string& name)
-    : Connective(world, Node_Tuple, nullptr, ops, name)
-{
-    Array<const Def*> types(ops.size());
-    for (size_t i = 0, e = ops.size(); i != e; ++i)
-        types[i] = ops[i]->type();
-    set_type(world.sigma(types, name));
+const Def* Sigma::infer_type(World& world, Defs ops) {
+    for (auto op : ops)
+        if (!op->type())
+            return nullptr;
+    return world.star();
 }
 
 /*
- * infer_type
+ * domain
  */
 
-const Def* Tuple::infer_type(World& world, Defs ops, const std::string& name) {
-}
-
-const Def* Sigma::infer_type(World& world, Defs ops, const std::string& name) {
-}
-
-const Def* App::infer_type(World& world, const Def* callee, const Def* arg, const std::string& name) {
-    return callee->type()->as<Quantifier>()->reduce(1, arg);
-}
-
-const Def* App::infer_type(World& world, const Def* callee, Defs arg, const std::string& name) {
-}
+const Def* Tuple::domain() const { return world().nat(); }
+const Def* Sigma::domain() const { return world().nat(); }
 
 //------------------------------------------------------------------------------
 
@@ -140,8 +139,8 @@ const Def* Def::rebuild(World& to, Defs ops) const {
     return vrebuild(to, ops);
 }
 
-const Def* App   ::vrebuild(World& to, Defs ops) const { return to.app(ops[0], ops[1], name()); }
-const Def* Assume::vrebuild(World& to, Defs ops) const { THORIN_UNREACHABLE; }
+const Def* App   ::vrebuild(World& to, Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
+const Def* Assume::vrebuild(World&   , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Lambda::vrebuild(World& to, Defs ops) const { return to.lambda(ops[0], ops[1], name()); }
 const Def* Pi    ::vrebuild(World& to, Defs ops) const { return to.pi(ops[0], ops[1], name()); }
 const Def* Sigma ::vrebuild(World& to, Defs ops) const { assert(is_structural()); return to.sigma(ops, name()); }
@@ -155,65 +154,65 @@ const Def* Var   ::vrebuild(World& to, Defs ops) const { return to.var(ops[0], d
  * reduce
  */
 
-const Def* Def::reduce(Def2Def& map, int depth, const Def* def) const {
+const Def* Def::reduce(Def2Def& map, int depth, Defs defs) const {
     if (auto result = find(map, this))
         return result;
-    return map[this] = vreduce(map, depth, def);
+    return map[this] = vreduce(map, depth, defs);
 }
 
-Array<const Def*> Def::reduce_ops(Def2Def& map, int depth, const Def* def) const {
+Array<const Def*> Def::reduce_ops(Def2Def& map, int depth, Defs defs) const {
     Array<const Def*> result(num_ops());
     for (size_t i = 0, e = num_ops(); i != e; ++i)
-        result[i] = op(i)->reduce(map, depth, def);
+        result[i] = op(i)->reduce(map, depth, defs);
     return result;
 }
 
-const Def* Lambda::vreduce(Def2Def& map, int depth, const Def* def) const {
-    auto new_domain = domain()->reduce(map, depth, def);
-    return world().lambda(new_domain, body()->reduce(map, depth+1, def), name());
+const Def* Lambda::vreduce(Def2Def& map, int depth, Defs defs) const {
+    auto new_domain = domain()->reduce(map, depth, defs);
+    return world().lambda(new_domain, body()->reduce(map, depth+1, defs), name());
 }
 
-const Def* Pi::vreduce(Def2Def& map, int depth, const Def* def) const {
-    return world().pi(domain(), body()->reduce(map, depth+1, def), name());
+const Def* Pi::vreduce(Def2Def& map, int depth, Defs defs) const {
+    return world().pi(domain(), body()->reduce(map, depth+1, defs), name());
 }
 
-const Def* Tuple::vreduce(Def2Def& map, int depth, const Def* def) const {
-    return world().tuple(reduce_ops(map, depth, def), name());
+const Def* Tuple::vreduce(Def2Def& map, int depth, Defs defs) const {
+    return world().tuple(reduce_ops(map, depth, defs), name());
 }
 
-const Def* Sigma::vreduce(Def2Def& map, int depth, const Def* def) const {
+const Def* Sigma::vreduce(Def2Def& map, int depth, Defs defs) const {
     if (is_nominal()) {
         auto sigma = world().sigma(num_ops(), name());
         map[this] = sigma;
 
         for (size_t i = 0, e = num_ops(); i != e; ++i)
-            sigma->set(i, op(i)->reduce(map, depth+i, def));
+            sigma->set(i, op(i)->reduce(map, depth+i, defs));
 
         return sigma;
     }  else {
         Array<const Def*> ops(num_ops());
         for (size_t i = 0, e = num_ops(); i != e; ++i)
-            ops[i] = op(i)->reduce(map, depth+i, def);
+            ops[i] = op(i)->reduce(map, depth+i, defs);
         return map[this] = world().sigma(ops, name());
     }
 }
 
-const Def* Var::vreduce(Def2Def& map, int depth, const Def* def) const {
+const Def* Var::vreduce(Def2Def& map, int depth, Defs defs) const {
     if (this->depth() == depth)
-        return def;
+        return world().tuple(type(), defs);
     else if (this->depth() > depth) // this is a free variable - shift by one
         return world().var(type(), this->depth()-1, name());
     else                            // this variable is not free - keep depth, reduce type
-        return world().var(type()->reduce(map, depth, def), this->depth(), name());
+        return world().var(type()->reduce(map, depth, defs), this->depth(), name());
 }
 
-const Def* App::vreduce(Def2Def& map, int depth, const Def* def) const {
-    auto ops = reduce_ops(map, depth, def);
+const Def* App::vreduce(Def2Def& map, int depth, Defs defs) const {
+    auto ops = reduce_ops(map, depth, defs);
     return world().app(ops[0], ops[1], name());
 }
 
-const Def* Assume::vreduce(Def2Def&, int depth, const Def* def) const { return this; }
-const Def* Star::vreduce(Def2Def&, int, const Def*) const { return this; }
+const Def* Assume::vreduce(Def2Def&, int, Defs) const { return this; }
+const Def* Star::vreduce(Def2Def&, int, Defs) const { return this; }
 
 //------------------------------------------------------------------------------
 

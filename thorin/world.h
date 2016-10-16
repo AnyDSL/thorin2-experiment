@@ -22,17 +22,13 @@ public:
     const Assume* assume(const Def* type, const std::string& name = "") { return insert(new Assume(*this, type, name)); }
     const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return unify(new Lambda(*this, domain, body, name)); }
     const Pi*     pi    (const Def* domain, const Def* body, const std::string& name = "") { return unify(new Pi    (*this, domain, body, name)); }
-    const Def* app(const Def* callee, const Def* arg, const std::string& name = "");
     const Def* app(const Def* callee, Defs args, const std::string& name = "");
-    const Tuple* tuple(const Def* type, Defs ops, const std::string& name = "") { return unify(new Tuple(*this, type, ops, name)); }
-    const Tuple* tuple(Defs ops, const std::string& name = "") {
-        Array<const Def*> types(ops.size());
-        for (size_t i = 0, e = types.size(); i != e; ++i)
-            types[i] = ops[i]->type();
-        return tuple(sigma(types, name), ops, name);
-    }
+    const Def* app(const Def* callee, const Def* arg, const std::string& name = "") { return app(callee, Defs({arg}), name); }
+    const Def* tuple(const Def* type, Defs ops, const std::string& name = "");
+    const Def* tuple(Defs defs, const std::string& name) { return tuple(sigma(types(defs), name), defs, name); }
     const Sigma* sigma(Defs ops, const std::string& name = "") { return unify(new Sigma(*this, ops, name)); }
     Sigma* sigma(size_t num_ops, const std::string& name = "") { return insert(new Sigma(*this, num_ops, name)); }
+    const Assume* nat() { return nat_; }
 
     const DefSet& defs() const { return defs_; }
 
@@ -63,6 +59,7 @@ protected:
 
     DefSet defs_;
     const Star* star_;
+    const Assume* nat_;
 };
 
 }

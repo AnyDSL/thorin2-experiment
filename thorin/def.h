@@ -72,6 +72,8 @@ using Def2Def = DefMap<const Def*>;
 
 typedef ArrayRef<const Def*> Defs;
 
+Array<const Def*> types(Defs defs);
+
 //------------------------------------------------------------------------------
 
 /// Base class for all @p Def%s.
@@ -150,22 +152,22 @@ public:
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
     virtual bool equal(const Def*) const;
 
-    const Def* reduce(Def2Def&, int, const Def*) const;
-    const Def* reduce(int depth, const Def* def) const { Def2Def map; return reduce(map, depth, def); }
-    const Def* rebuild(World& to, Defs ops) const;
-    const Def* rebuild(Defs ops) const { return rebuild(world(), ops); }
+    const Def* reduce(Def2Def&, int, Defs) const;
+    const Def* reduce(int depth, Defs defs) const { Def2Def map; return reduce(map, depth, defs); }
+    const Def* rebuild(World& to, Defs) const;
+    const Def* rebuild(Defs defs) const { return rebuild(world(), defs); }
 
     static size_t gid_counter() { return gid_counter_; }
 
 protected:
     virtual uint64_t vhash() const;
-    virtual const Def* vreduce(Def2Def&, int, const Def*) const = 0;
-    Array<const Def*> reduce_ops(Def2Def&, int, const Def*) const;
+    virtual const Def* vreduce(Def2Def&, int, Defs) const = 0;
+    Array<const Def*> reduce_ops(Def2Def&, int, Defs) const;
 
     mutable uint64_t hash_ = 0;
 
 private:
-    virtual const Def* vrebuild(World& to, Defs ops) const = 0;
+    virtual const Def* vrebuild(World&, Defs) const = 0;
 
     static size_t gid_counter_;
 
@@ -173,10 +175,10 @@ private:
     int tag_;
     const Def* type_;
     std::vector<const Def*> ops_;
-    mutable size_t gid_;
+    size_t gid_;
     mutable Uses uses_;
-    mutable std::string name_;
-    mutable bool is_nominal_;
+    std::string name_;
+    bool is_nominal_;
 
     friend class World;
     friend class Cleaner;
@@ -197,16 +199,6 @@ protected:
     {}
 };
 
-class Connective : public Abs {
-protected:
-    Connective(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
-        : Abs(world, tag, type, num_ops, name)
-    {}
-    Connective(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : Abs(world, tag, type, ops, name)
-    {}
-};
-
 class Quantifier : public Abs {
 protected:
     Quantifier(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
@@ -215,22 +207,22 @@ protected:
     Quantifier(World& world, int tag, const Def* type, Defs ops, const std::string& name)
         : Abs(world, tag, type, ops, name)
     {}
-};
-
-class Lambda : public Connective {
-private:
-    Lambda(World& world, const Def* domain, const Def* body, const std::string& name);
 
 public:
-    const Def* domain() const { return op(0); }
-    const Def* body() const { return op(1); }
-    virtual std::ostream& stream(std::ostream&) const override;
+    virtual const Def* domain() const = 0;
+};
 
-private:
-    virtual const Def* vrebuild(World& to, Defs ops) const override;
-    virtual const Def* vreduce(Def2Def&, int, const Def*) const override;
+class Connective : public Abs {
+protected:
+    Connective(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
+        : Abs(world, tag, type, num_ops, name)
+    {}
+    Connective(World& world, int tag, const Def* type, Defs ops, const std::string& name)
+        : Abs(world, tag, type, ops, name)
+    {}
 
-    friend class World;
+public:
+    virtual const Def* domain() const = 0;
 };
 
 class Pi : public Quantifier {
@@ -238,32 +230,29 @@ private:
     Pi(World& world, const Def* domain, const Def* body, const std::string& name);
 
 public:
-    const Def* domain() const { return op(0); }
+    virtual const Def* domain() const override { return op(0); }
     const Def* body() const { return op(1); }
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* vrebuild(World& to, Defs ops) const override;
-    virtual const Def* vreduce(Def2Def&, int, const Def*) const override;
+    virtual const Def* vrebuild(World&, Defs) const override;
+    virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
     friend class World;
 };
 
-class Tuple : public Connective {
+class Lambda : public Connective {
 private:
-    Tuple(World& world, const Def* type, Defs ops, const std::string& name)
-        : Connective(world, Node_Tuple, type, ops, name)
-    {}
-
-    Tuple(World& world, Defs ops, const std::string& name);
-
-    static const Def* infer_type(World& world, Defs ops, const std::string& name);
-
-    virtual const Def* vrebuild(World& to, Defs ops) const override;
-    virtual const Def* vreduce(Def2Def&, int, const Def*) const override;
+    Lambda(World& world, const Def* domain, const Def* body, const std::string& name);
 
 public:
+    virtual const Def* domain() const override { return op(0); }
+    const Def* body() const { return op(1); }
     virtual std::ostream& stream(std::ostream&) const override;
+
+private:
+    virtual const Def* vrebuild(World&, Defs) const override;
+    virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
     friend class World;
 };
@@ -272,15 +261,36 @@ class Sigma : public Quantifier {
 private:
     Sigma(World& world, size_t num_ops, const std::string& name)
         : Quantifier(world, Node_Sigma, nullptr /*TODO*/, num_ops, name)
-    {}
+    {
+        assert(false && "TODO");
+    }
     Sigma(World& world, Defs ops, const std::string& name)
-        : Quantifier(world, Node_Sigma, nullptr /*TODO*/, ops, name)
+        : Quantifier(world, Node_Sigma, infer_type(world, ops), ops, name)
     {}
 
-    static const Def* infer_type(World& world, Defs ops, const std::string& name);
+    virtual const Def* domain() const override;
+    static const Def* infer_type(World&, Defs);
 
-    virtual const Def* vrebuild(World& to, Defs ops) const override;
-    virtual const Def* vreduce(Def2Def&, int, const Def*) const override;
+    virtual const Def* vrebuild(World&, Defs) const override;
+    virtual const Def* vreduce(Def2Def&, int, Defs) const override;
+
+public:
+    virtual std::ostream& stream(std::ostream&) const override;
+
+    friend class World;
+};
+
+class Tuple : public Connective {
+private:
+    Tuple(World& world, const Def* type, Defs ops, const std::string& name)
+        : Connective(world, Node_Tuple, type, ops, name)
+    {
+        assert(type->as<Sigma>()->num_ops() && ops.size());
+    }
+
+    virtual const Def* domain() const override;
+    virtual const Def* vrebuild(World&, Defs) const override;
+    virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
 public:
     virtual std::ostream& stream(std::ostream&) const override;
@@ -298,8 +308,8 @@ public:
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* vrebuild(World& to, Defs ops) const override;
-    virtual const Def* vreduce(Def2Def&, int, const Def*) const override;
+    virtual const Def* vrebuild(World&, Defs) const override;
+    virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
     friend class World;
 };
@@ -318,8 +328,8 @@ public:
 private:
     virtual uint64_t vhash() const override;
     virtual bool equal(const Def*) const override;
-    virtual const Def* vrebuild(World& to, Defs ops) const override;
-    virtual const Def* vreduce(Def2Def&, int, const Def*) const override;
+    virtual const Def* vrebuild(World&, Defs) const override;
+    virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
     int depth_;
 
@@ -336,29 +346,26 @@ public:
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* vrebuild(World& to, Defs ops) const override;
-    virtual const Def* vreduce(Def2Def&, int, const Def*) const override;
+    virtual const Def* vrebuild(World&, Defs) const override;
+    virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
     friend class World;
 };
 
 class App : public Def {
 private:
-    App(World& world, const Def* callee, Defs args, const std::string& name)
-        : Def(world, Node_App, callee->type()->as<Quantifier>()->reduce(1, args.front()), concat(callee, args), name)
-    {}
-
-    static const Def* infer_type(World& world, const Def* callee, const Def* arg, const std::string& name);
-    static const Def* infer_type(World& world, const Def* callee, Defs arg, const std::string& name);
+    App(World& world, const Def* callee, Defs args, const std::string& name);
 
 public:
     const Def* callee() const { return Def::op(0); }
+    const Quantifier* quantifier() const { return callee()->type()->as<Quantifier>(); }
+    const Def* domain() const { return quantifier()->domain(); }
     Defs args() const { return ops().skip_front(); }
     size_t num_args() const { return args().size(); }
     const Def* arg(size_t i = 0) const { return args()[i]; }
     virtual std::ostream& stream(std::ostream&) const override;
-    virtual const Def* vrebuild(World& to, Defs ops) const override;
-    virtual const Def* vreduce(Def2Def&, int, const Def*) const override;
+    virtual const Def* vrebuild(World&, Defs) const override;
+    virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
 private:
     mutable const Def* cache_ = nullptr;
