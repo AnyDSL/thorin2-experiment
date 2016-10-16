@@ -289,7 +289,7 @@ public:
 class Star : public Def {
 private:
     Star(World& world)
-        : Def(world, Node_Star, nullptr, {}, "type")
+        : Def(world, Node_Star, nullptr, Defs(), "type")
     {}
 
 public:
@@ -305,7 +305,7 @@ private:
 class Var : public Def {
 private:
     Var(World& world, const Def* type, int depth, const std::string& name)
-        : Def(world, Node_Var, type, {}, name)
+        : Def(world, Node_Var, type, Defs(), name)
         , depth_(depth)
     {}
 
