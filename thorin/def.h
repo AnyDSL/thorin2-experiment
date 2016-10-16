@@ -10,6 +10,7 @@ namespace thorin {
 
 enum {
     Node_App,
+    Node_Assume,
     Node_Lambda,
     Node_Pi,
     Node_Sigma,
@@ -324,6 +325,22 @@ private:
     friend class World;
 };
 
+class Assume : public Def {
+private:
+    Assume(World& world, const Def* type, const std::string& name)
+        : Def(world, Node_Assume, type, 0, name)
+    {}
+
+public:
+    virtual std::ostream& stream(std::ostream&) const override;
+
+private:
+    virtual const Def* vrebuild(World& to, Defs ops) const override;
+    virtual const Def* vreduce(int, const Def*, Def2Def&) const override;
+
+    friend class World;
+};
+
 class App : public Def {
 private:
     App(World& world, const Def* callee, Defs args, const std::string& name)
@@ -335,7 +352,9 @@ private:
 
 public:
     const Def* callee() const { return Def::op(0); }
-    const Def* arg() const { return Def::op(1); }
+    Defs args() const { return ops().skip_front(); }
+    size_t num_args() const { return args().size(); }
+    const Def* arg(size_t i = 0) const { return args()[i]; }
     virtual std::ostream& stream(std::ostream&) const override;
     virtual const Def* vrebuild(World& to, Defs ops) const override;
     virtual const Def* vreduce(int, const Def*, Def2Def&) const override;

@@ -49,7 +49,7 @@ std::string Def::unique_name() const {
  */
 
 Lambda::Lambda(World& world, const Def* domain, const Def* body, const std::string& name)
-    : Connective(world, Node_Lambda, world.pi(domain, body, name), {domain, body}, name)
+    : Connective(world, Node_Lambda, world.pi(domain, body->type()), {domain, body}, name)
 {}
 
 Pi::Pi(World& world, const Def* domain, const Def* body, const std::string& name)
@@ -98,7 +98,7 @@ uint64_t Def::vhash() const {
 }
 
 uint64_t Var::vhash() const {
-    return thorin::hash_combine(thorin::hash_begin(int(tag())), depth());
+    return thorin::hash_combine(thorin::hash_begin(int(tag())), depth(), type() ? type()->gid() : 0);
 }
 
 //------------------------------------------------------------------------------
@@ -122,7 +122,8 @@ bool Def::equal(const Def* other) const {
 }
 
 bool Var::equal(const Def* other) const {
-    return other->isa<Var>() ? this->as<Var>()->depth() == other->as<Var>()->depth() : false;
+    return other->isa<Var>() && this->as<Var>()->depth() == other->as<Var>()->depth()
+                             && this->as<Var>()->type()  == other->as<Var>()->type();
 }
 
 //------------------------------------------------------------------------------
@@ -138,22 +139,14 @@ const Def* Def::rebuild(World& to, Defs ops) const {
     return vrebuild(to, ops);
 }
 
-const Def* Sigma::vrebuild(World& to, Defs ops) const {
-    if (is_nominal()) {
-        auto sigma = to.sigma(ops.size(), name());
-        for (size_t i = 0, e = ops.size(); i != e; ++i)
-            sigma->set(i, ops[i]);
-        return sigma;
-    } else
-        return to.sigma(ops, name());
-}
-
 const Def* App   ::vrebuild(World& to, Defs ops) const { return to.app(ops[0], ops[1], name()); }
-const Def* Tuple ::vrebuild(World& to, Defs ops) const { return to.tuple(ops, name()); }
+const Def* Assume::vrebuild(World& to, Defs ops) const { THORIN_UNREACHABLE; }
 const Def* Lambda::vrebuild(World& to, Defs ops) const { return to.lambda(ops[0], ops[1], name()); }
 const Def* Pi    ::vrebuild(World& to, Defs ops) const { return to.pi(ops[0], ops[1], name()); }
-const Def* Var   ::vrebuild(World& to, Defs ops) const { return to.var(ops[0], depth(), name()); }
+const Def* Sigma ::vrebuild(World& to, Defs ops) const { assert(is_structural()); return to.sigma(ops, name()); }
 const Def* Star  ::vrebuild(World& to, Defs    ) const { return to.star(); }
+const Def* Tuple ::vrebuild(World& to, Defs ops) const { return to.tuple(ops, name()); }
+const Def* Var   ::vrebuild(World& to, Defs ops) const { return to.var(ops[0], depth(), name()); }
 
 //------------------------------------------------------------------------------
 
@@ -175,7 +168,8 @@ Array<const Def*> Def::reduce_ops(int depth, const Def* def, Def2Def& map) const
 }
 
 const Def* Lambda::vreduce(int depth, const Def* def, Def2Def& map) const {
-    return world().lambda(domain(), body()->reduce(depth+1, def, map), name());
+    auto new_domain = domain()->reduce(depth, def, map);
+    return world().lambda(new_domain, body()->reduce(depth+1, def, map), name());
 }
 
 const Def* Pi::vreduce(int depth, const Def* def, Def2Def& map) const {
@@ -217,6 +211,7 @@ const Def* App::vreduce(int depth, const Def* def, Def2Def& map) const {
     return world().app(ops[0], ops[1], name());
 }
 
+const Def* Assume::vreduce(int depth, const Def* def, Def2Def&) const { return this; }
 const Def* Star::vreduce(int, const Def*, Def2Def&) const { return this; }
 
 //------------------------------------------------------------------------------
@@ -243,15 +238,17 @@ std::ostream& Sigma::stream(std::ostream& os) const {
 }
 
 std::ostream& Var::stream(std::ostream& os) const {
-    return streamf(os, "<%>", depth());
+    return streamf(os, "<%:%>", depth(), type());
 }
+
+std::ostream& Assume::stream(std::ostream& os) const { return os << name(); }
 
 std::ostream& Star::stream(std::ostream& os) const {
     return os << '*';
 }
 
 std::ostream& App::stream(std::ostream& os) const {
-    return stream_list(streamf(os, "(%)", callee()), ops(), [&](const Def* def) { def->stream(os); }, "(", ")");
+    return stream_list(streamf(os, "(%)", callee()), args(), [&](const Def* def) { def->stream(os); }, "(", ")");
 }
 
 }

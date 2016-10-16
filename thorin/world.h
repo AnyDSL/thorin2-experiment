@@ -19,6 +19,7 @@ public:
 
     const Star* star() const { return star_; }
     const Var* var(const Def* type, int depth, const std::string& name = "") { return unify(new Var(*this, type, depth, name)); }
+    const Assume* assume(const Def* type, const std::string& name = "") { return insert(new Assume(*this, type, name)); }
     const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return unify(new Lambda(*this, domain, body, name)); }
     const Pi*     pi    (const Def* domain, const Def* body, const std::string& name = "") { return unify(new Pi    (*this, domain, body, name)); }
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "");

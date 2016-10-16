@@ -13,7 +13,7 @@ const Def* World::app(const Def* callee, const Def* arg, const std::string& name
             args[i] = app(arg, arg, name);
         return app(callee, args, name);
     }
-    return app(callee, {arg}, name);
+    return app(callee, Defs({arg}), name);
 }
 
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {
