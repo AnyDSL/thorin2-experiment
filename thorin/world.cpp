@@ -15,6 +15,11 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
         if (auto sigma = args.front()->type()->isa<Sigma>()) {
             assert(false && "TODO" && sigma);
         }
+
+        if (auto tuple = callee->isa<Tuple>()) {
+            assert(args.size() == 1);
+            return tuple->op(std::stoi(args.front()->name()));
+        }
     }
 
     auto app = unify(new App(*this, callee, args, name));

@@ -25,9 +25,10 @@ public:
     const Def* app(const Def* callee, Defs args, const std::string& name = "");
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "") { return app(callee, Defs({arg}), name); }
     const Def* tuple(const Def* type, Defs ops, const std::string& name = "");
-    const Def* tuple(Defs defs, const std::string& name) { return tuple(sigma(types(defs), name), defs, name); }
+    const Def* tuple(Defs defs, const std::string& name = "") { return tuple(sigma(types(defs), name), defs, name); }
     const Sigma* sigma(Defs ops, const std::string& name = "") { return unify(new Sigma(*this, ops, name)); }
     Sigma* sigma(size_t num_ops, const std::string& name = "") { return insert(new Sigma(*this, num_ops, name)); }
+    const Sigma* unit() { return sigma(Defs()); }
     const Assume* nat() { return nat_; }
 
     const DefSet& defs() const { return defs_; }

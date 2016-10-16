@@ -20,6 +20,12 @@ int main()  {
     // 2
     w.app(int_id, n2)->dump();
 
+    // 3
+    w.app(w.tuple({n1, n2, n3}), n2)->dump();
+
+    auto make_pair = w.assume(w.pi(w.unit(), w.sigma({w.nat(), w.nat()})), "make_pair");
+    w.app(make_pair, n1)->dump();
+
     auto plus = w.assume(w.pi(w.sigma({w.nat(), w.nat()}), w.nat()), "+");
     w.app(int_id, w.app(plus, {w.app(plus, {n1, n2}), n3}))->dump();
 }
