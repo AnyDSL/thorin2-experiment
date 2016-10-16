@@ -76,6 +76,7 @@ const Def* Sigma::infer_type(World& world, Defs ops, const std::string& name) {
 }
 
 const Def* App::infer_type(World& world, const Def* callee, const Def* arg, const std::string& name) {
+    return callee->type()->as<Quantifier>()->reduce(1, arg);
 }
 
 const Def* App::infer_type(World& world, const Def* callee, Defs arg, const std::string& name) {
@@ -154,65 +155,65 @@ const Def* Var   ::vrebuild(World& to, Defs ops) const { return to.var(ops[0], d
  * reduce
  */
 
-const Def* Def::reduce(int depth, const Def* def, Def2Def& map) const {
+const Def* Def::reduce(Def2Def& map, int depth, const Def* def) const {
     if (auto result = find(map, this))
         return result;
-    return map[this] = vreduce(depth, def, map);
+    return map[this] = vreduce(map, depth, def);
 }
 
-Array<const Def*> Def::reduce_ops(int depth, const Def* def, Def2Def& map) const {
+Array<const Def*> Def::reduce_ops(Def2Def& map, int depth, const Def* def) const {
     Array<const Def*> result(num_ops());
     for (size_t i = 0, e = num_ops(); i != e; ++i)
-        result[i] = op(i)->reduce(depth, def, map);
+        result[i] = op(i)->reduce(map, depth, def);
     return result;
 }
 
-const Def* Lambda::vreduce(int depth, const Def* def, Def2Def& map) const {
-    auto new_domain = domain()->reduce(depth, def, map);
-    return world().lambda(new_domain, body()->reduce(depth+1, def, map), name());
+const Def* Lambda::vreduce(Def2Def& map, int depth, const Def* def) const {
+    auto new_domain = domain()->reduce(map, depth, def);
+    return world().lambda(new_domain, body()->reduce(map, depth+1, def), name());
 }
 
-const Def* Pi::vreduce(int depth, const Def* def, Def2Def& map) const {
-    return world().pi(domain(), body()->reduce(depth+1, def, map), name());
+const Def* Pi::vreduce(Def2Def& map, int depth, const Def* def) const {
+    return world().pi(domain(), body()->reduce(map, depth+1, def), name());
 }
 
-const Def* Tuple::vreduce(int depth, const Def* def, Def2Def& map) const {
-    return world().tuple(reduce_ops(depth, def, map), name());
+const Def* Tuple::vreduce(Def2Def& map, int depth, const Def* def) const {
+    return world().tuple(reduce_ops(map, depth, def), name());
 }
 
-const Def* Sigma::vreduce(int depth, const Def* def, Def2Def& map) const {
+const Def* Sigma::vreduce(Def2Def& map, int depth, const Def* def) const {
     if (is_nominal()) {
         auto sigma = world().sigma(num_ops(), name());
         map[this] = sigma;
 
         for (size_t i = 0, e = num_ops(); i != e; ++i)
-            sigma->set(i, op(i)->reduce(depth+i, def, map));
+            sigma->set(i, op(i)->reduce(map, depth+i, def));
 
         return sigma;
     }  else {
         Array<const Def*> ops(num_ops());
         for (size_t i = 0, e = num_ops(); i != e; ++i)
-            ops[i] = op(i)->reduce(depth+i, def, map);
+            ops[i] = op(i)->reduce(map, depth+i, def);
         return map[this] = world().sigma(ops, name());
     }
 }
 
-const Def* Var::vreduce(int depth, const Def* def, Def2Def& map) const {
+const Def* Var::vreduce(Def2Def& map, int depth, const Def* def) const {
     if (this->depth() == depth)
         return def;
     else if (this->depth() > depth) // this is a free variable - shift by one
         return world().var(type(), this->depth()-1, name());
     else                            // this variable is not free - keep depth, reduce type
-        return world().var(type()->reduce(depth, def, map), this->depth(), name());
+        return world().var(type()->reduce(map, depth, def), this->depth(), name());
 }
 
-const Def* App::vreduce(int depth, const Def* def, Def2Def& map) const {
-    auto ops = reduce_ops(depth, def, map);
+const Def* App::vreduce(Def2Def& map, int depth, const Def* def) const {
+    auto ops = reduce_ops(map, depth, def);
     return world().app(ops[0], ops[1], name());
 }
 
-const Def* Assume::vreduce(int depth, const Def* def, Def2Def&) const { return this; }
-const Def* Star::vreduce(int, const Def*, Def2Def&) const { return this; }
+const Def* Assume::vreduce(Def2Def&, int depth, const Def* def) const { return this; }
+const Def* Star::vreduce(Def2Def&, int, const Def*) const { return this; }
 
 //------------------------------------------------------------------------------
 
