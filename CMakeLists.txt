@@ -2,6 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 project (CoC)
 include_directories(.)
 add_executable(coc 
+    main.cpp
     thorin/def.cpp
     thorin/def.h
     thorin/world.cpp

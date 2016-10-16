@@ -65,6 +65,22 @@ Tuple::Tuple(World& world, Defs ops, const std::string& name)
     set_type(world.sigma(types, name));
 }
 
+/*
+ * infer_type
+ */
+
+const Def* Tuple::infer_type(World& world, Defs ops, const std::string& name) {
+}
+
+const Def* Sigma::infer_type(World& world, Defs ops, const std::string& name) {
+}
+
+const Def* App::infer_type(World& world, const Def* callee, const Def* arg, const std::string& name) {
+}
+
+const Def* App::infer_type(World& world, const Def* callee, Defs arg, const std::string& name) {
+}
+
 //------------------------------------------------------------------------------
 
 /*
@@ -135,7 +151,9 @@ const Def* Sigma::vrebuild(World& to, Defs ops) const {
 const Def* App   ::vrebuild(World& to, Defs ops) const { return to.app(ops[0], ops[1], name()); }
 const Def* Tuple ::vrebuild(World& to, Defs ops) const { return to.tuple(ops, name()); }
 const Def* Lambda::vrebuild(World& to, Defs ops) const { return to.lambda(ops[0], ops[1], name()); }
+const Def* Pi    ::vrebuild(World& to, Defs ops) const { return to.pi(ops[0], ops[1], name()); }
 const Def* Var   ::vrebuild(World& to, Defs ops) const { return to.var(ops[0], depth(), name()); }
+const Def* Star  ::vrebuild(World& to, Defs    ) const { return to.star(); }
 
 //------------------------------------------------------------------------------
 
@@ -199,6 +217,41 @@ const Def* App::vreduce(int depth, const Def* def, Def2Def& map) const {
     return world().app(ops[0], ops[1], name());
 }
 
+const Def* Star::vreduce(int, const Def*, Def2Def&) const { return this; }
+
 //------------------------------------------------------------------------------
+
+/*
+ * stream
+ */
+
+
+std::ostream& Lambda::stream(std::ostream& os) const {
+    return streamf(os, "λ%.%", domain(), body());
+}
+
+std::ostream& Pi::stream(std::ostream& os) const {
+    return streamf(os, "Π%.%", domain(), body());
+}
+
+std::ostream& Tuple::stream(std::ostream& os) const {
+    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "(", ")");
+}
+
+std::ostream& Sigma::stream(std::ostream& os) const {
+    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "Σ(", ")");
+}
+
+std::ostream& Var::stream(std::ostream& os) const {
+    return streamf(os, "<%>", depth());
+}
+
+std::ostream& Star::stream(std::ostream& os) const {
+    return os << '*';
+}
+
+std::ostream& App::stream(std::ostream& os) const {
+    return stream_list(streamf(os, "(%)", callee()), ops(), [&](const Def* def) { def->stream(os); }, "(", ")");
+}
 
 }

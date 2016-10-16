@@ -14,10 +14,10 @@ public:
     World& operator=(const World&);
     World(const World&);
 
-    World() {}
+    World();
     virtual ~World() { for (auto def : defs_) delete def; }
 
-    const Star* star();
+    const Star* star() const { return star_; }
     const Var* var(const Def* type, int depth, const std::string& name = "") { return unify(new Var(*this, type, depth, name)); }
     const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return unify(new Lambda(*this, domain, body, name)); }
     const Pi*     pi    (const Def* domain, const Def* body, const std::string& name = "") { return unify(new Pi    (*this, domain, body, name)); }
@@ -61,6 +61,7 @@ protected:
     }
 
     DefSet defs_;
+    const Star* star_;
 };
 
 }

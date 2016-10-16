@@ -161,9 +161,6 @@ protected:
     Array<const Def*> reduce_ops(int, const Def*, Def2Def&) const;
 
     mutable uint64_t hash_ = 0;
-    int order_ = 0;
-    mutable bool known_       = true;
-    mutable bool monomorphic_ = true;
 
 private:
     virtual const Def* vrebuild(World& to, Defs ops) const = 0;
@@ -310,9 +307,7 @@ private:
     Var(World& world, const Def* type, int depth, const std::string& name)
         : Def(world, Node_Var, type, {}, name)
         , depth_(depth)
-    {
-        monomorphic_ = false;
-    }
+    {}
 
 public:
     int depth() const { return depth_; }

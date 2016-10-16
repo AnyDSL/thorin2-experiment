@@ -2,6 +2,10 @@
 
 namespace thorin {
 
+World::World()
+    : star_(unify(new Star(*this)))
+{}
+
 const Def* World::app(const Def* callee, const Def* arg, const std::string& name) {
     if (auto sigma = arg->type()->isa<Sigma>()) {
         Array<const Def*> args;
