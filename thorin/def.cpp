@@ -101,7 +101,7 @@ uint64_t Def::vhash() const {
 }
 
 uint64_t Var::vhash() const {
-    return thorin::hash_combine(thorin::hash_begin(int(tag())), depth(), type() ? type()->gid() : 0);
+    return thorin::hash_combine(thorin::hash_begin(int(tag())), index(), type() ? type()->gid() : 0);
 }
 
 //------------------------------------------------------------------------------
@@ -125,7 +125,7 @@ bool Def::equal(const Def* other) const {
 }
 
 bool Var::equal(const Def* other) const {
-    return other->isa<Var>() && this->as<Var>()->depth() == other->as<Var>()->depth()
+    return other->isa<Var>() && this->as<Var>()->index() == other->as<Var>()->index()
                              && this->as<Var>()->type()  == other->as<Var>()->type();
 }
 
@@ -142,7 +142,7 @@ const Def* Pi    ::rebuild(World& to, Defs ops) const { return to.pi    (ops.ski
 const Def* Sigma ::rebuild(World& to, Defs ops) const { assert(is_structural()); return to.sigma(ops, name()); }
 const Def* Star  ::rebuild(World& to, Defs    ) const { return to.star(); }
 const Def* Tuple ::rebuild(World& to, Defs ops) const { return to.tuple(ops, name()); }
-const Def* Var   ::rebuild(World& to, Defs ops) const { return to.var(ops[0], depth(), name()); }
+const Def* Var   ::rebuild(World& to, Defs ops) const { return to.var(ops[0], index(), name()); }
 
 //------------------------------------------------------------------------------
 
@@ -150,60 +150,60 @@ const Def* Var   ::rebuild(World& to, Defs ops) const { return to.var(ops[0], de
  * reduce
  */
 
-Array<const Def*> reduce(Def2Def& map, int depth, Defs defs, Defs args) {
+Array<const Def*> reduce(Def2Def& map, int index, Defs defs, Defs args) {
     Array<const Def*> result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)
-        result[i] = defs[i]->reduce(map, depth, args);
+        result[i] = defs[i]->reduce(map, index, args);
     return result;
 }
 
-const Def* Def::reduce(Def2Def& map, int depth, Defs defs) const {
+const Def* Def::reduce(Def2Def& map, int index, Defs defs) const {
     if (auto result = find(map, this))
         return result;
-    return map[this] = vreduce(map, depth, defs);
+    return map[this] = vreduce(map, index, defs);
 }
 
-const Def* Lambda::vreduce(Def2Def& map, int depth, Defs defs) const {
-    auto new_domain = domain()->reduce(map, depth, defs);
-    return world().lambda(new_domain, body()->reduce(map, depth+1, defs), name());
+const Def* Lambda::vreduce(Def2Def& map, int index, Defs defs) const {
+    auto new_domain = domain()->reduce(map, index, defs);
+    return world().lambda(new_domain, body()->reduce(map, index+1, defs), name());
 }
 
-const Def* Pi::vreduce(Def2Def& map, int depth, Defs defs) const {
-    return world().pi(domain(), body()->reduce(map, depth+1, defs), name());
+const Def* Pi::vreduce(Def2Def& map, int index, Defs defs) const {
+    return world().pi(domain(), body()->reduce(map, index+1, defs), name());
 }
 
-const Def* Tuple::vreduce(Def2Def& map, int depth, Defs defs) const {
-    return world().tuple(thorin::reduce(map, depth, ops(), defs), name());
+const Def* Tuple::vreduce(Def2Def& map, int index, Defs defs) const {
+    return world().tuple(thorin::reduce(map, index, ops(), defs), name());
 }
 
-const Def* Sigma::vreduce(Def2Def& map, int depth, Defs defs) const {
+const Def* Sigma::vreduce(Def2Def& map, int index, Defs defs) const {
     if (is_nominal()) {
         auto sigma = world().sigma(num_ops(), name());
         map[this] = sigma;
 
         for (size_t i = 0, e = num_ops(); i != e; ++i)
-            sigma->set(i, op(i)->reduce(map, depth+i, defs));
+            sigma->set(i, op(i)->reduce(map, index+i, defs));
 
         return sigma;
     }  else {
         Array<const Def*> ops(num_ops());
         for (size_t i = 0, e = num_ops(); i != e; ++i)
-            ops[i] = op(i)->reduce(map, depth+i, defs);
+            ops[i] = op(i)->reduce(map, index+i, defs);
         return map[this] = world().sigma(ops, name());
     }
 }
 
-const Def* Var::vreduce(Def2Def& map, int depth, Defs defs) const {
-    if (this->depth() == depth)
+const Def* Var::vreduce(Def2Def& map, int index, Defs defs) const {
+    if (this->index() == index)
         return world().tuple(type(), defs);
-    else if (this->depth() > depth) // this is a free variable - shift by one
-        return world().var(type(), this->depth()-1, name());
-    else                            // this variable is not free - keep depth, reduce type
-        return world().var(type()->reduce(map, depth, defs), this->depth(), name());
+    else if (this->index() > index) // this is a free variable - shift by one
+        return world().var(type(), this->index()-1, name());
+    else                            // this variable is not free - keep index, reduce type
+        return world().var(type()->reduce(map, index, defs), this->index(), name());
 }
 
-const Def* App::vreduce(Def2Def& map, int depth, Defs defs) const {
-    auto ops = thorin::reduce(map, depth, this->ops(), defs);
+const Def* App::vreduce(Def2Def& map, int index, Defs defs) const {
+    auto ops = thorin::reduce(map, index, this->ops(), defs);
     return world().app(ops[0], ops[1], name());
 }
 
@@ -234,7 +234,7 @@ std::ostream& Sigma::stream(std::ostream& os) const {
 }
 
 std::ostream& Var::stream(std::ostream& os) const {
-    return streamf(os, "<%:%>", depth(), type());
+    return streamf(os, "<%:%>", index(), type());
 }
 
 std::ostream& Assume::stream(std::ostream& os) const { return os << name(); }

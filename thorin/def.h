@@ -153,7 +153,7 @@ public:
     virtual bool equal(const Def*) const;
 
     const Def* reduce(Def2Def&, int, Defs) const;
-    const Def* reduce(int depth, Defs defs) const { Def2Def map; return reduce(map, depth, defs); }
+    const Def* reduce(int index, Defs defs) const { Def2Def map; return reduce(map, index, defs); }
     const Def* rebuild(Defs defs) const { return rebuild(world(), defs); }
 
     static size_t gid_counter() { return gid_counter_; }
@@ -314,13 +314,13 @@ private:
 
 class Var : public Def {
 private:
-    Var(World& world, const Def* type, int depth, const std::string& name)
+    Var(World& world, const Def* type, int index, const std::string& name)
         : Def(world, Node_Var, type, Defs(), name)
-        , depth_(depth)
+        , index_(index)
     {}
 
 public:
-    int depth() const { return depth_; }
+    int index() const { return index_; }
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -329,7 +329,7 @@ private:
     virtual const Def* rebuild(World&, Defs) const override;
     virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
-    int depth_;
+    int index_;
 
     friend class World;
 };

@@ -18,7 +18,7 @@ public:
     virtual ~World() { for (auto def : defs_) delete def; }
 
     const Star* star() const { return star_; }
-    const Var* var(const Def* type, int depth, const std::string& name = "") { return unify(new Var(*this, type, depth, name)); }
+    const Var* var(const Def* type, int index, const std::string& name = "") { return unify(new Var(*this, type, index, name)); }
     const Assume* assume(const Def* type, const std::string& name = "") { return insert(new Assume(*this, type, name)); }
     const Lambda* lambda(Defs domain, const Def* body, const std::string& name = "");
     const Pi*     pi    (Defs domain, const Def* body, const std::string& name = "");
