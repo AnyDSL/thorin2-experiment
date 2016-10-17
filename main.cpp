@@ -28,6 +28,7 @@ int main()  {
     w.app(make_pair, n1)->dump();
 
     auto plus = w.assume(w.pi({w.nat(), w.nat()}, w.nat()), "+");
+    plus->type()->dump();
     w.app(int_id, w.app(plus, {w.app(plus, {n1, n2}), n3}))->dump();
 
     auto Arr = w.assume(w.pi({w.nat(), w.pi(w.nat(), w.star())}, w.star()));

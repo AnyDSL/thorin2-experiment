@@ -225,11 +225,12 @@ public:
 
 class Pi : public Quantifier {
 private:
-    Pi(World& world, Defs domain, const Def* body, const std::string& name);
+    Pi(World& world, Defs domains, const Def* body, const std::string& name);
 
 public:
-    virtual const Def* domain() const override;
+    Defs domains() const { return ops().skip_back(); }
     const Def* body() const { return ops().back(); }
+    virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -241,11 +242,12 @@ private:
 
 class Lambda : public Connective {
 private:
-    Lambda(World& world, Defs domain, const Def* body, const std::string& name);
+    Lambda(World& world, Defs domains, const Def* body, const std::string& name);
 
 public:
-    virtual const Def* domain() const override;
+    Defs domains() const { return ops().skip_back(); }
     const Def* body() const { return ops().back(); }
+    virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -355,7 +357,7 @@ private:
     App(World& world, const Def* callee, Defs args, const std::string& name);
 
 public:
-    const Def* callee() const { return Def::op(0); }
+    const Def* callee() const { return ops().front(); }
     const Quantifier* quantifier() const { return callee()->type()->as<Quantifier>(); }
     const Def* domain() const { return quantifier()->domain(); }
     Defs args() const { return ops().skip_front(); }

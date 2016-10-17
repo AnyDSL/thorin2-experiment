@@ -49,8 +49,8 @@ Array<const Def*> types(Defs defs) {
     return  result;
 }
 
-const Def* Lambda::domain() const { return world().sigma(ops().skip_back()); }
-const Def* Pi    ::domain() const { return world().sigma(ops().skip_back()); }
+const Def* Lambda::domain() const { return world().sigma(domains()); }
+const Def* Pi    ::domain() const { return world().sigma(domains()); }
 
 //------------------------------------------------------------------------------
 
@@ -64,12 +64,12 @@ App::App(World& world, const Def* callee, Defs args, const std::string& name)
     assert(world.tuple(domain(), types(args)));
 }
 
-Lambda::Lambda(World& world, Defs domain, const Def* body, const std::string& name)
-    : Connective(world, Node_Lambda, world.pi(domain, body->type()), concat(domain, body), name)
+Lambda::Lambda(World& world, Defs domains, const Def* body, const std::string& name)
+    : Connective(world, Node_Lambda, world.pi(domains, body->type()), concat(domains, body), name)
 {}
 
-Pi::Pi(World& world, Defs domain, const Def* body, const std::string& name)
-    : Quantifier(world, Node_Pi, body->type(), concat(domain, body), name)
+Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name)
+    : Quantifier(world, Node_Pi, body->type(), concat(domains, body), name)
 {}
 
 const Def* Sigma::infer_type(World& world, Defs ops) {
@@ -152,61 +152,59 @@ const Def* Var   ::rebuild(World& to, Defs ops) const { return to.var(ops[0], in
  * reduce
  */
 
+template<bool shift>
 Array<const Def*> reduce(Def2Def& map, int index, Defs defs, Defs args) {
     Array<const Def*> result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)
-        result[i] = defs[i]->reduce(map, index, args);
+        result[i] = defs[i]->reduce(map, index + shift ? i : 0, args);
     return result;
 }
 
-const Def* Def::reduce(Def2Def& map, int index, Defs defs) const {
+const Def* Def::reduce(Def2Def& map, int index, Defs args) const {
     if (auto result = find(map, this))
         return result;
-    return map[this] = vreduce(map, index, defs);
+    return map[this] = vreduce(map, index, args);
 }
 
-const Def* Lambda::vreduce(Def2Def& map, int index, Defs defs) const {
-    auto new_domain = domain()->reduce(map, index, defs);
-    return world().lambda(new_domain, body()->reduce(map, index+1, defs), name());
+const Def* Lambda::vreduce(Def2Def& map, int index, Defs args) const {
+    auto new_domains = thorin::reduce<false>(map, index, domains(), args);
+    return world().lambda(new_domains, body()->reduce(map, index+1, args), name());
 }
 
-const Def* Pi::vreduce(Def2Def& map, int index, Defs defs) const {
-    return world().pi(domain(), body()->reduce(map, index+1, defs), name());
+const Def* Pi::vreduce(Def2Def& map, int index, Defs args) const {
+    auto new_domains = thorin::reduce<true>(map, index, domains(), args);
+    return world().pi(new_domains, body()->reduce(map, index+1, args), name());
 }
 
-const Def* Tuple::vreduce(Def2Def& map, int index, Defs defs) const {
-    return world().tuple(thorin::reduce(map, index, ops(), defs), name());
+const Def* Tuple::vreduce(Def2Def& map, int index, Defs args) const {
+    return world().tuple(thorin::reduce<false>(map, index, ops(), args), name());
 }
 
-const Def* Sigma::vreduce(Def2Def& map, int index, Defs defs) const {
+const Def* Sigma::vreduce(Def2Def& map, int index, Defs args) const {
     if (is_nominal()) {
         auto sigma = world().sigma(num_ops(), name());
         map[this] = sigma;
 
         for (size_t i = 0, e = num_ops(); i != e; ++i)
-            sigma->set(i, op(i)->reduce(map, index+i, defs));
+            sigma->set(i, op(i)->reduce(map, index+i, args));
 
         return sigma;
-    }  else {
-        Array<const Def*> ops(num_ops());
-        for (size_t i = 0, e = num_ops(); i != e; ++i)
-            ops[i] = op(i)->reduce(map, index+i, defs);
-        return map[this] = world().sigma(ops, name());
-    }
+    }  else
+        return map[this] = world().sigma(thorin::reduce<true>(map, index, args, ops()), name());
 }
 
-const Def* Var::vreduce(Def2Def& map, int index, Defs defs) const {
-    if (this->index() == index)
-        return world().tuple(type(), defs);
+const Def* Var::vreduce(Def2Def& map, int index, Defs args) const {
+    if (this->index() == index)     // substitute
+        return world().tuple(type(), args);
     else if (this->index() > index) // this is a free variable - shift by one
         return world().var(type(), this->index()-1, name());
     else                            // this variable is not free - keep index, reduce type
-        return world().var(type()->reduce(map, index, defs), this->index(), name());
+        return world().var(type()->reduce(map, index, args), this->index(), name());
 }
 
-const Def* App::vreduce(Def2Def& map, int index, Defs defs) const {
-    auto ops = thorin::reduce(map, index, this->ops(), defs);
-    return world().app(ops[0], ops[1], name());
+const Def* App::vreduce(Def2Def& map, int index, Defs args) const {
+    auto ops = thorin::reduce<false>(map, index, this->ops(), args);
+    return world().app(ops.front(), ops.skip_front(), name());
 }
 
 const Def* Assume::vreduce(Def2Def&, int, Defs) const { return this; }
@@ -220,11 +218,11 @@ const Def* Star::vreduce(Def2Def&, int, Defs) const { return this; }
 
 
 std::ostream& Lambda::stream(std::ostream& os) const {
-    return streamf(os, "λ%.%", domain(), body());
+    return streamf(stream_list(os << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
-    return streamf(os, "Π%.%", domain(), body());
+    return streamf(stream_list(os << "Π", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
 }
 
 std::ostream& Tuple::stream(std::ostream& os) const {
