@@ -32,6 +32,8 @@ public:
     Sigma* sigma(size_t num_ops, const std::string& name = "") { return insert(new Sigma(*this, num_ops, name)); }
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
     const Assume* nat() { return nat_; }
+    const Def* extract(const Def* def, const Def* i);
+    const Def* extract(const Def* def, int i) { return extract(def, assume(nat(), std::to_string(i))); }
 
     const DefSet& defs() const { return defs_; }
 

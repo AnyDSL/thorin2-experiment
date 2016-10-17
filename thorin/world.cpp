@@ -66,6 +66,15 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
     return app;
 }
 
+const Def* World::extract(const Def* def, const Def* i) {
+    if (!def->isa<Tuple>() && !def->isa<Sigma>()) {
+        assert(i->name() == "0");
+        return def;
+    }
+
+    return app(def, i);
+}
+
 const Def* World::unify_base(const Def* def) {
     assert(!def->is_nominal());
     auto p = defs_.emplace(def);
