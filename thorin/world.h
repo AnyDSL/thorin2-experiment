@@ -1,6 +1,7 @@
 #ifndef THORIN_WORLD_H
 #define THORIN_WORLD_H
 
+#include <string>
 #include "thorin/def.h"
 
 namespace thorin {

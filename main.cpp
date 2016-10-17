@@ -1,8 +1,12 @@
-#include "thorin/world.h"
+﻿#include "thorin/world.h"
+#include "utils/unicodemanager.h"
+
 
 using namespace thorin;
 
 int main()  {
+	prepareUtf8Console();
+
     World w;
     auto n1 = w.assume(w.nat(), "1");
     auto n2 = w.assume(w.nat(), "2");

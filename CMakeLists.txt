@@ -13,6 +13,8 @@ add_executable(coc
     thorin/util/hash.h
     thorin/util/stream.cpp
     thorin/util/stream.h
+    utils/unicodemanager.cpp
+    utils/unicodemanager.h
 )
 set_property(TARGET coc PROPERTY CXX_STANDARD 11)
 set_property(TARGET coc PROPERTY CXX_STANDARD_REQUIRED on)
