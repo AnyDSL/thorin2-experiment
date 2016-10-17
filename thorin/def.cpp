@@ -216,7 +216,6 @@ const Def* Star::vreduce(Def2Def&, int, Defs) const { return this; }
  * stream
  */
 
-
 std::ostream& Lambda::stream(std::ostream& os) const {
     return streamf(stream_list(os << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
 }
