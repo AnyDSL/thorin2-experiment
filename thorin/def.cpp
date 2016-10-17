@@ -49,6 +49,9 @@ Array<const Def*> types(Defs defs) {
     return  result;
 }
 
+const Def* Lambda::domain() const { return world().sigma(ops().skip_back()); }
+const Def* Pi    ::domain() const { return world().sigma(ops().skip_back()); }
+
 /*
  * constructors
  */
@@ -59,12 +62,12 @@ App::App(World& world, const Def* callee, Defs args, const std::string& name)
     assert(world.tuple(domain(), types(args)));
 }
 
-Lambda::Lambda(World& world, const Def* domain, const Def* body, const std::string& name)
-    : Connective(world, Node_Lambda, world.pi(domain, body->type()), {domain, body}, name)
+Lambda::Lambda(World& world, Defs domain, const Def* body, const std::string& name)
+    : Connective(world, Node_Lambda, world.pi(domain, body->type()), concat(domain, body), name)
 {}
 
-Pi::Pi(World& world, const Def* domain, const Def* body, const std::string& name)
-    : Quantifier(world, Node_Pi, body->type(), {domain, body}, name)
+Pi::Pi(World& world, Defs domain, const Def* body, const std::string& name)
+    : Quantifier(world, Node_Pi, body->type(), concat(domain, body), name)
 {}
 
 const Def* Sigma::infer_type(World& world, Defs ops) {
@@ -141,8 +144,8 @@ const Def* Def::rebuild(World& to, Defs ops) const {
 
 const Def* App   ::vrebuild(World& to, Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
 const Def* Assume::vrebuild(World&   , Defs    ) const { THORIN_UNREACHABLE; }
-const Def* Lambda::vrebuild(World& to, Defs ops) const { return to.lambda(ops[0], ops[1], name()); }
-const Def* Pi    ::vrebuild(World& to, Defs ops) const { return to.pi(ops[0], ops[1], name()); }
+const Def* Lambda::vrebuild(World& to, Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
+const Def* Pi    ::vrebuild(World& to, Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
 const Def* Sigma ::vrebuild(World& to, Defs ops) const { assert(is_structural()); return to.sigma(ops, name()); }
 const Def* Star  ::vrebuild(World& to, Defs    ) const { return to.star(); }
 const Def* Tuple ::vrebuild(World& to, Defs ops) const { return to.tuple(ops, name()); }
@@ -154,17 +157,17 @@ const Def* Var   ::vrebuild(World& to, Defs ops) const { return to.var(ops[0], d
  * reduce
  */
 
+Array<const Def*> reduce(Def2Def& map, int depth, Defs defs, Defs args) {
+    Array<const Def*> result(defs.size());
+    for (size_t i = 0, e = result.size(); i != e; ++i)
+        result[i] = defs[i]->reduce(map, depth, args);
+    return result;
+}
+
 const Def* Def::reduce(Def2Def& map, int depth, Defs defs) const {
     if (auto result = find(map, this))
         return result;
     return map[this] = vreduce(map, depth, defs);
-}
-
-Array<const Def*> Def::reduce_ops(Def2Def& map, int depth, Defs defs) const {
-    Array<const Def*> result(num_ops());
-    for (size_t i = 0, e = num_ops(); i != e; ++i)
-        result[i] = op(i)->reduce(map, depth, defs);
-    return result;
 }
 
 const Def* Lambda::vreduce(Def2Def& map, int depth, Defs defs) const {
@@ -177,7 +180,7 @@ const Def* Pi::vreduce(Def2Def& map, int depth, Defs defs) const {
 }
 
 const Def* Tuple::vreduce(Def2Def& map, int depth, Defs defs) const {
-    return world().tuple(reduce_ops(map, depth, defs), name());
+    return world().tuple(thorin::reduce(map, depth, ops(), defs), name());
 }
 
 const Def* Sigma::vreduce(Def2Def& map, int depth, Defs defs) const {
@@ -207,7 +210,7 @@ const Def* Var::vreduce(Def2Def& map, int depth, Defs defs) const {
 }
 
 const Def* App::vreduce(Def2Def& map, int depth, Defs defs) const {
-    auto ops = reduce_ops(map, depth, defs);
+    auto ops = thorin::reduce(map, depth, this->ops(), defs);
     return world().app(ops[0], ops[1], name());
 }
 

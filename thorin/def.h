@@ -162,7 +162,6 @@ public:
 protected:
     virtual uint64_t vhash() const;
     virtual const Def* vreduce(Def2Def&, int, Defs) const = 0;
-    Array<const Def*> reduce_ops(Def2Def&, int, Defs) const;
 
     mutable uint64_t hash_ = 0;
 
@@ -227,11 +226,11 @@ public:
 
 class Pi : public Quantifier {
 private:
-    Pi(World& world, const Def* domain, const Def* body, const std::string& name);
+    Pi(World& world, Defs domain, const Def* body, const std::string& name);
 
 public:
-    virtual const Def* domain() const override { return op(0); }
-    const Def* body() const { return op(1); }
+    virtual const Def* domain() const override;
+    const Def* body() const { return ops().back(); }
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -243,11 +242,11 @@ private:
 
 class Lambda : public Connective {
 private:
-    Lambda(World& world, const Def* domain, const Def* body, const std::string& name);
+    Lambda(World& world, Defs domain, const Def* body, const std::string& name);
 
 public:
-    virtual const Def* domain() const override { return op(0); }
-    const Def* body() const { return op(1); }
+    virtual const Def* domain() const override;
+    const Def* body() const { return ops().back(); }
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:

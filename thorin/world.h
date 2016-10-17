@@ -20,15 +20,17 @@ public:
     const Star* star() const { return star_; }
     const Var* var(const Def* type, int depth, const std::string& name = "") { return unify(new Var(*this, type, depth, name)); }
     const Assume* assume(const Def* type, const std::string& name = "") { return insert(new Assume(*this, type, name)); }
-    const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return unify(new Lambda(*this, domain, body, name)); }
-    const Pi*     pi    (const Def* domain, const Def* body, const std::string& name = "") { return unify(new Pi    (*this, domain, body, name)); }
+    const Lambda* lambda(Defs domain, const Def* body, const std::string& name = "");
+    const Pi*     pi    (Defs domain, const Def* body, const std::string& name = "");
+    const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return lambda(Defs({domain}), body, name); }
+    const Pi*     pi    (const Def* domain, const Def* body, const std::string& name = "") { return pi    (Defs({domain}), body, name); }
     const Def* app(const Def* callee, Defs args, const std::string& name = "");
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "") { return app(callee, Defs({arg}), name); }
-    const Def* tuple(const Def* type, Defs ops, const std::string& name = "");
+    const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
     const Def* tuple(Defs defs, const std::string& name = "") { return tuple(sigma(types(defs), name), defs, name); }
-    const Sigma* sigma(Defs ops, const std::string& name = "") { return unify(new Sigma(*this, ops, name)); }
+    const Def* sigma(Defs, const std::string& name = "");
     Sigma* sigma(size_t num_ops, const std::string& name = "") { return insert(new Sigma(*this, num_ops, name)); }
-    const Sigma* unit() { return sigma(Defs()); }
+    const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
     const Assume* nat() { return nat_; }
 
     const DefSet& defs() const { return defs_; }

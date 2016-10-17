@@ -7,6 +7,38 @@ World::World()
     , nat_(assume(star(), "Nat"))
 {}
 
+const Lambda* World::lambda(Defs domain, const Def* body, const std::string& name) {
+    if (domain.size() == 1 && domain.front()->type()) {
+        if (auto sigma = domain.front()->type()->isa<Sigma>())
+            return lambda(sigma->ops(), body, name);
+    }
+
+    return unify(new Lambda(*this, domain, body, name));
+}
+
+const Pi* World::pi(Defs domain, const Def* body, const std::string& name) {
+    if (domain.size() == 1 && domain.front()->type()) {
+        if (auto sigma = domain.front()->type()->isa<Sigma>())
+            return pi(sigma->ops(), body, name);
+    }
+
+    return unify(new Pi(*this, domain, body, name));
+}
+
+const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
+    if (defs.size() == 1)
+        return defs.front();
+
+    return unify(new Tuple(*this, type, defs, name));
+}
+
+const Def* World::sigma(Defs defs, const std::string& name) {
+    if (defs.size() == 1)
+        return defs.front();
+
+    return unify(new Sigma(*this, defs, name));
+}
+
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {
     if (args.size() == 1) {
         if (auto tuple = args.front()->isa<Tuple>())
@@ -32,13 +64,6 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
         return app->cache_ = app;
 
     return app;
-}
-
-const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
-    if (defs.size() == 1)
-        return defs.front();
-
-    return unify(new Tuple(*this, type, defs, name));
 }
 
 const Def* World::unify_base(const Def* def) {
