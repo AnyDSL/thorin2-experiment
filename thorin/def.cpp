@@ -3,9 +3,9 @@
 
 namespace thorin {
 
-size_t Def::gid_counter_ = 1;
-
 //------------------------------------------------------------------------------
+
+size_t Def::gid_counter_ = 1;
 
 void Def::set(Defs defs) {
     assert(defs.size() == num_ops());
@@ -51,6 +51,8 @@ Array<const Def*> types(Defs defs) {
 
 const Def* Lambda::domain() const { return world().sigma(ops().skip_back()); }
 const Def* Pi    ::domain() const { return world().sigma(ops().skip_back()); }
+
+//------------------------------------------------------------------------------
 
 /*
  * constructors
