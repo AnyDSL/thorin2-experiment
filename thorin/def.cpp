@@ -46,13 +46,8 @@ Array<const Def*> types(Defs defs) {
     Array<const Def*> result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)
         result[i] = defs[i]->type();
-    return  result;
+    return result;
 }
-
-const Def* Lambda::domain() const { return world().sigma(domains()); }
-const Def* Pi    ::domain() const { return world().sigma(domains()); }
-const Var* Lambda::var() const { return world().var(domains(), depth()); }
-const Var* Pi    ::var() const { return world().var(domains(), depth()); }
 
 //------------------------------------------------------------------------------
 
@@ -74,24 +69,38 @@ Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name)
 }
 
 const Def* Sigma::infer_type(World& world, Defs ops) {
-    for (auto op : ops)
+    for (auto op : ops) {
         if (!op->type())
             return nullptr;
+    }
     return world.star();
 }
 
 App::App(World& world, const Def* callee, Defs args, const std::string& name)
-    : Def(world, Node_App, nullptr/*callee->type()->as<Quantifier>()->reduce(callee->type()->depth(), args)*/, concat(callee, args), name)
+    : Def(world, Node_App, infer_type(callee, args),  concat(callee, args), name)
 {
     assert(world.tuple(domain(), types(args)));
 }
 
+const Def* App::infer_type(const Def* callee, Defs args) {
+    if (auto pi = callee->type()->isa<Pi>())
+        return pi->body()->reduce(pi->var(), args);
+
+    //auto sigma = callee->type()->as<Sigma>();
+    //return sigma
+    return nullptr;
+}
+
 /*
- * domain
+ * domain/var
  */
 
-const Def* Tuple::domain() const { return world().nat(); }
-const Def* Sigma::domain() const { return world().nat(); }
+const Var* Lambda::var() const { return world().var(domains(), depth()); }
+const Var* Pi    ::var() const { return world().var(domains(), depth()); }
+const Def* Tuple ::domain() const { return world().nat(); }
+const Def* Sigma ::domain() const { return world().nat(); }
+const Def* Lambda::domain() const { return world().sigma(domains()); }
+const Def* Pi    ::domain() const { return world().sigma(domains()); }
 
 //------------------------------------------------------------------------------
 
@@ -113,7 +122,8 @@ bool Def::equal(const Def* other) const {
     if (is_nominal())
         return this == other;
 
-    bool result = this->tag() == other->tag() && this->depth() == other->depth() && this->num_ops() == other->num_ops();
+    bool result =  this->tag()  == other->tag()  && this->depth()   == other->depth()
+                && this->type() == other->type() && this->num_ops() == other->num_ops();
 
     if (result) {
         for (size_t i = 0, e = num_ops(); result && i != e; ++i)
@@ -229,9 +239,9 @@ std::ostream& Sigma::stream(std::ostream& os) const {
 }
 
 std::ostream& Var::stream(std::ostream& os) const {
-    if (name().empty())
-        return streamf(os, "<%>", index());
-    return os << name();
+    //if (name().empty())
+        return streamf(os, "<%:%>", index(), type());
+    //return os << name();
 }
 
 std::ostream& Assume::stream(std::ostream& os) const { return os << name(); }

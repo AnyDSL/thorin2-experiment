@@ -6,6 +6,8 @@
 #include "thorin/util/hash.h"
 #include "thorin/util/stream.h"
 
+#include <iostream>
+
 namespace thorin {
 
 enum {
@@ -273,11 +275,13 @@ private:
     }
     Sigma(World& world, Defs ops, const std::string& name)
         : Quantifier(world, Node_Sigma, infer_type(world, ops), ops, name)
-    {}
+    {
+        depth_ += num_ops();
+    }
 
-    virtual const Def* domain() const override;
     static const Def* infer_type(World&, Defs);
 
+    virtual const Def* domain() const override;
     virtual const Def* rebuild(World&, Defs) const override;
     virtual const Def* vreduce(Def2Def&) const override;
 
@@ -326,7 +330,9 @@ private:
     Var(World& world, const Def* type, int index, const std::string& name)
         : Def(world, Node_Var, type, Defs(), name)
         , index_(index)
-    {}
+    {
+        //streamf(std::cout, "%:%:%\n", index, type, name);
+    }
 
 public:
     int index() const { return index_; }
@@ -362,6 +368,8 @@ private:
 class App : public Def {
 private:
     App(World& world, const Def* callee, Defs args, const std::string& name);
+
+    static const Def* infer_type(const Def*, Defs);
 
 public:
     const Def* callee() const { return ops().front(); }
