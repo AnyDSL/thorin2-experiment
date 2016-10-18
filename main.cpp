@@ -1,8 +1,17 @@
 #include "thorin/world.h"
+#include "utils/unicodemanager.h"
+
 
 using namespace thorin;
 
+void testMatrix();
+
 int main()  {
+	prepareUtf8Console();
+
+	testMatrix();
+	//return 0;
+
     World w;
     auto n1 = w.assume(w.nat(), "1");
     auto n2 = w.assume(w.nat(), "2");
@@ -28,6 +37,7 @@ int main()  {
     //w.extract(n3, 0)->dump();
 
     auto make_pair = w.assume(w.pi(w.unit(), w.sigma({w.nat(), w.nat()})), "make_pair");
+	make_pair->dump();
     w.app(make_pair, n1)->dump();
 
     auto plus = w.assume(w.pi({w.nat(), w.nat()}, w.nat()), "+");

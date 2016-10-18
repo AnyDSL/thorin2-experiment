@@ -1,8 +1,9 @@
 cmake_minimum_required (VERSION 2.6)
 project (CoC)
 include_directories(.)
-add_executable(coc 
+add_executable(CoC 
     main.cpp
+    matrixtest.cpp
     thorin/def.cpp
     thorin/def.h
     thorin/world.cpp
@@ -13,6 +14,8 @@ add_executable(coc
     thorin/util/hash.h
     thorin/util/stream.cpp
     thorin/util/stream.h
+    utils/unicodemanager.cpp
+    utils/unicodemanager.h
 )
-set_property(TARGET coc PROPERTY CXX_STANDARD 11)
-set_property(TARGET coc PROPERTY CXX_STANDARD_REQUIRED on)
+set_property(TARGET CoC PROPERTY CXX_STANDARD 11)
+set_property(TARGET CoC PROPERTY CXX_STANDARD_REQUIRED on)

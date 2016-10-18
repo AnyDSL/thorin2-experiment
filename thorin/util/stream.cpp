@@ -1,4 +1,5 @@
 #include "thorin/util/stream.h"
+#include "utils/unicodemanager.h"
 
 #include <iostream>
 #include <sstream>
@@ -22,7 +23,15 @@ std::string Streamable::to_string() const {
     return os.str();
 }
 
-void Streamable::dump() const { stream(std::cout) << thorin::endl; }
+void Streamable::dump() const {
+#ifdef WIN32
+	std::stringstream ss;
+	stream(ss) << thorin::endl;
+	printUtf8(ss.str());
+#else
+	stream(cout) << thorin::endl;
+#endif
+}
 std::ostream& operator<<(std::ostream& ostream, const Streamable* s) { return s->stream(ostream); }
 
 std::ostream& streamf(std::ostream& os, const char* fmt) {
