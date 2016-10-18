@@ -140,7 +140,7 @@ const Def* Pi    ::rebuild(World& to, Defs ops) const { return to.pi    (ops.ski
 const Def* Sigma ::rebuild(World& to, Defs ops) const { assert(is_structural()); return to.sigma(ops, name()); }
 const Def* Star  ::rebuild(World& to, Defs    ) const { return to.star(); }
 const Def* Tuple ::rebuild(World& to, Defs ops) const { return to.tuple(ops, name()); }
-const Def* Var   ::rebuild(World& to, Defs ops) const { return to.var(ops[0], index(), name()); }
+const Def* Var   ::rebuild(World& to, Defs ops) const { return to.var(type(), index(), name()); }
 
 //------------------------------------------------------------------------------
 
