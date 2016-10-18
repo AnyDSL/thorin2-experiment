@@ -51,7 +51,7 @@ void prepareUtf8Console() {
 
 #else
 
-void prepare_utf8_output() {}
+void prepareUtf8Console() {}
 void printUtf8(const string& input) {
 	cout << input;
 }
