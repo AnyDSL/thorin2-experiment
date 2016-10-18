@@ -19,6 +19,7 @@ public:
 
     const Star* star() const { return star_; }
     const Var* var(const Def* type, int index, const std::string& name = "") { return unify(new Var(*this, type, index, name)); }
+    const Var* var(Defs types, int index, const std::string& name = "") { return var(sigma(types), index, name); }
     const Assume* assume(const Def* type, const std::string& name = "") { return insert(new Assume(*this, type, name)); }
     const Lambda* lambda(Defs domains, const Def* body, const std::string& name = "");
     const Pi*     pi    (Defs domains, const Def* body, const std::string& name = "");

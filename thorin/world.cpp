@@ -59,7 +59,7 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
     if (auto cache = app->cache_)
         return cache;
     if (auto lambda = app->callee()->template isa<Lambda>())
-        return app->cache_ = lambda->body()->reduce(1, args);
+        return app->cache_ = lambda->body()->reduce(lambda->var(), args);
     else
         return app->cache_ = app;
 
