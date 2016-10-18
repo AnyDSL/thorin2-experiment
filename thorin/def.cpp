@@ -133,21 +133,20 @@ bool Var::equal(const Def* other) const { return Def::equal(other) && this->inde
  * rebuild
  */
 
-const Def* App   ::rebuild(World& to, Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
-const Def* Assume::rebuild(World&   , Defs    ) const { THORIN_UNREACHABLE; }
-const Def* Lambda::rebuild(World& to, Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
-const Def* Pi    ::rebuild(World& to, Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
-const Def* Sigma ::rebuild(World& to, Defs ops) const { assert(is_structural()); return to.sigma(ops, name()); }
-const Def* Star  ::rebuild(World& to, Defs    ) const { return to.star(); }
-const Def* Tuple ::rebuild(World& to, Defs ops) const { return to.tuple(ops, name()); }
-const Def* Var   ::rebuild(World& to, Defs ops) const { return to.var(type(), index(), name()); }
+const Def* App   ::rebuild(World& to, const Def* t, Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
+const Def* Assume::rebuild(World&   , const Def* t, Defs    ) const { THORIN_UNREACHABLE; }
+const Def* Lambda::rebuild(World& to, const Def* t, Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
+const Def* Pi    ::rebuild(World& to, const Def* t, Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
+const Def* Sigma ::rebuild(World& to, const Def* t, Defs ops) const { assert(is_structural()); return to.sigma(ops, name()); }
+const Def* Star  ::rebuild(World& to, const Def* t, Defs    ) const { return to.star(); }
+const Def* Tuple ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
+const Def* Var   ::rebuild(World& to, const Def* t, Defs ops) const { return to.var(t, index(), name()); }
 
 //------------------------------------------------------------------------------
 
 /*
  * reduce
  */
-
 
 #if 0
 
@@ -171,14 +170,24 @@ const Def* reduce(const Def* def, int index, Defs defs) {
         auto def = stack.top();
 
         bool todo = false;
+        todo |= push(def->type());
         for (auto op : def->ops())
             todo |= push(op);
 
         if (!todo) {
-            new_ops.resize(def->num_ops());
-            for (size_t i = 0, e = def->num_ops(); i != e; ++i)
-                new_ops[i] = map[def->op(i)];
-            map[def] = def->rebuild(new_ops);
+            if (auto var = def->isa<Var>()) {
+                if (var->index() == index)      // substitute
+                    map[var] = world().tuple(type(), args);
+                else if (this->index() > index) // this is a free variable - shift by one
+                    return world().var(type(), this->index()-1, name());
+                else                            // this variable is not free - keep index, reduce type
+                    return world().var(type()->reduce(map, index, args), this->index(), name());
+            } else {
+                new_ops.resize(def->num_ops());
+                for (size_t i = 0, e = def->num_ops(); i != e; ++i)
+                    new_ops[i] = map[def->op(i)];
+                map[def] = def->rebuild(map[def->type()], new_ops);
+            }
             stack.pop();
         }
     }

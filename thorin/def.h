@@ -150,11 +150,11 @@ public:
     bool is_structural() const { return !is_nominal(); }      ///< A structural @p Def is always unified with a syntactically equivalent @p Def.
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
-    virtual int shift() const { return 0; }
+    virtual int num_vars() const { return 0; }
 
     const Def* reduce(Def2Def&, int, Defs) const;
     const Def* reduce(int index, Defs defs) const { Def2Def map; return reduce(map, index, defs); }
-    const Def* rebuild(Defs defs) const { return rebuild(world(), defs); }
+    const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
 
     static size_t gid_counter() { return gid_counter_; }
 
@@ -166,7 +166,7 @@ protected:
     mutable uint64_t hash_ = 0;
 
 private:
-    virtual const Def* rebuild(World&, Defs) const = 0;
+    virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
 
     static size_t gid_counter_;
 
@@ -231,12 +231,12 @@ private:
 public:
     Defs domains() const { return ops().skip_back(); }
     const Def* body() const { return ops().back(); }
-    virtual int shift() const { return 1; }
+    virtual int num_vars() const override { return 1; }
     virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* rebuild(World&, Defs) const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
     friend class World;
@@ -248,13 +248,13 @@ private:
 
 public:
     Defs domains() const { return ops().skip_back(); }
-    virtual int shift() const { return 1; }
+    virtual int num_vars() const override { return 1; }
     const Def* body() const { return ops().back(); }
     virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* rebuild(World&, Defs) const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
     friend class World;
@@ -273,9 +273,9 @@ private:
 
     static const Def* infer_type(World&, Defs);
 
-    virtual int shift() const { return num_ops(); }
+    virtual int num_vars() const override { return num_ops(); }
     virtual const Def* domain() const override;
-    virtual const Def* rebuild(World&, Defs) const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
 public:
@@ -293,7 +293,7 @@ private:
     }
 
     virtual const Def* domain() const override;
-    virtual const Def* rebuild(World&, Defs) const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
 public:
@@ -312,7 +312,7 @@ public:
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* rebuild(World&, Defs) const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
     friend class World;
@@ -334,7 +334,7 @@ public:
 private:
     virtual uint64_t vhash() const override;
     virtual bool equal(const Def*) const override;
-    virtual const Def* rebuild(World&, Defs) const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
     int index_;
@@ -352,7 +352,7 @@ public:
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* rebuild(World&, Defs) const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
     friend class World;
@@ -372,7 +372,7 @@ public:
     size_t num_args() const { return args().size(); }
     const Def* arg(size_t i = 0) const { return args()[i]; }
     virtual std::ostream& stream(std::ostream&) const override;
-    virtual const Def* rebuild(World&, Defs) const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vreduce(Def2Def&, int, Defs) const override;
 
 private:
