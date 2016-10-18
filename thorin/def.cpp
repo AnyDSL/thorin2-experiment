@@ -239,9 +239,9 @@ std::ostream& Sigma::stream(std::ostream& os) const {
 }
 
 std::ostream& Var::stream(std::ostream& os) const {
-    //if (name().empty())
+    if (name().empty())
         return streamf(os, "<%:%>", index(), type());
-    //return os << name();
+    return os << name();
 }
 
 std::ostream& Assume::stream(std::ostream& os) const { return os << name(); }

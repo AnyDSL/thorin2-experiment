@@ -47,10 +47,7 @@ public:
     }
 
 private:
-    void fix() {
-        for (auto def : defs_)
-            def->world_ = this;
-    }
+    void fix() { for (auto def : defs_) def->world_ = this; }
 
 protected:
     const Def* unify_base(const Def* type);
