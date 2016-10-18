@@ -240,4 +240,6 @@ std::ostream& App::stream(std::ostream& os) const {
     return stream_list(streamf(os, "(%)", callee()), args(), [&](const Def* def) { def->stream(os); }, "(", ")");
 }
 
+//------------------------------------------------------------------------------
+
 }
