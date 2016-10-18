@@ -150,6 +150,7 @@ public:
     bool is_structural() const { return !is_nominal(); }      ///< A structural @p Def is always unified with a syntactically equivalent @p Def.
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
+    virtual int shift() const { return 0; }
 
     const Def* reduce(Def2Def&, int, Defs) const;
     const Def* reduce(int index, Defs defs) const { Def2Def map; return reduce(map, index, defs); }
@@ -230,6 +231,7 @@ private:
 public:
     Defs domains() const { return ops().skip_back(); }
     const Def* body() const { return ops().back(); }
+    virtual int shift() const { return 1; }
     virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
 
@@ -246,6 +248,7 @@ private:
 
 public:
     Defs domains() const { return ops().skip_back(); }
+    virtual int shift() const { return 1; }
     const Def* body() const { return ops().back(); }
     virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
@@ -270,6 +273,7 @@ private:
 
     static const Def* infer_type(World&, Defs);
 
+    virtual int shift() const { return num_ops(); }
     virtual const Def* domain() const override;
     virtual const Def* rebuild(World&, Defs) const override;
     virtual const Def* vreduce(Def2Def&, int, Defs) const override;

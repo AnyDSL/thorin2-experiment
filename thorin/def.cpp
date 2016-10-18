@@ -1,6 +1,8 @@
 #include "thorin/def.h"
 #include "thorin/world.h"
 
+#include <stack>
+
 namespace thorin {
 
 //------------------------------------------------------------------------------
@@ -145,6 +147,44 @@ const Def* Var   ::rebuild(World& to, Defs ops) const { return to.var(ops[0], in
 /*
  * reduce
  */
+
+
+#if 0
+
+const Def* reduce(const Def* def, int index, Defs defs) {
+    Def2Def map;
+    std::stack<const Def*> stack;
+    std::vector<const Def*> new_ops;
+
+    auto push = [&](const Def* def) {
+        const auto& p = map.emplace(def, nullptr);
+        if (p.second) {
+            stack.push(def);
+            return true;
+        }
+        return false;
+    };
+
+    push(def);
+
+    while (!stack.empty()) {
+        auto def = stack.top();
+
+        bool todo = false;
+        for (auto op : def->ops())
+            todo |= push(op);
+
+        if (!todo) {
+            new_ops.resize(def->num_ops());
+            for (size_t i = 0, e = def->num_ops(); i != e; ++i)
+                new_ops[i] = map[def->op(i)];
+            map[def] = def->rebuild(new_ops);
+            stack.pop();
+        }
+    }
+}
+
+#endif
 
 template<bool shift>
 Array<const Def*> reduce(Def2Def& map, int index, Defs defs, Defs args) {
