@@ -133,14 +133,14 @@ bool Var::equal(const Def* other) const { return Def::equal(other) && this->inde
  * rebuild
  */
 
-const Def* App   ::rebuild(World& to, const Def* t, Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
-const Def* Assume::rebuild(World&   , const Def* t, Defs    ) const { THORIN_UNREACHABLE; }
-const Def* Lambda::rebuild(World& to, const Def* t, Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
-const Def* Pi    ::rebuild(World& to, const Def* t, Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
-const Def* Sigma ::rebuild(World& to, const Def* t, Defs ops) const { assert(is_structural()); return to.sigma(ops, name()); }
-const Def* Star  ::rebuild(World& to, const Def* t, Defs    ) const { return to.star(); }
+const Def* App   ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
+const Def* Assume::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
+const Def* Lambda::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
+const Def* Pi    ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
+const Def* Sigma ::rebuild(World& to, const Def*  , Defs ops) const { assert(is_structural()); return to.sigma(ops, name()); }
+const Def* Star  ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(); }
 const Def* Tuple ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
-const Def* Var   ::rebuild(World& to, const Def* t, Defs ops) const { return to.var(t, index(), name()); }
+const Def* Var   ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), name()); }
 
 //------------------------------------------------------------------------------
 
