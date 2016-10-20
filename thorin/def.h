@@ -81,7 +81,7 @@ public:
         Term, Type, Kind
     };
 
-    enum {
+    enum Structure {
         Unrestricted,
         Affine   = 1 << 0,
         Relevant = 1 << 1,
@@ -155,7 +155,11 @@ public:
     void unset(size_t i);
     void replace(const Def*) const;
     bool is_nominal() const { return nominal_; }        ///< A nominal @p Def is always different from each other @p Def.
-    bool is_structural() const { return !nominal_; }    ///< A structural @p Def is always unified with a syntactically equivalent @p Def.
+    Structure structure() const { return Structure(structure_); }
+    bool is_unrestricted() const { return structure() & Unrestricted; }
+    bool is_affine() const       { return structure() & Affine; }
+    bool is_relevant() const     { return structure() & Relevant; }
+    bool is_linear() const       { return structure() & Linear; }
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
     virtual int num_vars() const { return 0; }
