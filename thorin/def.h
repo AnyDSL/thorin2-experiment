@@ -6,8 +6,6 @@
 #include "thorin/util/hash.h"
 #include "thorin/util/stream.h"
 
-#include <iostream>
-
 namespace thorin {
 
 enum {
@@ -334,9 +332,7 @@ private:
     Var(World& world, const Def* type, int index, const std::string& name)
         : Def(world, Node_Var, type, Defs(), name)
         , index_(index)
-    {
-        //streamf(std::cout, "%:%:%\n", index, type, name);
-    }
+    {}
 
 public:
     int index() const { return index_; }
