@@ -58,7 +58,7 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
 }
 
 const Def* World::extract(const Def* def, const Def* i) {
-    if (!def->isa<Tuple>() && !def->isa<Sigma>()) {
+    if (!def->isa<Sigma>() && !def->type()->isa<Sigma>()) {
         assert(i->name() == "0");
         return def;
     }

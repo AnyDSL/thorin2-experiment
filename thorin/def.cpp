@@ -185,15 +185,20 @@ const Def* Tuple::vsubst(Def2Def& map, int index, Defs args) const {
 
 const Def* Sigma::vsubst(Def2Def& map, int index, Defs args) const {
     if (is_nominal()) {
-        auto sigma = world().sigma(num_ops(), name());
-        map[this] = sigma;
+        assert(false && "TODO");
+    }  else {
+        Array<const Def*> new_ops(num_ops());
+        Def2Def new_map;
+        Def2Def* cur_map = &map;
+        for (size_t i = 0, e = num_ops(); i != e; ++i) {
+            new_ops[i] = op(i)->subst(*cur_map, index + i, args);
+            if (i == 0)
+                cur_map = &new_map;
+            new_map.clear();
+        }
 
-        for (size_t i = 0, e = num_ops(); i != e; ++i)
-            sigma->set(i, op(i)->subst(map, index+i, args));
-
-        return sigma;
-    }  else
-        return map[this] = world().sigma(thorin::subst(map, index, args, ops()), name());
+        return world().sigma(new_ops, name());
+    }
 }
 
 const Def* Var::vsubst(Def2Def& map, int index, Defs args) const {

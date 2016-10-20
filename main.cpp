@@ -1,7 +1,6 @@
 #include "thorin/world.h"
 #include "utils/unicodemanager.h"
 
-
 using namespace thorin;
 
 void testMatrix();
@@ -15,8 +14,8 @@ int main()  {
     World w;
     auto n0 = w.assume(w.nat(), "0");
     auto n1 = w.assume(w.nat(), "1");
-    auto n2 = w.assume(w.nat(), "2");
-    auto n3 = w.assume(w.nat(), "3");
+    //auto n2 = w.assume(w.nat(), "2");
+    //auto n3 = w.assume(w.nat(), "3");
     auto n23 = w.assume(w.nat(), "23");
     auto n42 = w.assume(w.nat(), "42");
 
@@ -53,6 +52,11 @@ int main()  {
     //plus->type()->dump();
     //w.app(int_id, w.app(plus, {w.app(plus, {n1, n2}), n3}))->dump();
 
-    //auto Arr = w.assume(w.pi({w.nat(), w.pi(w.nat(), w.star())}, w.star()));
-    //auto _Arr = w.lambda({w.nat(), w.star()}, w.app(Arr, {w.extract(w.var(
+    auto Arr = w.assume(w.pi({w.nat(), w.pi(w.nat(), w.star())}, w.star()), "Arr");
+    Defs dom{w.nat(), w.star()};
+    auto _Arr = w.lambda(dom, w.app(Arr, {w.extract(w.var(dom, 1), 0), w.lambda(w.nat(), w.extract(w.var(dom, 2), 1))}));
+    _Arr->dump();
+
+    auto arr = w.app(_Arr, {n23, w.nat()});
+    arr->dump();
 }
