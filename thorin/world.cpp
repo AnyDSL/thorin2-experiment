@@ -43,23 +43,14 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
     if (args.size() == 1) {
         if (auto tuple = args.front()->isa<Tuple>())
             return app(callee, tuple->ops(), name);
-
-        if (auto sigma = args.front()->type()->isa<Sigma>()) {
-            assert(false && "TODO" && sigma);
-        }
-
-        if (auto tuple = callee->isa<Tuple>()) {
-            assert(args.size() == 1);
-            return tuple->op(std::stoi(args.front()->name()));
-        }
     }
 
     auto app = unify(new App(*this, callee, args, name));
 
     if (auto cache = app->cache_)
         return cache;
-    if (auto lambda = app->callee()->template isa<Lambda>())
-        return app->cache_ = lambda->body()->reduce(1, args);
+    if (auto abs = app->callee()->isa<Abs>())
+        return app->cache_ = abs->reduce(args);
     else
         return app->cache_ = app;
 

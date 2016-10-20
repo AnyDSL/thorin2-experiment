@@ -75,13 +75,9 @@ const Def* Sigma::infer_type(World& world, Defs ops) {
 }
 
 App::App(World& world, const Def* callee, Defs args, const std::string& name)
-    : Def(world, Node_App, infer_type(callee, args),  concat(callee, args), name)
+    : Def(world, Node_App, callee->type()->as<Quantifier>()->reduce(args),  concat(callee, args), name)
 {
     assert(world.tuple(domain(), types(args)));
-}
-
-const Def* App::infer_type(const Def* callee, Defs args) {
-    return callee->type()->as<Quantifier>()->reduce(1, args);
 }
 
 //------------------------------------------------------------------------------
@@ -145,113 +141,77 @@ const Def* Var   ::rebuild(World& to, const Def* t, Defs    ) const { return to.
 //------------------------------------------------------------------------------
 
 /*
- * reduce
+ * subst
  */
 
-#if 0
-
-const Def* reduce(const Def* def, int index, Defs defs) {
-    Def2Def map;
-    std::stack<const Def*> stack;
-    std::vector<const Def*> new_ops;
-
-    auto push = [&](const Def* def) {
-        const auto& p = map.emplace(def, nullptr);
-        if (p.second) {
-            stack.push(def);
-            return true;
-        }
-        return false;
-    };
-
-    push(def);
-
-    while (!stack.empty()) {
-        auto def = stack.top();
-
-        bool todo = false;
-        todo |= push(def->type());
-        for (auto op : def->ops())
-            todo |= push(op);
-
-        if (!todo) {
-            if (auto var = def->isa<Var>()) {
-                if (var->index() == index)      // substitute
-                    map[var] = world().tuple(type(), args);
-                else if (this->index() > index) // this is a free variable - shift by one
-                    return world().var(type(), this->index()-1, name());
-                else                            // this variable is not free - keep index, reduce type
-                    return world().var(type()->reduce(map, index, args), this->index(), name());
-            } else {
-                new_ops.resize(def->num_ops());
-                for (size_t i = 0, e = def->num_ops(); i != e; ++i)
-                    new_ops[i] = map[def->op(i)];
-                map[def] = def->rebuild(map[def->type()], new_ops);
-            }
-            stack.pop();
-        }
-    }
+const Def* Tuple::reduce(Defs defs) const {
+    assert(defs.size() == 1);
+    return op(std::stoi(defs.front()->name()));
 }
 
-#endif
+const Def* Sigma::reduce(Defs defs) const {
+    assert(defs.size() == 1);
+    return op(std::stoi(defs.front()->name()));
+}
 
-template<bool shift>
-Array<const Def*> reduce(Def2Def& map, int index, Defs defs, Defs args) {
+Array<const Def*> subst(Def2Def& map, int index, Defs defs, Defs args) {
     Array<const Def*> result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)
-        result[i] = defs[i]->reduce(map, index + shift ? i : 0, args);
+        result[i] = defs[i]->subst(map, index, args);
     return result;
 }
 
-const Def* Def::reduce(Def2Def& map, int index, Defs args) const {
+const Def* Def::subst(Def2Def& map, int index, Defs args) const {
     if (auto result = find(map, this))
         return result;
-    return map[this] = vreduce(map, index, args);
+    return map[this] = vsubst(map, index, args);
 }
 
-const Def* Lambda::vreduce(Def2Def& map, int index, Defs args) const {
-    auto new_domains = thorin::reduce<false>(map, index, domains(), args);
-    return world().lambda(new_domains, body()->reduce(map, index+1, args), name());
+const Def* Lambda::vsubst(Def2Def& map, int index, Defs args) const {
+    auto new_domains = thorin::subst(map, index, domains(), args);
+    Def2Def new_map;
+    return world().lambda(new_domains, body()->subst(new_map, index+1, args), name());
 }
 
-const Def* Pi::vreduce(Def2Def& map, int index, Defs args) const {
-    auto new_domains = thorin::reduce<true>(map, index, domains(), args);
-    return world().pi(new_domains, body()->reduce(map, index+1, args), name());
+const Def* Pi::vsubst(Def2Def& map, int index, Defs args) const {
+    auto new_domains = thorin::subst(map, index, domains(), args);
+    Def2Def new_map;
+    return world().pi(new_domains, body()->subst(new_map, index+1, args), name());
 }
 
-const Def* Tuple::vreduce(Def2Def& map, int index, Defs args) const {
-    return world().tuple(thorin::reduce<false>(map, index, ops(), args), name());
+const Def* Tuple::vsubst(Def2Def& map, int index, Defs args) const {
+    return world().tuple(thorin::subst(map, index, ops(), args), name());
 }
 
-const Def* Sigma::vreduce(Def2Def& map, int index, Defs args) const {
+const Def* Sigma::vsubst(Def2Def& map, int index, Defs args) const {
     if (is_nominal()) {
         auto sigma = world().sigma(num_ops(), name());
         map[this] = sigma;
 
         for (size_t i = 0, e = num_ops(); i != e; ++i)
-            sigma->set(i, op(i)->reduce(map, index+i, args));
+            sigma->set(i, op(i)->subst(map, index+i, args));
 
         return sigma;
     }  else
-        return map[this] = world().sigma(thorin::reduce<true>(map, index, args, ops()), name());
+        return map[this] = world().sigma(thorin::subst(map, index, args, ops()), name());
 }
 
-const Def* Var::vreduce(Def2Def& map, int index, Defs args) const {
+const Def* Var::vsubst(Def2Def& map, int index, Defs args) const {
     if (this->index() == index)     // substitute
         return world().tuple(type(), args);
     else if (this->index() > index) // this is a free variable - shift by one
         return world().var(type(), this->index()-1, name());
-    else                            // this variable is not free - keep index, reduce type
-        return world().var(type()->reduce(map, index, args), this->index(), name());
+    else                            // this variable is not free - keep index, subst type
+        return world().var(type()->subst(map, index, args), this->index(), name());
 }
 
-const Def* App::vreduce(Def2Def& map, int index, Defs args) const {
-    auto ops = thorin::reduce<false>(map, index, this->ops(), args);
+const Def* App::vsubst(Def2Def& map, int index, Defs args) const {
+    auto ops = thorin::subst(map, index, this->ops(), args);
     return world().app(ops.front(), ops.skip_front(), name());
 }
 
-const Def* Assume::vreduce(Def2Def&, int, Defs) const { return this; }
-const Def* Star::vreduce(Def2Def&, int, Defs) const { return this; }
+const Def* Assume::vsubst(Def2Def&, int, Defs) const { return this; }
+const Def* Star::vsubst(Def2Def&, int, Defs) const { return this; }
 
 //------------------------------------------------------------------------------
 
