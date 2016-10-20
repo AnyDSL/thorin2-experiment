@@ -78,30 +78,44 @@ Array<const Def*> types(Defs defs);
 
 /// Base class for all @p Def%s.
 class Def : public Streamable, public MagicCast<Def> {
+public:
+    enum Sort {
+        Term, Type, Kind
+    };
+
+    enum {
+        Unrestricted,
+        Affine   = 1 << 0,
+        Relevant = 1 << 1,
+        Linear = Affine | Relevant,
+    };
+
 protected:
     Def(const Def&) = delete;
     Def& operator=(const Def&) = delete;
 
     /// Use for nominal @p Def%s.
-    Def(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
-        : world_(&world)
-        , tag_(tag)
-        , type_(type)
+    Def(World& world, unsigned tag, const Def* type, size_t num_ops, const std::string& name)
+        : type_(type)
         , ops_(num_ops)
-        , gid_(gid_counter_++)
         , name_(name)
-        , is_nominal_(true)
+        , world_(&world)
+        , gid_(gid_counter_++)
+        , tag_(tag)
+        , nominal_(true)
+        , structure_(Unrestricted)
     {}
 
     /// Use for structural @p Def%s.
-    Def(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : world_(&world)
-        , tag_(tag)
-        , type_(type)
+    Def(World& world, unsigned tag, const Def* type, Defs ops, const std::string& name)
+        : type_(type)
         , ops_(ops.size())
-        , gid_(gid_counter_++)
         , name_(name)
-        , is_nominal_(false)
+        , world_(&world)
+        , tag_(tag)
+        , gid_(gid_counter_++)
+        , nominal_(false)
+        , structure_(Unrestricted)
     {
         for (size_t i = 0, e = num_ops(); i != e; ++i) {
             if (auto op = ops[i])
@@ -116,10 +130,6 @@ protected:
     void resize(size_t n) { ops_.resize(n, nullptr); }
 
 public:
-    enum Sort {
-        Term, Type, Kind
-    };
-
     Sort sort() const {
         if (!type())
             return Kind;
@@ -131,7 +141,7 @@ public:
         }
     }
 
-    int tag() const { return tag_; }
+    unsigned tag() const { return tag_; }
     World& world() const { return *world_; }
     Defs ops() const { return ops_; }
     const Def* op(size_t i) const { return ops()[i]; }
@@ -146,8 +156,8 @@ public:
     void set(size_t i, const Def*);
     void unset(size_t i);
     void replace(const Def*) const;
-    bool is_nominal() const { return is_nominal_; }           ///< A nominal @p Def is always different from each other @p Def.
-    bool is_structural() const { return !is_nominal(); }      ///< A structural @p Def is always unified with a syntactically equivalent @p Def.
+    bool is_nominal() const { return nominal_; }        ///< A nominal @p Def is always different from each other @p Def.
+    bool is_structural() const { return !nominal_; }    ///< A structural @p Def is always unified with a syntactically equivalent @p Def.
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
     virtual int num_vars() const { return 0; }
@@ -170,14 +180,15 @@ private:
 
     static size_t gid_counter_;
 
-    mutable World* world_;
-    int tag_;
-    const Def* type_;
     std::vector<const Def*> ops_;
-    size_t gid_;
     mutable Uses uses_;
+    mutable World* world_;
+    const Def* type_;
     std::string name_;
-    bool is_nominal_;
+    unsigned gid_       : 24;
+    unsigned tag_       :  5;
+    unsigned nominal_   :  1;
+    unsigned structure_ :  2;
 
     friend class World;
     friend class Cleaner;
