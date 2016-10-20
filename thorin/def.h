@@ -94,10 +94,10 @@ protected:
 
     /// Use for nominal @p Def%s.
     Def(World& world, unsigned tag, const Def* type, size_t num_ops, const std::string& name)
-        : type_(type)
-        , ops_(num_ops)
+        : ops_(num_ops)
         , name_(name)
         , world_(&world)
+        , type_(type)
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(true)
@@ -106,12 +106,12 @@ protected:
 
     /// Use for structural @p Def%s.
     Def(World& world, unsigned tag, const Def* type, Defs ops, const std::string& name)
-        : type_(type)
-        , ops_(ops.size())
+        : ops_(ops.size())
         , name_(name)
         , world_(&world)
-        , tag_(tag)
+        , type_(type)
         , gid_(gid_counter_++)
+        , tag_(tag)
         , nominal_(false)
         , structure_(Unrestricted)
     {
@@ -183,10 +183,10 @@ private:
     static size_t gid_counter_;
 
     std::vector<const Def*> ops_;
+    std::string name_;
     mutable Uses uses_;
     mutable World* world_;
     const Def* type_;
-    std::string name_;
     unsigned gid_       : 24;
     unsigned tag_       :  5;
     unsigned nominal_   :  1;
