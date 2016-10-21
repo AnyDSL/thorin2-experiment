@@ -102,8 +102,10 @@ uint64_t Def::vhash() const {
         return gid();
 
     uint64_t seed = thorin::hash_combine(thorin::hash_begin(int(tag())), num_ops(), type() ? type()->gid() : 0);
-    for (auto op : ops_)
-        seed = thorin::hash_combine(seed, op->hash());
+    for (auto op : ops()) {
+        if (op)
+            seed = thorin::hash_combine(seed, op->hash());
+    }
     return seed;
 }
 
