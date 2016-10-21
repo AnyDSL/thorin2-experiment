@@ -1,4 +1,4 @@
-#include "thorin/world.h"
+#include "thorin/builder.h"
 #include "utils/unicodemanager.h"
 
 using namespace thorin;
@@ -9,9 +9,16 @@ int main()  {
 	prepareUtf8Console();
 
 	testMatrix();
-	//return 0;
 
     World w;
+    {
+        Builder::world_ = &w;
+        // λT:*.λx:T.x
+        typedef MVar<'T', MStar> T;
+        typedef MVar<'x', T> x;
+        MLambda<T, MLambda<x, x>>::emit()->dump();
+    }
+
     auto n0 = w.assume(w.nat(), "0");
     auto n1 = w.assume(w.nat(), "1");
     //auto n2 = w.assume(w.nat(), "2");

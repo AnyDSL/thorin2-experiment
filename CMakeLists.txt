@@ -6,6 +6,7 @@ add_executable(CoC
     matrixtest.cpp
     thorin/def.cpp
     thorin/def.h
+    thorin/builder.h
     thorin/world.cpp
     thorin/world.h
     thorin/util/array.h
