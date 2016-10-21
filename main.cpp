@@ -14,8 +14,8 @@ int main()  {
     {
         Builder::world_ = &w;
         // λT:*.λx:T.x
-        typedef BVar<'T', BStar> T;
-        typedef BVar<'x', T> x;
+        typedef BVar<decltype("T"_var), BStar> T;
+        typedef BVar<decltype("x"_var), T> x;
         BLambda<T, BLambda<x, x>>::emit()->dump();
     }
 

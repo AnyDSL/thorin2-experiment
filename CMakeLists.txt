@@ -18,5 +18,5 @@ add_executable(CoC
     utils/unicodemanager.cpp
     utils/unicodemanager.h
 )
-set_property(TARGET CoC PROPERTY CXX_STANDARD 11)
+set_property(TARGET CoC PROPERTY CXX_STANDARD 14)
 set_property(TARGET CoC PROPERTY CXX_STANDARD_REQUIRED on)

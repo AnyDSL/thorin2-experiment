@@ -1,9 +1,28 @@
 #ifndef THORIN_BUILDER_H
 #define THORIN_BUILDER_H
 
+#include <utility>
+
 #include "thorin/world.h"
 
 namespace thorin {
+
+template <char... chars>
+using VarName = std::integer_sequence<char, chars...>;
+
+template<class T, T... chars>
+constexpr VarName<chars...> operator""_var() { return {}; }
+
+template <typename>
+struct StrGetter;
+
+template<char... chars>
+struct StrGetter<VarName<chars...>> {
+    const char* GetString() const {
+        static constexpr char str[sizeof...(chars) + 1] = { chars..., '\0' };
+        return str;
+    }
+};
 
 struct Builder {
     static World& world() { return *world_; }
@@ -50,7 +69,7 @@ struct BTuple {
     }
 };
 
-template<char name, class... T>
+template<class Name, class... T>
 struct BVar {
     typedef BTuple<T...> type;
     static int offset;
@@ -59,8 +78,8 @@ struct BVar {
     }
 };
 
-template<char name, class... T>
-int BVar<name, T...>::offset = 0;
+template<class Name, class... T>
+int BVar<Name, T...>::offset = 0;
 
 template<class BVar, class Body>
 struct BLambda {
