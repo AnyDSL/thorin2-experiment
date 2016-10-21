@@ -14,9 +14,9 @@ int main()  {
     {
         Builder::world_ = &w;
         // λT:*.λx:T.x
-        typedef MVar<'T', MStar> T;
-        typedef MVar<'x', T> x;
-        MLambda<T, MLambda<x, x>>::emit()->dump();
+        typedef BVar<'T', BStar> T;
+        typedef BVar<'x', T> x;
+        BLambda<T, BLambda<x, x>>::emit()->dump();
     }
 
     auto n0 = w.assume(w.nat(), "0");
