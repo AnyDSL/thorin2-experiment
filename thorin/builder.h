@@ -1,6 +1,8 @@
 #ifndef THORIN_BUILDER_H
 #define THORIN_BUILDER_H
 
+#define BVAR(n, T) typedef BVar<decltype(#n ## _var), T> n
+
 #include <utility>
 
 #include "thorin/world.h"
