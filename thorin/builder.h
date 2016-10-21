@@ -22,24 +22,31 @@ struct BStar {
 };
 
 template<class... Ops>
-struct BTupleDecompose {
+struct BDecomposeHelper {
     static void decompose(std::vector<const Def*>&) {}
 };
 
 template<class Head, class... Tail>
-struct BTupleDecompose<Head, Tail...> {
+struct BDecomposeHelper<Head, Tail...> {
     static void decompose(std::vector<const Def*>& ops) {
         ops.push_back(Head::emit());
-        BTupleDecompose<Tail...>::decompose(ops);
+        BDecomposeHelper<Tail...>::decompose(ops);
+    }
+};
+
+template<class... Ops>
+struct BDecompose {
+    static Array<const Def*> emit() {
+        std::vector<const Def*> result;
+        BDecomposeHelper<Ops...>::decompose(result);
+        return result;
     }
 };
 
 template<class... Ops>
 struct BTuple {
     static const Def* emit() {
-        std::vector<const Def*> ops;
-        BTupleDecompose<Ops...>::decompose(ops);
-        return Builder::world().tuple(ops);
+        return Builder::world().tuple(BDecompose<Ops...>::emit());
     }
 };
 
@@ -70,7 +77,7 @@ struct BLambda {
 template<class Callee, class... Args>
 struct BApp {
     static const Def* emit() {
-        return Builder::world().app(Callee::emit(), BTuple<Args...>::emit());
+        return Builder::world().app(Callee::emit(), BDecompose<Args...>::emit());
     }
 };
 
