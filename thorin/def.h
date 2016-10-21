@@ -81,7 +81,7 @@ public:
         Term, Type, Kind
     };
 
-    enum Structure {
+    enum Qualifier {
         Unrestricted,
         Affine   = 1 << 0,
         Relevant = 1 << 1,
@@ -93,7 +93,7 @@ protected:
     Def& operator=(const Def&) = delete;
 
     /// Use for nominal @p Def%s.
-    Def(World& world, unsigned tag, const Def* type, size_t num_ops, const std::string& name)
+    Def(World& world, unsigned tag, const Def* type, size_t num_ops, const std::string& name, Qualifier qualifier = Unrestricted)
         : ops_(num_ops)
         , name_(name)
         , world_(&world)
@@ -101,11 +101,15 @@ protected:
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(true)
-        , structure_(Unrestricted)
-    {}
+        , qualifier_(qualifier)
+    {
+        if (sort() == Term) {
+            qualifier_ = type->qualifier();
+        }
+    }
 
     /// Use for structural @p Def%s.
-    Def(World& world, unsigned tag, const Def* type, Defs ops, const std::string& name)
+    Def(World& world, unsigned tag, const Def* type, Defs ops, const std::string& name, Qualifier qualifier = Unrestricted)
         : ops_(ops.size())
         , name_(name)
         , world_(&world)
@@ -113,8 +117,11 @@ protected:
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(false)
-        , structure_(Unrestricted)
+        , qualifier_(qualifier)
     {
+        if (sort() == Term) {
+            qualifier_ = type->qualifier();
+        }
         for (size_t i = 0, e = num_ops(); i != e; ++i) {
             if (auto op = ops[i])
                 set(i, op);
@@ -155,11 +162,11 @@ public:
     void unset(size_t i);
     void replace(const Def*) const;
     bool is_nominal() const { return nominal_; }        ///< A nominal @p Def is always different from each other @p Def.
-    Structure structure() const { return Structure(structure_); }
-    bool is_unrestricted() const { return structure() & Unrestricted; }
-    bool is_affine() const       { return structure() & Affine; }
-    bool is_relevant() const     { return structure() & Relevant; }
-    bool is_linear() const       { return structure() & Linear; }
+    Qualifier qualifier() const { return Qualifier(qualifier_); }
+    bool is_unrestricted() const { return qualifier() & Unrestricted; }
+    bool is_affine() const       { return qualifier() & Affine; }
+    bool is_relevant() const     { return qualifier() & Relevant; }
+    bool is_linear() const       { return qualifier() & Linear; }
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
     virtual int num_vars() const { return 0; }
@@ -189,7 +196,7 @@ private:
     unsigned gid_       : 24;
     unsigned tag_       :  5;
     unsigned nominal_   :  1;
-    unsigned structure_ :  2;
+    unsigned qualifier_ :  2;
 
     friend class World;
     friend class Cleaner;

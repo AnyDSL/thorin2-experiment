@@ -20,6 +20,8 @@ void Def::set(size_t i, const Def* def) {
     assert(def && "setting null pointer");
     ops_[i] = def;
     assert(!def->uses_.contains(Use(i, this)));
+    assert(def->sort() != Sort::Term || !def->type()->is_affine() || def->num_uses() == 0
+           && "Affinely typed terms can be used at most once.");
     const auto& p = def->uses_.emplace(i, this);
     assert_unused(p.second);
 }
@@ -37,6 +39,8 @@ void Def::unregister_use(size_t i) const {
 }
 
 void Def::unset(size_t i) {
+    assert(sort() != Sort::Term || !type()->is_relevant()
+           && "Do not remove the use of a relevant value.");
     assert(ops_[i] && "must be set");
     unregister_use(i);
     ops_[i] = nullptr;
