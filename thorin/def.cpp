@@ -228,24 +228,39 @@ const Def* Star::vsubst(Def2Def&, int, Defs) const { return this; }
  * stream
  */
 
+std::ostream& operator<<(std::ostream& ostream, const Def::Qualifier s) {
+    switch (s) {
+    case Def::Qualifier::Unrestricted:
+        return ostream << ""; //ᵁ
+    case Def::Qualifier::Affine:
+        return ostream << "ᴬ";
+    case Def::Qualifier::Relevant:
+        return ostream << "ᴿ";
+    case Def::Qualifier::Linear:
+        return ostream << "ᴸ";
+    default:
+        THORIN_UNREACHABLE;
+    }
+}
+
 std::ostream& Lambda::stream(std::ostream& os) const {
-    return streamf(stream_list(os << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
+    return streamf(stream_list(os << qualifier() << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
-    return streamf(stream_list(os << "Π", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
+    return streamf(stream_list(os << qualifier() << "Π", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
 }
 
 std::ostream& Tuple::stream(std::ostream& os) const {
-    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "(", ")");
+    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->stream(os); }, "(", ")");
 }
 
 std::ostream& Sigma::stream(std::ostream& os) const {
-    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "Σ(", ")");
+    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->stream(os); }, "Σ(", ")");
 }
 
 std::ostream& Var::stream(std::ostream& os) const {
-    return streamf(os, "<%:%>", index(), type());
+    return streamf(os << qualifier(), "<%:%>", index(), type());
 }
 
 std::ostream& Assume::stream(std::ostream& os) const { return os << name(); }
@@ -255,7 +270,7 @@ std::ostream& Star::stream(std::ostream& os) const {
 }
 
 std::ostream& App::stream(std::ostream& os) const {
-    return stream_list(streamf(os, "(%)", callee()), args(), [&](const Def* def) { def->stream(os); }, "(", ")");
+    return stream_list(streamf(os << qualifier(), "(%)", callee()), args(), [&](const Def* def) { def->stream(os); }, "(", ")");
 }
 
 //------------------------------------------------------------------------------
