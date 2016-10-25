@@ -4,6 +4,7 @@ include_directories(.)
 add_executable(CoC 
     main.cpp
     matrixtest.cpp
+    qualifiertest.cpp
     thorin/def.cpp
     thorin/def.h
     thorin/builder.h

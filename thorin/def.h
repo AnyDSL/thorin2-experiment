@@ -76,6 +76,28 @@ Array<const Def*> types(Defs defs);
 
 //------------------------------------------------------------------------------
 
+namespace Qualifier {
+    enum URAL {
+        Unrestricted,
+        Affine   = 1 << 0,
+        Relevant = 1 << 1,
+        Linear = Affine | Relevant,
+    };
+
+    bool operator==(URAL lhs, URAL rhs);
+    bool operator<(URAL lhs, URAL rhs);
+    bool operator<=(URAL lhs, URAL rhs);
+
+    std::ostream& operator<<(std::ostream& ostream, const URAL q);
+
+    URAL min(const Defs& defs);
+
+    URAL meet(URAL lhs, URAL rhs);
+    URAL meet(const Defs& defs);
+}
+
+//------------------------------------------------------------------------------
+
 /// Base class for all @p Def%s.
 class Def : public Streamable, public MagicCast<Def> {
 public:
@@ -83,19 +105,12 @@ public:
         Term, Type, Kind
     };
 
-    enum Qualifier {
-        Unrestricted,
-        Affine   = 1 << 0,
-        Relevant = 1 << 1,
-        Linear = Affine | Relevant,
-    };
-
 protected:
     Def(const Def&) = delete;
     Def& operator=(const Def&) = delete;
 
     /// Use for nominal @p Def%s.
-    Def(World& world, unsigned tag, const Def* type, size_t num_ops, const std::string& name, Qualifier qualifier = Unrestricted)
+    Def(World& world, unsigned tag, const Def* type, size_t num_ops, const std::string& name, Qualifier::URAL qualifier = Qualifier::Unrestricted)
         : ops_(num_ops)
         , name_(name)
         , world_(&world)
@@ -105,11 +120,11 @@ protected:
         , nominal_(true)
         , qualifier_(qualifier)
     {
-        assert(sort() == Type || qualifier == Unrestricted);
+        assert(sort() == Type || qualifier == Qualifier::Unrestricted);
     }
 
     /// Use for structural @p Def%s.
-    Def(World& world, unsigned tag, const Def* type, Defs ops, const std::string& name, Qualifier qualifier = Unrestricted)
+    Def(World& world, unsigned tag, const Def* type, Defs ops, const std::string& name, Qualifier::URAL qualifier = Qualifier::Unrestricted)
         : ops_(ops.size())
         , name_(name)
         , world_(&world)
@@ -119,7 +134,7 @@ protected:
         , nominal_(false)
         , qualifier_(qualifier)
     {
-        assert(sort() == Type || qualifier == Unrestricted);
+        assert(sort() == Type || qualifier == Qualifier::Unrestricted);
         for (size_t i = 0, e = num_ops(); i != e; ++i) {
             if (auto op = ops[i])
                 set(i, op);
@@ -160,11 +175,11 @@ public:
     void unset(size_t i);
     void replace(const Def*) const;
     bool is_nominal() const { return nominal_; }        ///< A nominal @p Def is always different from each other @p Def.
-    Qualifier qualifier() const { return Qualifier(qualifier_); }
-    bool is_unrestricted() const { return qualifier() & Unrestricted; }
-    bool is_affine() const       { return qualifier() & Affine; }
-    bool is_relevant() const     { return qualifier() & Relevant; }
-    bool is_linear() const       { return qualifier() & Linear; }
+    Qualifier::URAL qualifier() const { return Qualifier::URAL(qualifier_); }
+    bool is_unrestricted() const { return qualifier() & Qualifier::Unrestricted; }
+    bool is_affine() const       { return qualifier() & Qualifier::Affine; }
+    bool is_relevant() const     { return qualifier() & Qualifier::Relevant; }
+    bool is_linear() const       { return qualifier() & Qualifier::Linear; }
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
     virtual int num_vars() const { return 0; }
@@ -201,9 +216,6 @@ private:
     friend class Scope;
 };
 
-bool operator<(Def::Qualifier lhs, Def::Qualifier rhs);
-
-Def::Qualifier min_qualifier(const Defs& defs);
 
 uint64_t UseHash::operator()(Use use) const {
     return hash_combine(hash_begin(use->gid()), use.index());
@@ -211,11 +223,11 @@ uint64_t UseHash::operator()(Use use) const {
 
 class Abs : public Def {
 protected:
-    Abs(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
-        : Def(world, tag, type, num_ops, name)
+    Abs(World& world, int tag, const Def* type, size_t num_ops, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted)
+        : Def(world, tag, type, num_ops, name, q)
     {}
-    Abs(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : Def(world, tag, type, ops, name)
+    Abs(World& world, int tag, const Def* type, Defs ops, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted)
+        : Def(world, tag, type, ops, name, q)
     {}
 
 public:
@@ -224,11 +236,11 @@ public:
 
 class Quantifier : public Abs {
 protected:
-    Quantifier(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
-        : Abs(world, tag, type, num_ops, name)
+    Quantifier(World& world, int tag, const Def* type, size_t num_ops, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted)
+        : Abs(world, tag, type, num_ops, name, q)
     {}
-    Quantifier(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : Abs(world, tag, type, ops, name)
+    Quantifier(World& world, int tag, const Def* type, Defs ops, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted)
+        : Abs(world, tag, type, ops, name, q)
     {}
 
 public:
@@ -250,7 +262,7 @@ public:
 
 class Pi : public Quantifier {
 private:
-    Pi(World& world, Defs domains, const Def* body, const std::string& name);
+    Pi(World& world, Defs domains, const Def* body, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted);
 
 public:
     Defs domains() const { return ops().skip_back(); }
@@ -288,15 +300,15 @@ private:
 
 class Sigma : public Quantifier {
 private:
-    Sigma(World& world, size_t num_ops, const std::string& name, Def::Qualifier q)
-        : Quantifier(world, Node_Sigma, nullptr /*TODO*/, num_ops, name)
+    Sigma(World& world, size_t num_ops, const std::string& name, Qualifier::URAL q)
+        : Quantifier(world, Node_Sigma, nullptr /*TODO*/, num_ops, name, q)
     {
         assert(false && "TODO");
     }
-    Sigma(World& world, Defs ops, const std::string& name, Def::Qualifier q)
-        : Quantifier(world, Node_Sigma, infer_type(world, ops), ops, name)
+    Sigma(World& world, Defs ops, const std::string& name, Qualifier::URAL q)
+        : Quantifier(world, Node_Sigma, infer_type(world, ops), ops, name, q)
     {
-        assert(sort() != Type || qualifier() <= min_qualifier(ops));
+        assert(sort() != Type || qualifier() <= Qualifier::meet(ops));
     }
 
     static const Def* infer_type(World&, Defs);
@@ -319,8 +331,6 @@ private:
         : Connective(world, Node_Tuple, type, ops, name)
     {
         assert(type->as<Sigma>()->num_ops() && ops.size());
-
-        assert(type->qualifier() <= min_qualifier(ops));
     }
 
     virtual const Def* reduce(Defs defs) const override;
@@ -374,8 +384,8 @@ private:
 
 class Assume : public Def {
 private:
-    Assume(World& world, const Def* type, const std::string& name)
-        : Def(world, Node_Assume, type, 0, name)
+    Assume(World& world, const Def* type, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted)
+        : Def(world, Node_Assume, type, 0, name, q)
     {}
 
 public:

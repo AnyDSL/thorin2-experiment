@@ -4,7 +4,10 @@ namespace thorin {
 
 World::World()
     : star_(unify(new Star(*this)))
-    , nat_(assume(star(), "Nat"))
+    , nat_({assume(star(), "Nat"),
+            assume(star(), "Nat", Qualifier::Affine),
+            assume(star(), "Nat", Qualifier::Relevant),
+            assume(star(), "Nat", Qualifier::Linear)})
 {}
 
 const Lambda* World::lambda(Defs domain, const Def* body, const std::string& name) {
@@ -32,7 +35,11 @@ const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
     return unify(new Tuple(*this, type, defs, name));
 }
 
-const Def* World::sigma(Defs defs, const std::string& name, Def::Qualifier q) {
+const Def* World::sigma(Defs defs, const std::string& name) {
+    return sigma(defs, Qualifier::meet(defs), name);
+}
+
+const Def* World::sigma(Defs defs, Qualifier::URAL q, const std::string& name) {
     if (defs.size() == 1) {
         auto single = defs.front();
         assert(!single || single->qualifier() == q);

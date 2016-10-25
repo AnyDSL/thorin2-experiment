@@ -5,6 +5,58 @@
 
 namespace thorin {
 
+namespace Qualifier {
+    bool operator==(URAL lhs, URAL rhs) {
+        return static_cast<int>(lhs) == static_cast<int>(rhs);
+    }
+
+    bool operator<(URAL lhs, URAL rhs) {
+        if (lhs == rhs) return false;
+        if (rhs == Unrestricted) return true;
+        if (lhs == Linear) return true;
+        return false;
+    }
+
+    bool operator<=(URAL lhs, URAL rhs) {
+        return lhs == rhs || lhs < rhs;
+    }
+
+    std::ostream& operator<<(std::ostream& ostream, const URAL s) {
+        switch (s) {
+        case Unrestricted:
+            return ostream << ""; //ᵁ
+        case Affine:
+            return ostream << "ᴬ";
+        case Relevant:
+            return ostream << "ᴿ";
+        case Linear:
+            return ostream << "ᴸ";
+        default:
+            THORIN_UNREACHABLE;
+        }
+    }
+
+    URAL min_qualifier(const Defs& defs) {
+        auto q = std::accumulate(defs.begin(), defs.end(), Unrestricted,
+                                 [](URAL q, const Def* const def) {
+                                     return def ? std::min(q, def->qualifier()) : q;});
+        return q;
+    }
+
+    URAL meet(URAL lhs, URAL rhs) {
+        if (lhs <= rhs)
+            return lhs;
+        if (rhs < lhs)
+            return rhs;
+        return URAL::Linear;
+    }
+
+    URAL meet(const Defs& defs) {
+        return std::accumulate(defs.begin(), defs.end(), Unrestricted,
+                                 [](URAL q, const Def* const def) {
+                                     return def ? meet(q, def->qualifier()) : q;});
+    }
+}
 //------------------------------------------------------------------------------
 
 size_t Def::gid_counter_ = 1;
@@ -55,18 +107,6 @@ Array<const Def*> types(Defs defs) {
     return result;
 }
 
-bool operator<(Def::Qualifier lhs, Def::Qualifier rhs) {
-    if (lhs == rhs) return false;
-    if (rhs == Def::Unrestricted) return true;
-    if (lhs == Def::Linear) return true;
-    return false;
-}
-
-Def::Qualifier min_qualifier(const Defs& defs) {
-    return std::accumulate(defs.begin(), defs.end(), Def::Linear,
-                           [](Def::Qualifier q, const Def* const def) {
-                               return std::min(q, def->qualifier());});
-}
 //------------------------------------------------------------------------------
 
 /*
@@ -78,8 +118,8 @@ Lambda::Lambda(World& world, Defs domains, const Def* body, const std::string& n
 {}
 
 
-Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name)
-    : Quantifier(world, Node_Pi, body->type(), concat(domains, body), name)
+Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name, Qualifier::URAL q)
+    : Quantifier(world, Node_Pi, body->type(), concat(domains, body), name, q)
 {}
 
 const Def* Sigma::infer_type(World& world, Defs ops) {
@@ -118,6 +158,7 @@ uint64_t Def::vhash() const {
         return gid();
 
     uint64_t seed = thorin::hash_combine(thorin::hash_begin(int(tag())), num_ops(), type() ? type()->gid() : 0);
+    seed = thorin::hash_combine(seed, static_cast<int>(qualifier()));
     for (auto op : ops_)
         seed = thorin::hash_combine(seed, op->hash());
     return seed;
@@ -128,6 +169,7 @@ bool Def::equal(const Def* other) const {
         return this == other;
 
     bool result = this->tag() == other->tag() && this->type() == other->type() && this->num_ops() == other->num_ops();
+    result &= this->qualifier() == other->qualifier();
     if (result) {
         for (size_t i = 0, e = num_ops(); result && i != e; ++i)
             result &= this->op(i) == other->op(i);
@@ -240,21 +282,6 @@ const Def* Star::vsubst(Def2Def&, int, Defs) const { return this; }
  * stream
  */
 
-std::ostream& operator<<(std::ostream& ostream, const Def::Qualifier s) {
-    switch (s) {
-    case Def::Qualifier::Unrestricted:
-        return ostream << ""; //ᵁ
-    case Def::Qualifier::Affine:
-        return ostream << "ᴬ";
-    case Def::Qualifier::Relevant:
-        return ostream << "ᴿ";
-    case Def::Qualifier::Linear:
-        return ostream << "ᴸ";
-    default:
-        THORIN_UNREACHABLE;
-    }
-}
-
 std::ostream& Lambda::stream(std::ostream& os) const {
     return streamf(stream_list(os << qualifier() << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
 }
@@ -275,7 +302,7 @@ std::ostream& Var::stream(std::ostream& os) const {
     return streamf(os << qualifier(), "<%:%>", index(), type());
 }
 
-std::ostream& Assume::stream(std::ostream& os) const { return os << name(); }
+std::ostream& Assume::stream(std::ostream& os) const { return os << qualifier() << name(); }
 
 std::ostream& Star::stream(std::ostream& os) const {
     return os << '*';
