@@ -32,11 +32,14 @@ const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
     return unify(new Tuple(*this, type, defs, name));
 }
 
-const Def* World::sigma(Defs defs, const std::string& name) {
-    if (defs.size() == 1)
-        return defs.front();
+const Def* World::sigma(Defs defs, const std::string& name, Def::Qualifier q) {
+    if (defs.size() == 1) {
+        auto single = defs.front();
+        assert(!single || single->qualifier() == q);
+        return single;
+    }
 
-    return unify(new Sigma(*this, defs, name));
+    return unify(new Sigma(*this, defs, name, q));
 }
 
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {

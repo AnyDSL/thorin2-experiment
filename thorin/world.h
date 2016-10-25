@@ -30,10 +30,10 @@ public:
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "") { return app(callee, Defs({arg}), name); }
     const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
     const Def* tuple(Defs defs, const std::string& name = "") { return tuple(sigma(types(defs), name), defs, name); }
-    const Def* sigma(Defs, const std::string& name = "");
-    Sigma* sigma(size_t num_ops, const std::string& name = "") { return insert(new Sigma(*this, num_ops, name)); }
+    const Def* sigma(Defs, const std::string& name = "", Def::Qualifier q = Def::Unrestricted);
+    Sigma* sigma(size_t num_ops, const std::string& name = "", Def::Qualifier q = Def::Unrestricted) { return insert(new Sigma(*this, num_ops, name, q)); }
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
-    const Assume* nat() { return nat_; }
+    const Assume* nat(Def::Qualifier q = Def::Unrestricted) { return nat_[q]; }
     const Def* extract(const Def* def, const Def* i);
     const Def* extract(const Def* def, int i) { return extract(def, assume(nat(), std::to_string(i))); }
 

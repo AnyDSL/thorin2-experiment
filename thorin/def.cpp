@@ -55,6 +55,18 @@ Array<const Def*> types(Defs defs) {
     return result;
 }
 
+bool operator<(Def::Qualifier lhs, Def::Qualifier rhs) {
+    if (lhs == rhs) return false;
+    if (rhs == Def::Unrestricted) return true;
+    if (lhs == Def::Linear) return true;
+    return false;
+}
+
+Def::Qualifier min_qualifier(const Defs& defs) {
+    return std::accumulate(defs.begin(), defs.end(), Def::Linear,
+                           [](Def::Qualifier q, const Def* const def) {
+                               return std::min(q, def->qualifier());});
+}
 //------------------------------------------------------------------------------
 
 /*

@@ -1,6 +1,8 @@
 #ifndef THORIN_DEF_H
 #define THORIN_DEF_H
 
+#include <numeric>
+
 #include "thorin/util/array.h"
 #include "thorin/util/cast.h"
 #include "thorin/util/hash.h"
@@ -103,9 +105,7 @@ protected:
         , nominal_(true)
         , qualifier_(qualifier)
     {
-        if (sort() == Term) {
-            qualifier_ = type->qualifier();
-        }
+        assert(sort() == Type || qualifier == Unrestricted);
     }
 
     /// Use for structural @p Def%s.
@@ -119,9 +119,7 @@ protected:
         , nominal_(false)
         , qualifier_(qualifier)
     {
-        if (sort() == Term) {
-            qualifier_ = type->qualifier();
-        }
+        assert(sort() == Type || qualifier == Unrestricted);
         for (size_t i = 0, e = num_ops(); i != e; ++i) {
             if (auto op = ops[i])
                 set(i, op);
@@ -202,6 +200,10 @@ private:
     friend class Cleaner;
     friend class Scope;
 };
+
+bool operator<(Def::Qualifier lhs, Def::Qualifier rhs);
+
+Def::Qualifier min_qualifier(const Defs& defs);
 
 uint64_t UseHash::operator()(Use use) const {
     return hash_combine(hash_begin(use->gid()), use.index());
@@ -286,14 +288,16 @@ private:
 
 class Sigma : public Quantifier {
 private:
-    Sigma(World& world, size_t num_ops, const std::string& name)
+    Sigma(World& world, size_t num_ops, const std::string& name, Def::Qualifier q)
         : Quantifier(world, Node_Sigma, nullptr /*TODO*/, num_ops, name)
     {
         assert(false && "TODO");
     }
-    Sigma(World& world, Defs ops, const std::string& name)
+    Sigma(World& world, Defs ops, const std::string& name, Def::Qualifier q)
         : Quantifier(world, Node_Sigma, infer_type(world, ops), ops, name)
-    {}
+    {
+        assert(sort() != Type || qualifier() <= min_qualifier(ops));
+    }
 
     static const Def* infer_type(World&, Defs);
 
@@ -315,6 +319,8 @@ private:
         : Connective(world, Node_Tuple, type, ops, name)
     {
         assert(type->as<Sigma>()->num_ops() && ops.size());
+
+        assert(type->qualifier() <= min_qualifier(ops));
     }
 
     virtual const Def* reduce(Defs defs) const override;
