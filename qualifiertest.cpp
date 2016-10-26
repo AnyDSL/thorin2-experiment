@@ -26,6 +26,16 @@ void testQualifiers() {
     assert(meet(L, R) == L);
 
     World w;
+    auto Nat = w.nat();
+    auto ANat = w.nat(A);
+    auto RNat = w.nat(R);
+    auto LNat = w.nat(L);
+    auto an0 = w.assume(ANat, "0");
+    auto anx = w.var(ANat, 1, "x");
+    auto anid = w.lambda(ANat, anx, "anid");
+    auto app1 = w.app(anid, an0);
+    assert(w.app(anid, an0) == w.error());
+
     auto tuple_type = w.sigma({w.nat(A), w.nat(R)});
     assert(tuple_type->qualifier() == L);
 }

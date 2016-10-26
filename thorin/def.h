@@ -19,6 +19,7 @@ enum {
     Node_Star,
     Node_Tuple,
     Node_Var,
+    Node_Error,
 };
 
 class Def;
@@ -415,6 +416,22 @@ public:
 
 private:
     mutable const Def* cache_ = nullptr;
+    friend class World;
+};
+
+class Error : public Def {
+private:
+    Error(World& world)
+        : Def(world, Node_Error, nullptr, Defs(), "error")
+    {}
+
+public:
+    virtual std::ostream& stream(std::ostream&) const override;
+
+private:
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
+    virtual const Def* vsubst(Def2Def&, int, Defs) const override;
+
     friend class World;
 };
 

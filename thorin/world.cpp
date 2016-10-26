@@ -4,6 +4,7 @@ namespace thorin {
 
 World::World()
     : star_(unify(new Star(*this)))
+    , error_(unify(new Error(*this)))
     , nat_({assume(star(), "Nat"),
             assume(star(), "Nat", Qualifier::Affine),
             assume(star(), "Nat", Qualifier::Relevant),
@@ -55,6 +56,9 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
             return app(callee, tuple->ops(), name);
     }
 
+    if (too_many_affine_uses(args)) {
+        return error();
+    }
     auto app = unify(new App(*this, callee, args, name));
 
     if (auto cache = app->cache_)

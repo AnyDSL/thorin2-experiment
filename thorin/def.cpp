@@ -188,6 +188,7 @@ const Def* Sigma ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is
 const Def* Star  ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(); }
 const Def* Tuple ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
 const Def* Var   ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), name()); }
+const Def* Error ::rebuild(World& to, const Def*  , Defs    ) const { return to.error(); }
 
 //------------------------------------------------------------------------------
 
@@ -268,6 +269,7 @@ const Def* App::vsubst(Def2Def& map, int index, Defs args) const {
 
 const Def* Assume::vsubst(Def2Def&, int, Defs) const { return this; }
 const Def* Star::vsubst(Def2Def&, int, Defs) const { return this; }
+const Def* Error::vsubst(Def2Def&, int, Defs) const { return this; }
 
 //------------------------------------------------------------------------------
 
@@ -303,6 +305,10 @@ std::ostream& Star::stream(std::ostream& os) const {
 
 std::ostream& App::stream(std::ostream& os) const {
     return stream_list(streamf(os << qualifier(), "(%)", callee()), args(), [&](const Def* def) { def->stream(os); }, "(", ")");
+}
+
+std::ostream& Error::stream(std::ostream& os) const {
+    return os << "Error";
 }
 
 //------------------------------------------------------------------------------

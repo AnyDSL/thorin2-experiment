@@ -19,6 +19,7 @@ public:
     virtual ~World() { for (auto def : defs_) delete def; }
 
     const Star* star() const { return star_; }
+    const Error* error() const { return error_; }
     const Var* var(const Def* type, int index, const std::string& name = "") { return unify(new Var(*this, type, index, name)); }
     const Var* var(Defs types, int index, const std::string& name = "") { return var(sigma(types), index, name); }
     const Assume* assume(const Def* type, const std::string& name = "", Qualifier::URAL q = Qualifier::Unrestricted) { return insert(new Assume(*this, type, name, q)); }
@@ -50,6 +51,14 @@ public:
 private:
     void fix() { for (auto def : defs_) def->world_ = this; }
 
+    bool too_many_affine_uses(Defs defs) {
+        for (auto def : defs) {
+            if (def->type()->is_affine() && def->num_uses() > 0)
+                return true;
+        }
+        return false;
+    }
+
 protected:
     const Def* unify_base(const Def* type);
     template<class T>
@@ -64,6 +73,7 @@ protected:
 
     DefSet defs_;
     const Star* star_;
+    const Error* error_;
     const Array<const Assume*> nat_;
 };
 
