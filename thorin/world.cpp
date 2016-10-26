@@ -56,9 +56,24 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
             return app(callee, tuple->ops(), name);
     }
 
-    if (too_many_affine_uses(args)) {
+    if (too_many_affine_uses(args))
         return error();
+    if (callee->type()->isa<Sigma>()) {
+        assert(args.size() == 1);
+        auto assume = args.front()->as<Assume>();
+        if (assume->type() != nat())
+            return error();
+        auto index = args.front()->name();
+        if (callee->type()->is_affine()) {
+            // check all uses for same index
+            for (auto use : callee->uses()) {
+                auto use_index = use->as<App>()->op(1)->as<Assume>()->name();
+                if (index == use_index)
+                    return error();
+            }
+        }
     }
+
     auto app = unify(new App(*this, callee, args, name));
 
     if (auto cache = app->cache_)

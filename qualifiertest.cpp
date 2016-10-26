@@ -5,8 +5,8 @@ using namespace thorin;
 
 void testQualifiers() {
     auto U = Qualifier::Unrestricted;
-    auto A = Qualifier::Affine;
     auto R = Qualifier::Relevant;
+    auto A = Qualifier::Affine;
     auto L = Qualifier::Linear;
 
     assert(A < U);
@@ -38,4 +38,11 @@ void testQualifiers() {
 
     auto tuple_type = w.sigma({w.nat(A), w.nat(R)});
     assert(tuple_type->qualifier() == L);
+    auto an1 = w.assume(ANat, "1");
+    auto rn0 = w.assume(RNat, "0");
+    auto tuple = w.tuple({an1, rn0});
+    tuple_type->dump();
+    assert(tuple->type() == tuple_type);
+    auto tuple_app0 = w.extract(tuple, 0);
+    assert(w.extract(tuple, 0) == w.error());
 }
