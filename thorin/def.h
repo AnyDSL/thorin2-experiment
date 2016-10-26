@@ -307,7 +307,7 @@ private:
     Tuple(World& world, const Def* type, Defs ops, const std::string& name)
         : Connective(world, Node_Tuple, type, ops, name)
     {
-        assert(type->as<Sigma>()->num_ops() && ops.size());
+        assert(type->as<Sigma>()->num_ops() == ops.size());
     }
 
     virtual const Def* reduce(Defs defs) const override;
