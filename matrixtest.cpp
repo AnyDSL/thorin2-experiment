@@ -14,6 +14,7 @@ void testMatrix() {
 	auto Nat = w.nat();
 	auto Float = w.assume(w.star(), "Float");
 	auto opFloatPlus = w.assume(w.pi(w.sigma({ Float, Float }), Float), "+");
+	auto opFloatMult = w.assume(w.pi(w.sigma({ Float, Float }), Float), "x");
 	auto cFloatZero = w.assume(Float, "0.0");
 
 	// Some testing
@@ -62,9 +63,6 @@ void testMatrix() {
 	auto sum = w.app(w.app(w.app(reduce, Float), opFloatPlus), cFloatZero, "sum");
 	printType(sum);
 
-	// Matrix multiplication
-	//auto matrixDot = w.lambda({ Nat, Nat, Nat }, );
-
 
 
 	printUtf8("\n--- compiled ---\n\n");
@@ -72,7 +70,7 @@ void testMatrix() {
 
 
 	// UArrT := λ lt:(Nat, *). ArrT (lt[0], λ _:Nat. lt[1])
-	auto UArrT = w.lambda({ Nat, w.star() }, w.app(ArrT, { w.extract(w.var({ Nat, w.star() }, 1, "lt"), 0), w.lambda(Nat, w.extract(w.var({ Nat, w.star() }, 2, "lt"), 1)) }));
+	auto UArrT = w.lambda({ Nat, w.star() }, w.app(ArrT, { w.extract(w.var({ Nat, w.star() }, 1, "lt"), 0), w.lambda(Nat, w.extract(w.var({ Nat, w.star() }, 2, "lt"), 1)) }), "UArrT");
 	printValue(UArrT);
 	printType(UArrT);
 
@@ -80,9 +78,9 @@ void testMatrix() {
 	auto MatrixType = w.lambda(Nat, w.lambda(Nat, w.app(UArrT, { w.var(Nat, 2, "n"), w.app(UArrT,{ w.var(Nat, 1, "m"), Float }) })));
 	printValue(MatrixType);
 	printType(MatrixType);
-
-	// matrixDot := λ n:Nat. λ m:Nat. λ o:Nat. λ M1:MatrixType n m. λ M2:MatrixType m o. ArrCreate (n, λ _:Nat. UArrT (o, Float)) (λ i:Nat. ArrCreate (o, λ _:Nat. Float) (λ j:Nat. sum n (λ k:Nat. cFloatZero)))
-	auto matrixDot = w.lambda(Nat, w.lambda(Nat, w.lambda(Nat, w.lambda(w.app(w.app(MatrixType, w.var(Nat, 3, "n")), w.var(Nat, 2, "m")), w.lambda(w.app(w.app(MatrixType, w.var(Nat, 3, "m")), w.var(Nat, 2, "o")), w.app(w.app(ArrCreate, { w.var(Nat, 5, "n"), w.lambda(Nat, w.app(UArrT,{ w.var(Nat, 4, "o"), Float })) }), w.lambda(Nat, w.app(w.app(ArrCreate, { w.var(Nat, 4, "o"), w.lambda(Nat, Float) }), w.lambda(Nat, w.app(w.app(sum, w.var(Nat, 7, "n")), w.lambda(Nat, cFloatZero)))))))))));
+	
+	// matrixDot := λ n:Nat. λ m:Nat. λ o:Nat. λ M1:MatrixType n m. λ M2:MatrixType m o. ArrCreate (n, λ _:Nat. UArrT (o, Float)) (λ i:Nat. ArrCreate (o, λ _:Nat. Float) (λ j:Nat. sum n (λ k:Nat. opFloatMult ((ArrGet (m, λ _:Nat. Float) (ArrGet (n, λ _:Nat. UArrT (m, Float)) M1 i) k), (ArrGet (o, λ _:Nat. Float) (ArrGet (m, λ _:Nat. UArrT (m, Float)) M1 k) j)))))
+	auto matrixDot = w.lambda(Nat, w.lambda(Nat, w.lambda(Nat, w.lambda(w.app(w.app(MatrixType, w.var(Nat, 3, "n")), w.var(Nat, 2, "m")), w.lambda(w.app(w.app(MatrixType, w.var(Nat, 3, "m")), w.var(Nat, 2, "o")), w.app(w.app(ArrCreate, {w.var(Nat, 5, "n"), w.lambda(Nat, w.app(UArrT, {w.var(Nat, 4, "o"), Float}))}), w.lambda(Nat, w.app(w.app(ArrCreate, {w.var(Nat, 4, "o"), w.lambda(Nat, Float)}), w.lambda(Nat, w.app(w.app(sum, w.var(Nat, 7, "n")), w.lambda(Nat, w.app(opFloatMult, {w.app(w.app(w.app(ArrGet, {w.var(Nat, 7, "m"), w.lambda(Nat, Float)}), w.app(w.app(w.app(ArrGet, {w.var(Nat, 8, "n"), w.lambda(Nat, w.app(UArrT, {w.var(Nat, 8, "m"), Float}))}), w.var(w.app(w.app(MatrixType, w.var(Nat, 8, "n")), w.var(Nat, 7, "m")), 5, "M1")), w.var(Nat, 3, "i"))), w.var(Nat, 1, "k")), w.app(w.app(w.app(ArrGet, {w.var(Nat, 6, "o"), w.lambda(Nat, Float)}), w.app(w.app(w.app(ArrGet, {w.var(Nat, 7, "m"), w.lambda(Nat, w.app(UArrT, {w.var(Nat, 8, "m"), Float}))}), w.var(w.app(w.app(MatrixType, w.var(Nat, 8, "n")), w.var(Nat, 7, "m")), 5, "M1")), w.var(Nat, 1, "k"))), w.var(Nat, 2, "j"))}))))))))))));
 	printValue(matrixDot);
 	printType(matrixDot);
 
