@@ -36,13 +36,6 @@ namespace Qualifier {
         }
     }
 
-    URAL min_qualifier(const Defs& defs) {
-        auto q = std::accumulate(defs.begin(), defs.end(), Unrestricted,
-                                 [](URAL q, const Def* const def) {
-                                     return def ? std::min(q, def->qualifier()) : q;});
-        return q;
-    }
-
     URAL meet(URAL lhs, URAL rhs) {
         if (lhs <= rhs)
             return lhs;

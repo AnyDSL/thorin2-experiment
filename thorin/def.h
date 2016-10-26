@@ -90,8 +90,6 @@ namespace Qualifier {
 
     std::ostream& operator<<(std::ostream& ostream, const URAL q);
 
-    URAL min(const Defs& defs);
-
     URAL meet(URAL lhs, URAL rhs);
     URAL meet(const Defs& defs);
 }
