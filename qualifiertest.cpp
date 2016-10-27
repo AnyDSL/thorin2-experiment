@@ -41,8 +41,12 @@ void testQualifiers() {
     auto an1 = w.assume(ANat, "1");
     auto rn0 = w.assume(RNat, "0");
     auto tuple = w.tuple({an1, rn0});
-    tuple_type->dump();
     assert(tuple->type() == tuple_type);
     auto tuple_app0 = w.extract(tuple, 0);
     assert(w.extract(tuple, 0) == w.error());
+
+    auto a_id_type = w.pi(Nat, Nat, A);
+    auto nx = w.var(Nat, 1, "x");
+    auto a_id = w.lambda(Nat, nx, A, "a_id");
+    assert(a_id_type == a_id->type());
 }

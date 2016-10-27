@@ -109,7 +109,7 @@ protected:
     Def& operator=(const Def&) = delete;
 
     /// Use for nominal @p Def%s.
-    Def(World& world, unsigned tag, const Def* type, size_t num_ops, const std::string& name, Qualifier::URAL qualifier = Qualifier::Unrestricted)
+    Def(World& world, unsigned tag, const Def* type, size_t num_ops, Qualifier::URAL qualifier, const std::string& name)
         : ops_(num_ops)
         , name_(name)
         , world_(&world)
@@ -123,7 +123,7 @@ protected:
     }
 
     /// Use for structural @p Def%s.
-    Def(World& world, unsigned tag, const Def* type, Defs ops, const std::string& name, Qualifier::URAL qualifier = Qualifier::Unrestricted)
+    Def(World& world, unsigned tag, const Def* type, Defs ops, Qualifier::URAL qualifier, const std::string& name)
         : ops_(ops.size())
         , name_(name)
         , world_(&world)
@@ -222,11 +222,11 @@ uint64_t UseHash::operator()(Use use) const {
 
 class Abs : public Def {
 protected:
-    Abs(World& world, int tag, const Def* type, size_t num_ops, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted)
-        : Def(world, tag, type, num_ops, name, q)
+    Abs(World& world, int tag, const Def* type, size_t num_ops, Qualifier::URAL q, const std::string& name)
+        : Def(world, tag, type, num_ops, q, name)
     {}
-    Abs(World& world, int tag, const Def* type, Defs ops, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted)
-        : Def(world, tag, type, ops, name, q)
+    Abs(World& world, int tag, const Def* type, Defs ops, Qualifier::URAL q, const std::string& name)
+        : Def(world, tag, type, ops, q, name)
     {}
 
 public:
@@ -235,11 +235,11 @@ public:
 
 class Quantifier : public Abs {
 protected:
-    Quantifier(World& world, int tag, const Def* type, size_t num_ops, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted)
-        : Abs(world, tag, type, num_ops, name, q)
+    Quantifier(World& world, int tag, const Def* type, size_t num_ops, Qualifier::URAL q, const std::string& name)
+        : Abs(world, tag, type, num_ops, q, name)
     {}
-    Quantifier(World& world, int tag, const Def* type, Defs ops, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted)
-        : Abs(world, tag, type, ops, name, q)
+    Quantifier(World& world, int tag, const Def* type, Defs ops, Qualifier::URAL q, const std::string& name)
+        : Abs(world, tag, type, ops, q, name)
     {}
 
 public:
@@ -249,10 +249,10 @@ public:
 class Connective : public Abs {
 protected:
     Connective(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
-        : Abs(world, tag, type, num_ops, name)
+        : Abs(world, tag, type, num_ops, Qualifier::Unrestricted, name)
     {}
     Connective(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : Abs(world, tag, type, ops, name)
+        : Abs(world, tag, type, ops, Qualifier::Unrestricted, name)
     {}
 
 public:
@@ -261,7 +261,7 @@ public:
 
 class Pi : public Quantifier {
 private:
-    Pi(World& world, Defs domains, const Def* body, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted);
+    Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, const std::string& name);
 
 public:
     Defs domains() const { return ops().skip_back(); }
@@ -280,7 +280,7 @@ private:
 
 class Lambda : public Connective {
 private:
-    Lambda(World& world, Defs domains, const Def* body, const std::string& name);
+    Lambda(World& world, const Def* type, const Def* body, const std::string& name);
 
 public:
     Defs domains() const { return ops().skip_back(); }
@@ -299,13 +299,13 @@ private:
 
 class Sigma : public Quantifier {
 private:
-    Sigma(World& world, size_t num_ops, const std::string& name, Qualifier::URAL q)
-        : Quantifier(world, Node_Sigma, nullptr /*TODO*/, num_ops, name, q)
+    Sigma(World& world, size_t num_ops, Qualifier::URAL q, const std::string& name)
+        : Quantifier(world, Node_Sigma, nullptr /*TODO*/, num_ops, q, name)
     {
         assert(false && "TODO");
     }
     Sigma(World& world, Defs ops, const std::string& name, Qualifier::URAL q)
-        : Quantifier(world, Node_Sigma, infer_type(world, ops), ops, name, q)
+        : Quantifier(world, Node_Sigma, infer_type(world, ops), ops, q, name)
     {
         assert(sort() != Type || qualifier() <= Qualifier::meet(ops));
     }
@@ -346,7 +346,7 @@ public:
 class Star : public Def {
 private:
     Star(World& world)
-        : Def(world, Node_Star, nullptr, Defs(), "type")
+        : Def(world, Node_Star, nullptr, Defs(), Qualifier::Unrestricted, "type")
     {}
 
 public:
@@ -361,8 +361,8 @@ private:
 
 class Var : public Def {
 private:
-    Var(World& world, const Def* type, int index, const std::string& name)
-        : Def(world, Node_Var, type, Defs(), name)
+    Var(World& world, const Def* type, int index, Qualifier::URAL q, const std::string& name)
+        : Def(world, Node_Var, type, Defs(), q, name)
         , index_(index)
     {}
 
@@ -383,8 +383,8 @@ private:
 
 class Assume : public Def {
 private:
-    Assume(World& world, const Def* type, const std::string& name, Qualifier::URAL q = Qualifier::Unrestricted)
-        : Def(world, Node_Assume, type, 0, name, q)
+    Assume(World& world, const Def* type, Qualifier::URAL q, const std::string& name)
+        : Def(world, Node_Assume, type, 0, q, name)
     {}
 
 public:
@@ -422,7 +422,7 @@ private:
 class Error : public Def {
 private:
     Error(World& world)
-        : Def(world, Node_Error, nullptr, Defs(), "error")
+        : Def(world, Node_Error, nullptr, Defs(), Qualifier::Unrestricted, "error")
     {}
 
 public:

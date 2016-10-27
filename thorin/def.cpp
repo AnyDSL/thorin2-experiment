@@ -106,13 +106,12 @@ Array<const Def*> types(Defs defs) {
  * constructors
  */
 
-Lambda::Lambda(World& world, Defs domains, const Def* body, const std::string& name)
-    : Connective(world, Node_Lambda, world.pi(domains, body->type()), concat(domains, body), name)
+Lambda::Lambda(World& world, const Def* type, const Def* body, const std::string& name)
+    : Connective(world, Node_Lambda, type, concat(type->as<Pi>()->domains(), body), name)
 {}
 
-
-Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name, Qualifier::URAL q)
-    : Quantifier(world, Node_Pi, body->type(), concat(domains, body), name, q)
+Pi::Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, const std::string& name)
+    : Quantifier(world, Node_Pi, body->type(), concat(domains, body), q, name)
 {}
 
 const Def* Sigma::infer_type(World& world, Defs ops) {
@@ -124,7 +123,8 @@ const Def* Sigma::infer_type(World& world, Defs ops) {
 }
 
 App::App(World& world, const Def* callee, Defs args, const std::string& name)
-    : Def(world, Node_App, callee->type()->as<Quantifier>()->reduce(args),  concat(callee, args), name)
+    : Def(world, Node_App, callee->type()->as<Quantifier>()->reduce(args),
+          concat(callee, args), Qualifier::Unrestricted, name)
 {
     assert(world.tuple(domain(), types(args)));
 }

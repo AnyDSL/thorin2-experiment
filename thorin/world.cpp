@@ -5,28 +5,19 @@ namespace thorin {
 World::World()
     : star_(unify(new Star(*this)))
     , error_(unify(new Error(*this)))
-    , nat_({assume(star(), "Nat"),
-            assume(star(), "Nat", Qualifier::Affine),
-            assume(star(), "Nat", Qualifier::Relevant),
-            assume(star(), "Nat", Qualifier::Linear)})
+    , nat_({assume(star(), Qualifier::Unrestricted, "Nat"),
+            assume(star(), Qualifier::Affine, "Nat"),
+            assume(star(), Qualifier::Relevant, "Nat"),
+            assume(star(), Qualifier::Linear, "Nat")})
 {}
 
-const Lambda* World::lambda(Defs domain, const Def* body, const std::string& name) {
+const Pi* World::pi(Defs domain, const Def* body, Qualifier::URAL q, const std::string& name) {
     if (domain.size() == 1 && domain.front()->type()) {
         if (auto sigma = domain.front()->type()->isa<Sigma>())
-            return lambda(sigma->ops(), body, name);
+            return pi(sigma->ops(), body, q, name);
     }
 
-    return unify(new Lambda(*this, domain, body, name));
-}
-
-const Pi* World::pi(Defs domain, const Def* body, const std::string& name) {
-    if (domain.size() == 1 && domain.front()->type()) {
-        if (auto sigma = domain.front()->type()->isa<Sigma>())
-            return pi(sigma->ops(), body, name);
-    }
-
-    return unify(new Pi(*this, domain, body, name));
+    return unify(new Pi(*this, domain, body, q, name));
 }
 
 const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
@@ -34,10 +25,6 @@ const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
         return defs.front();
 
     return unify(new Tuple(*this, type, defs, name));
-}
-
-const Def* World::sigma(Defs defs, const std::string& name) {
-    return sigma(defs, Qualifier::meet(defs), name);
 }
 
 const Def* World::sigma(Defs defs, Qualifier::URAL q, const std::string& name) {
