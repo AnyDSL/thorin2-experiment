@@ -3,7 +3,9 @@
 namespace thorin {
 
 World::World()
-    : star_(unify(new Star(*this)))
+    : root_page_(new Page)
+    , cur_page_(root_page_.get())
+    , star_(unify(alloc<Star>(*this)))
     , nat_(assume(star(), "Nat"))
 {}
 
@@ -13,7 +15,7 @@ const Lambda* World::lambda(Defs domain, const Def* body, const std::string& nam
             return lambda(sigma->ops(), body, name);
     }
 
-    return unify(new Lambda(*this, domain, body, name));
+    return unify(alloc<Lambda>(*this, domain, body, name));
 }
 
 const Pi* World::pi(Defs domain, const Def* body, const std::string& name) {
@@ -22,21 +24,21 @@ const Pi* World::pi(Defs domain, const Def* body, const std::string& name) {
             return pi(sigma->ops(), body, name);
     }
 
-    return unify(new Pi(*this, domain, body, name));
+    return unify(alloc<Pi>(*this, domain, body, name));
 }
 
 const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
     if (defs.size() == 1)
         return defs.front();
 
-    return unify(new Tuple(*this, type, defs, name));
+    return unify(alloc<Tuple>(*this, type, defs, name));
 }
 
 const Def* World::sigma(Defs defs, const std::string& name) {
     if (defs.size() == 1)
         return defs.front();
 
-    return unify(new Sigma(*this, defs, name));
+    return unify(alloc<Sigma>(*this, defs, name));
 }
 
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {
@@ -45,7 +47,7 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
             return app(callee, tuple->ops(), name);
     }
 
-    auto app = unify(new App(*this, callee, args, name));
+    auto app = unify(alloc<App>(*this, callee, args, name));
 
     if (auto cache = app->cache_)
         return cache;
@@ -64,18 +66,6 @@ const Def* World::extract(const Def* def, const Def* i) {
     }
 
     return app(def, i);
-}
-
-const Def* World::unify_base(const Def* def) {
-    assert(!def->is_nominal());
-    auto p = defs_.emplace(def);
-    if (p.second)
-        return def;
-
-    def->unregister_uses();
-    --Def::gid_counter_;
-    delete def;
-    return *p.first;
 }
 
 }
