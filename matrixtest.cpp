@@ -88,14 +88,12 @@ void testRecursive(World& w) {
 	auto Nat = w.nat();
 	auto opNatPlus = w.assume(w.pi({Nat, Nat}, Nat), "+");
 	auto cNatOne = w.assume(Nat, "1n");
-	auto addToInfinity = w.lambdaRec(Nat, Nat);
+	auto addToInfinity = w.lambdaRec(Nat, Nat, "addToInfinity");
 	printValue(addToInfinity);
 	printType(addToInfinity);
-	//addToInfinity->setBody(w.app(opNatPlus, {w.app(addToInfinity, w.var(Nat, 0)), cNatOne}));
-	//addToInfinity->setBody(w.app(addToInfinity, w.var(Nat, 0)));
-	addToInfinity->setBody(cNatOne);
-	printValue(addToInfinity->body());
+	addToInfinity->setBody(w.app(opNatPlus, {w.app(addToInfinity, w.var(Nat, 0)), cNatOne}));
 	printValue(addToInfinity);
+	printValue(addToInfinity->body());
 	printType(addToInfinity);
 }
 

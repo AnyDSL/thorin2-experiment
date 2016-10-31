@@ -67,7 +67,7 @@ Lambda::Lambda(World& world, Defs domains, const Def* body, const std::string& n
 
 
 LambdaNominal::LambdaNominal(World& world, Defs domains, const Def* type, const std::string& name)
-    : Connective(world, Node_Lambda, world.pi(domains, type), concat(domains, world.unbound(type)), name)
+    : Def(world, Node_Lambda, world.pi(domains, type), concat(domains, world.unbound(type)), name)
 {}
 
 
@@ -99,7 +99,6 @@ const Def* Tuple ::domain() const { return world().nat(); }
 const Def* Sigma ::domain() const { return world().nat(); }
 const Def* Lambda::domain() const { return world().sigma(domains()); }
 const Def* Pi    ::domain() const { return world().sigma(domains()); }
-const Def* LambdaNominal::domain() const { return world().sigma(domains()); }
 
 //------------------------------------------------------------------------------
 
@@ -252,7 +251,8 @@ std::ostream& Lambda::stream(std::ostream& os) const {
 }
 
 std::ostream& LambdaNominal::stream(std::ostream& os) const {
-    return streamf(stream_list(os << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
+	if (!name().empty()) return os << "λ{" << name() << "}";
+	else return os << "λ{?}";
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
