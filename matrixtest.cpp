@@ -10,6 +10,7 @@ using namespace thorin;
 
 
 static void testCompiled(World& w);
+static void testRecursive(World& w);
 
 
 void testMatrix() {
@@ -69,12 +70,10 @@ void testMatrix() {
 
 
 	printUtf8("\n--- compiled ---\n\n");
-
-
-
 	testCompiled(w);
 
-
+	printUtf8("\n--- recursive ---\n\n");
+	testRecursive(w);
 
 	printUtf8("\n--- end ---\n\n");
 }
@@ -82,6 +81,22 @@ void testMatrix() {
 
 void testCompiled(World& w) {
 #include "frontend/arrays.lbl.h"
+}
+
+
+void testRecursive(World& w) {
+	auto Nat = w.nat();
+	auto opNatPlus = w.assume(w.pi({Nat, Nat}, Nat), "+");
+	auto cNatOne = w.assume(Nat, "1n");
+	auto addToInfinity = w.lambdaRec(Nat, Nat);
+	printValue(addToInfinity);
+	printType(addToInfinity);
+	//addToInfinity->setBody(w.app(opNatPlus, {w.app(addToInfinity, w.var(Nat, 0)), cNatOne}));
+	//addToInfinity->setBody(w.app(addToInfinity, w.var(Nat, 0)));
+	addToInfinity->setBody(cNatOne);
+	printValue(addToInfinity->body());
+	printValue(addToInfinity);
+	printType(addToInfinity);
 }
 
 

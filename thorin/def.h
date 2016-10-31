@@ -17,6 +17,7 @@ enum {
     Node_Star,
     Node_Tuple,
     Node_Var,
+    Node_Unbound,
 };
 
 class Def;
@@ -200,6 +201,17 @@ uint64_t UseHash::operator()(Use use) const {
     return hash_combine(hash_begin(use->gid()), use.index());
 }
 
+class Unbound : public Def {
+public:
+    Unbound(World& world, const Def* type, const std::string& name)
+            : Def(world, Node_Unbound, type, Defs(), name)
+    {}
+    virtual std::ostream& stream(std::ostream&) const override;
+private:
+    virtual const Def* vsubst(Def2Def&, int, Defs) const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
+};
+
 class Abs : public Def {
 protected:
     Abs(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
@@ -276,6 +288,32 @@ private:
 
     friend class World;
 };
+
+class LambdaNominal : public Connective {
+private:
+    LambdaNominal(World& world, Defs domains, const Def* type, const std::string& name);
+
+public:
+    Defs domains() const { return ops().skip_back(); }
+    void setBody(const Def* body) {
+        printf("%d\n", ops().back()->tag());
+        set(ops().size()-1, body);
+        printf("%d <-\n", body->tag());
+        printf("%d <-\n", ops().back()->tag());
+    }
+    const Def* body() const { return ops().back(); }
+    virtual int num_vars() const override { return 1; }
+    virtual const Def* reduce(Defs defs) const override { Def2Def map; return body()->subst(map, 1, defs); }
+    virtual const Def* domain() const override;
+    virtual std::ostream& stream(std::ostream&) const override;
+
+private:
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
+    virtual const Def* vsubst(Def2Def&, int, Defs) const override;
+
+    friend class World;
+};
+
 
 class Sigma : public Quantifier {
 private:

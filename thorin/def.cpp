@@ -16,6 +16,10 @@ void Def::set(Defs defs) {
 }
 
 void Def::set(size_t i, const Def* def) {
+    if (dynamic_cast<const Unbound*>(op(i))){
+        op(i)->uses_.erase(Use(i, this));
+        ops_[i] = nullptr;
+    }
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
     ops_[i] = def;
@@ -62,6 +66,11 @@ Lambda::Lambda(World& world, Defs domains, const Def* body, const std::string& n
 {}
 
 
+LambdaNominal::LambdaNominal(World& world, Defs domains, const Def* type, const std::string& name)
+    : Connective(world, Node_Lambda, world.pi(domains, type), concat(domains, world.unbound(type)), name)
+{}
+
+
 Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name)
     : Quantifier(world, Node_Pi, body->type(), concat(domains, body), name)
 {}
@@ -90,6 +99,7 @@ const Def* Tuple ::domain() const { return world().nat(); }
 const Def* Sigma ::domain() const { return world().nat(); }
 const Def* Lambda::domain() const { return world().sigma(domains()); }
 const Def* Pi    ::domain() const { return world().sigma(domains()); }
+const Def* LambdaNominal::domain() const { return world().sigma(domains()); }
 
 //------------------------------------------------------------------------------
 
@@ -131,14 +141,20 @@ bool Var::equal(const Def* other) const { return Def::equal(other) && this->inde
  * rebuild
  */
 
-const Def* App   ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
-const Def* Assume::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
-const Def* Lambda::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
-const Def* Pi    ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
-const Def* Sigma ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is_nominal()); return to.sigma(ops, name()); }
-const Def* Star  ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(); }
-const Def* Tuple ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
-const Def* Var   ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), name()); }
+const Def* App    ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
+const Def* Assume ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
+const Def* Lambda ::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
+const Def* Pi     ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
+const Def* Sigma  ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is_nominal()); return to.sigma(ops, name()); }
+const Def* Star   ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(); }
+const Def* Tuple  ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
+const Def* Var    ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), name()); }
+const Def* Unbound::rebuild(World& to, const Def*  , Defs    ) const { return to.unbound(type()); }
+const Def* LambdaNominal::rebuild(World& to, const Def*, Defs ops) const {
+    auto l = to.lambdaRec(ops.skip_back(), ops.back()->type(), name());
+    l->setBody(ops.back());
+    return l;
+}
 
 //------------------------------------------------------------------------------
 
@@ -173,6 +189,10 @@ const Def* Lambda::vsubst(Def2Def& map, int index, Defs args) const {
     auto new_domains = thorin::subst(map, index, domains(), args);
     Def2Def new_map;
     return world().lambda(new_domains, body()->subst(new_map, index+1, args), name());
+}
+
+const Def* LambdaNominal::vsubst(Def2Def& map, int index, Defs args) const {
+    assert(false && "TODO");
 }
 
 const Def* Pi::vsubst(Def2Def& map, int index, Defs args) const {
@@ -219,6 +239,7 @@ const Def* App::vsubst(Def2Def& map, int index, Defs args) const {
 
 const Def* Assume::vsubst(Def2Def&, int, Defs) const { return this; }
 const Def* Star::vsubst(Def2Def&, int, Defs) const { return this; }
+const Def* Unbound::vsubst(Def2Def&, int, Defs) const { return this; }
 
 //------------------------------------------------------------------------------
 
@@ -227,6 +248,10 @@ const Def* Star::vsubst(Def2Def&, int, Defs) const { return this; }
  */
 
 std::ostream& Lambda::stream(std::ostream& os) const {
+    return streamf(stream_list(os << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
+}
+
+std::ostream& LambdaNominal::stream(std::ostream& os) const {
     return streamf(stream_list(os << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
 }
 
@@ -247,7 +272,6 @@ std::ostream& Var::stream(std::ostream& os) const {
 }
 
 std::ostream& Assume::stream(std::ostream& os) const { return os << name(); }
-
 std::ostream& Star::stream(std::ostream& os) const {
     return os << '*';
 }
@@ -255,6 +279,8 @@ std::ostream& Star::stream(std::ostream& os) const {
 std::ostream& App::stream(std::ostream& os) const {
     return stream_list(streamf(os, "(%)", callee()), args(), [&](const Def* def) { def->stream(os); }, "(", ")");
 }
+
+std::ostream& Unbound::stream(std::ostream& os) const { return os << "<unbound>"; }
 
 //------------------------------------------------------------------------------
 

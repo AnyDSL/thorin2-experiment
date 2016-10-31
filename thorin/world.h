@@ -26,6 +26,8 @@ public:
     const Pi*     pi    (Defs domains, const Def* body, const std::string& name = "");
     const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return lambda(Defs({domain}), body, name); }
     const Pi*     pi    (const Def* domain, const Def* body, const std::string& name = "") { return pi    (Defs({domain}), body, name); }
+    LambdaNominal* lambdaRec(Defs domains, const Def* type, const std::string& name = "");
+    LambdaNominal* lambdaRec(const Def* domain, const Def* type, const std::string& name = "") { return lambdaRec(Defs({domain}), type, name); }
     const Def* app(const Def* callee, Defs args, const std::string& name = "");
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "") { return app(callee, Defs({arg}), name); }
     const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
@@ -34,6 +36,7 @@ public:
     Sigma* sigma(size_t num_ops, const std::string& name = "") { return insert(new Sigma(*this, num_ops, name)); }
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
     const Assume* nat() { return nat_; }
+    const Def* unbound(const Def* type, const std::string& name = "");
     const Def* extract(const Def* def, const Def* i);
     const Def* extract(const Def* def, int i) { return extract(def, assume(nat(), std::to_string(i))); }
 
