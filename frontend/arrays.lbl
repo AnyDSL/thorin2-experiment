@@ -1,7 +1,14 @@
+// Natural and floating-point numbers
 define Nat = Nat;
 assume Float: *;
+assume opFloatPlus: (Float, Float) -> Float;
+assume opFloatMult: (Float, Float) -> Float;
+assume cFloatZero: Float;
 
+// Arrays
 assume ArrT: pi_:(Nat, Nat -> *). *;
+assume ArrCreate: pi type: (Nat, Nat -> *). (pi i: Nat. type[1] i) -> ArrT type;
+assume ArrGet: pi type: (Nat, Nat -> *). ArrT type -> pi i:Nat. type[1] i;
 define UArrT = lambda lt: (Nat, *). ArrT (lt[0], lambda _:Nat. lt[1]);
 
 //define MatrixType = lambda n:Nat. lambda m:Nat. ArrT (n, (lambda _:Nat. ArrT (m, (lambda _:Nat. Float))));

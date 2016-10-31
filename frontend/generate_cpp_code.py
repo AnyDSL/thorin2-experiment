@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 import sys
-from parser import parse_lambda_code
+from lambdaparser import parse_lambda_code
 
 
 

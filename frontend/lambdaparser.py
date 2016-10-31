@@ -113,7 +113,7 @@ class Identifier(str, LambdaAST):
 		return str(self.name)
 
 	def __repr__(self):
-		return 'var '+repr(self.name)
+		return 'Identifier('+repr(self.name)+')'
 
 
 class Constant(Keyword, LambdaAST):
@@ -178,12 +178,12 @@ class Pi(Plain, LambdaAST):
 class Extract(List, LambdaAST):
 	grammar = attr('base', AtomicExpression), maybe_some('[', re.compile(r'\d+'), ']')
 
-	def normalize(self):
+	"""def normalize(self):
 		# remove Extract without indices
 		if len(self) == 0:
 			return self.base.normalize()
 		else:
-			return LambdaAST.normalize(self)
+			return LambdaAST.normalize(self)"""
 
 	def to_cpp(self, scope):
 		result = self.base.to_cpp(scope)
@@ -201,13 +201,12 @@ class App(List, LambdaAST):
 	def normalize(self):
 		# convert -> to pi
 		if self.arrow is not None:
-			print ('PI', self.arrow)
 			pi = Pi.new('_', self, self.arrow)
 			self.arrow = None
 			return pi.normalize()
 		# remove App without parameters
-		elif len(self) == 0:
-			return self.func.normalize()
+		#elif len(self) == 0:
+		#	return self.func.normalize()
 		else:
 			return LambdaAST.normalize(self)
 
@@ -270,7 +269,7 @@ class Assumption(Plain, LambdaAST):
 
 
 class Comment(str, LambdaAST):
-	grammar = [comment_cpp, comment_sh]
+	grammar = [comment_cpp, comment_sh, comment_c]
 
 	def to_cpp(self, scope):
 		return ''
