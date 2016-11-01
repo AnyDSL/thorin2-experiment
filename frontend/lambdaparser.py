@@ -26,14 +26,19 @@ GRAMMAR = """
 
 TEST = """
 define Nat = Nat;
-assume 1: Nat;
+assume n1: Nat;
 assume opPlus: Nat -> Nat -> Nat;
 
 // simple recursive
-// define diverge = lambda (x:Nat): Nat. opPlus (diverge x) 1;
+define diverge = lambda rec (x:Nat): Nat. opPlus (diverge x) n1;
 // internal recursive
 define divergepoly = lambda t:*. lambda rec l1(x:t): t. (l1 x, x)[0];
-define divergepoly2 = lambda t:*. lambda y:t. lambda rec l1(_:t): t. (l1 y, y)[0];
+define divergepoly2 = lambda t:*. lambda y:t. lambda rec l2(_:t): t. (l2 y, y)[0];
+
+// pairwise recursive
+define d1 = lambda rec (x:Nat): Nat. d2 x;
+define d2 = lambda rec (x:Nat): Nat. d3 x;
+define d3 = lambda rec (x:Nat): Nat. d1 x;
 
 """
 
@@ -62,9 +67,66 @@ class Scope:
 class CppCodeGen:
 	def __init__(self):
 		self.decls = []
+		self.temp_varname_counter = 0
+		self.unknown_identifiers = []
+		self.pending_decls = []
+
+	# Manage list of CPP lines
+
+	def add_comment(self, comment):
+		self.decls.append(('comment', comment))
+
+	def add_decl(self, name, decl):
+		self.decls.append(('decl', decl))
+		# add pending decls if preconditions are fulfilled
+		for (inst, depends) in self.pending_decls:
+			depends.discard(name)
+
+	def add_inst(self, inst):
+		self.decls.append(('inst', inst))
+
+	def add_blank(self):
+		self.decls.append(('blank', ''))
+
+	def add_depending(self, inst, depends_on):
+		if len(depends_on) == 0:
+			return self.add_inst(inst)
+		self.pending_decls.append((inst, set(depends_on)))
+
+	# add all "resolved" dependencies
+	def progress_depending(self):
+		for (inst, depends) in self.pending_decls:
+			if len(depends) == 0:
+				self.add_inst(inst)
+		self.pending_decls = [(i, d) for i, d in self.pending_decls if len(d) > 0]
+
+	# Unique variable names
+	def get_temp_varname(self):
+		self.temp_varname_counter += 1
+		return 'lbl_tmp_'+str(self.temp_varname_counter)
+
+	# Handling unknown identifiers
+	def unknown_identifier(self, ident):
+		self.unknown_identifiers.append(ident)
+
+	def get_unknown_identifiers(self):
+		return self.unknown_identifiers
+
+	def set_unknown_identifiers_list(self, l):
+		self.unknown_identifiers = l
+
+	# Returning generated code and status
 
 	def output(self, indent=''):
-		return '\n'.join([indent + x for x in self.decls])
+		return '\n'.join([indent + y for x, y in self.decls])
+
+	def warnings(self):
+		warnings = []
+		for x in set(self.unknown_identifiers):
+			warnings.append('[WARN] Unknown variable: '+str(x))
+		for i, d in self.pending_decls:
+			warnings.append('[WARN] Recursive declaration waiting for {} to appear'.format(', '.join(d)))
+		return warnings
 
 
 
@@ -99,15 +161,16 @@ Keyword.regex = re.compile(r'\w+|\*')
 class Identifier(str, LambdaAST):
 	grammar = name()
 
-	def to_cpp(self, scope):
+	def to_cpp(self, scope, codegen):
 		# check if var in scope
 		if self.name not in scope.vars:
-			print('[WARN] Unknown variable:'+str(self.name))
+			#print('[WARN] Unknown variable:'+str(self.name))
+			codegen.unknown_identifier(self.name)
 			return str(self.name)
 		# resolve var
 		kind, vartype, acc = scope.vars[self.name]
 		if kind == 'param':
-			return 'w.var(' + vartype.to_cpp(scope) + ', ' + str(scope.depth - acc) + ', ' + cpp_string(self.name) + ')'
+			return 'w.var(' + vartype.to_cpp(scope, codegen) + ', ' + str(scope.depth - acc) + ', ' + cpp_string(self.name) + ')'
 		return str(self.name)
 
 	def __repr__(self):
@@ -120,7 +183,7 @@ class Constant(Keyword, LambdaAST):
 	def compose(self, parser, attr_of):
 		return self.name
 
-	def to_cpp(self, scope):
+	def to_cpp(self, scope, codegen):
 		if self.name == '*':
 			return 'w.star()'
 		elif self.name == 'Nat' and not scope.contains(self.name):
@@ -135,11 +198,11 @@ class Tupel(List, LambdaAST):
 	def compose(self, parser, attr_of):
 		return '('+', '.join([parser.compose(x, attr_of=self) for x in self])+')'
 
-	def to_cpp(self, scope):
+	def to_cpp(self, scope, codegen):
 		if len(self) == 1:
-			return self[0].to_cpp(scope)
+			return self[0].to_cpp(scope, codegen)
 		else:
-			return '{'+', '.join([element.to_cpp(scope) for element in self])+'}'
+			return '{'+', '.join([element.to_cpp(scope, codegen) for element in self])+'}'
 
 
 class Lambda(Plain, LambdaAST):
@@ -148,8 +211,8 @@ class Lambda(Plain, LambdaAST):
 	def compose(self, parser, attr_of):
 		return 'λ ' + self.name + ':' + parser.compose(self.type, attr_of=self) + '. ' + parser.compose(self.body, attr_of=self)
 
-	def to_cpp(self, scope):
-		return 'w.lambda('+self.type.to_cpp(scope)+', '+self.body.to_cpp(scope.push_param(self.name, self.type))+')'
+	def to_cpp(self, scope, codegen):
+		return 'w.lambda('+self.type.to_cpp(scope, codegen)+', '+self.body.to_cpp(scope.push_param(self.name, self.type), codegen)+')'
 
 
 class LambdaRec(Plain, LambdaAST):
@@ -169,9 +232,25 @@ class LambdaRec(Plain, LambdaAST):
 		result += parser.compose(self.returntype, attr_of=self) + '. ' + parser.compose(self.body, attr_of=self)
 		return result
 
-	def to_cpp(self, scope):
-		#TODO
-		return 'w.lambda('+self.type.to_cpp(scope)+', '+self.body.to_cpp(scope.push_param(self.name, self.type))+')'
+	def to_cpp(self, scope, codegen):
+		# declare variable without body
+		paramtype = self.type.to_cpp(scope, codegen);
+		returntype = self.returntype.to_cpp(scope, codegen);
+		varname = self.name or codegen.get_temp_varname()
+		decl = 'auto ' + varname + ' = w.lambdaRec(' + paramtype + ', ' + returntype;
+		if self.name:
+			decl += ', '+cpp_string(self.name)
+		codegen.add_decl(varname, decl + ');')
+
+		# body decl
+		scope.add_definition(varname, Pi.new('_', self.type, self.returntype))
+		childscope = scope.push_param(self.param.thing, self.type)
+		old_unknown = codegen.get_unknown_identifiers()
+		codegen.set_unknown_identifiers_list([])
+		body = self.body.to_cpp(childscope, codegen)
+		codegen.add_depending('{}->setBody({});'.format(varname, body), codegen.get_unknown_identifiers())
+		codegen.set_unknown_identifiers_list(old_unknown)
+		return varname
 
 
 class Pi(Plain, LambdaAST):
@@ -191,8 +270,8 @@ class Pi(Plain, LambdaAST):
 			return parser.compose(self.type, attr_of=self) + ' -> ' + parser.compose(self.body, attr_of=self)
 		return 'Π ' + self.name + ':' + parser.compose(self.type, attr_of=self) + '. ' + parser.compose(self.body, attr_of=self)
 
-	def to_cpp(self, scope):
-		return 'w.pi('+self.type.to_cpp(scope)+', '+self.body.to_cpp(scope.push_param(self.name, self.type))+')'
+	def to_cpp(self, scope, codegen):
+		return 'w.pi('+self.type.to_cpp(scope, codegen)+', '+self.body.to_cpp(scope.push_param(self.name, self.type), codegen)+')'
 
 
 class Extract(List, LambdaAST):
@@ -205,8 +284,8 @@ class Extract(List, LambdaAST):
 		else:
 			return LambdaAST.normalize(self)"""
 
-	def to_cpp(self, scope):
-		result = self.base.to_cpp(scope)
+	def to_cpp(self, scope, codegen):
+		result = self.base.to_cpp(scope, codegen)
 		for index in self:
 			result = 'w.extract('+result+', '+index+')'
 		return result
@@ -239,10 +318,10 @@ class App(List, LambdaAST):
 			result += ' ' + parser.compose(param, attr_of=self)
 		return result
 
-	def to_cpp(self, scope):
-		result = self.func.to_cpp(scope)
+	def to_cpp(self, scope, codegen):
+		result = self.func.to_cpp(scope, codegen)
 		for param in self:
-			result = 'w.app('+result+', '+param.to_cpp(scope)+')'
+			result = 'w.app('+result+', '+param.to_cpp(scope, codegen)+')'
 		return result
 
 	def __repr__(self):
@@ -262,15 +341,16 @@ class Definition(Plain, LambdaAST):
 	def compose(self, parser, attr_of):
 		return self.name+' := '+parser.compose(self.body)
 
-	def to_cpp(self, scope):
-		result = '// '+compose(self, autoblank=True)+'\n'
-		body = self.body.to_cpp(scope)
+	def to_cpp(self, scope, codegen):
+		codegen.add_comment('// '+compose(self, autoblank=True))
+		body = self.body.to_cpp(scope, codegen)
 		scope.add_definition(self.name)
-		result += 'auto '+self.name+' = '+body+';\n'
-		result += 'printValue('+self.name+');\n'
+		codegen.add_decl(self.name, 'auto '+self.name+' = '+body+';')
+		codegen.add_inst('printValue('+self.name+');')
 		if not self.type:
-			result += 'printType(' + self.name + ');\n'
-		return result + '\n'
+			codegen.add_inst('printType(' + self.name + ');')
+		codegen.progress_depending()
+		codegen.add_blank()
 
 
 class Assumption(Plain, LambdaAST):
@@ -279,19 +359,20 @@ class Assumption(Plain, LambdaAST):
 	def to_expr(self):
 		return 'assume '+self.name+': '+self.body.to_expr()
 
-	def to_cpp(self, scope):
-		result = '// '+compose(self, autoblank=True)+'\n'
-		body = self.body.to_cpp(scope)
+	def to_cpp(self, scope, codegen):
+		codegen.add_comment('// '+compose(self, autoblank=True));
+		body = self.body.to_cpp(scope, codegen)
 		scope.add_definition(self.name, self.body)
-		result += 'auto '+self.name+' = w.assume('+body+', '+cpp_string(self.name)+');\n'
-		result += 'printType(' + self.name + ');\n\n'
-		return result
+		codegen.add_decl(self.name, 'auto '+self.name+' = w.assume('+body+', '+cpp_string(self.name)+');')
+		codegen.add_inst('printType(' + self.name + ');')
+		codegen.progress_depending()
+		codegen.add_blank()
 
 
 class Comment(str, LambdaAST):
 	grammar = [comment_cpp, comment_sh, comment_c]
 
-	def to_cpp(self, scope):
+	def to_cpp(self, scope, codegen):
 		return ''
 
 
@@ -301,7 +382,13 @@ class Program(List, LambdaAST):
 	def to_cpp(self):
 		scope = Scope()
 		codegen = CppCodeGen()
-		return ''.join(map(lambda x: x.to_cpp(scope, codegen), self))
+		for x in self:
+			x.to_cpp(scope, codegen)
+		codegen.progress_depending()
+		codegen.add_blank()
+		for warn in codegen.warnings():
+			print(warn)
+		return codegen.output()
 
 
 

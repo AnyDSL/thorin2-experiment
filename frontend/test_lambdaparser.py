@@ -18,6 +18,25 @@ def test_identity():
 	program.to_cpp()
 
 
+def test_recursive():
+	program = """
+	define Nat = Nat;
+	assume n1: Nat;
+	assume opPlus: Nat -> Nat -> Nat;
+
+	// simple recursive
+	define diverge = lambda rec (x:Nat): Nat. opPlus (diverge x) n1;
+	// internal recursive
+	define divergepoly = lambda t:*. lambda rec l1(x:t): t. (l1 x, x)[0];
+	define divergepoly2 = lambda t:*. lambda y:t. lambda rec l2(_:t): t. (l2 y, y)[0];
+
+	// pairwise recursive
+	define d1 = lambda rec (x:Nat): Nat. d2 x;
+	define d2 = lambda rec (x:Nat): Nat. d3 x;
+	define d3 = lambda rec (x:Nat): Nat. d1 x;
+	"""
+
+
 
 
 
