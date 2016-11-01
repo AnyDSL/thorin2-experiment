@@ -17,6 +17,8 @@ GRAMMAR = """
 
 <expression> :=   lambda <name>: <expression>. <expression>
 				| pi <name>: <expression>. <expression>
+				| lambda rec <funcname> (<param>:<type-expression>): <returntype-expression>. <expression>
+				| let <definition>... in <expression> end
 				| <extract-expression> [<extract-expression>]+ [-> <expression>]
 <extract-expression> := <atomic-expression> [ '[' <int> ']' ]+
 <atomic-expression> := Nat | * | Param | Var
@@ -29,16 +31,17 @@ define Nat = Nat;
 assume n1: Nat;
 assume opPlus: Nat -> Nat -> Nat;
 
-// simple recursive
-define diverge = lambda rec (x:Nat): Nat. opPlus (diverge x) n1;
-// internal recursive
-define divergepoly = lambda t:*. lambda rec l1(x:t): t. (l1 x, x)[0];
-define divergepoly2 = lambda t:*. lambda y:t. lambda rec l2(_:t): t. (l2 y, y)[0];
+define test1 = let
+		define x = n1;
+		define y = n1;
+	in opPlus (x, y) end;
 
-// pairwise recursive
-define d1 = lambda rec (x:Nat): Nat. d2 x;
-define d2 = lambda rec (x:Nat): Nat. d3 x;
-define d3 = lambda rec (x:Nat): Nat. d1 x;
+define test2 = let in Nat end;
+
+define test3 = lambda n:Nat. let
+	define r1 = lambda rec (x:Nat): Nat. r2 x;
+	define r2 = lambda rec (y:Nat): Nat. r1 n1;
+in (r1 n, r2 n) end;
 
 """
 
@@ -50,11 +53,15 @@ class Scope:
 		self.depth = 0
 
 	def push_param(self, vname=None, vtype=None):
-		scope = Scope()
-		scope.vars = self.vars.copy()
+		scope = self.push()
 		if vname:
 			scope.vars[vname] = ('param', vtype, self.depth)
-		scope.depth = self.depth+1
+		return scope
+
+	def push(self):
+		scope = Scope()
+		scope.vars = self.vars.copy()
+		scope.depth = self.depth + 1
 		return scope
 
 	def add_definition(self, defname, deftype=None):
@@ -156,6 +163,8 @@ def cpp_string(x):
 Expression = []
 AtomicExpression = []
 Keyword.regex = re.compile(r'\w+|\*')
+Symbol.regex = re.compile(r'\w+|\*')
+Symbol.check_keywords = True
 
 
 class Identifier(str, LambdaAST):
@@ -164,7 +173,6 @@ class Identifier(str, LambdaAST):
 	def to_cpp(self, scope, codegen):
 		# check if var in scope
 		if self.name not in scope.vars:
-			#print('[WARN] Unknown variable:'+str(self.name))
 			codegen.unknown_identifier(self.name)
 			return str(self.name)
 		# resolve var
@@ -177,8 +185,8 @@ class Identifier(str, LambdaAST):
 		return 'Identifier('+repr(self.name)+')'
 
 
-class Constant(Keyword, LambdaAST):
-	grammar = Enum(K('*'), K('Nat'))
+class Constant(Symbol, LambdaAST):
+	grammar = Enum(Symbol('*'), Symbol('Nat'))
 
 	def compose(self, parser, attr_of):
 		return self.name
@@ -331,12 +339,8 @@ class App(List, LambdaAST):
 		return result + ')'
 
 
-Expression.extend([LambdaRec, Lambda, Pi, App])
-AtomicExpression.extend([Tupel, Constant, Identifier])
-
-
-class Definition(Plain, LambdaAST):
-	grammar = 'define', blank, flag('type', 'type'), name(), blank, '=', blank, attr("body", Expression), ';'
+class InnerDefinition(Plain, LambdaAST):
+	grammar = K('define'), blank, flag('type', 'type'), name(), blank, '=', blank, attr("body", Expression), ';'
 
 	def compose(self, parser, attr_of):
 		return self.name+' := '+parser.compose(self.body)
@@ -346,6 +350,10 @@ class Definition(Plain, LambdaAST):
 		body = self.body.to_cpp(scope, codegen)
 		scope.add_definition(self.name)
 		codegen.add_decl(self.name, 'auto '+self.name+' = '+body+';')
+
+class Definition(InnerDefinition):
+	def to_cpp(self, scope, codegen):
+		InnerDefinition.to_cpp(self, scope, codegen)
 		codegen.add_inst('printValue('+self.name+');')
 		if not self.type:
 			codegen.add_inst('printType(' + self.name + ');')
@@ -354,7 +362,7 @@ class Definition(Plain, LambdaAST):
 
 
 class Assumption(Plain, LambdaAST):
-	grammar = 'assume', blank, name(), ':', blank, attr("body", Expression), ';'
+	grammar = K('assume'), blank, name(), ':', blank, attr("body", Expression), ';'
 
 	def to_expr(self):
 		return 'assume '+self.name+': '+self.body.to_expr()
@@ -374,6 +382,25 @@ class Comment(str, LambdaAST):
 
 	def to_cpp(self, scope, codegen):
 		return ''
+
+
+
+class LetIn(List, LambdaAST):
+	grammar = K('let'), blank, maybe_some([InnerDefinition, Comment]), blank, K('in'), blank, attr('expr', Expression), blank, K('end')
+
+	def compose(self, parser, attr_of):
+		return 'let {{ {} }} in {} end'.format(', '.join([parser.compose(d, attr_of=self) for d in self]), parser.compose(self.expr, attr_of=self))
+
+	def to_cpp(self, scope, codegen):
+		inner_scope = scope.push()
+		for definition in self:
+			definition.to_cpp(inner_scope, codegen)
+		return self.expr.to_cpp(inner_scope, codegen)
+
+
+Expression.extend([LambdaRec, Lambda, Pi, LetIn, App])
+AtomicExpression.extend([Tupel, Constant, Identifier])
+
 
 
 class Program(List, LambdaAST):

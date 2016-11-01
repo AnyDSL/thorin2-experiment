@@ -1,0 +1,42 @@
+// Natural and floating-point numbers
+define Nat = Nat;
+assume opNatPlus:  (Nat, Nat) -> Nat;
+assume opNatMinus: (Nat, Nat) -> Nat;
+
+assume Float: *;
+assume opFloatPlus: (Float, Float) -> Float;
+assume opFloatMult: (Float, Float) -> Float;
+assume cFloatZero: Float;
+
+// Arrays
+assume ArrT: pi_:(Nat, Nat -> *). *;
+assume ArrCreate: pi type: (Nat, Nat -> *). (pi i: Nat. type[1] i) -> ArrT type;
+assume ArrGet: pi type: (Nat, Nat -> *). ArrT type -> pi i:Nat. type[1] i;
+define UArrT = lambda lt: (Nat, *). ArrT (lt[0], lambda _:Nat. lt[1]);
+
+define MatrixType = lambda n:Nat. lambda m:Nat. UArrT (n, UArrT (m, Float));
+
+assume reduce: pi t:*. pi op: ((t, t) -> t). pi startval:t. pi len:Nat. pi values:(Nat -> t). t;
+define sum = reduce Float opFloatPlus cFloatZero;
+
+
+// --- LU Decomposition ---
+
+define LType = λn:Nat. ArrT (n, λi:Nat. UArrT (i, Float));
+define UType = λn:Nat. ArrT (n, λi:Nat. UArrT (opNatMinus(n,i), Float));
+
+/*
+LUD: Πn:Nat. MatrixType n n -> (LType n, UType n)
+LUD = λn:Nat. λA: (MatrixType n n). let
+	U = UType.ArrCreate (λi:Nat. (UArrT (n-i) Float).ArrCreate (λj: Nat.
+		if i == 0 then A[i][j]
+		else A[i][i+j] - sum i (λk:Nat. L[i][k] * U[k][i+j-k])
+	))
+	L = LType.ArrCreate (λi:Nat. (UArrT i Float).ArrCreate (λj: Nat.
+		if j == 0 then A[i][j] / U[j][0]
+		else ( A[i][j] - sum j (λk:Nat. L[i][k] * U[k][j-k]) ) / U[j][0]
+	))
+in
+	(L, U)
+end
+*/

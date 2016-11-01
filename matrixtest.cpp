@@ -11,6 +11,7 @@ using namespace thorin;
 
 static void testCompiled(World& w);
 static void testRecursive(World& w);
+static void testLUDecomposition(World& w);
 
 
 void testMatrix() {
@@ -75,6 +76,9 @@ void testMatrix() {
 	printUtf8("\n--- recursive ---\n\n");
 	testRecursive(w);
 
+	printUtf8("\n--- LU Decomposition ---\n\n");
+	testLUDecomposition(w);
+
 	printUtf8("\n--- end ---\n\n");
 }
 
@@ -95,6 +99,11 @@ void testRecursive(World& w) {
 	printValue(addToInfinity);
 	printValue(addToInfinity->body());
 	printType(addToInfinity);
+}
+
+
+void testLUDecomposition(World& w) {
+#include "frontend/lu-decomposition.lbl.h"
 }
 
 
