@@ -15,8 +15,8 @@ GRAMMAR = """
 <definition> := define [type] <name> = <expression>;
 <assumption> := assume <name>: <expression>;
 
-<expression> :=   lambda name(): <expression>. <expression>
-				| pi name(): <expression>. <expression>
+<expression> :=   lambda <name>: <expression>. <expression>
+				| pi <name>: <expression>. <expression>
 				| <extract-expression> [<extract-expression>]+ [-> <expression>]
 <extract-expression> := <atomic-expression> [ '[' <int> ']' ]+
 <atomic-expression> := Nat | * | Param | Var
@@ -25,27 +25,16 @@ GRAMMAR = """
 
 
 TEST = """
-// define id_nat = lambda x: Nat. x;
-// define id_poly = lambda t: *. lambda x: t. x;
-define type ArrTypeFuncT = pi _:Nat. *;
-assume ArrT: pi_:(Nat, ArrTypeFuncT). *;
-define UArrT = lambda lt: (Nat, *). ArrT (lt[0], lambda _:Nat. lt[1]);
+define Nat = Nat;
+assume 1: Nat;
+assume opPlus: Nat -> Nat -> Nat;
 
-//define MatrixType = lambda n:Nat. lambda m:Nat. ArrT (n, (lambda _:Nat. ArrT (m, (lambda _:Nat. Float))));
-define MatrixType = lambda n:Nat. lambda m:Nat. UArrT (n, UArrT (m, Float));
+// simple recursive
+// define diverge = lambda (x:Nat): Nat. opPlus (diverge x) 1;
+// internal recursive
+define divergepoly = lambda t:*. lambda rec l1(x:t): t. (l1 x, x)[0];
+define divergepoly2 = lambda t:*. lambda y:t. lambda rec l1(_:t): t. (l1 y, y)[0];
 
-assume reduce: pi t:*. pi op: ((t, t) -> t). pi startval:t. pi len:Nat. pi values:(Nat -> t). t;
-define sum = reduce Float opFloatPlus cFloatZero;
-
-define matrixDot = lambda n:Nat. lambda m:Nat. lambda o:Nat. lambda M1: MatrixType n m. lambda M2: MatrixType m o.
-		ArrCreate (n, lambda _:Nat. UArrT (o, Float)) (
-			lambda i:Nat. ArrCreate (o, lambda _:Nat. Float) (lambda j: Nat.
-				sum n (lambda k: Nat. opFloatMult(
-					(ArrGet (m, lambda _:Nat. Float) (ArrGet (n, lambda _:Nat. UArrT (m, Float)) M1 i) k),
-					(ArrGet (o, lambda _:Nat. Float) (ArrGet (m, lambda _:Nat. UArrT (m, Float)) M1 k) j)
-				))
-			)
-		);
 """
 
 
@@ -68,6 +57,15 @@ class Scope:
 
 	def contains(self, name):
 		return name in self.vars
+
+
+class CppCodeGen:
+	def __init__(self):
+		self.decls = []
+
+	def output(self, indent=''):
+		return '\n'.join([indent + x for x in self.decls])
+
 
 
 class LambdaAST:
@@ -154,6 +152,28 @@ class Lambda(Plain, LambdaAST):
 		return 'w.lambda('+self.type.to_cpp(scope)+', '+self.body.to_cpp(scope.push_param(self.name, self.type))+')'
 
 
+class LambdaRec(Plain, LambdaAST):
+	#lambda rec [name](param:type): returntype. expression
+	grammar = ['lambda', '\\', 'λ'], blank, K('rec'), blank, optional(name()), \
+			  '(', attr('param', [name(), '_']), ':', attr('type', Expression), ')', blank, \
+			  ':', blank, attr('returntype', Expression), '.', blank, attr('body', Expression)
+
+	def __init__(self):
+		self.name = None
+
+	def compose(self, parser, attr_of):
+		result = 'λ rec ';
+		if self.name:
+			result += self.name + ' ';
+		result += '(' + self.param.thing + ':' + parser.compose(self.type, attr_of=self) + ') : '
+		result += parser.compose(self.returntype, attr_of=self) + '. ' + parser.compose(self.body, attr_of=self)
+		return result
+
+	def to_cpp(self, scope):
+		#TODO
+		return 'w.lambda('+self.type.to_cpp(scope)+', '+self.body.to_cpp(scope.push_param(self.name, self.type))+')'
+
+
 class Pi(Plain, LambdaAST):
 	grammar = ['pi', 'Π'], blank, [name(), '_'], ':', attr('type', Expression), '.', blank, attr('body', Expression)
 
@@ -232,7 +252,7 @@ class App(List, LambdaAST):
 		return result + ')'
 
 
-Expression.extend([Lambda, Pi, App])
+Expression.extend([LambdaRec, Lambda, Pi, App])
 AtomicExpression.extend([Tupel, Constant, Identifier])
 
 
@@ -280,7 +300,8 @@ class Program(List, LambdaAST):
 
 	def to_cpp(self):
 		scope = Scope()
-		return ''.join(map(lambda x: x.to_cpp(scope), self))
+		codegen = CppCodeGen()
+		return ''.join(map(lambda x: x.to_cpp(scope, codegen), self))
 
 
 

@@ -10,6 +10,15 @@ def test_floatvalues():
 	program.to_cpp()
 
 
+def test_identity():
+	program = """
+	define id_nat = lambda x: Nat. x;
+	define id_poly = lambda t: *. lambda x: t. x;"""
+	program = lambdaparser.parse_lambda_code(program)
+	program.to_cpp()
+
+
+
 
 
 
