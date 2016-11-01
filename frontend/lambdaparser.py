@@ -170,7 +170,7 @@ Symbol.check_keywords = True
 class Identifier(str, LambdaAST):
 	grammar = name()
 
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
 		# check if var in scope
 		if self.name not in scope.vars:
 			codegen.unknown_identifier(self.name)
@@ -178,7 +178,7 @@ class Identifier(str, LambdaAST):
 		# resolve var
 		kind, vartype, acc = scope.vars[self.name]
 		if kind == 'param':
-			return 'w.var(' + vartype.to_cpp(scope, codegen) + ', ' + str(scope.depth - acc) + ', ' + cpp_string(self.name) + ')'
+			return 'w.var(' + vartype.to_cpp(scope, codegen, {'accept_inline_tuple': True}) + ', ' + str(scope.depth - acc) + ', ' + cpp_string(self.name) + ')'
 		return str(self.name)
 
 	def __repr__(self):
@@ -186,12 +186,12 @@ class Identifier(str, LambdaAST):
 
 
 class Constant(Symbol, LambdaAST):
-	grammar = Enum(Symbol('*'), Symbol('Nat'))
+	grammar = Enum(Symbol('*'), Symbol('Nat'), Symbol('tuple'))
 
 	def compose(self, parser, attr_of):
 		return self.name
 
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
 		if self.name == '*':
 			return 'w.star()'
 		elif self.name == 'Nat' and not scope.contains(self.name):
@@ -206,11 +206,14 @@ class Tupel(List, LambdaAST):
 	def compose(self, parser, attr_of):
 		return '('+', '.join([parser.compose(x, attr_of=self) for x in self])+')'
 
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
 		if len(self) == 1:
-			return self[0].to_cpp(scope, codegen)
+			return self[0].to_cpp(scope, codegen, opts)
 		else:
-			return '{'+', '.join([element.to_cpp(scope, codegen) for element in self])+'}'
+			tuple = '{'+', '.join([element.to_cpp(scope, codegen) for element in self])+'}'
+			if not 'accept_inline_tuple' in opts:
+				tuple = 'w.tuple('+tuple+')'
+			return tuple
 
 
 class Lambda(Plain, LambdaAST):
@@ -219,8 +222,9 @@ class Lambda(Plain, LambdaAST):
 	def compose(self, parser, attr_of):
 		return 'λ ' + self.name + ':' + parser.compose(self.type, attr_of=self) + '. ' + parser.compose(self.body, attr_of=self)
 
-	def to_cpp(self, scope, codegen):
-		return 'w.lambda('+self.type.to_cpp(scope, codegen)+', '+self.body.to_cpp(scope.push_param(self.name, self.type), codegen)+')'
+	def to_cpp(self, scope, codegen, opts={}):
+		paramtype = self.type.to_cpp(scope, codegen, {'accept_inline_tuple':True})
+		return 'w.lambda('+paramtype+', '+self.body.to_cpp(scope.push_param(self.name, self.type), codegen)+')'
 
 
 class LambdaRec(Plain, LambdaAST):
@@ -240,25 +244,31 @@ class LambdaRec(Plain, LambdaAST):
 		result += parser.compose(self.returntype, attr_of=self) + '. ' + parser.compose(self.body, attr_of=self)
 		return result
 
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
 		# declare variable without body
-		paramtype = self.type.to_cpp(scope, codegen);
+		paramtype = self.type.to_cpp(scope, codegen, {'accept_inline_tuple':True});
 		returntype = self.returntype.to_cpp(scope, codegen);
-		varname = self.name or codegen.get_temp_varname()
-		decl = 'auto ' + varname + ' = w.lambdaRec(' + paramtype + ', ' + returntype;
+		decl = 'w.lambdaRec(' + paramtype + ', ' + returntype;
 		if self.name:
 			decl += ', '+cpp_string(self.name)
-		codegen.add_decl(varname, decl + ');')
+		decl += ')'
+		if 'cpp_name' in opts:
+			varname = opts['cpp_name']
+			result = decl
+		else:
+			varname = self.name or codegen.get_temp_varname()
+			codegen.add_decl(varname, decl + ');')
+			scope.add_definition(varname, Pi.new('_', self.type, self.returntype))
+			result = varname
 
 		# body decl
-		scope.add_definition(varname, Pi.new('_', self.type, self.returntype))
 		childscope = scope.push_param(self.param.thing, self.type)
 		old_unknown = codegen.get_unknown_identifiers()
 		codegen.set_unknown_identifiers_list([])
 		body = self.body.to_cpp(childscope, codegen)
 		codegen.add_depending('{}->setBody({});'.format(varname, body), codegen.get_unknown_identifiers())
 		codegen.set_unknown_identifiers_list(old_unknown)
-		return varname
+		return result
 
 
 class Pi(Plain, LambdaAST):
@@ -278,8 +288,9 @@ class Pi(Plain, LambdaAST):
 			return parser.compose(self.type, attr_of=self) + ' -> ' + parser.compose(self.body, attr_of=self)
 		return 'Π ' + self.name + ':' + parser.compose(self.type, attr_of=self) + '. ' + parser.compose(self.body, attr_of=self)
 
-	def to_cpp(self, scope, codegen):
-		return 'w.pi('+self.type.to_cpp(scope, codegen)+', '+self.body.to_cpp(scope.push_param(self.name, self.type), codegen)+')'
+	def to_cpp(self, scope, codegen, opts={}):
+		paramtype = self.type.to_cpp(scope, codegen, {'accept_inline_tuple':True})
+		return 'w.pi('+paramtype+', '+self.body.to_cpp(scope.push_param(self.name, self.type), codegen)+')'
 
 
 class Extract(List, LambdaAST):
@@ -292,7 +303,9 @@ class Extract(List, LambdaAST):
 		else:
 			return LambdaAST.normalize(self)"""
 
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
+		if len(self) == 0:
+			return self.base.to_cpp(scope, codegen, opts)
 		result = self.base.to_cpp(scope, codegen)
 		for index in self:
 			result = 'w.extract('+result+', '+index+')'
@@ -326,10 +339,12 @@ class App(List, LambdaAST):
 			result += ' ' + parser.compose(param, attr_of=self)
 		return result
 
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
+		if len(self) == 0:
+			return self.func.to_cpp(scope, codegen, opts)
 		result = self.func.to_cpp(scope, codegen)
 		for param in self:
-			result = 'w.app('+result+', '+param.to_cpp(scope, codegen)+')'
+			result = 'w.app('+result+', '+param.to_cpp(scope, codegen, {'accept_inline_tuple':True})+')'
 		return result
 
 	def __repr__(self):
@@ -345,14 +360,14 @@ class InnerDefinition(Plain, LambdaAST):
 	def compose(self, parser, attr_of):
 		return self.name+' := '+parser.compose(self.body)
 
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
 		codegen.add_comment('// '+compose(self, autoblank=True))
-		body = self.body.to_cpp(scope, codegen)
+		body = self.body.to_cpp(scope, codegen, {'cpp_name': self.name})
 		scope.add_definition(self.name)
 		codegen.add_decl(self.name, 'auto '+self.name+' = '+body+';')
 
 class Definition(InnerDefinition):
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
 		InnerDefinition.to_cpp(self, scope, codegen)
 		codegen.add_inst('printValue('+self.name+');')
 		if not self.type:
@@ -367,7 +382,7 @@ class Assumption(Plain, LambdaAST):
 	def to_expr(self):
 		return 'assume '+self.name+': '+self.body.to_expr()
 
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
 		codegen.add_comment('// '+compose(self, autoblank=True));
 		body = self.body.to_cpp(scope, codegen)
 		scope.add_definition(self.name, self.body)
@@ -380,7 +395,7 @@ class Assumption(Plain, LambdaAST):
 class Comment(str, LambdaAST):
 	grammar = [comment_cpp, comment_sh, comment_c]
 
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
 		return ''
 
 
@@ -391,7 +406,7 @@ class LetIn(List, LambdaAST):
 	def compose(self, parser, attr_of):
 		return 'let {{ {} }} in {} end'.format(', '.join([parser.compose(d, attr_of=self) for d in self]), parser.compose(self.expr, attr_of=self))
 
-	def to_cpp(self, scope, codegen):
+	def to_cpp(self, scope, codegen, opts={}):
 		inner_scope = scope.push()
 		for definition in self:
 			definition.to_cpp(inner_scope, codegen)

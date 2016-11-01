@@ -24,6 +24,21 @@ define sum = reduce Float opFloatPlus cFloatZero;
 
 define LType = λn:Nat. ArrT (n, λi:Nat. UArrT (i, Float));
 define UType = λn:Nat. ArrT (n, λi:Nat. UArrT (opNatMinus(n,i), Float));
+define LTypePair = λn:Nat. (n, λi:Nat. UArrT (i, Float));
+define UTypePair = λn:Nat. (n, λi:Nat. UArrT (opNatMinus(n,i), Float));
+
+define LUD = lambda n:Nat. lambda A:MatrixType n n. let
+		define U = ArrCreate (UTypePair n) (lambda i:Nat.
+			ArrCreate (opNatMinus(n,i), lambda _:Nat. Float) (lambda j:Nat.
+				cFloatZero
+			)
+		);
+		define L = ArrCreate (LTypePair n) (lambda i:Nat.
+			ArrCreate (i, lambda _:Nat. Float) (lambda j:Nat.
+				cFloatZero
+			)
+		);
+	in (L, U) end;
 
 /*
 LUD: Πn:Nat. MatrixType n n -> (LType n, UType n)
