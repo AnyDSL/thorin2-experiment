@@ -308,35 +308,6 @@ private:
     friend class World;
 };
 
-#if 0
-class LambdaNominal : public Def {
-private:
-    LambdaNominal(World& world, Defs domains, const Def* type, const std::string& name);
-
-public:
-    Defs domains() const { return ops().skip_back(); }
-    void setBody(const Def* body) {
-        set(ops().size()-1, body);
-    }
-    const Def* body() const { return ops().back(); }
-    virtual int num_vars() const override { return 1; }
-    /*
-	virtual const Def* reduce(Defs defs) const override {
-		Def2Def map;
-		return body()->subst(map, 1, defs);
-	}
-    virtual const Def* domain() const override;
-	*/
-    virtual std::ostream& stream(std::ostream&) const override;
-
-private:
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubst(Def2Def&, int, Defs) const override;
-
-    friend class World;
-};
-#endif
-
 class Sigma : public Quantifier {
 private:
     Sigma(World& world, size_t num_ops, const std::string& name)
