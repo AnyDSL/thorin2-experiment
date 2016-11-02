@@ -67,8 +67,16 @@ Lambda::Lambda(World& world, Defs domains, const Def* body, const std::string& n
 
 
 LambdaNominal::LambdaNominal(World& world, Defs domains, const Def* type, const std::string& name)
-    : Def(world, Node_Lambda, world.pi(domains, type), concat(domains, world.unbound(type)), name)
-{}
+    : Def(world, Node_Lambda, world.pi(domains, type), domains.size()+1, name)
+{
+    //concat(domains, world.unbound(type))
+    for (size_t i = 0, e = domains.size(); i != e; ++i) {
+        if (auto op = domains[i]) {
+            set(i, op);
+        }
+    }
+    set(domains.size(), world.unbound(type));
+}
 
 
 Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name)
@@ -191,7 +199,13 @@ const Def* Lambda::vsubst(Def2Def& map, int index, Defs args) const {
 }
 
 const Def* LambdaNominal::vsubst(Def2Def& map, int index, Defs args) const {
+    //TODO check
     assert(false && "TODO");
+    /*auto new_domains = thorin::subst(map, index, domains(), args);
+    Def2Def new_map;
+    auto new_body = body()->subst(new_map, index+1, args);
+    set(ops().size()-1, new_body);
+    return this;*/
 }
 
 const Def* Pi::vsubst(Def2Def& map, int index, Defs args) const {
