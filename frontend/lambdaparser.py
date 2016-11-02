@@ -186,7 +186,7 @@ class Identifier(str, LambdaAST):
 
 
 class Constant(Symbol, LambdaAST):
-	grammar = Enum(Symbol('*'), Symbol('Nat'), Symbol('tuple'))
+	grammar = Enum(Symbol('*'), Symbol('Nat'))
 
 	def compose(self, parser, attr_of):
 		return self.name
@@ -257,7 +257,7 @@ class LambdaRec(Plain, LambdaAST):
 			result = decl
 		else:
 			varname = self.name or codegen.get_temp_varname()
-			codegen.add_decl(varname, decl + ');')
+			codegen.add_decl(varname, 'auto {} = {};'.format(varname, decl))
 			scope.add_definition(varname, Pi.new('_', self.type, self.returntype))
 			result = varname
 
@@ -312,8 +312,28 @@ class Extract(List, LambdaAST):
 		return result
 
 
+class SpecialFunction(Symbol, LambdaAST):
+	grammar = Enum(Symbol('sigma'), Symbol('tuple'))
+
+
+class SpecialApp(Plain, LambdaAST):
+	grammar = attr('func', SpecialFunction), attr('param', Extract)
+
+	def compose(self, parser, attr_of):
+		return self.func+' '+parser.compose(self.param, attr_of=self)
+
+	def to_cpp(self, scope, codegen, opts={}):
+		if self.func.name == 'sigma':
+			return 'w.sigma('+self.param.to_cpp(scope, codegen, {'accept_inline_tuple': True})+')'
+		elif self.func.name == 'tuple':
+			return 'w.tuple('+self.param.to_cpp(scope, codegen, {'accept_inline_tuple': True})+')'
+		else:
+			raise Exception("Unknown special function ("+str(self.func)+")")
+
+
+
 class App(List, LambdaAST):
-	grammar = attr('func', Extract), maybe_some(Extract), optional('->', attr('arrow', Expression))
+	grammar = attr('func', [SpecialApp, Extract]), maybe_some(Extract), optional('->', attr('arrow', Expression))
 
 	def __init__(self):
 		self.arrow = None
