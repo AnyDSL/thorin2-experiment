@@ -26,8 +26,8 @@ public:
     const Pi*     pi    (Defs domains, const Def* body, const std::string& name = "");
     const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return lambda(Defs({domain}), body, name); }
     const Pi*     pi    (const Def* domain, const Def* body, const std::string& name = "") { return pi    (Defs({domain}), body, name); }
-    LambdaNominal* lambdaRec(Defs domains, const Def* type, const std::string& name = "");
-    LambdaNominal* lambdaRec(const Def* domain, const Def* type, const std::string& name = "") { return lambdaRec(Defs({domain}), type, name); }
+    Lambda* lambda_rec(Defs domains, const Def* type, const std::string& name = "");
+    Lambda* lambda_rec(const Def* domain, const Def* type, const std::string& name = "") { return lambda_rec(Defs({domain}), type, name); }
     const Def* app(const Def* callee, Defs args, const std::string& name = "");
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "") { return app(callee, Defs({arg}), name); }
     const Def* tuple(const Def* type, Defs defs, const std::string& name = "");

@@ -248,7 +248,7 @@ class LambdaRec(Plain, LambdaAST):
 		# declare variable without body
 		paramtype = self.type.to_cpp(scope, codegen, {'accept_inline_tuple':True});
 		returntype = self.returntype.to_cpp(scope, codegen);
-		decl = 'w.lambdaRec(' + paramtype + ', ' + returntype;
+		decl = 'w.lambda_rec(' + paramtype + ', ' + returntype;
 		if self.name:
 			decl += ', '+cpp_string(self.name)
 		decl += ')'
@@ -266,7 +266,7 @@ class LambdaRec(Plain, LambdaAST):
 		old_unknown = codegen.get_unknown_identifiers()
 		codegen.set_unknown_identifiers_list([])
 		body = self.body.to_cpp(childscope, codegen)
-		codegen.add_depending('{}->setBody({});'.format(varname, body), codegen.get_unknown_identifiers())
+		codegen.add_depending('{}->set({});'.format(varname, body), codegen.get_unknown_identifiers())
 		codegen.set_unknown_identifiers_list(old_unknown)
 		return result
 

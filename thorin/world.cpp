@@ -16,13 +16,13 @@ const Lambda* World::lambda(Defs domain, const Def* body, const std::string& nam
     return unify(new Lambda(*this, domain, body, name));
 }
 
-LambdaNominal* World::lambdaRec(Defs domain, const Def* type, const std::string& name) {
+Lambda* World::lambda_rec(Defs domain, const Def* type, const std::string& name) {
     if (domain.size() == 1 && domain.front()->type()) {
         if (auto sigma = domain.front()->type()->isa<Sigma>())
-            return lambdaRec(sigma->ops(), type, name);
+            return lambda_rec(sigma->ops(), type, name);
     }
 
-    LambdaNominal* result = new LambdaNominal(*this, domain, type, name);
+    auto result = new Lambda(*this, domain, unbound(type), name);
     insert(result); // free entity when world gets free'd
     return result;
 }
@@ -60,9 +60,10 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
 
     if (auto cache = app->cache_)
         return cache;
-    if (auto abs = app->callee()->isa<Abs>())
-        return app->cache_ = abs->reduce(args);
-    else
+    if (auto abs = app->callee()->isa<Abs>()) {
+        if (abs->is_closed())
+            return app->cache_ = abs->reduce(args);
+    } else
         return app->cache_ = app;
 
     return app;

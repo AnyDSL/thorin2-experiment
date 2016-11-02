@@ -102,6 +102,7 @@ protected:
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(true)
+        , closed_(true)
         , structure_(Unrestricted)
     {}
 
@@ -114,6 +115,7 @@ protected:
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(false)
+        , closed_(true)
         , structure_(Unrestricted)
     {
         for (size_t i = 0, e = num_ops(); i != e; ++i) {
@@ -155,6 +157,7 @@ public:
     void set(size_t i, const Def*);
     void unset(size_t i);
     void replace(const Def*) const;
+    bool is_closed() const { return closed_; }
     bool is_nominal() const { return nominal_; }        ///< A nominal @p Def is always different from each other @p Def.
     Structure structure() const { return Structure(structure_); }
     bool is_unrestricted() const { return structure() & Unrestricted; }
@@ -188,8 +191,13 @@ private:
     mutable World* world_;
     const Def* type_;
     unsigned gid_       : 24;
-    unsigned tag_       :  5;
+    unsigned tag_       :  4;
+
+protected:
     unsigned nominal_   :  1;
+    unsigned closed_    :  1;
+
+private:
     unsigned structure_ :  2;
 
     friend class World;
@@ -205,7 +213,9 @@ class Unbound : public Def {
 public:
     Unbound(World& world, const Def* type, const std::string& name)
             : Def(world, Node_Unbound, type, Defs(), name)
-    {}
+    {
+        closed_ = false;
+    }
     virtual std::ostream& stream(std::ostream&) const override;
 private:
     virtual const Def* vsubst(Def2Def&, int, Defs) const override;
@@ -275,6 +285,15 @@ private:
     Lambda(World& world, Defs domains, const Def* body, const std::string& name);
 
 public:
+    void set(const Def* body) {
+        assert(is_nominal());
+        assert(this->body()->isa<Unbound>());
+        assert(this->body()->type() == body->type());
+        unset(num_ops()-1);
+        Def::set(ops().size()-1, body);
+        closed_ = true;
+    }
+
     Defs domains() const { return ops().skip_back(); }
     const Def* body() const { return ops().back(); }
     virtual int num_vars() const override { return 1; }
@@ -289,6 +308,7 @@ private:
     friend class World;
 };
 
+#if 0
 class LambdaNominal : public Def {
 private:
     LambdaNominal(World& world, Defs domains, const Def* type, const std::string& name);
@@ -315,7 +335,7 @@ private:
 
     friend class World;
 };
-
+#endif
 
 class Sigma : public Quantifier {
 private:

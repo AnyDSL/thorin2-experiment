@@ -16,16 +16,14 @@ void Def::set(Defs defs) {
 }
 
 void Def::set(size_t i, const Def* def) {
-    if (dynamic_cast<const Unbound*>(op(i))){
-        op(i)->uses_.erase(Use(i, this));
-        ops_[i] = nullptr;
-    }
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
     ops_[i] = def;
     assert(!def->uses_.contains(Use(i, this)));
     const auto& p = def->uses_.emplace(i, this);
     assert_unused(p.second);
+
+    closed_ &= !def->is_closed();
 }
 
 void Def::unregister_uses() const {
@@ -63,21 +61,9 @@ Array<const Def*> types(Defs defs) {
 
 Lambda::Lambda(World& world, Defs domains, const Def* body, const std::string& name)
     : Connective(world, Node_Lambda, world.pi(domains, body->type()), concat(domains, body), name)
-{}
-
-
-LambdaNominal::LambdaNominal(World& world, Defs domains, const Def* type, const std::string& name)
-    : Def(world, Node_Lambda, world.pi(domains, type), domains.size()+1, name)
 {
-    //concat(domains, world.unbound(type))
-    for (size_t i = 0, e = domains.size(); i != e; ++i) {
-        if (auto op = domains[i]) {
-            set(i, op);
-        }
-    }
-    set(domains.size(), world.unbound(type));
+    nominal_ = bool(body->isa<Unbound>());
 }
-
 
 Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name)
     : Quantifier(world, Node_Pi, body->type(), concat(domains, body), name)
@@ -157,11 +143,6 @@ const Def* Star   ::rebuild(World& to, const Def*  , Defs    ) const { return to
 const Def* Tuple  ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
 const Def* Var    ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), name()); }
 const Def* Unbound::rebuild(World& to, const Def*  , Defs    ) const { return to.unbound(type()); }
-const Def* LambdaNominal::rebuild(World& to, const Def*, Defs ops) const {
-    auto l = to.lambdaRec(ops.skip_back(), ops.back()->type(), name());
-    l->setBody(ops.back());
-    return l;
-}
 
 //------------------------------------------------------------------------------
 
@@ -196,16 +177,6 @@ const Def* Lambda::vsubst(Def2Def& map, int index, Defs args) const {
     auto new_domains = thorin::subst(map, index, domains(), args);
     Def2Def new_map;
     return world().lambda(new_domains, body()->subst(new_map, index+1, args), name());
-}
-
-const Def* LambdaNominal::vsubst(Def2Def& map, int index, Defs args) const {
-    //TODO check
-    assert(false && "TODO");
-    /*auto new_domains = thorin::subst(map, index, domains(), args);
-    Def2Def new_map;
-    auto new_body = body()->subst(new_map, index+1, args);
-    set(ops().size()-1, new_body);
-    return this;*/
 }
 
 const Def* Pi::vsubst(Def2Def& map, int index, Defs args) const {
@@ -261,12 +232,13 @@ const Def* Unbound::vsubst(Def2Def&, int, Defs) const { return this; }
  */
 
 std::ostream& Lambda::stream(std::ostream& os) const {
-    return streamf(stream_list(os << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
-}
-
-std::ostream& LambdaNominal::stream(std::ostream& os) const {
-	if (!name().empty()) return os << "λ{" << name() << "}";
-	else return os << "λ{?}";
+    if (is_nominal()) {
+        if (!name().empty())
+            return os << "λ{" << name() << "}";
+        else
+            return os << "λ{?}";
+    } else
+        return streamf(stream_list(os << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {

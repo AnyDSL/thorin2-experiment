@@ -26,8 +26,8 @@ void testMatrix() {
 	auto getSecondValue = w.lambda({ Nat, Nat }, w.extract(w.var({ Nat, Nat }, 1), 1));
 	printValue(getSecondValue);
 	printType(getSecondValue);
-	
-	
+
+
 	auto ArrTypeFuncT = w.pi(Nat, w.star());
 	printValue(ArrTypeFuncT);
 	// Type constructor for arrays
@@ -92,10 +92,10 @@ void testRecursive(World& w) {
 	auto Nat = w.nat();
 	auto opNatPlus = w.assume(w.pi({Nat, Nat}, Nat), "+");
 	auto cNatOne = w.assume(Nat, "1n");
-	auto addToInfinity = w.lambdaRec(Nat, Nat, "addToInfinity");
+	auto addToInfinity = w.lambda_rec(Nat, Nat, "addToInfinity");
 	printValue(addToInfinity);
 	printType(addToInfinity);
-	addToInfinity->setBody(w.app(opNatPlus, {w.app(addToInfinity, w.var(Nat, 0)), cNatOne}));
+	addToInfinity->set(w.app(opNatPlus, {w.app(addToInfinity, w.var(Nat, 0)), cNatOne}));
 	printValue(addToInfinity);
 	printValue(addToInfinity->body());
 	printType(addToInfinity);
