@@ -1,12 +1,18 @@
 // Natural and floating-point numbers
 define Nat = Nat;
+assume cNatZero: Nat;
 assume opNatPlus:  (Nat, Nat) -> Nat;
 assume opNatMinus: (Nat, Nat) -> Nat;
 
 assume Float: *;
-assume opFloatPlus: (Float, Float) -> Float;
-assume opFloatMult: (Float, Float) -> Float;
+assume opFloatPlus:  (Float, Float) -> Float;
+assume opFloatMinus: (Float, Float) -> Float;
+assume opFloatMult:  (Float, Float) -> Float;
+assume opFloatDiv:   (Float, Float) -> Float;
 assume cFloatZero: Float;
+
+// if <type> <condition> <then> <else> := (<condition> ? <then> : <else>): <type>
+assume ifcond: pi t:*. Nat -> sigma(t, t) ->  t;
 
 // Arrays
 assume ArrT: pi_:(Nat, Nat -> *). *;
@@ -27,15 +33,34 @@ define UType = λn:Nat. ArrT (n, λi:Nat. UArrT (opNatMinus(n,i), Float));
 define LTypePair = λn:Nat. (n, λi:Nat. UArrT (i, Float));
 define UTypePair = λn:Nat. (n, λi:Nat. UArrT (opNatMinus(n,i), Float));
 
+define AGet = lambda n:Nat. lambda A:MatrixType n n. lambda i:Nat. lambda j:Nat.
+    ArrGet (n, lambda _:Nat. Float) (ArrGet (n, lambda _:Nat. UArrT (n, Float)) A i) j;
+define UGet = lambda n:Nat. lambda U:UType n. lambda i:Nat. lambda j:Nat.
+    ArrGet (opNatMinus(n,i), lambda _:Nat. Float) (ArrGet (UTypePair n) U i) j;
+define LGet = lambda n:Nat. lambda L:LType n. lambda i:Nat. lambda j:Nat.
+    ArrGet (i, lambda _:Nat. Float) (ArrGet (LTypePair n) L i) j;
+
 define LUD = lambda n:Nat. lambda A:MatrixType n n. let
 		define U = ArrCreate (UTypePair n) (lambda i:Nat.
-			ArrCreate (opNatMinus(n,i), lambda _:Nat. Float) (lambda j:Nat.
-				cFloatZero
+			ArrCreate (opNatMinus(n,i), lambda _:Nat. Float) (lambda rec (j:Nat): Float.
+			    ifcond Float i (
+			        opFloatMinus (
+			            AGet n A i (opNatPlus (i,j)),
+			            sum i (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (opNatPlus(i, j), k))))
+			        ),
+			        AGet n A i j
+			    )
 			)
 		);
 		define L = ArrCreate (LTypePair n) (lambda i:Nat.
-			ArrCreate (i, lambda _:Nat. Float) (lambda j:Nat.
-				cFloatZero
+			ArrCreate (i, lambda _:Nat. Float) (lambda rec (j:Nat): Float.
+				opFloatDiv (ifcond Float j (
+			        opFloatMinus (
+			            AGet n A i j,
+			            sum j (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (j, k))))
+			        ),
+			        AGet n A i j
+			    ), UGet n U j cNatZero)
 			)
 		);
 	in (L, U) end;

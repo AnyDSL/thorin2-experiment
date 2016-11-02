@@ -99,10 +99,15 @@ void testRecursive(World& w) {
 	printValue(addToInfinity);
 	printValue(addToInfinity->body());
 	printType(addToInfinity);
+
+    auto stt = w.sigma({Nat, Nat});
+    printValue(stt);
+    auto stv = w.tuple({cNatOne, cNatOne});
+    printType(stv);
 }
 
 
-void testLUDecomposition(World& w) {
+static void testLUDecomposition(World& w) {
 #include "frontend/lu-decomposition.lbl.h"
 }
 
