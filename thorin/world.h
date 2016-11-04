@@ -81,6 +81,7 @@ protected:
 
     template<class T, class... Args>
     T* alloc(size_t num_ops, Args&&... args) {
+        static_assert(sizeof(Def) == sizeof(T), "you are not allowed to introduce any additional data in subclasses of Def");
 #ifndef NDEBUG
         static bool guard = false;
         assert(guard = !guard && "you are not allowed to recursively invoke alloc");
