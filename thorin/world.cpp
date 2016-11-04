@@ -9,22 +9,23 @@ World::World()
     , nat_(assume(star(), "Nat"))
 {}
 
-const Lambda* World::lambda(Defs domain, const Def* body, const std::string& name) {
-    if (domain.size() == 1 && domain.front()->type()) {
-        if (auto sigma = domain.front()->type()->isa<Sigma>())
+const Lambda* World::lambda(Defs domains, const Def* body, const std::string& name) {
+    if (domains.size() == 1 && domains.front()->type()) {
+        if (auto sigma = domains.front()->type()->isa<Sigma>())
             return lambda(sigma->ops(), body, name);
     }
 
-    return unify(alloc<Lambda>(domain.size() + 1, *this, domain, body, name));
+    auto type = pi(domains, body->type());
+    return unify(alloc<Lambda>(domains.size() + 1, *this, type, domains, body, name));
 }
 
-const Pi* World::pi(Defs domain, const Def* body, const std::string& name) {
-    if (domain.size() == 1 && domain.front()->type()) {
-        if (auto sigma = domain.front()->type()->isa<Sigma>())
+const Pi* World::pi(Defs domains, const Def* body, const std::string& name) {
+    if (domains.size() == 1 && domains.front()->type()) {
+        if (auto sigma = domains.front()->type()->isa<Sigma>())
             return pi(sigma->ops(), body, name);
     }
 
-    return unify(alloc<Pi>(domain.size() + 1, *this, domain, body, name));
+    return unify(alloc<Pi>(domains.size() + 1, *this, domains, body, name));
 }
 
 const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
@@ -47,7 +48,8 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
             return app(callee, tuple->ops(), name);
     }
 
-    auto app = unify(alloc<App>(args.size() + 1, *this, callee, args, name));
+    auto type = callee->type()->as<Quantifier>()->reduce(args);
+    auto app = unify(alloc<App>(args.size() + 1, *this, type, callee, args, name));
 
     if (auto cache = app->cache_)
         return cache;

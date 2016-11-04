@@ -81,6 +81,10 @@ protected:
 
     template<class T, class... Args>
     T* alloc(size_t num_ops, Args&&... args) {
+#ifndef NDEBUG
+        static bool guard = false;
+        assert(guard = !guard && "you are not allowed to recursively invoke alloc");
+#endif
         size_t num_bytes = sizeof(T) + sizeof(const Def*) * num_ops;
         assert(num_bytes < Page::Size);
 
@@ -91,10 +95,13 @@ protected:
             buffer_index_ = 0;
         }
 
-        auto ptr = cur_page_->buffer + buffer_index_;
-        buffer_index_ += num_bytes;         // first, reserve memory
-        auto result = new (ptr) T(args...); // then, construct: it may in turn invoke alloc
+        auto result = new (cur_page_->buffer + buffer_index_) T(args...);
+        buffer_index_ += num_bytes;
         assert(buffer_index_ % alignof(T) == 0);
+
+#ifndef NDEBUG
+        guard = !guard;
+#endif
         return result;
     }
 

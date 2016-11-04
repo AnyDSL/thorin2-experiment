@@ -282,7 +282,7 @@ private:
 
 class Lambda : public Connective {
 private:
-    Lambda(World& world, Defs domains, const Def* body, const std::string& name);
+    Lambda(World& world, const Def* type, Defs domains, const Def* body, const std::string& name);
 
 public:
     Defs domains() const { return ops().skip_back(); }
@@ -398,7 +398,7 @@ private:
 
 class App : public Def {
 private:
-    App(World& world, const Def* callee, Defs args, const std::string& name);
+    App(World& world, const Def* type, const Def* callee, Defs args, const std::string& name);
 
     static const Def* infer_type(const Def*, Defs);
 
