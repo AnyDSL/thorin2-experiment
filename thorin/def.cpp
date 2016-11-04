@@ -9,10 +9,14 @@ namespace thorin {
 
 size_t Def::gid_counter_ = 1;
 
-void Def::set(Defs defs) {
-    assert(defs.size() == num_ops());
-    for (size_t i = 0, e = defs.size(); i != e; ++i)
-        set(i, defs[i]);
+void Def::wire_uses() const {
+    for (size_t i = 0, e = num_ops(); i != e; ++i) {
+        if (auto def = op(i)) {
+            assert(!def->uses_.contains(Use(i, this)));
+            const auto& p = def->uses_.emplace(i, this);
+            assert_unused(p.second);
+        }
+    }
 }
 
 void Def::set(size_t i, const Def* def) {
@@ -77,6 +81,7 @@ const Def* Sigma::infer_type(World& world, Defs ops) {
 App::App(World& world, const Def* callee, Defs args, const std::string& name)
     : Def(world, Node_App, callee->type()->as<Quantifier>()->reduce(args),  concat(callee, args), name)
 {
+    cache_ = nullptr;
     assert(world.tuple(domain(), types(args)));
 }
 

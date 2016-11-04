@@ -21,9 +21,9 @@ public:
     virtual ~World() { for (auto def : defs_) def->~Def(); }
 
     const Star* star() const { return star_; }
-    const Var* var(const Def* type, int index, const std::string& name = "") { return unify(alloc<Var>(*this, type, index, name)); }
+    const Var* var(const Def* type, int index, const std::string& name = "") { return unify(alloc<Var>(0, *this, type, index, name)); }
     const Var* var(Defs types, int index, const std::string& name = "") { return var(sigma(types), index, name); }
-    const Assume* assume(const Def* type, const std::string& name = "") { return insert(alloc<Assume>(*this, type, name)); }
+    const Assume* assume(const Def* type, const std::string& name = "") { return insert(alloc<Assume>(0, *this, type, name)); }
     const Lambda* lambda(Defs domains, const Def* body, const std::string& name = "");
     const Pi*     pi    (Defs domains, const Def* body, const std::string& name = "");
     const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return lambda(Defs({domain}), body, name); }
@@ -33,7 +33,7 @@ public:
     const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
     const Def* tuple(Defs defs, const std::string& name = "") { return tuple(sigma(types(defs), name), defs, name); }
     const Def* sigma(Defs, const std::string& name = "");
-    Sigma* sigma(size_t num_ops, const std::string& name = "") { return insert(alloc<Sigma>(*this, num_ops, name)); }
+    Sigma* sigma(size_t num_ops, const std::string& name = "") { return insert(alloc<Sigma>(num_ops, *this, num_ops, name)); }
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
     const Assume* nat() { return nat_; }
     const Def* extract(const Def* def, const Def* i);
@@ -56,10 +56,11 @@ protected:
     const T* unify(const T* def) {
         assert(!def->is_nominal());
         auto p = defs_.emplace(def);
-        if (p.second)
+        if (p.second) {
+            def->wire_uses();
             return def;
+        }
 
-        def->unregister_uses();
         --Def::gid_counter_;
         dealloc(def);
         return static_cast<const T*>(*p.first);
@@ -79,10 +80,9 @@ protected:
     };
 
     template<class T, class... Args>
-    T* alloc(Args&&... args) {
-        size_t num_bytes = sizeof(T);
-        assert(num_bytes < (1 << 16));
-        assert(num_bytes % alignof(T) == 0);
+    T* alloc(size_t num_ops, Args&&... args) {
+        size_t num_bytes = sizeof(T) + sizeof(const Def*) * num_ops;
+        assert(num_bytes < Page::Size);
 
         if (buffer_index_ + num_bytes >= Page::Size) {
             auto page = new Page;
@@ -91,19 +91,20 @@ protected:
             buffer_index_ = 0;
         }
 
-        assert(buffer_index_ % alignof(T) == 0);
         auto ptr = cur_page_->buffer + buffer_index_;
         buffer_index_ += num_bytes;         // first reserve memory
+        assert(buffer_index_ % alignof(T) == 0);
         auto result = new (ptr) T(args...); // then construct: it may in turn invoke alloc
         return result;
     }
 
     template<class T>
     void dealloc(const T* def) {
-        size_t num_bytes = sizeof(T);
+        size_t num_bytes = sizeof(T) + def->num_ops() * sizeof(const Def*);
         def->~T();
-        if (int(buffer_index_ - num_bytes) > 0) // don't care otherwise
+        if (intptr_t(buffer_index_ - num_bytes) > 0) // don't care otherwise
             buffer_index_-= num_bytes;
+        assert(buffer_index_ % alignof(T) == 0);
     }
 
     std::unique_ptr<Page> root_page_;

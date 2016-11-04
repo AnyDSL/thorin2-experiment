@@ -94,38 +94,43 @@ protected:
 
     /// Use for nominal @p Def%s.
     Def(World& world, unsigned tag, const Def* type, size_t num_ops, const std::string& name)
-        : ops_(num_ops)
-        , name_(name)
+        : name_(name)
         , world_(&world)
         , type_(type)
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(true)
         , structure_(Unrestricted)
+        , num_ops_(num_ops)
+        , capacity_(num_ops)
+        , ops_(&vla_ops_[0])
     {}
 
     /// Use for structural @p Def%s.
     Def(World& world, unsigned tag, const Def* type, Defs ops, const std::string& name)
-        : ops_(ops.size())
-        , name_(name)
+        : name_(name)
         , world_(&world)
         , type_(type)
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(false)
         , structure_(Unrestricted)
+        , num_ops_(ops.size())
+        , capacity_(num_ops_)
+        , ops_(&vla_ops_[0])
     {
-        for (size_t i = 0, e = num_ops(); i != e; ++i) {
-            if (auto op = ops[i])
-                set(i, op);
-        }
+        std::copy(ops.begin(), ops.end(), ops_);
     }
 
     void clear_type() { type_ = nullptr; }
     void set_type(const Def* type) { type_ = type; }
     void unregister_use(size_t i) const;
     void unregister_uses() const;
-    void resize(size_t n) { ops_.resize(n, nullptr); }
+    void resize(size_t num_ops) {
+        num_ops_ = num_ops;
+        if (num_ops_ > capacity_)
+            assert(false && "TODO");
+    }
 
 public:
     Sort sort() const {
@@ -141,16 +146,14 @@ public:
 
     unsigned tag() const { return tag_; }
     World& world() const { return *world_; }
-    Defs ops() const { return ops_; }
+    Defs ops() const { return Defs(ops_, num_ops_); }
     const Def* op(size_t i) const { return ops()[i]; }
-    size_t num_ops() const { return ops_.size(); }
-    bool empty() const { return ops_.empty(); }
+    size_t num_ops() const { return num_ops_; }
     const Uses& uses() const { return uses_; }
     size_t num_uses() const { return uses().size(); }
     const Def* type() const { return type_; }
     const std::string& name() const { return name_; }
     std::string unique_name() const;
-    void set(Defs);
     void set(size_t i, const Def*);
     void unset(size_t i);
     void replace(const Def*) const;
@@ -174,22 +177,32 @@ protected:
     virtual bool equal(const Def*) const;
     virtual const Def* vsubst(Def2Def&, int, Defs) const = 0;
 
-    mutable uint64_t hash_ = 0;
+    union {
+        mutable const Def* cache_;  ///< used by @p App.
+        size_t index_;              ///< used by Var
+    };
 
 private:
+    void wire_uses() const;
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
 
     static size_t gid_counter_;
 
-    std::vector<const Def*> ops_;
     std::string name_;
     mutable Uses uses_;
     mutable World* world_;
     const Def* type_;
+    mutable uint64_t hash_ = 0;
     unsigned gid_       : 24;
     unsigned tag_       :  5;
     unsigned nominal_   :  1;
     unsigned structure_ :  2;
+
+private:
+    int16_t num_ops_;
+    int16_t capacity_;
+    const Def** ops_;
+    const Def* vla_ops_[0];
 
     friend class World;
     friend class Cleaner;
@@ -341,8 +354,9 @@ class Var : public Def {
 private:
     Var(World& world, const Def* type, int index, const std::string& name)
         : Def(world, Node_Var, type, Defs(), name)
-        , index_(index)
-    {}
+    {
+        index_ = index;
+    }
 
 public:
     int index() const { return index_; }
@@ -353,8 +367,6 @@ private:
     virtual bool equal(const Def*) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubst(Def2Def&, int, Defs) const override;
-
-    int index_;
 
     friend class World;
 };
@@ -392,8 +404,6 @@ public:
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubst(Def2Def&, int, Defs) const override;
 
-private:
-    mutable const Def* cache_ = nullptr;
     friend class World;
 };
 
