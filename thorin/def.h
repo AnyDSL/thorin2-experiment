@@ -102,7 +102,7 @@ protected:
         , nominal_(true)
         , structure_(Unrestricted)
         , num_ops_(num_ops)
-        , capacity_(num_ops)
+        , ops_capacity_(num_ops)
         , ops_(&vla_ops_[0])
     {}
 
@@ -116,7 +116,7 @@ protected:
         , nominal_(false)
         , structure_(Unrestricted)
         , num_ops_(ops.size())
-        , capacity_(num_ops_)
+        , ops_capacity_(num_ops_)
         , ops_(&vla_ops_[0])
     {
         std::copy(ops.begin(), ops.end(), ops_);
@@ -131,7 +131,7 @@ protected:
     void unregister_uses() const;
     void resize(size_t num_ops) {
         num_ops_ = num_ops;
-        if (num_ops_ > capacity_)
+        if (num_ops_ > ops_capacity_)
             assert(false && "TODO");
     }
 
@@ -199,8 +199,8 @@ private:
     unsigned structure_ :  2;
 
 private:
-    int16_t num_ops_;
-    int16_t capacity_;
+    uint16_t num_ops_;
+    uint16_t ops_capacity_;
     const Def** ops_;
     const Def* vla_ops_[0];
 
