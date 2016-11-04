@@ -106,7 +106,7 @@ uint64_t Def::vhash() const {
     if (is_nominal())
         return gid();
 
-    uint64_t seed = thorin::hash_combine(thorin::hash_begin(int(tag())), num_ops(), type() ? type()->gid() : 0);
+    uint64_t seed = thorin::hash_combine(thorin::hash_begin(hash_fields()), type() ? type()->gid() : 0);
     for (auto op : ops()) {
         if (op)
             seed = thorin::hash_combine(seed, op->hash());

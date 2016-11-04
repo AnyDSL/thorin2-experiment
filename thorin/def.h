@@ -81,7 +81,7 @@ public:
         Term, Type, Kind
     };
 
-    enum Structure {
+    enum Qualifier {
         Unrestricted,
         Affine   = 1 << 0,
         Relevant = 1 << 1,
@@ -100,7 +100,7 @@ protected:
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(true)
-        , structure_(Unrestricted)
+        , qualifier_(Unrestricted)
         , num_ops_(num_ops)
         , ops_capacity_(num_ops)
         , ops_(&vla_ops_[0])
@@ -114,7 +114,7 @@ protected:
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(false)
-        , structure_(Unrestricted)
+        , qualifier_(Unrestricted)
         , num_ops_(ops.size())
         , ops_capacity_(num_ops_)
         , ops_(&vla_ops_[0])
@@ -158,12 +158,12 @@ public:
     const std::string& name() const { return name_; }
     std::string unique_name() const;
     void replace(const Def*) const;
-    bool is_nominal() const { return nominal_; }        ///< A nominal @p Def is always different from each other @p Def.
-    Structure structure() const { return Structure(structure_); }
-    bool is_unrestricted() const { return structure() & Unrestricted; }
-    bool is_affine() const       { return structure() & Affine; }
-    bool is_relevant() const     { return structure() & Relevant; }
-    bool is_linear() const       { return structure() & Linear; }
+    bool is_nominal() const { return nominal_; }    ///< A nominal @p Def is always different from each other @p Def.
+    Qualifier qualifier() const { return Qualifier(qualifier_); }
+    bool is_unrestricted() const { return qualifier() & Unrestricted; }
+    bool is_affine() const       { return qualifier() & Affine; }
+    bool is_relevant() const     { return qualifier() & Relevant; }
+    bool is_linear() const       { return qualifier() & Linear; }
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
     virtual int num_vars() const { return 0; }
@@ -185,6 +185,10 @@ protected:
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
+    uint64_t hash_fields() const {
+        // everything except ops_capacity_ (the upper 16 bits) is relevant for hashing
+        return fields_ & 0xFFFFFFFFFFFFFF00;
+    }
 
     static size_t gid_counter_;
 
@@ -193,14 +197,19 @@ private:
     mutable World* world_;
     const Def* type_;
     mutable uint64_t hash_ = 0;
-    unsigned gid_       : 24;
-    unsigned tag_       :  5;
-    unsigned nominal_   :  1;
-    unsigned structure_ :  2;
+    union {
+        struct {
+            unsigned gid_           : 24;
+            unsigned tag_           :  5;
+            unsigned nominal_       :  1;
+            unsigned qualifier_     :  2;
+            unsigned num_ops_       : 16;
+            unsigned ops_capacity_  : 16;
+            // this sum must be 64   ^^^
+        };
+        uint64_t fields_;
+    };
 
-private:
-    uint16_t num_ops_;
-    uint16_t ops_capacity_;
     const Def** ops_;
     const Def* vla_ops_[0];
 
