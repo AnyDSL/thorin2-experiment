@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <string>
-#include <iostream>
 
 #include "thorin/def.h"
 
@@ -75,35 +74,34 @@ protected:
 
     struct Page {
         static const size_t Size = 1024 * 1024; // 1MB
-        char buffer[Size];
         std::unique_ptr<Page> next;
+        char buffer[Size];
     };
 
     template<class T, class... Args>
     T* alloc(Args&&... args) {
         size_t num_bytes = sizeof(T);
         assert(num_bytes < (1 << 16));
+        assert(num_bytes % alignof(T) == 0);
 
         if (buffer_index_ + num_bytes >= Page::Size) {
-            std::cout << "wtf" << std::endl;
             auto page = new Page;
             cur_page_->next.reset(page);
             cur_page_ = page;
             buffer_index_ = 0;
         }
 
-        auto result = new (&cur_page_->buffer[buffer_index_]) T(args...);
-        buffer_index_ += num_bytes;
-        result->dump();
-        std::cout << "^^^ " << num_bytes << std::endl;
-        std::cout << "---" << std::endl;
+        assert(buffer_index_ % alignof(T) == 0);
+        auto ptr = cur_page_->buffer + buffer_index_;
+        buffer_index_ += num_bytes;         // first reserve memory
+        auto result = new (ptr) T(args...); // then construct: it may in turn invoke alloc
         return result;
     }
 
     template<class T>
     void dealloc(const T* def) {
-        def->~T();
         size_t num_bytes = sizeof(T);
+        def->~T();
         if (int(buffer_index_ - num_bytes) > 0) // don't care otherwise
             buffer_index_-= num_bytes;
     }
@@ -114,7 +112,6 @@ protected:
     DefSet defs_;
     const Star* star_;
     const Assume* nat_;
-
 };
 
 }

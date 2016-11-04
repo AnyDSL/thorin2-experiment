@@ -197,7 +197,7 @@ private:
 };
 
 uint64_t UseHash::operator()(Use use) const {
-    return hash_combine(hash_begin(use->gid()), use.index());
+    return use->gid() | (uint64_t(use.index()) << 32);
 }
 
 class Abs : public Def {
