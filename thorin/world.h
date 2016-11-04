@@ -74,7 +74,7 @@ protected:
     }
 
     struct Page {
-        static const size_t Size = 1024 * 1024; // 1MB
+        static const size_t Size = 1024 * 1024 - sizeof(std::unique_ptr<int>); // 1MB - sizeof(next)
         std::unique_ptr<Page> next;
         char buffer[Size];
     };
