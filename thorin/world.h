@@ -92,9 +92,9 @@ protected:
         }
 
         auto ptr = cur_page_->buffer + buffer_index_;
-        buffer_index_ += num_bytes;         // first reserve memory
+        buffer_index_ += num_bytes;         // first, reserve memory
+        auto result = new (ptr) T(args...); // then, construct: it may in turn invoke alloc
         assert(buffer_index_ % alignof(T) == 0);
-        auto result = new (ptr) T(args...); // then construct: it may in turn invoke alloc
         return result;
     }
 

@@ -179,8 +179,8 @@ protected:
     virtual const Def* vsubst(Def2Def&, int, Defs) const = 0;
 
     union {
-        mutable const Def* cache_;  ///< used by @p App.
-        size_t index_;              ///< used by Var
+        mutable const Def* cache_;  ///< Used by @p App.
+        size_t index_;              ///< Used by @p Var.
     };
 
 private:
