@@ -124,6 +124,9 @@ protected:
 
     void clear_type() { type_ = nullptr; }
     void set_type(const Def* type) { type_ = type; }
+    void set(size_t i, const Def*);
+    void wire_uses() const;
+    void unset(size_t i);
     void unregister_use(size_t i) const;
     void unregister_uses() const;
     void resize(size_t num_ops) {
@@ -154,8 +157,6 @@ public:
     const Def* type() const { return type_; }
     const std::string& name() const { return name_; }
     std::string unique_name() const;
-    void set(size_t i, const Def*);
-    void unset(size_t i);
     void replace(const Def*) const;
     bool is_nominal() const { return nominal_; }        ///< A nominal @p Def is always different from each other @p Def.
     Structure structure() const { return Structure(structure_); }
@@ -183,7 +184,6 @@ protected:
     };
 
 private:
-    void wire_uses() const;
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
 
     static size_t gid_counter_;
