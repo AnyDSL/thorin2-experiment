@@ -1,5 +1,6 @@
 #include "thorin/def.h"
 #include "thorin/world.h"
+#include "thorin/visitor.h"
 
 #include <stack>
 
@@ -267,6 +268,50 @@ std::ostream& App::stream(std::ostream& os) const {
 }
 
 std::ostream& Unbound::stream(std::ostream& os) const { return os << "<unbound>"; }
+
+//------------------------------------------------------------------------------
+
+/*
+ * Visitor
+ */
+
+void Unbound::accept(Visitor &v) const {
+    v.visit(this);
+}
+
+void App::accept(Visitor &v) const {
+    v.visit(this);
+}
+
+void Star::accept(Visitor &v) const {
+    v.visit(this);
+}
+
+void Assume::accept(Visitor &v) const {
+    v.visit(this);
+}
+
+void Var::accept(Visitor &v) const {
+    v.visit(this);
+}
+
+void Sigma::accept(Visitor &v) const {
+    v.visit(this);
+}
+
+void Tuple::accept(Visitor &v) const {
+    v.visit(this);
+}
+
+void Pi::accept(Visitor &v) const {
+    v.visit(this);
+}
+
+void Lambda::accept(Visitor &v) const {
+    v.visit(this);
+}
+
+
 
 //------------------------------------------------------------------------------
 

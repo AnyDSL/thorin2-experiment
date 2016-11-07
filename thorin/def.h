@@ -22,6 +22,7 @@ enum {
 
 class Def;
 class World;
+class Visitor;
 
 /**
  * References a user.
@@ -173,6 +174,8 @@ public:
 
     static size_t gid_counter() { return gid_counter_; }
 
+    virtual void accept(Visitor &v) const = 0;
+
 protected:
     virtual uint64_t vhash() const;
     virtual bool equal(const Def*) const;
@@ -220,6 +223,7 @@ public:
 private:
     virtual const Def* vsubst(Def2Def&, int, Defs) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
+    virtual void accept(Visitor &v) const override;
 };
 
 class Abs : public Def {
@@ -272,6 +276,7 @@ public:
     virtual int num_vars() const override { return 1; }
     virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
+    virtual void accept(Visitor &v) const override;
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
@@ -300,6 +305,7 @@ public:
     virtual const Def* reduce(Defs defs) const override { Def2Def map; return body()->subst(map, 1, defs); }
     virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
+    virtual void accept(Visitor &v) const override;
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
@@ -326,6 +332,7 @@ private:
     virtual const Def* domain() const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubst(Def2Def&, int, Defs) const override;
+    virtual void accept(Visitor &v) const override;
 
 public:
     virtual std::ostream& stream(std::ostream&) const override;
@@ -345,6 +352,7 @@ private:
     virtual const Def* domain() const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubst(Def2Def&, int, Defs) const override;
+    virtual void accept(Visitor &v) const override;
 
 public:
     virtual std::ostream& stream(std::ostream&) const override;
@@ -360,6 +368,7 @@ private:
 
 public:
     virtual std::ostream& stream(std::ostream&) const override;
+    virtual void accept(Visitor &v) const override;
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
@@ -378,6 +387,7 @@ private:
 public:
     int index() const { return index_; }
     virtual std::ostream& stream(std::ostream&) const override;
+    virtual void accept(Visitor &v) const override;
 
 private:
     virtual uint64_t vhash() const override;
@@ -398,6 +408,7 @@ private:
 
 public:
     virtual std::ostream& stream(std::ostream&) const override;
+    virtual void accept(Visitor &v) const override;
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
@@ -422,6 +433,7 @@ public:
     virtual std::ostream& stream(std::ostream&) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubst(Def2Def&, int, Defs) const override;
+    virtual void accept(Visitor &v) const override;
 
 private:
     mutable const Def* cache_ = nullptr;

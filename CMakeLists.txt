@@ -17,6 +17,7 @@ add_executable(CoC
     thorin/util/hash.h
     thorin/util/stream.cpp
     thorin/util/stream.h
+    thorin/visitor.h
     utils/unicodemanager.cpp
     utils/unicodemanager.h
     islplay.cpp)
