@@ -2,7 +2,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 import sys
+import os
 from lambdaparser import parse_lambda_code
+
+
+HELP = 'USAGE: '+__file__+""" [params] [filename...]
+Parameters:
+--all -a : Progress all files in this directory
+"""
 
 
 
@@ -17,7 +24,19 @@ def translate_file_to_cpp(fname):
 
 
 
+def translate_all():
+	for f in os.listdir('.'):
+		if f.endswith('.lbl') and os.path.isfile(f):
+			translate_file_to_cpp(f)
+
+
+
 if __name__ == '__main__':
 	for param in sys.argv[1:]:
-		translate_file_to_cpp(param)
+		if param == '--all' or param == '-a':
+			translate_all()
+		else:
+			translate_file_to_cpp(param)
+	if len(sys.argv) <= 1:
+		print(HELP)
 
