@@ -5,10 +5,14 @@ using namespace thorin;
 
 void testMatrix();
 
+void testISL();
+
 int main()  {
 	prepareUtf8Console();
 
-	testMatrix();
+	//testMatrix();
+    testISL();
+    return 0;
 
     World w;
     {

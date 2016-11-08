@@ -1,0 +1,34 @@
+// Natural and floating-point numbers
+define Nat = Nat;
+assume Float: *;
+assume opFloatPlus: (Float, Float) -> Float;
+assume opFloatMult: (Float, Float) -> Float;
+assume cFloatZero: Float;
+assume cNatZero: Nat;
+assume cNatOne: Nat;
+
+// Arrays
+assume ArrT: pi_:(Nat, Nat -> *). *;
+assume ArrCreate: pi type: (Nat, Nat -> *). (pi i: Nat. type[1] i) -> ArrT type;
+assume ArrGet: pi type: (Nat, Nat -> *). ArrT type -> pi i:Nat. type[1] i;
+define UArrT = lambda lt: (Nat, *). ArrT (lt[0], lambda _:Nat. lt[1]);
+
+//define MatrixType = lambda n:Nat. lambda m:Nat. ArrT (n, (lambda _:Nat. ArrT (m, (lambda _:Nat. Float))));
+define MatrixType = lambda n:Nat. lambda m:Nat. UArrT (n, UArrT (m, Float));
+
+assume reduce: pi t:*. pi op: ((t, t) -> t). pi startval:t. pi len:Nat. pi values:(Nat -> t). t;
+define sum = reduce Float opFloatPlus cFloatZero;
+
+// Test cases
+define arrayAccess = lambda arr: UArrT (cNatOne, Float). ArrGet (cNatOne, lambda _:Nat. Float) arr cNatZero;
+define arraySum = lambda n:Nat. lambda arr: UArrT (n, Float). sum n (ArrGet (n, lambda _:Nat. Float) arr);
+
+define matrixDot = lambda n:Nat. lambda m:Nat. lambda o:Nat. lambda M1: MatrixType n m. lambda M2: MatrixType m o.
+		ArrCreate (n, lambda _:Nat. UArrT (o, Float)) (
+			lambda i:Nat. ArrCreate (o, lambda _:Nat. Float) (lambda j: Nat.
+				sum n (lambda k: Nat. opFloatMult(
+					(ArrGet (m, lambda _:Nat. Float) (ArrGet (n, lambda _:Nat. UArrT (m, Float)) M1 i) k),
+					(ArrGet (o, lambda _:Nat. Float) (ArrGet (m, lambda _:Nat. UArrT (m, Float)) M1 k) j)
+				))
+			)
+		);
