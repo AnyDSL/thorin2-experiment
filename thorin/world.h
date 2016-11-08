@@ -18,26 +18,22 @@ public:
     World();
     virtual ~World() { for (auto def : defs_) delete def; }
 
-    const Star* star() const { return star_; }
+    const Star* star(Qualifier::URAL q = Qualifier::Unrestricted) const { return star_[q]; }
     const Error* error() const { return error_; }
 
     const Var* var(const Def* type, int index, const std::string& name = "") {
-        return var(type, index, Qualifier::Unrestricted, name);
-    }
-    const Var* var(const Def* type, int index, Qualifier::URAL q, const std::string& name = "") {
-        return unify(new Var(*this, type, index, q, name));
+        return unify(new Var(*this, type, index, name));
     }
     const Var* var(Defs types, int index, const std::string& name = "") {
-        return var(sigma(types), index, Qualifier::Unrestricted, name);
-    }
-    const Var* var(Defs types, int index, Qualifier::URAL q, const std::string& name = "") {
-        return var(sigma(types), index, q, name);
+        return var(sigma(types), index, name);
     }
 
     const Assume* assume(const Def* type, const std::string& name = "") {
-        return assume( type, Qualifier::Unrestricted, name);
+        return assume(type, type ? type->qualifier() : Qualifier::Unrestricted, name);
     }
+    // Needed for differently qualified *s
     const Assume* assume(const Def* type, Qualifier::URAL q, const std::string& name = "") {
+        assert(!type || type->qualifier() == q);
         return insert(new Assume(*this, type, q, name));
     }
 
@@ -59,17 +55,17 @@ public:
         return unify(new Lambda(*this, type, body, name));
     }
 
-    const Pi*  pi(const Def* domain, const Def* body, const std::string& name = "") {
+    const Pi* pi(const Def* domain, const Def* body, const std::string& name = "") {
         return pi(Defs({domain}), body, name);
     }
-    const Pi*  pi(const Def* domain, const Def* body, Qualifier::URAL q,
+    const Pi* pi(const Def* domain, const Def* body, Qualifier::URAL q,
                   const std::string& name = "") {
         return pi(Defs({domain}), body, q, name);
     }
-    const Pi*  pi(Defs domains, const Def* body, const std::string& name = "") {
+    const Pi* pi(Defs domains, const Def* body, const std::string& name = "") {
         return pi(domains, body, Qualifier::Unrestricted, name);
     }
-    const Pi*  pi(Defs domains, const Def* body, Qualifier::URAL q, const std::string& name = "");
+    const Pi* pi(Defs domains, const Def* body, Qualifier::URAL q, const std::string& name = "");
 
     const Def* app(const Def* callee, Defs args, const std::string& name = "");
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "") {
@@ -111,7 +107,7 @@ private:
 
     bool too_many_affine_uses(Defs defs) {
         for (auto def : defs) {
-            if (def->type()->is_affine() && def->num_uses() > 0)
+            if (def->is_term() && def->type()->is_affine() && def->num_uses() > 0)
                 return true;
         }
         return false;
@@ -130,7 +126,7 @@ protected:
     }
 
     DefSet defs_;
-    const Star* star_;
+    const Array<const Star*> star_;
     const Error* error_;
     const Array<const Assume*> nat_;
 };

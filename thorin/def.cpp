@@ -66,7 +66,7 @@ void Def::set(size_t i, const Def* def) {
     ops_[i] = def;
     assert(!def->uses_.contains(Use(i, this)));
     assert(def->sort() != Sort::Term || !def->type()->is_affine() || def->num_uses() == 0
-           && "Affinely typed terms can be used at most once.");
+           && "Affinely typed terms can be used at most once, check before calling this.");
     const auto& p = def->uses_.emplace(i, this);
     assert_unused(p.second);
 }
@@ -150,7 +150,8 @@ uint64_t Def::vhash() const {
     if (is_nominal())
         return gid();
 
-    uint64_t seed = thorin::hash_combine(thorin::hash_begin(int(tag())), num_ops(), type() ? type()->gid() : 0);
+    uint64_t seed = thorin::hash_combine(thorin::hash_begin(int(tag())), num_ops(),
+                                         type() ? type()->gid() : 0);
     seed = thorin::hash_combine(seed, static_cast<int>(qualifier()));
     for (auto op : ops_)
         seed = thorin::hash_combine(seed, op->hash());
@@ -161,8 +162,8 @@ bool Def::equal(const Def* other) const {
     if (is_nominal())
         return this == other;
 
-    bool result = this->tag() == other->tag() && this->type() == other->type() && this->num_ops() == other->num_ops();
-    result &= this->qualifier() == other->qualifier();
+    bool result = this->tag() == other->tag() && this->type() == other->type()
+        && this->num_ops() == other->num_ops() && this->qualifier() == other->qualifier();
     if (result) {
         for (size_t i = 0, e = num_ops(); result && i != e; ++i)
             result &= this->op(i) == other->op(i);
@@ -172,7 +173,9 @@ bool Def::equal(const Def* other) const {
 }
 
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
-bool Var::equal(const Def* other) const { return Def::equal(other) && this->index() == other->as<Var>()->index(); }
+bool Var::equal(const Def* other) const {
+    return Def::equal(other) && this->index() == other->as<Var>()->index();
+}
 
 //------------------------------------------------------------------------------
 
@@ -185,7 +188,7 @@ const Def* Assume::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNR
 const Def* Lambda::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
 const Def* Pi    ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
 const Def* Sigma ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is_nominal()); return to.sigma(ops, name()); }
-const Def* Star  ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(); }
+const Def* Star  ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
 const Def* Tuple ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
 const Def* Var   ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), name()); }
 const Def* Error ::rebuild(World& to, const Def*  , Defs    ) const { return to.error(); }
@@ -300,7 +303,7 @@ std::ostream& Var::stream(std::ostream& os) const {
 std::ostream& Assume::stream(std::ostream& os) const { return os << qualifier() << name(); }
 
 std::ostream& Star::stream(std::ostream& os) const {
-    return os << '*';
+    return os << qualifier() << '*';
 }
 
 std::ostream& App::stream(std::ostream& os) const {

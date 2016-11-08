@@ -109,7 +109,8 @@ protected:
     Def& operator=(const Def&) = delete;
 
     /// Use for nominal @p Def%s.
-    Def(World& world, unsigned tag, const Def* type, size_t num_ops, Qualifier::URAL qualifier, const std::string& name)
+    Def(World& world, unsigned tag, const Def* type, size_t num_ops, Qualifier::URAL qualifier,
+        const std::string& name)
         : ops_(num_ops)
         , name_(name)
         , world_(&world)
@@ -118,12 +119,11 @@ protected:
         , tag_(tag)
         , nominal_(true)
         , qualifier_(qualifier)
-    {
-        assert(sort() == Type || qualifier == Qualifier::Unrestricted);
-    }
+    {}
 
     /// Use for structural @p Def%s.
-    Def(World& world, unsigned tag, const Def* type, Defs ops, Qualifier::URAL qualifier, const std::string& name)
+    Def(World& world, unsigned tag, const Def* type, Defs ops, Qualifier::URAL qualifier,
+        const std::string& name)
         : ops_(ops.size())
         , name_(name)
         , world_(&world)
@@ -133,7 +133,6 @@ protected:
         , nominal_(false)
         , qualifier_(qualifier)
     {
-        assert(sort() == Type || qualifier == Qualifier::Unrestricted);
         for (size_t i = 0, e = num_ops(); i != e; ++i) {
             if (auto op = ops[i])
                 set(i, op);
@@ -173,7 +172,11 @@ public:
     void set(size_t i, const Def*);
     void unset(size_t i);
     void replace(const Def*) const;
-    bool is_nominal() const { return nominal_; }        ///< A nominal @p Def is always different from each other @p Def.
+    /// A nominal @p Def is always different from each other @p Def.
+    bool is_nominal() const { return nominal_; }
+    bool is_kind() const { return sort() == Kind; }
+    bool is_type() const { return sort() == Type; }
+    bool is_term() const { return sort() == Term; }
     Qualifier::URAL qualifier() const { return Qualifier::URAL(qualifier_); }
     bool is_unrestricted() const { return qualifier() & Qualifier::Unrestricted; }
     bool is_affine() const       { return qualifier() & Qualifier::Affine; }
@@ -345,8 +348,8 @@ public:
 
 class Star : public Def {
 private:
-    Star(World& world)
-        : Def(world, Node_Star, nullptr, Defs(), Qualifier::Unrestricted, "type")
+    Star(World& world, Qualifier::URAL q)
+        : Def(world, Node_Star, nullptr, Defs(), q, "type")
     {}
 
 public:
@@ -361,8 +364,8 @@ private:
 
 class Var : public Def {
 private:
-    Var(World& world, const Def* type, int index, Qualifier::URAL q, const std::string& name)
-        : Def(world, Node_Var, type, Defs(), q, name)
+    Var(World& world, const Def* type, int index, const std::string& name)
+        : Def(world, Node_Var, type, Defs(), type->qualifier(), name)
         , index_(index)
     {}
 

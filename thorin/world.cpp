@@ -3,12 +3,15 @@
 namespace thorin {
 
 World::World()
-    : star_(unify(new Star(*this)))
+    : star_({unify(new Star(*this, Qualifier::Unrestricted)),
+             unify(new Star(*this, Qualifier::Affine)),
+             unify(new Star(*this, Qualifier::Relevant)),
+             unify(new Star(*this, Qualifier::Linear))})
     , error_(unify(new Error(*this)))
-    , nat_({assume(star(), Qualifier::Unrestricted, "Nat"),
-            assume(star(), Qualifier::Affine, "Nat"),
-            assume(star(), Qualifier::Relevant, "Nat"),
-            assume(star(), Qualifier::Linear, "Nat")})
+    , nat_({assume(star(Qualifier::Unrestricted), "Nat"),
+            assume(star(Qualifier::Affine), "Nat"),
+            assume(star(Qualifier::Relevant), "Nat"),
+            assume(star(Qualifier::Linear), "Nat")})
 {}
 
 const Pi* World::pi(Defs domain, const Def* body, Qualifier::URAL q, const std::string& name) {
@@ -43,7 +46,7 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
             return app(callee, tuple->ops(), name);
     }
 
-    if (too_many_affine_uses(args))
+    if (too_many_affine_uses({callee}) || too_many_affine_uses(args))
         return error();
     if (callee->type()->isa<Sigma>()) {
         assert(args.size() == 1);
