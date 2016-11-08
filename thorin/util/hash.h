@@ -7,6 +7,8 @@
 #include <functional>
 #include <type_traits>
 
+#include "thorin/util/stream.h"
+
 namespace thorin {
 
 //------------------------------------------------------------------------------
@@ -422,7 +424,7 @@ private:
  * This container is for the most part compatible with <tt>std::unordered_set</tt>.
  * We use our own implementation in order to have a consistent and deterministic behavior across different platforms.
  */
-template<class Key, class Hasher = Hash<Key>, class KeyEqual = std::equal_to<Key>>
+template<class Key, class Hasher = Hash<Key>, class KeyEqual = std::equal_to<Key>, typename=void>
 class HashSet : public HashTable<Key, void, Hasher, KeyEqual> {
 public:
     typedef Hasher hasher;
@@ -449,13 +451,28 @@ public:
     friend void swap(HashSet& s1, HashSet& s2) { swap(static_cast<Super&>(s1), static_cast<Super&>(s2)); }
 };
 
+template<class Key, class Hasher, class KeyEqual>
+class HashSet<Key, Hasher, KeyEqual, typename std::enable_if<is_streamable<Key>::value, void>::type>
+    : public HashSet<Key, Hasher, KeyEqual, bool>, public Streamable {
+protected:
+    std::ostream& stream(std::ostream& os) const {
+        os << "{";
+        auto sep = "";
+        for (auto key : *this) {
+            os << sep << key;
+            sep = ", ";
+        }
+        return os << "}";
+    }
+};
+
 //------------------------------------------------------------------------------
 
 /**
  * This container is for the most part compatible with <tt>std::unordered_map</tt>.
  * We use our own implementation in order to have a consistent and deterministic behavior across different platforms.
  */
-template<class Key, class T, class Hasher = Hash<Key>, class KeyEqual = std::equal_to<Key>>
+template<class Key, class T, class Hasher = Hash<Key>, class KeyEqual = std::equal_to<Key>, typename=void>
 class HashMap : public HashTable<Key, T, Hasher, KeyEqual> {
 public:
     typedef Hasher hasher;
@@ -483,6 +500,22 @@ public:
     mapped_type& operator[](key_type&& key) { return Super::insert(value_type(std::move(key), T())).first->second; }
 
     friend void swap(HashMap& m1, HashMap& m2) { swap(static_cast<Super&>(m1), static_cast<Super&>(m2)); }
+};
+
+template<class Key, class T, class Hasher, class KeyEqual>
+class HashMap<Key, T, Hasher, KeyEqual,
+              typename std::enable_if<is_streamable<Key>::value && is_streamable<T>::value, void>::type>
+    : public HashMap<Key, T, Hasher, KeyEqual, bool>, public Streamable {
+public:
+    std::ostream& stream(std::ostream& os) const {
+        os << "{";
+        auto sep = "";
+        for (auto key_mapped : *this) {
+            os << sep << key_mapped.first << " : " << key_mapped.second;
+            sep = ", ";
+        }
+        return os << "}";
+    }
 };
 
 //------------------------------------------------------------------------------
