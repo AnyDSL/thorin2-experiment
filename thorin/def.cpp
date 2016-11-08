@@ -5,6 +5,10 @@
 
 namespace thorin {
 
+std::ostream& Use::stream(std::ostream& os) const {
+    return os << def_;
+}
+
 //------------------------------------------------------------------------------
 
 size_t Def::gid_counter_ = 1;

@@ -26,7 +26,7 @@ class World;
  * References a user.
  * A \p Def \c u which uses \p Def \c d as \c i^th operand is a \p Use with \p index_ \c i of \p Def \c d.
  */
-class Use {
+class Use : public Streamable {
 public:
     Use() {}
     Use(size_t index, const Def* def)
@@ -39,6 +39,7 @@ public:
     operator const Def*() const { return def_; }
     const Def* operator->() const { return def_; }
     bool operator==(Use other) const { return this->def() == other.def() && this->index() == other.index(); }
+    std::ostream& stream(std::ostream& os) const override;
 
 private:
     size_t index_;
