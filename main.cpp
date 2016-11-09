@@ -31,10 +31,10 @@ int main()  {
     auto n42 = w.assume(w.nat(), "42");
 
     // λT:*.λx:T.x
-    auto T = w.var(w.star(), 2, "T");
-    auto x = w.var(T, 1, "x");
-    auto poly_id = w.lambda(T->type(), w.lambda(T, x));
-    cout << "polymorphic id: ";
+    auto T_1 = w.var(w.star(), 1, "T");
+    auto T_2 = w.var(w.star(), 2, "T");
+    auto x = w.var(T_2, 1, "x");
+    auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
     poly_id->dump();
     poly_id->type()->dump();
 
