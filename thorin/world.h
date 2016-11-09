@@ -1,7 +1,9 @@
 #ifndef THORIN_WORLD_H
 #define THORIN_WORLD_H
 
+#include <memory>
 #include <string>
+
 #include "thorin/def.h"
 
 namespace thorin {
@@ -12,17 +14,17 @@ public:
     struct DefEqual { bool operator()(const Def* d1, const Def* d2) const { return d2->equal(d1); } };
     typedef HashSet<const Def*, DefHash, DefEqual> DefSet;
 
-    World& operator=(const World&);
-    World(const World&);
+    World& operator=(const World&) = delete;
+    World(const World&) = delete;
 
     World();
-    virtual ~World() { for (auto def : defs_) delete def; }
+    virtual ~World() { for (auto def : defs_) def->~Def(); }
 
     const Star* star(Qualifier::URAL q = Qualifier::Unrestricted) const { return star_[q]; }
     const Error* error() const { return error_; }
 
     const Var* var(const Def* type, int index, const std::string& name = "") {
-        return unify(new Var(*this, type, index, name));
+        return unify(alloc<Var>(0, *this, type, index, name));
     }
     const Var* var(Defs types, int index, const std::string& name = "") {
         return var(sigma(types), index, name);
@@ -34,7 +36,7 @@ public:
     // Needed for differently qualified *s
     const Assume* assume(const Def* type, Qualifier::URAL q, const std::string& name = "") {
         assert(!type || type->qualifier() == q);
-        return insert(new Assume(*this, type, q, name));
+        return insert(alloc<Assume>(0, *this, type, q, name));
     }
 
     const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") {
@@ -51,8 +53,8 @@ public:
                          const std::string& name = "") {
         return typed_lambda(pi(domains, body->type(), type_q), body, name);
     }
-    const Lambda* typed_lambda(const Def* type, const Def* body, const std::string& name = "") {
-        return unify(new Lambda(*this, type, body, name));
+    const Lambda* typed_lambda(const Pi* type, const Def* body, const std::string& name = "") {
+        return unify(alloc<Lambda>(type->domains().size() + 1, *this, type, body, name));
     }
 
     const Pi* pi(const Def* domain, const Def* body, const std::string& name = "") {
@@ -83,7 +85,7 @@ public:
     const Def* sigma(Defs, Qualifier::URAL q, const std::string& name = "");
     Sigma* sigma(size_t num_ops, Qualifier::URAL q = Qualifier::Unrestricted,
                  const std::string& name = "") {
-        return insert(new Sigma(*this, num_ops, q, name));
+        return insert(alloc<Sigma>(num_ops, *this, num_ops, q, name));
     }
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
 
@@ -114,9 +116,19 @@ private:
     }
 
 protected:
-    const Def* unify_base(const Def* type);
     template<class T>
-    const T* unify(const T* type) { return unify_base(type)->template as<T>(); }
+    const T* unify(const T* def) {
+        assert(!def->is_nominal());
+        auto p = defs_.emplace(def);
+        if (p.second) {
+            def->wire_uses();
+            return def;
+        }
+
+        --Def::gid_counter_;
+        dealloc(def);
+        return static_cast<const T*>(*p.first);
+    }
 
     template<class T>
     T* insert(T* def) {
@@ -125,6 +137,51 @@ protected:
         return def;
     }
 
+    struct Page {
+        static const size_t Size = 1024 * 1024 - sizeof(std::unique_ptr<int>); // 1MB - sizeof(next)
+        std::unique_ptr<Page> next;
+        char buffer[Size];
+    };
+
+    template<class T, class... Args>
+    T* alloc(size_t num_ops, Args&&... args) {
+        static_assert(sizeof(Def) == sizeof(T), "you are not allowed to introduce any additional data in subclasses of Def");
+#ifndef NDEBUG
+        static bool guard = false;
+        assert(guard = !guard && "you are not allowed to recursively invoke alloc");
+#endif
+        size_t num_bytes = sizeof(T) + sizeof(const Def*) * num_ops;
+        assert(num_bytes < Page::Size);
+
+        if (buffer_index_ + num_bytes >= Page::Size) {
+            auto page = new Page;
+            cur_page_->next.reset(page);
+            cur_page_ = page;
+            buffer_index_ = 0;
+        }
+
+        auto result = new (cur_page_->buffer + buffer_index_) T(args...);
+        buffer_index_ += num_bytes;
+        assert(buffer_index_ % alignof(T) == 0);
+
+#ifndef NDEBUG
+        guard = !guard;
+#endif
+        return result;
+    }
+
+    template<class T>
+    void dealloc(const T* def) {
+        size_t num_bytes = sizeof(T) + def->num_ops() * sizeof(const Def*);
+        def->~T();
+        if (intptr_t(buffer_index_ - num_bytes) > 0) // don't care otherwise
+            buffer_index_-= num_bytes;
+        assert(buffer_index_ % alignof(T) == 0);
+    }
+
+    std::unique_ptr<Page> root_page_;
+    Page* cur_page_;
+    size_t buffer_index_ = 0;
     DefSet defs_;
     const Array<const Star*> star_;
     const Error* error_;

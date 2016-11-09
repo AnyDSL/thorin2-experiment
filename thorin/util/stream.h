@@ -3,6 +3,7 @@
 
 #include <ostream>
 #include <stdexcept>
+#include <type_traits>
 
 namespace thorin {
 
@@ -15,6 +16,10 @@ public:
     std::string to_string() const; ///< Uses @p stream and @c std::ostringstream to generate a @c std::string.
     void dump() const; ///< Uses @p stream in order to dump to @p std::cout.
 };
+
+
+template<typename T>
+using is_streamable = std::is_base_of<Streamable, typename std::remove_pointer<T>::type>;
 
 std::ostream& operator<<(std::ostream&, const Streamable*); ///< Use @p Streamable in C++ streams via @c operator<<.
 

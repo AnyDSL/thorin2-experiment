@@ -5,6 +5,12 @@
 
 namespace thorin {
 
+<<<<<<< Updated upstream
+=======
+std::ostream& Use::stream(std::ostream& os) const {
+    return os << def_;
+}
+
 namespace Qualifier {
     bool operator==(URAL lhs, URAL rhs) {
         return static_cast<int>(lhs) == static_cast<int>(rhs);
@@ -46,15 +52,12 @@ namespace Qualifier {
 
     URAL meet(const Defs& defs) {
         return std::accumulate(defs.begin(), defs.end(), Unrestricted,
-                               [](URAL q, const Def* const def) {
-                                   return def ? meet(q, def->qualifier()) : q;});
+                                 [](URAL q, const Def* const def) {
+                                     return def ? meet(q, def->qualifier()) : q;});
     }
 }
 
-std::ostream& Use::stream(std::ostream& os) const {
-    return os << def_;
-}
-
+>>>>>>> Stashed changes
 //------------------------------------------------------------------------------
 
 size_t Def::gid_counter_ = 1;
@@ -74,8 +77,6 @@ void Def::set(size_t i, const Def* def) {
     assert(def && "setting null pointer");
     ops_[i] = def;
     assert(!def->uses_.contains(Use(i, this)));
-    assert(def->sort() != Sort::Term || !def->type()->is_affine() || def->num_uses() == 0
-           && "Affinely typed terms can be used at most once, check before calling this.");
     const auto& p = def->uses_.emplace(i, this);
     assert_unused(p.second);
 }
@@ -93,8 +94,6 @@ void Def::unregister_use(size_t i) const {
 }
 
 void Def::unset(size_t i) {
-    assert(sort() != Sort::Term || !type()->is_relevant()
-           && "Do not remove the use of a relevant value.");
     assert(ops_[i] && "must be set");
     unregister_use(i);
     ops_[i] = nullptr;
@@ -115,16 +114,16 @@ Array<const Def*> types(Defs defs) {
  * constructors
  */
 
-Lambda::Lambda(World& world, const Pi* type, const Def* body, const std::string& name)
-    : Connective(world, Node_Lambda, type, concat(type->domains(), body), name)
+Lambda::Lambda(World& world, const Def* type, Defs domains, const Def* body, const std::string& name)
+    : Connective(world, Node_Lambda, type, concat(domains, body), name)
 {}
 
-Pi::Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, const std::string& name)
-    : Quantifier(world, Node_Pi, body->type(), concat(domains, body), q, name)
+Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name)
+    : Quantifier(world, Node_Pi, body->type(), concat(domains, body), name)
 {}
 
 App::App(World& world, const Def* type, const Def* callee, Defs args, const std::string& name)
-    : Def(world, Node_App, type, concat(callee, args), Qualifier::Unrestricted, name)
+    : Def(world, Node_App, type,  concat(callee, args), name)
 {
     cache_ = nullptr;
 }
@@ -170,8 +169,7 @@ bool Def::equal(const Def* other) const {
     if (is_nominal())
         return this == other;
 
-    bool result = this->tag() == other->tag() && this->type() == other->type()
-        && this->num_ops() == other->num_ops() && this->qualifier() == other->qualifier();
+    bool result = this->tag() == other->tag() && this->type() == other->type() && this->num_ops() == other->num_ops();
     if (result) {
         for (size_t i = 0, e = num_ops(); result && i != e; ++i)
             result &= this->op(i) == other->op(i);
@@ -181,9 +179,7 @@ bool Def::equal(const Def* other) const {
 }
 
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
-bool Var::equal(const Def* other) const {
-    return Def::equal(other) && this->index() == other->as<Var>()->index();
-}
+bool Var::equal(const Def* other) const { return Def::equal(other) && this->index() == other->as<Var>()->index(); }
 
 //------------------------------------------------------------------------------
 
@@ -196,10 +192,9 @@ const Def* Assume::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNR
 const Def* Lambda::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
 const Def* Pi    ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
 const Def* Sigma ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is_nominal()); return to.sigma(ops, name()); }
-const Def* Star  ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
+const Def* Star  ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(); }
 const Def* Tuple ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
 const Def* Var   ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), name()); }
-const Def* Error ::rebuild(World& to, const Def*  , Defs    ) const { return to.error(); }
 
 //------------------------------------------------------------------------------
 
@@ -280,7 +275,6 @@ const Def* App::vsubst(Def2Def& map, int index, Defs args) const {
 
 const Def* Assume::vsubst(Def2Def&, int, Defs) const { return this; }
 const Def* Star::vsubst(Def2Def&, int, Defs) const { return this; }
-const Def* Error::vsubst(Def2Def&, int, Defs) const { return this; }
 
 //------------------------------------------------------------------------------
 
@@ -289,37 +283,33 @@ const Def* Error::vsubst(Def2Def&, int, Defs) const { return this; }
  */
 
 std::ostream& Lambda::stream(std::ostream& os) const {
-    return streamf(stream_list(os << qualifier() << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
+    return streamf(stream_list(os << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
-    return streamf(stream_list(os << qualifier() << "Π", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
+    return streamf(stream_list(os << "Π", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
 }
 
 std::ostream& Tuple::stream(std::ostream& os) const {
-    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->stream(os); }, "(", ")");
+    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "(", ")");
 }
 
 std::ostream& Sigma::stream(std::ostream& os) const {
-    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->stream(os); }, "Σ(", ")");
+    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "Σ(", ")");
 }
 
 std::ostream& Var::stream(std::ostream& os) const {
-    return streamf(os << qualifier(), "<%:%>", index(), type());
+    return streamf(os, "<%:%>", index(), type());
 }
 
-std::ostream& Assume::stream(std::ostream& os) const { return os << qualifier() << name(); }
+std::ostream& Assume::stream(std::ostream& os) const { return os << name(); }
 
 std::ostream& Star::stream(std::ostream& os) const {
-    return os << qualifier() << '*';
+    return os << '*';
 }
 
 std::ostream& App::stream(std::ostream& os) const {
-    return stream_list(streamf(os << qualifier(), "(%)", callee()), args(), [&](const Def* def) { def->stream(os); }, "(", ")");
-}
-
-std::ostream& Error::stream(std::ostream& os) const {
-    return os << "Error";
+    return stream_list(streamf(os, "(%)", callee()), args(), [&](const Def* def) { def->stream(os); }, "(", ")");
 }
 
 //------------------------------------------------------------------------------

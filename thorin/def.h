@@ -29,7 +29,7 @@ class World;
  * References a user.
  * A \p Def \c u which uses \p Def \c d as \c i^th operand is a \p Use with \p index_ \c i of \p Def \c d.
  */
-class Use {
+class Use : public Streamable {
 public:
     Use() {}
     Use(size_t index, const Def* def)
@@ -42,6 +42,7 @@ public:
     operator const Def*() const { return def_; }
     const Def* operator->() const { return def_; }
     bool operator==(Use other) const { return this->def() == other.def() && this->index() == other.index(); }
+    std::ostream& stream(std::ostream& os) const override;
 
 private:
     size_t index_;
@@ -111,39 +112,47 @@ protected:
     /// Use for nominal @p Def%s.
     Def(World& world, unsigned tag, const Def* type, size_t num_ops, Qualifier::URAL qualifier,
         const std::string& name)
-        : ops_(num_ops)
-        , name_(name)
+        : name_(name)
         , world_(&world)
         , type_(type)
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(true)
         , qualifier_(qualifier)
+        , num_ops_(num_ops)
+        , ops_capacity_(num_ops)
+        , ops_(&vla_ops_[0])
     {}
 
     /// Use for structural @p Def%s.
     Def(World& world, unsigned tag, const Def* type, Defs ops, Qualifier::URAL qualifier,
         const std::string& name)
-        : ops_(ops.size())
-        , name_(name)
+        : name_(name)
         , world_(&world)
         , type_(type)
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(false)
         , qualifier_(qualifier)
+        , num_ops_(ops.size())
+        , ops_capacity_(num_ops_)
+        , ops_(&vla_ops_[0])
     {
-        for (size_t i = 0, e = num_ops(); i != e; ++i) {
-            if (auto op = ops[i])
-                set(i, op);
-        }
+        std::copy(ops.begin(), ops.end(), ops_);
     }
 
     void clear_type() { type_ = nullptr; }
     void set_type(const Def* type) { type_ = type; }
+    void set(size_t i, const Def*);
+    void wire_uses() const;
+    void unset(size_t i);
     void unregister_use(size_t i) const;
     void unregister_uses() const;
-    void resize(size_t n) { ops_.resize(n, nullptr); }
+    void resize(size_t num_ops) {
+        num_ops_ = num_ops;
+        if (num_ops_ > ops_capacity_)
+            assert(false && "TODO");
+    }
 
 public:
     Sort sort() const {
@@ -159,29 +168,27 @@ public:
 
     unsigned tag() const { return tag_; }
     World& world() const { return *world_; }
-    Defs ops() const { return ops_; }
+    Defs ops() const { return Defs(ops_, num_ops_); }
     const Def* op(size_t i) const { return ops()[i]; }
-    size_t num_ops() const { return ops_.size(); }
-    bool empty() const { return ops_.empty(); }
+    size_t num_ops() const { return num_ops_; }
     const Uses& uses() const { return uses_; }
     size_t num_uses() const { return uses().size(); }
     const Def* type() const { return type_; }
     const std::string& name() const { return name_; }
     std::string unique_name() const;
-    void set(Defs);
-    void set(size_t i, const Def*);
-    void unset(size_t i);
     void replace(const Def*) const;
     /// A nominal @p Def is always different from each other @p Def.
     bool is_nominal() const { return nominal_; }
     bool is_kind() const { return sort() == Kind; }
     bool is_type() const { return sort() == Type; }
     bool is_term() const { return sort() == Term; }
+
     Qualifier::URAL qualifier() const { return Qualifier::URAL(qualifier_); }
     bool is_unrestricted() const { return qualifier() & Qualifier::Unrestricted; }
     bool is_affine() const       { return qualifier() & Qualifier::Affine; }
     bool is_relevant() const     { return qualifier() & Qualifier::Relevant; }
     bool is_linear() const       { return qualifier() & Qualifier::Linear; }
+
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
     virtual int num_vars() const { return 0; }
@@ -196,22 +203,40 @@ protected:
     virtual bool equal(const Def*) const;
     virtual const Def* vsubst(Def2Def&, int, Defs) const = 0;
 
-    mutable uint64_t hash_ = 0;
+    union {
+        mutable const Def* cache_;  ///< Used by @p App.
+        size_t index_;              ///< Used by @p Var.
+    };
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
+    uint64_t hash_fields() const {
+        // everything except ops_capacity_ (the upper 16 bits) is relevant for hashing
+        return fields_ & 0xFFFFFFFFFFFFFF00;
+    }
 
     static size_t gid_counter_;
 
-    std::vector<const Def*> ops_;
     std::string name_;
     mutable Uses uses_;
     mutable World* world_;
     const Def* type_;
-    unsigned gid_       : 24;
-    unsigned tag_       :  5;
-    unsigned nominal_   :  1;
-    unsigned qualifier_ :  2;
+    mutable uint64_t hash_ = 0;
+    union {
+        struct {
+            unsigned gid_           : 24;
+            unsigned tag_           :  5;
+            unsigned nominal_       :  1;
+            unsigned qualifier_     :  2;
+            unsigned num_ops_       : 16;
+            unsigned ops_capacity_  : 16;
+            // this sum must be 64   ^^^
+        };
+        uint64_t fields_;
+    };
+
+    const Def** ops_;
+    const Def* vla_ops_[0];
 
     friend class World;
     friend class Cleaner;
@@ -220,7 +245,7 @@ private:
 
 
 uint64_t UseHash::operator()(Use use) const {
-    return hash_combine(hash_begin(use->gid()), use.index());
+    return use->gid() | (uint64_t(use.index()) << 32);
 }
 
 class Abs : public Def {
@@ -283,7 +308,7 @@ private:
 
 class Lambda : public Connective {
 private:
-    Lambda(World& world, const Def* type, const Def* body, const std::string& name);
+    Lambda(World& world, const Pi* type, const Def* body, const std::string& name);
 
 public:
     Defs domains() const { return ops().skip_back(); }
@@ -329,10 +354,10 @@ public:
 
 class Tuple : public Connective {
 private:
-    Tuple(World& world, const Def* type, Defs ops, const std::string& name)
+    Tuple(World& world, const Sigma* type, Defs ops, const std::string& name)
         : Connective(world, Node_Tuple, type, ops, name)
     {
-        assert(type->as<Sigma>()->num_ops() && ops.size());
+        assert(type->num_ops() == ops.size());
     }
 
     virtual const Def* reduce(Defs defs) const override;
@@ -366,8 +391,9 @@ class Var : public Def {
 private:
     Var(World& world, const Def* type, int index, const std::string& name)
         : Def(world, Node_Var, type, Defs(), type->qualifier(), name)
-        , index_(index)
-    {}
+    {
+        index_ = index;
+    }
 
 public:
     int index() const { return index_; }
@@ -378,8 +404,6 @@ private:
     virtual bool equal(const Def*) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubst(Def2Def&, int, Defs) const override;
-
-    int index_;
 
     friend class World;
 };
@@ -402,7 +426,7 @@ private:
 
 class App : public Def {
 private:
-    App(World& world, const Def* callee, Defs args, const std::string& name);
+    App(World& world, const Def* type, const Def* callee, Defs args, const std::string& name);
 
     static const Def* infer_type(const Def*, Defs);
 
@@ -417,8 +441,6 @@ public:
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubst(Def2Def&, int, Defs) const override;
 
-private:
-    mutable const Def* cache_ = nullptr;
     friend class World;
 };
 

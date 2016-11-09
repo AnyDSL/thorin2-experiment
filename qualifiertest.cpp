@@ -57,11 +57,9 @@ void testQualifiers() {
     auto aT = w.var(w.star(A), 2, "T");
     auto x = w.var(aT, 1, "x");
     auto poly_aid = w.lambda(aT->type(), w.lambda(aT, x));
-    poly_aid->dump();
-    poly_aid->type()->dump();
+    cout << poly_aid << " : " << poly_aid->type() << thorin::endl;
 
     // λx:ᴬNat.x
     auto anid2 = w.app(poly_aid, ANat);
-    anid2->dump();
-    anid2->type()->dump();
+    cout << anid2 << " : " << anid2->type() << thorin::endl;
 }

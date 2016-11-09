@@ -18,8 +18,8 @@ int main()  {
     {
         Builder::world_ = &w;
         // λT:*.λx:T.x
-        BVAR(T, BStar);
-        BVAR(x, T);
+        using T = BVar<NAME("T"), BStar>;
+        using x = BVar<NAME("x"), T>;
         BLambda<T, BLambda<x, x>>::emit()->dump();
     }
 
@@ -34,6 +34,7 @@ int main()  {
     auto T = w.var(w.star(), 2, "T");
     auto x = w.var(T, 1, "x");
     auto poly_id = w.lambda(T->type(), w.lambda(T, x));
+    cout << "polymorphic id: ";
     poly_id->dump();
     poly_id->type()->dump();
 
@@ -70,4 +71,19 @@ int main()  {
 
     auto arr = w.app(_Arr, {n23, w.nat()});
     arr->dump();
+
+    {
+#if 0
+        BDEF(Nat, w.nat());
+        BDEF(N0, n0);
+        BDEF(N1, n1);
+        BDEF(N23, n23);
+        BDEF(ARR, Arr);
+        using v = BVar<NAME("v"), Nat, BStar>;
+        using _ARR = BLambda<v, BApp<ARR, BApp<v, N0>, BLambda<B_<Nat>, BApp<v, N1>>>>;
+        _ARR::emit()->dump();
+
+        BApp<_ARR, N23, Nat>::emit()->dump();
+#endif
+    }
 }

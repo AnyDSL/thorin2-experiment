@@ -3,31 +3,33 @@
 namespace thorin {
 
 World::World()
-    : star_({unify(new Star(*this, Qualifier::Unrestricted)),
-             unify(new Star(*this, Qualifier::Affine)),
-             unify(new Star(*this, Qualifier::Relevant)),
-             unify(new Star(*this, Qualifier::Linear))})
-    , error_(unify(new Error(*this)))
+    : root_page_(new Page)
+    , cur_page_(root_page_.get())
+    , star_({unify(alloc<Star>(0, *this, Qualifier::Unrestricted)),
+             unify(alloc<Star>(0, *this, Qualifier::Affine)),
+             unify(alloc<Star>(0, *this, Qualifier::Relevant)),
+             unify(alloc<Star>(0, *this, Qualifier::Linear))})
+    , error_(unify(alloc<Error>(0, *this)))
     , nat_({assume(star(Qualifier::Unrestricted), "Nat"),
             assume(star(Qualifier::Affine), "Nat"),
             assume(star(Qualifier::Relevant), "Nat"),
             assume(star(Qualifier::Linear), "Nat")})
 {}
 
-const Pi* World::pi(Defs domain, const Def* body, Qualifier::URAL q, const std::string& name) {
-    if (domain.size() == 1 && domain.front()->type()) {
-        if (auto sigma = domain.front()->type()->isa<Sigma>())
+const Pi* World::pi(Defs domains, const Def* body, Qualifier::URAL q, const std::string& name) {
+    if (domains.size() == 1 && domains.front()->type()) {
+        if (auto sigma = domains.front()->type()->isa<Sigma>())
             return pi(sigma->ops(), body, q, name);
     }
 
-    return unify(new Pi(*this, domain, body, q, name));
+    return unify(alloc<Pi>(domains.size() + 1, *this, domains, body, q, name));
 }
 
 const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
     if (defs.size() == 1)
         return defs.front();
 
-    return unify(new Tuple(*this, type, defs, name));
+    return unify(alloc<Tuple>(defs.size(), *this, type->as<Sigma>(), defs, name));
 }
 
 const Def* World::sigma(Defs defs, Qualifier::URAL q, const std::string& name) {
@@ -37,7 +39,7 @@ const Def* World::sigma(Defs defs, Qualifier::URAL q, const std::string& name) {
         return single;
     }
 
-    return unify(new Sigma(*this, defs, name, q));
+    return unify(alloc<Sigma>(defs.size(), *this, defs, name, q));
 }
 
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {
@@ -48,6 +50,7 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
 
     if (too_many_affine_uses({callee}) || too_many_affine_uses(args))
         return error();
+    // TODO do this checking later during a separate type checking phase
     if (callee->type()->isa<Sigma>()) {
         assert(args.size() == 1);
         auto assume = args.front()->as<Assume>();
@@ -64,7 +67,8 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
         }
     }
 
-    auto app = unify(new App(*this, callee, args, name));
+    auto type = callee->type()->as<Quantifier>()->reduce(args);
+    auto app = unify(alloc<App>(args.size() + 1, *this, type, callee, args, name));
 
     if (auto cache = app->cache_)
         return cache;
@@ -83,18 +87,6 @@ const Def* World::extract(const Def* def, const Def* i) {
     }
 
     return app(def, i);
-}
-
-const Def* World::unify_base(const Def* def) {
-    assert(!def->is_nominal());
-    auto p = defs_.emplace(def);
-    if (p.second)
-        return def;
-
-    def->unregister_uses();
-    --Def::gid_counter_;
-    delete def;
-    return *p.first;
 }
 
 }
