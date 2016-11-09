@@ -54,9 +54,10 @@ void testQualifiers() {
     assert(w.app(a_id, n0) == w.error());
 
     // λᴬT:*.λx:ᴬT.x
-    auto aT = w.var(w.star(A), 2, "T");
-    auto x = w.var(aT, 1, "x");
-    auto poly_aid = w.lambda(aT->type(), w.lambda(aT, x));
+    auto aT1 = w.var(w.star(A), 1, "T");
+    auto aT2 = w.var(w.star(A), 2, "T");
+    auto x = w.var(aT2, 1, "x");
+    auto poly_aid = w.lambda(aT2->type(), w.lambda(aT1, x));
     cout << poly_aid << " : " << poly_aid->type() << thorin::endl;
 
     // λx:ᴬNat.x
