@@ -33,9 +33,14 @@ public:
     const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
     const Def* tuple(Defs defs, const std::string& name = "") { return tuple(sigma(types(defs), name), defs, name); }
     const Def* sigma(Defs, const std::string& name = "");
+    const Def* cup(Defs defs, const std::string& name = "");
+    const Def* cap(Defs defs, const std::string& name = "");
+    const Def* wedge(Defs defs, const std::string& name = "");
+    const Def* vee(const Def* type, const Def* def, const std::string& name = "");
     Sigma* sigma(size_t num_ops, const std::string& name = "") { return insert(alloc<Sigma>(num_ops, *this, num_ops, name)); }
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
     const Assume* nat() { return nat_; }
+    const Assume* boolean() { return boolean_; }
     const Def* extract(const Def* def, const Def* i);
     const Def* extract(const Def* def, int i) { return extract(def, assume(nat(), std::to_string(i))); }
 
@@ -121,6 +126,7 @@ protected:
     DefSet defs_;
     const Star* star_;
     const Assume* nat_;
+    const Assume* boolean_;
 };
 
 }

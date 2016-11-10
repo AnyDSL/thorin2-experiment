@@ -7,6 +7,7 @@ World::World()
     , cur_page_(root_page_.get())
     , star_(unify(alloc<Star>(0, *this)))
     , nat_(assume(star(), "Nat"))
+    , boolean_(assume(star(), "Boolean"))
 {}
 
 const Lambda* World::lambda(Defs domains, const Def* body, const std::string& name) {
@@ -40,6 +41,22 @@ const Def* World::sigma(Defs defs, const std::string& name) {
         return defs.front();
 
     return unify(alloc<Sigma>(defs.size(), *this, defs, name));
+}
+
+const Def* World::cup(Defs defs, const std::string& name) {
+    return unify(alloc<Cup>(defs.size(), *this, defs, name));
+}
+
+const Def* World::wedge(Defs defs, const std::string& name) {
+    return unify(alloc<Wedge>(defs.size(), *this, /*TODO*/nullptr, defs, name));
+}
+
+const Def* World::cap(Defs defs, const std::string& name) {
+    return unify(alloc<Cap>(defs.size(), *this, defs, name));
+}
+
+const Def* World::vee(const Def* type, const Def* def, const std::string& name) {
+    return unify(alloc<Vee>(1, *this, type, def, name));
 }
 
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {

@@ -79,7 +79,7 @@ App::App(World& world, const Def* type, const Def* callee, Defs args, const std:
     cache_ = nullptr;
 }
 
-const Def* Sigma::infer_type(World& world, Defs ops) {
+const Def* Quantifier::max_type(World& world, Defs ops) {
     for (auto op : ops) {
         if (!op->type())
             return nullptr;
@@ -93,10 +93,14 @@ const Def* Sigma::infer_type(World& world, Defs ops) {
  * domain
  */
 
-const Def* Tuple ::domain() const { return world().nat(); }
-const Def* Sigma ::domain() const { return world().nat(); }
+const Def* Cap   ::domain() const { return /*TODO*/nullptr; }
+const Def* Cup   ::domain() const { return /*TODO*/nullptr; }
 const Def* Lambda::domain() const { return world().sigma(domains()); }
 const Def* Pi    ::domain() const { return world().sigma(domains()); }
+const Def* Sigma ::domain() const { return world().nat(); }
+const Def* Tuple ::domain() const { return world().nat(); }
+const Def* Wedge ::domain() const { return /*TODO*/nullptr; }
+const Def* Vee   ::domain() const { return /*TODO*/nullptr; }
 
 //------------------------------------------------------------------------------
 
@@ -140,22 +144,48 @@ bool Var::equal(const Def* other) const { return Def::equal(other) && this->inde
 
 const Def* App   ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
 const Def* Assume::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
+const Def* Cap   ::rebuild(World& to, const Def* t, Defs ops) const { return to.cap(ops, name()); }
+const Def* Cup   ::rebuild(World& to, const Def* t, Defs ops) const { return to.cup(ops, name()); }
 const Def* Lambda::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
 const Def* Pi    ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
 const Def* Sigma ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is_nominal()); return to.sigma(ops, name()); }
 const Def* Star  ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(); }
 const Def* Tuple ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
 const Def* Var   ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), name()); }
+const Def* Vee   ::rebuild(World& to, const Def* t, Defs ops) const { return to.vee(t, ops[0], name()); }
+const Def* Wedge ::rebuild(World& to, const Def*  , Defs ops) const { return to.wedge(ops, name()); }
 
 //------------------------------------------------------------------------------
 
 /*
- * subst
+ * substitute
  */
 
-const Def* Tuple::reduce(Defs defs) const {
+// helpers
+
+Array<const Def*> substitute(Def2Def& map, int index, Defs defs, Defs args) {
+    Array<const Def*> result(defs.size());
+    for (size_t i = 0, e = result.size(); i != e; ++i)
+        result[i] = defs[i]->substitute(map, index, args);
+    return result;
+}
+
+const Def* Def::substitute(Def2Def& map, int index, Defs args) const {
+    if (auto result = find(map, this))
+        return result;
+    return map[this] = vsubstitute(map, index, args);
+}
+
+// reduce
+
+const Def* Cap::reduce(Defs defs) const {
     assert(defs.size() == 1);
-    return op(std::stoi(defs.front()->name()));
+    return /*TODO*/nullptr;
+}
+
+const Def* Cup::reduce(Defs defs) const {
+    assert(defs.size() == 1);
+    return /*TODO*/nullptr;
 }
 
 const Def* Sigma::reduce(Defs defs) const {
@@ -163,36 +193,44 @@ const Def* Sigma::reduce(Defs defs) const {
     return op(std::stoi(defs.front()->name()));
 }
 
-Array<const Def*> subst(Def2Def& map, int index, Defs defs, Defs args) {
-    Array<const Def*> result(defs.size());
-    for (size_t i = 0, e = result.size(); i != e; ++i)
-        result[i] = defs[i]->subst(map, index, args);
-    return result;
+const Def* Tuple::reduce(Defs defs) const {
+    assert(defs.size() == 1);
+    return op(std::stoi(defs.front()->name()));
 }
 
-const Def* Def::subst(Def2Def& map, int index, Defs args) const {
-    if (auto result = find(map, this))
-        return result;
-    return map[this] = vsubst(map, index, args);
+const Def* Vee::reduce(Defs defs) const {
+    assert(defs.size() == 1);
+    return /*TODO*/nullptr;
 }
 
-const Def* Lambda::vsubst(Def2Def& map, int index, Defs args) const {
-    auto new_domains = thorin::subst(map, index, domains(), args);
+const Def* Wedge::reduce(Defs defs) const {
+    assert(defs.size() == 1);
+    return /*TODO*/nullptr;
+}
+
+// vsubstitute
+
+const Def* Cap::vsubstitute(Def2Def& map, int index, Defs args) const {
+    return world().cap(thorin::substitute(map, index, ops(), args), name());
+}
+
+const Def* Cup::vsubstitute(Def2Def& map, int index, Defs args) const {
+    return world().cup(thorin::substitute(map, index, ops(), args), name());
+}
+
+const Def* Lambda::vsubstitute(Def2Def& map, int index, Defs args) const {
+    auto new_domains = thorin::substitute(map, index, domains(), args);
     Def2Def new_map;
-    return world().lambda(new_domains, body()->subst(new_map, index+1, args), name());
+    return world().lambda(new_domains, body()->substitute(new_map, index+1, args), name());
 }
 
-const Def* Pi::vsubst(Def2Def& map, int index, Defs args) const {
-    auto new_domains = thorin::subst(map, index, domains(), args);
+const Def* Pi::vsubstitute(Def2Def& map, int index, Defs args) const {
+    auto new_domains = thorin::substitute(map, index, domains(), args);
     Def2Def new_map;
-    return world().pi(new_domains, body()->subst(new_map, index+1, args), name());
+    return world().pi(new_domains, body()->substitute(new_map, index+1, args), name());
 }
 
-const Def* Tuple::vsubst(Def2Def& map, int index, Defs args) const {
-    return world().tuple(thorin::subst(map, index, ops(), args), name());
-}
-
-const Def* Sigma::vsubst(Def2Def& map, int index, Defs args) const {
+const Def* Sigma::vsubstitute(Def2Def& map, int index, Defs args) const {
     if (is_nominal()) {
         assert(false && "TODO");
     }  else {
@@ -200,7 +238,7 @@ const Def* Sigma::vsubst(Def2Def& map, int index, Defs args) const {
         Def2Def new_map;
         Def2Def* cur_map = &map;
         for (size_t i = 0, e = num_ops(); i != e; ++i) {
-            new_ops[i] = op(i)->subst(*cur_map, index + i, args);
+            new_ops[i] = op(i)->substitute(*cur_map, index + i, args);
             if (i == 0)
                 cur_map = &new_map;
             new_map.clear();
@@ -210,22 +248,35 @@ const Def* Sigma::vsubst(Def2Def& map, int index, Defs args) const {
     }
 }
 
-const Def* Var::vsubst(Def2Def& map, int index, Defs args) const {
+const Def* Tuple::vsubstitute(Def2Def& map, int index, Defs args) const {
+    return world().tuple(thorin::substitute(map, index, ops(), args), name());
+}
+
+const Def* Var::vsubstitute(Def2Def& map, int index, Defs args) const {
     if (this->index() == index)     // substitute
         return world().tuple(type(), args);
     else if (this->index() > index) // this is a free variable - shift by one
         return world().var(type(), this->index()-1, name());
-    else                            // this variable is not free - keep index, subst type
-        return world().var(type()->subst(map, index, args), this->index(), name());
+    else                            // this variable is not free - keep index, substitute type
+        return world().var(type()->substitute(map, index, args), this->index(), name());
 }
 
-const Def* App::vsubst(Def2Def& map, int index, Defs args) const {
-    auto ops = thorin::subst(map, index, this->ops(), args);
+const Def* Vee::vsubstitute(Def2Def& map, int index, Defs args) const {
+    auto new_type = substitute(map, index, {type()});
+    return world().vee(new_type, substitute(map, index, {def()}));
+}
+
+const Def* Wedge::vsubstitute(Def2Def& map, int index, Defs args) const {
+    return world().wedge(thorin::substitute(map, index, ops(), args), name());
+}
+
+const Def* App::vsubstitute(Def2Def& map, int index, Defs args) const {
+    auto ops = thorin::substitute(map, index, this->ops(), args);
     return world().app(ops.front(), ops.skip_front(), name());
 }
 
-const Def* Assume::vsubst(Def2Def&, int, Defs) const { return this; }
-const Def* Star::vsubst(Def2Def&, int, Defs) const { return this; }
+const Def* Assume::vsubstitute(Def2Def&, int, Defs) const { return this; }
+const Def* Star::vsubstitute(Def2Def&, int, Defs) const { return this; }
 
 //------------------------------------------------------------------------------
 
@@ -261,6 +312,22 @@ std::ostream& Star::stream(std::ostream& os) const {
 
 std::ostream& App::stream(std::ostream& os) const {
     return stream_list(streamf(os, "(%)", callee()), args(), [&](const Def* def) { def->stream(os); }, "(", ")");
+}
+
+std::ostream& Cap::stream(std::ostream& os) const {
+    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "(", ")", " ∩ ");
+}
+
+std::ostream& Cup::stream(std::ostream& os) const {
+    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "(", ")", " ∪ ");
+}
+
+std::ostream& Vee::stream(std::ostream& os) const {
+    return streamf(os, "∧:%(%)", type(), def());
+}
+
+std::ostream& Wedge::stream(std::ostream& os) const {
+    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "(", ")", " ∧ ");
 }
 
 //------------------------------------------------------------------------------
