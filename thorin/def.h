@@ -11,16 +11,16 @@ namespace thorin {
 enum {
     Node_App,
     Node_Assume,
-    Node_Cap,
-    Node_Cup,
+    Node_Variant,
+    Node_Intersection,
     Node_Lambda,
     Node_Pi,
     Node_Sigma,
     Node_Star,
     Node_Tuple,
     Node_Var,
-    Node_Vee,
-    Node_Wedge,
+    Node_Any,
+    Node_All,
 };
 
 class Def;
@@ -354,10 +354,10 @@ public:
     friend class World;
 };
 
-class Cup : public Quantifier {
+class Intersection : public Quantifier {
 private:
-    Cup(World& world, Defs ops, const std::string& name)
-        : Quantifier(world, Node_Cup, max_type(world, ops), ops, name)
+    Intersection(World& world, Defs ops, const std::string& name)
+        : Quantifier(world, Node_Intersection, max_type(world, ops), ops, name)
     {}
 
     virtual const Def* reduce(Defs defs) const override;
@@ -371,9 +371,9 @@ public:
     friend class World;
 };
 
-class Wedge : public Connective {
+class All : public Connective {
 private:
-    Wedge(World& world, const Def* type, Defs ops, const std::string& name)
+    All(World& world, const Def* type, Defs ops, const std::string& name)
         : Connective(world, Node_Tuple, type, ops, name)
     {
         assert(type->as<Sigma>()->num_ops() == ops.size());
@@ -390,10 +390,10 @@ public:
     friend class World;
 };
 
-class Cap : public Quantifier {
+class Variant : public Quantifier {
 private:
-    Cap(World& world, Defs ops, const std::string& name)
-        : Quantifier(world, Node_Cap, max_type(world, ops), ops, name)
+    Variant(World& world, Defs ops, const std::string& name)
+        : Quantifier(world, Node_Variant, max_type(world, ops), ops, name)
     {}
 
     virtual const Def* reduce(Defs defs) const override;
@@ -407,10 +407,10 @@ public:
     friend class World;
 };
 
-class Vee : public Connective {
+class Any : public Connective {
 private:
-    Vee(World& world, const Def* type, const Def* def, const std::string& name)
-        : Connective(world, Node_Vee, type, {def}, name)
+    Any(World& world, const Def* type, const Def* def, const std::string& name)
+        : Connective(world, Node_Any, type, {def}, name)
     {}
 
     virtual const Def* reduce(Defs defs) const override;

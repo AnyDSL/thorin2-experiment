@@ -19,7 +19,7 @@ int main()  {
         BLambda<T, BLambda<x, x>>::emit()->dump();
     }
 
-    w.cup({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
+    w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 
     auto n0 = w.assume(w.nat(), "0");
     auto n1 = w.assume(w.nat(), "1");
