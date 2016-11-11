@@ -285,23 +285,26 @@ const Def* Star::vsubstitute(Def2Def&, int, Defs) const { return this; }
  */
 
 std::ostream& Lambda::stream(std::ostream& os) const {
-    return streamf(stream_list(os << "λ", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
+    stream_list(os << "λ", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    return body()->name_stream(os << ".");
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
-    return streamf(stream_list(os << "Π", domains(), [&](const Def* def) { def->stream(os); }, "(", ")"), ".%", body());
+    stream_list(os << "Π", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    return body()->name_stream(os << ".");
 }
 
 std::ostream& Tuple::stream(std::ostream& os) const {
-    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "(", ")");
+    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
 }
 
 std::ostream& Sigma::stream(std::ostream& os) const {
-    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "Σ(", ")");
+    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
 }
 
 std::ostream& Var::stream(std::ostream& os) const {
-    return streamf(os, "<%:%>", index(), type());
+    os << "<" << index() << ":";
+    return type()->name_stream(os) << ">";
 }
 
 std::ostream& Assume::stream(std::ostream& os) const { return os << name(); }
@@ -311,23 +314,33 @@ std::ostream& Star::stream(std::ostream& os) const {
 }
 
 std::ostream& App::stream(std::ostream& os) const {
-    return stream_list(streamf(os, "(%)", callee()), args(), [&](const Def* def) { def->stream(os); }, "(", ")");
+    auto begin = "(";
+    auto end = ")";
+    if (callee()->sort() == Type) {
+        begin = "[";
+        end = "]";
+    }
+    return stream_list(streamf(os, "%", callee()), args(),
+                      [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
 
 std::ostream& Cap::stream(std::ostream& os) const {
-    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "(", ")", " ∩ ");
+    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")", " ∩ ");
 }
 
 std::ostream& Cup::stream(std::ostream& os) const {
-    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "(", ")", " ∪ ");
+    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")", " ∪ ");
 }
 
 std::ostream& Vee::stream(std::ostream& os) const {
-    return streamf(os, "∧:%(%)", type(), def());
+    os << "∧:";
+    type()->name_stream(os);
+    def()->name_stream(os << "(");
+    return os << ")";
 }
 
 std::ostream& Wedge::stream(std::ostream& os) const {
-    return stream_list(os, ops(), [&](const Def* def) { def->stream(os); }, "(", ")", " ∧ ");
+    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")", " ∧ ");
 }
 
 //------------------------------------------------------------------------------

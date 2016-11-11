@@ -178,6 +178,12 @@ public:
 
     static size_t gid_counter() { return gid_counter_; }
 
+    virtual std::ostream& name_stream(std::ostream& os) const {
+        if (name() != "")
+            return os << name();
+        return stream(os);
+    }
+
 protected:
     virtual uint64_t vhash() const;
     virtual bool equal(const Def*) const;
@@ -423,7 +429,7 @@ public:
 class Star : public Def {
 private:
     Star(World& world)
-        : Def(world, Node_Star, nullptr, Defs(), "type")
+        : Def(world, Node_Star, nullptr, Defs(), "*")
     {}
 
 public:
@@ -447,6 +453,10 @@ private:
 public:
     int index() const { return index_; }
     virtual std::ostream& stream(std::ostream&) const override;
+    /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
+    virtual std::ostream& name_stream(std::ostream& os) const override {
+        return stream(os);
+    }
 
 private:
     virtual uint64_t vhash() const override;
