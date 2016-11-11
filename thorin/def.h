@@ -346,6 +346,8 @@ private:
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubst(Def2Def&, int, Defs) const override;
 
+    bool is_unit() const { return ops().empty(); }
+
 public:
     virtual std::ostream& stream(std::ostream&) const override;
 
