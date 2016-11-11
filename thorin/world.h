@@ -24,10 +24,11 @@ public:
     const Var* var(const Def* type, int index, const std::string& name = "") { return unify(alloc<Var>(0, *this, type, index, name)); }
     const Var* var(Defs types, int index, const std::string& name = "") { return var(sigma(types), index, name); }
     const Assume* assume(const Def* type, const std::string& name = "") { return insert(alloc<Assume>(0, *this, type, name)); }
-    const Lambda* lambda(Defs domains, const Def* body, const std::string& name = "");
-    const Pi*     pi    (Defs domains, const Def* body, const std::string& name = "");
     const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return lambda(Defs({domain}), body, name); }
-    const Pi*     pi    (const Def* domain, const Def* body, const std::string& name = "") { return pi    (Defs({domain}), body, name); }
+    const Lambda* lambda(Defs domains, const Def* body, const std::string& name = "");
+    const Lambda* typed_lambda(const Def* type, const Def* body, const std::string& name = "");
+    const Pi* pi(const Def* domain, const Def* body, const std::string& name = "") { return pi(Defs({domain}), body, name); }
+    const Pi* pi(Defs domains, const Def* body, const std::string& name = "");
     const Def* app(const Def* callee, Defs args, const std::string& name = "");
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "") { return app(callee, Defs({arg}), name); }
     const Def* tuple(const Def* type, Defs defs, const std::string& name = "");

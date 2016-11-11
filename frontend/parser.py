@@ -55,16 +55,15 @@ define matrixDot = lambda n:Nat. lambda m:Nat. lambda o:Nat. lambda M1: MatrixTy
 
 
 class Scope:
-	def __init__(self):
+	def __init__(self, depth = 0):
 		self.vars = {}
-		self.depth = 0
+		self.depth = depth
 
 	def push_param(self, vname=None, vtype=None):
-		scope = Scope()
+		scope = Scope(self.depth + 1)
 		scope.vars = self.vars.copy()
 		if vname:
-			scope.vars[vname] = ('param', vtype, self.depth)
-		scope.depth = self.depth+1
+			scope.vars[vname] = ('param', vtype, scope.depth)
 		return scope
 
 	def add_definition(self, defname, deftype=None):

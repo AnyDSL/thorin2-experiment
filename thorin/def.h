@@ -163,7 +163,8 @@ public:
     const std::string& name() const { return name_; }
     std::string unique_name() const;
     void replace(const Def*) const;
-    bool is_nominal() const { return nominal_; }    ///< A nominal @p Def is always different from each other @p Def.
+    /// A nominal @p Def is always different from each other @p Def.
+    bool is_nominal() const { return nominal_; }
     Qualifier qualifier() const { return Qualifier(qualifier_); }
     bool is_unrestricted() const { return qualifier() & Unrestricted; }
     bool is_affine() const       { return qualifier() & Affine; }
@@ -281,7 +282,7 @@ private:
 public:
     Defs domains() const { return ops().skip_back(); }
     const Def* body() const { return ops().back(); }
-    virtual const Def* reduce(Defs defs) const override { Def2Def map; return body()->substitute(map, 1, defs); }
+    virtual const Def* reduce(Defs defs) const override { Def2Def map; return body()->substitute(map, 0, defs); }
     virtual int num_vars() const override { return 1; }
     virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
@@ -295,13 +296,13 @@ private:
 
 class Lambda : public Connective {
 private:
-    Lambda(World& world, const Def* type, Defs domains, const Def* body, const std::string& name);
+    Lambda(World& world, const Def* type, const Def* body, const std::string& name);
 
 public:
-    Defs domains() const { return ops().skip_back(); }
-    const Def* body() const { return ops().back(); }
+    Defs domains() const { return type()->as<Pi>()->domains(); }
+    const Def* body() const { return op(0); }
     virtual int num_vars() const override { return 1; }
-    virtual const Def* reduce(Defs defs) const override { Def2Def map; return body()->substitute(map, 1, defs); }
+    virtual const Def* reduce(Defs defs) const override { Def2Def map; return body()->substitute(map, 0, defs); }
     virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
 

@@ -65,8 +65,8 @@ Array<const Def*> types(Defs defs) {
  * constructors
  */
 
-Lambda::Lambda(World& world, const Def* type, Defs domains, const Def* body, const std::string& name)
-    : Connective(world, Node_Lambda, type, concat(domains, body), name)
+Lambda::Lambda(World& world, const Def* type, const Def* body, const std::string& name)
+    : Connective(world, Node_Lambda, type, {body}, name)
 {}
 
 Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name)
@@ -170,6 +170,18 @@ Array<const Def*> substitute(Def2Def& map, int index, Defs defs, Defs args) {
     return result;
 }
 
+Array<const Def*> binder_substitute(Def2Def& map, int index, Defs ops, Defs args) {
+    Array<const Def*> new_ops(ops.size());
+    Def2Def new_map;
+    Def2Def* cur_map = &map;
+    for (size_t i = 0, e = new_ops.size(); i != e; ++i) {
+        new_ops[i] = ops[i]->substitute(*cur_map, index + i, args);
+        cur_map = &new_map;
+        new_map.clear();
+    }
+    return new_ops;
+}
+
 const Def* Def::substitute(Def2Def& map, int index, Defs args) const {
     if (auto result = find(map, this))
         return result;
@@ -215,8 +227,8 @@ const Def* All::vsubstitute(Def2Def& map, int index, Defs args) const {
 }
 
 const Def* Any::vsubstitute(Def2Def& map, int index, Defs args) const {
-    auto new_type = substitute(map, index, {type()});
-    return world().any(new_type, substitute(map, index, {def()}));
+    auto new_type = type()->substitute(map, index, args);
+    return world().any(new_type, def()->substitute(map, index, args));
 }
 
 const Def* App::vsubstitute(Def2Def& map, int index, Defs args) const {
@@ -232,32 +244,22 @@ const Def* Intersection::vsubstitute(Def2Def& map, int index, Defs args) const {
 }
 
 const Def* Lambda::vsubstitute(Def2Def& map, int index, Defs args) const {
-    auto new_domains = thorin::substitute(map, index, domains(), args);
+    auto new_type = type()->substitute(map, index, args);
     Def2Def new_map;
-    return world().lambda(new_domains, body()->substitute(new_map, index+1, args), name());
+    return world().typed_lambda(new_type, body()->substitute(new_map, index + domains().size(), args), name());
 }
 
 const Def* Pi::vsubstitute(Def2Def& map, int index, Defs args) const {
-    auto new_domains = thorin::substitute(map, index, domains(), args);
+    auto new_domains = thorin::binder_substitute(map, index, domains(), args);
     Def2Def new_map;
-    return world().pi(new_domains, body()->substitute(new_map, index+1, args), name());
+    return world().pi(new_domains, body()->substitute(new_map, index + domains().size(), args), name());
 }
 
 const Def* Sigma::vsubstitute(Def2Def& map, int index, Defs args) const {
     if (is_nominal()) {
         assert(false && "TODO");
     }  else {
-        Array<const Def*> new_ops(num_ops());
-        Def2Def new_map;
-        Def2Def* cur_map = &map;
-        for (size_t i = 0, e = num_ops(); i != e; ++i) {
-            new_ops[i] = op(i)->substitute(*cur_map, index + i, args);
-            if (i == 0)
-                cur_map = &new_map;
-            new_map.clear();
-        }
-
-        return world().sigma(new_ops, name());
+        return world().sigma(binder_substitute(map, index, ops(), args), name());
     }
 }
 
