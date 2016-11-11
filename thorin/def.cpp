@@ -37,11 +37,7 @@ namespace Qualifier {
     }
 
     URAL meet(URAL lhs, URAL rhs) {
-        if (lhs <= rhs)
-            return lhs;
-        if (rhs < lhs)
-            return rhs;
-        return URAL::Linear;
+        return URAL(static_cast<int>(lhs) | static_cast<int>(rhs));
     }
 
     URAL meet(const Defs& defs) {
