@@ -11,13 +11,12 @@ World::World()
 {}
 
 const Lambda* World::lambda(Defs domains, const Def* body, const std::string& name) {
-    auto type = pi(domains, body->type());
-    return typed_lambda(type, body, name);
+    return pi_lambda(pi(domains, body->type()), body, name);
 }
 
-const Lambda* World::typed_lambda(const Def* type, const Def* body, const std::string& name) {
-    assert(type->as<Pi>()->body() == body->type());
-    return unify(alloc<Lambda>(1, *this, type, body, name));
+const Lambda* World::pi_lambda(const Pi* pi, const Def* body, const std::string& name) {
+    assert(pi->body() == body->type());
+    return unify(alloc<Lambda>(1, *this, pi, body, name));
 }
 
 const Pi* World::pi(Defs domains, const Def* body, const std::string& name) {

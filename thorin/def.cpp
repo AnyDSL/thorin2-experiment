@@ -244,9 +244,9 @@ const Def* Intersection::vsubstitute(Def2Def& map, int index, Defs args) const {
 }
 
 const Def* Lambda::vsubstitute(Def2Def& map, int index, Defs args) const {
-    auto new_type = type()->substitute(map, index, args);
+    auto new_pi = type()->substitute(map, index, args)->as<Pi>();
     Def2Def new_map;
-    return world().typed_lambda(new_type, body()->substitute(new_map, index + domains().size(), args), name());
+    return world().pi_lambda(new_pi, body()->substitute(new_map, index + domains().size(), args), name());
 }
 
 const Def* Pi::vsubstitute(Def2Def& map, int index, Defs args) const {
