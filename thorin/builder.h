@@ -121,8 +121,8 @@ template<class BVar, class Body>
 struct BLambda {
     static const Def* emit() {
         auto domain = BVar::type::emit();
-        BVar::offset = Builder::depth;
         ++Builder::depth;
+        BVar::offset = Builder::depth;
         auto def = Builder::world().lambda(domain, Body::emit());
         --Builder::depth;
         return def;
@@ -133,8 +133,8 @@ template<class BVar, class Body>
 struct BPi {
     static const Def* emit() {
         auto domain = BVar::type::emit();
-        BVar::offset = Builder::depth;
         ++Builder::depth;
+        BVar::offset = Builder::depth;
         auto def = Builder::world().lambda(domain, Body::emit());
         --Builder::depth;
         return def;

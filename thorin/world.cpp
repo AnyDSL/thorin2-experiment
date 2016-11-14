@@ -14,6 +14,10 @@ World::World()
             assume(star(Qualifier::Affine), "Nat"),
             assume(star(Qualifier::Relevant), "Nat"),
             assume(star(Qualifier::Linear), "Nat")})
+    , boolean_({assume(star(Qualifier::Unrestricted), "Boolean"),
+                assume(star(Qualifier::Affine), "Boolean"),
+                assume(star(Qualifier::Relevant), "Boolean"),
+                assume(star(Qualifier::Linear), "Boolean")})
 {}
 
 const Pi* World::pi(Defs domains, const Def* body, Qualifier::URAL q, const std::string& name) {
@@ -23,6 +27,11 @@ const Pi* World::pi(Defs domains, const Def* body, Qualifier::URAL q, const std:
     }
 
     return unify(alloc<Pi>(domains.size() + 1, *this, domains, body, q, name));
+}
+
+const Lambda* World::pi_lambda(const Pi* pi, const Def* body, const std::string& name) {
+    assert(pi->body() == body->type());
+    return unify(alloc<Lambda>(1, *this, pi, body, name));
 }
 
 const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
@@ -40,6 +49,22 @@ const Def* World::sigma(Defs defs, Qualifier::URAL q, const std::string& name) {
     }
 
     return unify(alloc<Sigma>(defs.size(), *this, defs, name, q));
+}
+
+const Def* World::intersection(Defs defs, const std::string& name) {
+    return unify(alloc<Intersection>(defs.size(), *this, defs, name));
+}
+
+const Def* World::all(Defs defs, const std::string& name) {
+    return unify(alloc<All>(defs.size(), *this, /*TODO*/nullptr, defs, name));
+}
+
+const Def* World::variant(Defs defs, const std::string& name) {
+    return unify(alloc<Variant>(defs.size(), *this, defs, name));
+}
+
+const Def* World::any(const Def* type, const Def* def, const std::string& name) {
+    return unify(alloc<Any>(1, *this, type, def, name));
 }
 
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {

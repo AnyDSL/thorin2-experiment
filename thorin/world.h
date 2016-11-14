@@ -10,8 +10,14 @@ namespace thorin {
 
 class World {
 public:
-    struct DefHash { uint64_t operator()(const Def* def) const { return def->hash(); } };
-    struct DefEqual { bool operator()(const Def* d1, const Def* d2) const { return d2->equal(d1); } };
+    struct DefHash {
+        uint64_t operator()(const Def* def) const { return def->hash(); }
+    };
+
+    struct DefEqual {
+        bool operator()(const Def* d1, const Def* d2) const { return d2->equal(d1); }
+    };
+
     typedef HashSet<const Def*, DefHash, DefEqual> DefSet;
 
     World& operator=(const World&) = delete;
@@ -51,11 +57,9 @@ public:
     }
     const Lambda* lambda(Defs domains, const Def* body, Qualifier::URAL type_q,
                          const std::string& name = "") {
-        return typed_lambda(pi(domains, body->type(), type_q), body, name);
+        return pi_lambda(pi(domains, body->type(), type_q), body, name);
     }
-    const Lambda* typed_lambda(const Pi* type, const Def* body, const std::string& name = "") {
-        return unify(alloc<Lambda>(type->domains().size() + 1, *this, type, body, name));
-    }
+    const Lambda* pi_lambda(const Pi* type, const Def* body, const std::string& name = "");
 
     const Pi* pi(const Def* domain, const Def* body, const std::string& name = "") {
         return pi(Defs({domain}), body, name);
@@ -87,9 +91,14 @@ public:
                  const std::string& name = "") {
         return insert(alloc<Sigma>(num_ops, *this, num_ops, q, name));
     }
+    const Def* intersection(Defs defs, const std::string& name = "");
+    const Def* variant(Defs defs, const std::string& name = "");
+    const Def* all(Defs defs, const std::string& name = "");
+    const Def* any(const Def* type, const Def* def, const std::string& name = "");
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
 
     const Assume* nat(Qualifier::URAL q = Qualifier::Unrestricted) { return nat_[q]; }
+    const Assume* boolean(Qualifier::URAL q = Qualifier::Unrestricted) { return boolean_[q]; }
     const Def* extract(const Def* def, const Def* i);
     const Def* extract(const Def* def, int i) {
         return extract(def, assume(nat(), std::to_string(i)));
@@ -186,6 +195,7 @@ protected:
     const Array<const Star*> star_;
     const Error* error_;
     const Array<const Assume*> nat_;
+    const Array<const Assume*> boolean_;
 };
 
 }

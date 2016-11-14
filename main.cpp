@@ -23,6 +23,8 @@ int main()  {
         BLambda<T, BLambda<x, x>>::emit()->dump();
     }
 
+    w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
+
     auto n0 = w.assume(w.nat(), "0");
     auto n1 = w.assume(w.nat(), "1");
     //auto n2 = w.assume(w.nat(), "2");
@@ -31,9 +33,9 @@ int main()  {
     auto n42 = w.assume(w.nat(), "42");
 
     // λT:*.λx:T.x
-    auto T_1 = w.var(w.star(), 1, "T");
-    auto T_2 = w.var(w.star(), 2, "T");
-    auto x = w.var(T_2, 1, "x");
+    auto T_1 = w.var(w.star(), 0, "T");
+    auto T_2 = w.var(w.star(), 1, "T");
+    auto x = w.var(T_2, 0, "x");
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
     poly_id->dump();
     poly_id->type()->dump();
@@ -43,8 +45,8 @@ int main()  {
     int_id->dump();
     int_id->type()->dump();
 
-    auto fst = w.lambda({w.nat(), w.nat()}, w.app(w.var({w.nat(), w.nat()}, 1, "pair"), n0));
-    auto snd = w.lambda({w.nat(), w.nat()}, w.app(w.var({w.nat(), w.nat()}, 1, "pair"), n1));
+    auto fst = w.lambda({w.nat(), w.nat()}, w.app(w.var({w.nat(), w.nat()}, 0, "pair"), n0));
+    auto snd = w.lambda({w.nat(), w.nat()}, w.app(w.var({w.nat(), w.nat()}, 0, "pair"), n1));
     w.app(fst, {n23, n42})->dump(); // 23
     w.app(snd, {n23, n42})->dump(); // 42
 
@@ -66,7 +68,7 @@ int main()  {
 
     auto Arr = w.assume(w.pi({w.nat(), w.pi(w.nat(), w.star())}, w.star()), "Arr");
     Defs dom{w.nat(), w.star()};
-    auto _Arr = w.lambda(dom, w.app(Arr, {w.extract(w.var(dom, 1), 0), w.lambda(w.nat(), w.extract(w.var(dom, 2), 1))}));
+    auto _Arr = w.lambda(dom, w.app(Arr, {w.extract(w.var(dom, 0), 0), w.lambda(w.nat(), w.extract(w.var(dom, 1), 1))}));
     _Arr->dump();
 
     auto arr = w.app(_Arr, {n23, w.nat()});
