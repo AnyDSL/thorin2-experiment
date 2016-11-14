@@ -3,6 +3,7 @@
 from __future__ import unicode_literals, print_function
 from pypeg2 import *
 import re
+import ast
 
 """
 REQUIREMENTS:
@@ -184,6 +185,15 @@ class Identifier(str, LambdaAST):
 	def __repr__(self):
 		return 'Identifier('+repr(self.name)+')'
 
+	def to_ast(self, scope):
+		if self.name not in scope.vars:
+			asm = ast.get_assumption(self.name)
+			if asm:
+				return asm
+			raise Exception('Unknown value (TODO): '+repr(self.name))
+		kind, vartype, acc = scope.vars[self.name]
+		return vartype
+
 
 class Constant(Symbol, LambdaAST):
 	grammar = Enum(Symbol('*'), Symbol('Nat'))
@@ -198,6 +208,9 @@ class Constant(Symbol, LambdaAST):
 			return 'w.nat()'
 		else:
 			return self.name
+
+	def to_ast(self, scope):
+		return ast.get_constant(self.name)
 
 
 class Tupel(List, LambdaAST):
@@ -215,6 +228,12 @@ class Tupel(List, LambdaAST):
 				tuple = 'w.tuple('+tuple+')'
 			return tuple
 
+	def to_ast(self, scope):
+		if len(self) == 1:
+			return self[0].to_ast(scope)
+		else:
+			return ast.Tupel([element.to_ast(scope) for element in self])
+
 
 class Lambda(Plain, LambdaAST):
 	grammar = ['lambda', '\\', 'λ'], blank, [name(), '_'], ':', attr('type', Expression), '.', blank, attr('body', Expression)
@@ -225,6 +244,11 @@ class Lambda(Plain, LambdaAST):
 	def to_cpp(self, scope, codegen, opts={}):
 		paramtype = self.type.to_cpp(scope, codegen, {'accept_inline_tuple':True})
 		return 'w.lambda('+paramtype+', '+self.body.to_cpp(scope.push_param(self.name, self.type), codegen)+')'
+
+	def to_ast(self, scope):
+		tp = self.type.to_ast(scope)
+		param = ast.ParamDef(self.name, tp)
+		return ast.Lambda([param, self.body.to_ast(scope.push_param(self.name, param))])
 
 
 class LambdaRec(Plain, LambdaAST):
@@ -270,6 +294,9 @@ class LambdaRec(Plain, LambdaAST):
 		codegen.set_unknown_identifiers_list(old_unknown)
 		return result
 
+	def to_ast(self, scope):
+		raise Exception('TODO')
+
 
 class Pi(Plain, LambdaAST):
 	grammar = ['pi', 'Π'], blank, [name(), '_'], ':', attr('type', Expression), '.', blank, attr('body', Expression)
@@ -292,6 +319,11 @@ class Pi(Plain, LambdaAST):
 		paramtype = self.type.to_cpp(scope, codegen, {'accept_inline_tuple':True})
 		return 'w.pi('+paramtype+', '+self.body.to_cpp(scope.push_param(self.name, self.type), codegen)+')'
 
+	def to_ast(self, scope):
+		tp = self.type.to_ast(scope)
+		param = ast.ParamDef(self.name, tp)
+		return ast.Pi([param, self.body.to_ast(scope.push_param(self.name, ast.ParamDef(self.name, tp)))])
+
 
 class Extract(List, LambdaAST):
 	grammar = attr('base', AtomicExpression), maybe_some('[', re.compile(r'\d+'), ']')
@@ -309,6 +341,12 @@ class Extract(List, LambdaAST):
 		result = self.base.to_cpp(scope, codegen)
 		for index in self:
 			result = 'w.extract('+result+', '+index+')'
+		return result
+
+	def to_ast(self, scope):
+		result = self.base.to_ast(scope)
+		for index in self:
+			result = ast.Extract([result, index])
 		return result
 
 
@@ -329,6 +367,10 @@ class SpecialApp(Plain, LambdaAST):
 			return 'w.tuple('+self.param.to_cpp(scope, codegen, {'accept_inline_tuple': True})+')'
 		else:
 			raise Exception("Unknown special function ("+str(self.func)+")")
+
+	def to_ast(self, scope):
+		return self.param.to_ast(scope)
+
 
 
 
@@ -373,6 +415,12 @@ class App(List, LambdaAST):
 			result += '@'+repr(param)
 		return result + ')'
 
+	def to_ast(self, scope):
+		result = self.func.to_ast(scope)
+		for param in self:
+			result = ast.App([result, param.to_ast(scope)])
+		return result
+
 
 class InnerDefinition(Plain, LambdaAST):
 	grammar = K('define'), blank, flag('type', 'type'), name(), blank, '=', blank, attr("body", Expression), ';'
@@ -385,6 +433,12 @@ class InnerDefinition(Plain, LambdaAST):
 		body = self.body.to_cpp(scope, codegen, {'cpp_name': self.name})
 		scope.add_definition(self.name)
 		codegen.add_decl(self.name, 'auto '+self.name+' = '+body+';')
+
+	def to_ast(self, scope):
+		body = self.body.to_ast(scope)
+		scope.add_definition(self.name, body)
+		return [body]
+
 
 class Definition(InnerDefinition):
 	def to_cpp(self, scope, codegen, opts={}):
@@ -411,12 +465,20 @@ class Assumption(Plain, LambdaAST):
 		codegen.progress_depending()
 		codegen.add_blank()
 
+	def to_ast(self, scope):
+		assumption = ast.Assume([self.name, self.body.to_ast(scope)])
+		scope.add_definition(self.name, assumption)
+		return [assumption]
+
 
 class Comment(str, LambdaAST):
 	grammar = [comment_cpp, comment_sh, comment_c]
 
 	def to_cpp(self, scope, codegen, opts={}):
 		return ''
+
+	def to_ast(self, scope):
+		return []
 
 
 
@@ -451,6 +513,13 @@ class Program(List, LambdaAST):
 		for warn in codegen.warnings():
 			print(warn)
 		return codegen.output()
+
+	def to_ast(self):
+		scope = Scope()
+		defs = []
+		for x in self:
+			defs += x.to_ast(scope)
+		return defs
 
 
 
