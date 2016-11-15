@@ -65,19 +65,13 @@ Array<const Def*> types(Defs defs) {
  * constructors
  */
 
-Lambda::Lambda(World& world, const Def* type, const Def* body, const std::string& name)
-    : Connective(world, Node_Lambda, type, {body}, name)
+Lambda::Lambda(World& world, const Pi* type, const Def* body, const std::string& name)
+    : Constructor(world, Node_Lambda, type, {body}, name)
 {}
 
 Pi::Pi(World& world, Defs domains, const Def* body, const std::string& name)
     : Quantifier(world, Node_Pi, body->type(), concat(domains, body), name)
 {}
-
-App::App(World& world, const Def* type, const Def* callee, Defs args, const std::string& name)
-    : Def(world, Node_App, type,  concat(callee, args), name)
-{
-    cache_ = nullptr;
-}
 
 const Def* Quantifier::max_type(World& world, Defs ops) {
     for (auto op : ops) {
@@ -93,14 +87,8 @@ const Def* Quantifier::max_type(World& world, Defs ops) {
  * domain
  */
 
-const Def* All         ::domain() const { return /*TODO*/nullptr; }
-const Def* Any         ::domain() const { return /*TODO*/nullptr; }
-const Def* Intersection::domain() const { return /*TODO*/nullptr; }
 const Def* Lambda      ::domain() const { return world().sigma(domains()); }
 const Def* Pi          ::domain() const { return world().sigma(domains()); }
-const Def* Sigma       ::domain() const { return world().nat(); }
-const Def* Tuple       ::domain() const { return world().nat(); }
-const Def* Variant     ::domain() const { return /*TODO*/nullptr; }
 
 //------------------------------------------------------------------------------
 
@@ -133,8 +121,14 @@ bool Def::equal(const Def* other) const {
     return result;
 }
 
+uint64_t Extract::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
-bool Var::equal(const Def* other) const { return Def::equal(other) && this->index() == other->as<Var>()->index(); }
+bool Extract::equal(const Def* other) const {
+    return Def::equal(other) && this->index() == other->as<Extract>()->index();
+}
+bool Var::equal(const Def* other) const {
+    return Def::equal(other) && this->index() == other->as<Var>()->index();
+}
 
 //------------------------------------------------------------------------------
 
@@ -145,6 +139,7 @@ bool Var::equal(const Def* other) const { return Def::equal(other) && this->inde
 const Def* All         ::rebuild(World& to, const Def*  , Defs ops) const { return to.all(ops, name()); }
 const Def* Any         ::rebuild(World& to, const Def* t, Defs ops) const { return to.any(t, ops[0], name()); }
 const Def* App         ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
+const Def* Extract     ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], index(), name()); }
 const Def* Assume      ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Intersection::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(ops, name()); }
 const Def* Lambda      ::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
@@ -236,6 +231,11 @@ const Def* App::vsubstitute(Def2Def& map, int index, Defs args) const {
     return world().app(ops.front(), ops.skip_front(), name());
 }
 
+const Def* Extract::vsubstitute(Def2Def& map, int index, Defs args) const {
+    auto op = this->destructee()->substitute(map, index, args);
+    return world().extract(op, this->index(), name());
+}
+
 const Def* Assume::vsubstitute(Def2Def&, int, Defs) const { return this; }
 
 
@@ -302,15 +302,19 @@ std::ostream& Any::stream(std::ostream& os) const {
 std::ostream& App::stream(std::ostream& os) const {
     auto begin = "(";
     auto end = ")";
-    if (callee()->sort() == Type) {
+    if (destructee()->sort() == Type) {
         begin = "[";
         end = "]";
     }
-    return stream_list(streamf(os, "%", callee()), args(),
+    return stream_list(streamf(os, "%", destructee()), args(),
                       [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
 
 std::ostream& Assume::stream(std::ostream& os) const { return os << name(); }
+
+std::ostream& Extract::stream(std::ostream& os) const {
+    return destructee()->name_stream(os) << "." << index();
+}
 
 std::ostream& Intersection::stream(std::ostream& os) const {
     return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")", " ∩ ");

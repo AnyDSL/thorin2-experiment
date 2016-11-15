@@ -9,18 +9,21 @@
 namespace thorin {
 
 enum {
-    Node_App,
     Node_Assume,
+    Node_Var,
+    Node_Star,
+    Node_Pi,
+    Node_Sigma,
     Node_Variant,
     Node_Intersection,
     Node_Lambda,
-    Node_Pi,
-    Node_Sigma,
-    Node_Star,
     Node_Tuple,
-    Node_Var,
     Node_Any,
     Node_All,
+    Node_App,
+    Node_Extract,
+    Node_Match,
+    Node_Pick,
 };
 
 class Def;
@@ -172,13 +175,13 @@ public:
     bool is_linear() const       { return qualifier() & Linear; }
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
-    virtual int num_vars() const { return 0; }
 
     const Def* substitute(Def2Def&, int, Defs) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
 
     static size_t gid_counter() { return gid_counter_; }
 
+    virtual bool maybe_dependent() const { return true; }
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "")
             return os << name();
@@ -257,22 +260,35 @@ protected:
     {}
 
     static const Def* max_type(World&, Defs);
-
-public:
-    virtual const Def* domain() const = 0;
 };
 
-class Connective : public Abs {
+class Constructor : public Abs {
 protected:
-    Connective(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
+    Constructor(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
         : Abs(world, tag, type, num_ops, name)
     {}
-    Connective(World& world, int tag, const Def* type, Defs ops, const std::string& name)
+    Constructor(World& world, int tag, const Def* type, Defs ops, const std::string& name)
         : Abs(world, tag, type, ops, name)
     {}
+};
+
+class Destructor : public Def {
+protected:
+    Destructor(World& world, int tag, const Def* type, const Def* op, const std::string& name)
+        : Destructor(world, tag, type, Defs({op}), name)
+    {}
+    Destructor(World& world, int tag, const Def* type, Defs ops, const std::string& name)
+        : Def(world, tag, type, ops, name)
+    {
+        cache_ = nullptr;
+    }
 
 public:
-    virtual const Def* domain() const = 0;
+    const Def* destructee() const { return ops().front(); }
+    const Quantifier* quantifier() const { return destructee()->type()->as<Quantifier>(); }
+    Defs args() const { return ops().skip_front(); }
+    size_t num_args() const { return args().size(); }
+    const Def* arg(size_t i = 0) const { return args()[i]; }
 };
 
 class Pi : public Quantifier {
@@ -280,11 +296,10 @@ private:
     Pi(World& world, Defs domains, const Def* body, const std::string& name);
 
 public:
+    const Def* domain() const;
     Defs domains() const { return ops().skip_back(); }
     const Def* body() const { return ops().back(); }
     virtual const Def* reduce(Defs defs) const override { Def2Def map; return body()->substitute(map, 0, defs); }
-    virtual int num_vars() const override { return 1; }
-    virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -294,19 +309,35 @@ private:
     friend class World;
 };
 
-class Lambda : public Connective {
+class Lambda : public Constructor {
 private:
-    Lambda(World& world, const Def* type, const Def* body, const std::string& name);
+    Lambda(World& world, const Pi* type, const Def* body, const std::string& name);
 
 public:
-    Defs domains() const { return type()->as<Pi>()->domains(); }
+    const Def* domain() const;
+    Defs domains() const { return type()->domains(); }
     const Def* body() const { return op(0); }
-    virtual int num_vars() const override { return 1; }
+    const Pi* type() const { return Constructor::type()->as<Pi>(); }
+
     virtual const Def* reduce(Defs defs) const override { Def2Def map; return body()->substitute(map, 0, defs); }
-    virtual const Def* domain() const override;
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
+    virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
+
+    friend class World;
+};
+
+class App : public Destructor {
+private:
+    App(World& world, const Def* type, const Def* callee, Defs args, const std::string& name)
+        : Destructor(world, Node_App, type,  concat(callee, args), name)
+    {
+    }
+
+public:
+    virtual std::ostream& stream(std::ostream&) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -325,8 +356,6 @@ private:
     {}
 
     virtual const Def* reduce(Defs defs) const override;
-    virtual int num_vars() const override { return num_ops(); }
-    virtual const Def* domain() const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -336,21 +365,40 @@ public:
     friend class World;
 };
 
-class Tuple : public Connective {
+class Tuple : public Constructor {
 private:
     Tuple(World& world, const Def* type, Defs ops, const std::string& name)
-        : Connective(world, Node_Tuple, type, ops, name)
+        : Constructor(world, Node_Tuple, type, ops, name)
     {
         assert(type->as<Sigma>()->num_ops() == ops.size());
     }
 
     virtual const Def* reduce(Defs defs) const override;
-    virtual const Def* domain() const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
 public:
     virtual std::ostream& stream(std::ostream&) const override;
+
+    friend class World;
+};
+
+class Extract : public Destructor {
+private:
+    Extract(World& world, const Def* type, const Def* tuple, int index, const std::string& name)
+        : Destructor(world, Node_Extract, type, tuple, name)
+    {
+        index_ = index;
+    }
+
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
+    virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
+
+public:
+    int index() const { return index_; }
+    virtual std::ostream& stream(std::ostream&) const override;
+    virtual uint64_t vhash() const override;
+    virtual bool equal(const Def*) const override;
 
     friend class World;
 };
@@ -362,7 +410,6 @@ private:
     {}
 
     virtual const Def* reduce(Defs defs) const override;
-    virtual const Def* domain() const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -372,16 +419,30 @@ public:
     friend class World;
 };
 
-class All : public Connective {
+class All : public Constructor {
 private:
     All(World& world, const Def* type, Defs ops, const std::string& name)
-        : Connective(world, Node_Tuple, type, ops, name)
+        : Constructor(world, Node_All, type, ops, name)
     {
         assert(type->as<Sigma>()->num_ops() == ops.size());
     }
 
     virtual const Def* reduce(Defs defs) const override;
-    virtual const Def* domain() const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
+    virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
+
+public:
+    virtual std::ostream& stream(std::ostream&) const override;
+
+    friend class World;
+};
+
+class Pick : public Destructor {
+private:
+    Pick(World& world, const Def* type, const Def* def, const std::string& name)
+        : Destructor(world, Node_Pick, type, def, name)
+    {}
+
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -398,7 +459,6 @@ private:
     {}
 
     virtual const Def* reduce(Defs defs) const override;
-    virtual const Def* domain() const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -408,14 +468,13 @@ public:
     friend class World;
 };
 
-class Any : public Connective {
+class Any : public Constructor {
 private:
     Any(World& world, const Def* type, const Def* def, const std::string& name)
-        : Connective(world, Node_Any, type, {def}, name)
+        : Constructor(world, Node_Any, type, {def}, name)
     {}
 
     virtual const Def* reduce(Defs defs) const override;
-    virtual const Def* domain() const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -423,6 +482,20 @@ public:
     const Def* def() const { return op(0); }
 
     virtual std::ostream& stream(std::ostream&) const override;
+
+    friend class World;
+};
+
+class Match : public Destructor {
+private:
+    Match(World& world, const Def* type, const Def* def, const std::string& name)
+        : Destructor(world, Node_Match, type, def, name)
+    {}
+
+public:
+    virtual std::ostream& stream(std::ostream&) const override;
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
+    virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
     friend class World;
 };
@@ -475,27 +548,10 @@ private:
     {}
 
 public:
+    virtual bool maybe_dependent() const { return false; }
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
-
-    friend class World;
-};
-
-class App : public Def {
-private:
-    App(World& world, const Def* type, const Def* callee, Defs args, const std::string& name);
-
-public:
-    const Def* callee() const { return ops().front(); }
-    const Quantifier* quantifier() const { return callee()->type()->as<Quantifier>(); }
-    const Def* domain() const { return quantifier()->domain(); }
-    Defs args() const { return ops().skip_front(); }
-    size_t num_args() const { return args().size(); }
-    const Def* arg(size_t i = 0) const { return args()[i]; }
-    virtual std::ostream& stream(std::ostream&) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 

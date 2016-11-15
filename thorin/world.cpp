@@ -28,6 +28,13 @@ const Pi* World::pi(Defs domains, const Def* body, const std::string& name) {
     return unify(alloc<Pi>(domains.size() + 1, *this, domains, body, name));
 }
 
+const Def* World::sigma(Defs defs, const std::string& name) {
+    if (defs.size() == 1)
+        return defs.front();
+
+    return unify(alloc<Sigma>(defs.size(), *this, defs, name));
+}
+
 const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
     if (defs.size() == 1)
         return defs.front();
@@ -35,11 +42,27 @@ const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
     return unify(alloc<Tuple>(defs.size(), *this, type, defs, name));
 }
 
-const Def* World::sigma(Defs defs, const std::string& name) {
-    if (defs.size() == 1)
-        return defs.front();
+const Def* build_extract_type(World& world, const Def* tuple, int index) {
+    auto sigma = tuple->type()->as<Sigma>();
 
-    return unify(alloc<Sigma>(defs.size(), *this, defs, name));
+    auto type = sigma->op(index);
+    Def2Def map;
+    for (int delta = 1; type->maybe_dependent() && delta <= index; delta++) {
+        auto prev_extract = world.extract(tuple, index - delta);
+        type = type->substitute(map, delta - 1, {prev_extract});
+    }
+    return type;
+}
+
+const Def* World::extract(const Def* def, int index, const std::string& name) {
+    if (!def->isa<Sigma>() && !def->type()->isa<Sigma>()) {
+        assert(index == 0);
+        return def;
+    }
+
+    auto type = build_extract_type(*this, def, index);
+
+    return unify(alloc<Extract>(1, *this, type, def, index, name));
 }
 
 const Def* World::intersection(Defs defs, const std::string& name) {
@@ -69,21 +92,12 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
 
     if (auto cache = app->cache_)
         return cache;
-    if (auto abs = app->callee()->isa<Abs>())
+    if (auto abs = app->destructee()->isa<Abs>())
         return app->cache_ = abs->reduce(args);
     else
         return app->cache_ = app;
 
     return app;
-}
-
-const Def* World::extract(const Def* def, const Def* i) {
-    if (!def->isa<Sigma>() && !def->type()->isa<Sigma>()) {
-        assert(i->name() == "0");
-        return def;
-    }
-
-    return app(def, i);
 }
 
 }

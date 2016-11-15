@@ -84,4 +84,14 @@ int main()  {
         BApp<_ARR, N23, Nat>::emit()->dump();
 #endif
     }
+
+    // Test projections from dependent sigmas
+    auto poly = w.assume(w.pi(w.star(), w.star()), "Poly");
+    auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))});
+    sigma->dump();
+    auto sigma_val = w.assume(sigma);
+    auto fst_sigma = w.extract(sigma_val, 0);
+    cout << fst_sigma << ": " << fst_sigma->type() << endl;
+    auto snd_sigma = w.extract(sigma_val, 1);
+    cout << snd_sigma << ": " << snd_sigma->type() << endl;
 }

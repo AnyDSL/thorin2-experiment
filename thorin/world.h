@@ -39,6 +39,7 @@ public:
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "") { return app(callee, Defs({arg}), name); }
     const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
     const Def* tuple(Defs defs, const std::string& name = "") { return tuple(sigma(types(defs), name), defs, name); }
+    const Def* extract(const Def* def, int index, const std::string& name = "");
     const Def* sigma(Defs, const std::string& name = "");
     const Def* intersection(Defs defs, const std::string& name = "");
     const Def* variant(Defs defs, const std::string& name = "");
@@ -48,8 +49,6 @@ public:
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
     const Assume* nat() { return nat_; }
     const Assume* boolean() { return boolean_; }
-    const Def* extract(const Def* def, const Def* i);
-    const Def* extract(const Def* def, int i) { return extract(def, assume(nat(), std::to_string(i))); }
 
     const DefSet& defs() const { return defs_; }
 
