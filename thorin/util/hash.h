@@ -451,6 +451,7 @@ public:
     friend void swap(HashSet& s1, HashSet& s2) { swap(static_cast<Super&>(s1), static_cast<Super&>(s2)); }
 };
 
+#ifndef NDEBUG
 template<class Key, class Hasher, class KeyEqual>
 class HashSet<Key, Hasher, KeyEqual, typename std::enable_if<is_streamable<Key>::value, void>::type>
     : public HashSet<Key, Hasher, KeyEqual, bool>, public Streamable {
@@ -465,6 +466,7 @@ protected:
         return os << "}";
     }
 };
+#endif
 
 //------------------------------------------------------------------------------
 
@@ -502,6 +504,7 @@ public:
     friend void swap(HashMap& m1, HashMap& m2) { swap(static_cast<Super&>(m1), static_cast<Super&>(m2)); }
 };
 
+#ifdef NDEBUG
 template<class Key, class T, class Hasher, class KeyEqual>
 class HashMap<Key, T, Hasher, KeyEqual,
               typename std::enable_if<is_streamable<Key>::value && is_streamable<T>::value, void>::type>
@@ -517,6 +520,7 @@ public:
         return os << "}";
     }
 };
+#endif
 
 //------------------------------------------------------------------------------
 

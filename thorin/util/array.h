@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "thorin/util/hash.h"
+#include "thorin/util/stream.h"
 
 namespace thorin {
 
@@ -25,7 +26,7 @@ template<class T> class Array;
  * Note that you can often construct an @p ArrayRef inline with an initializer_list: <code>foo(arg1, {elem1, elem2, elem3}, arg3)</code>.
  * Useful operations are @p skip_front and @p skip_back to create other @p ArrayRef%s.
  */
-template<class T>
+template<class T, typename=void>
 class ArrayRef {
 public:
     typedef T value_type;
@@ -78,6 +79,25 @@ private:
     size_t size_;
     const T* ptr_;
 };
+
+#ifndef NDEBUG
+template<class T>
+class ArrayRef<T, typename std::enable_if<is_streamable<T>::value>::type>
+    : public ArrayRef<T, bool>, public Streamable {
+public:
+    using ArrayRef<T, bool>::ArrayRef;
+
+    std::ostream& stream(std::ostream& os) const {
+        os << "[";
+        auto sep = "";
+        for (auto element : *this) {
+            os << sep << element;
+            sep = ", ";
+        }
+        return os << "]";
+    }
+};
+#endif
 
 //------------------------------------------------------------------------------
 
@@ -192,8 +212,8 @@ private:
     T* ptr_;
 };
 
-template<class T>
-Array<T> ArrayRef<T>::cut(ArrayRef<size_t> indices, size_t reserve) const {
+template<class T, typename V>
+Array<T> ArrayRef<T, V>::cut(ArrayRef<size_t> indices, size_t reserve) const {
     size_t num_old = size();
     size_t num_idx = indices.size();
     size_t num_res = num_old - num_idx;
