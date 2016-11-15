@@ -30,6 +30,7 @@ void testQualifiers() {
 
     World w;
     auto Nat = w.nat();
+    auto n42 = w.assume(Nat, "42");
     auto ANat = w.nat(A);
     auto RNat = w.nat(R);
     auto LNat = w.nat(L);
@@ -67,38 +68,35 @@ void testQualifiers() {
     auto anid2 = w.app(poly_aid, ANat);
     cout << anid2 << " : " << anid2->type() << endl;
 
+    auto T = [&](int i){ return w.var(w.star(), i, "T"); };
     cout << "--- Unrestricted Refs ---" << endl;
     {
         auto Ref = w.assume(w.pi(w.star(), w.star()), "Ref");
         printType(Ref);
-        auto T_1 = w.var(w.star(), 0, "T");
-        auto T_2 = w.var(w.star(), 1, "T");
-        auto app_Ref_T_1 = w.app(Ref, T_1);
-        auto NewRef = w.assume(w.pi(w.star(), w.pi(T_1, w.app(Ref, T_2))), "NewRef");
+        auto app_Ref_T0 = w.app(Ref, T(0));
+        auto NewRef = w.assume(w.pi({w.star(), T(0)}, w.app(Ref, T(1))), "NewRef");
         printType(NewRef);
-        auto ReadRef = w.assume(w.pi(w.star(), w.pi(w.app(Ref, T_1), T_2)), "ReadRef");
+        auto ReadRef = w.assume(w.pi({w.star(), w.app(Ref, T(0))}, T(1)), "ReadRef");
         printType(ReadRef);
-        auto WriteRef = w.assume(w.pi(w.star(), w.pi({app_Ref_T_1, T_1}, w.unit())), "WriteRef");
+        auto WriteRef = w.assume(w.pi({w.star(), app_Ref_T0, T(0)}, w.unit()), "WriteRef");
         printType(WriteRef);
-        auto FreeRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_1, w.unit())), "FreeRef");
+        auto FreeRef = w.assume(w.pi({w.star(), app_Ref_T0}, w.unit()), "FreeRef");
         printType(FreeRef);
     }
     cout << "--- Affine Refs ---" << endl;
     {
         auto Ref = w.assume(w.pi(w.star(), w.star(A)), "ARef");
         printType(Ref);
-        auto T_0 = w.var(w.star(), 0, "T");
-        auto T_1 = w.var(w.star(), 1, "T");
-        auto T_2 = w.var(w.star(), 2, "T");
-        auto app_Ref_T_0 = w.app(Ref, T_0);
-        auto NewRef = w.assume(w.pi(w.star(), w.pi(T_0, w.app(Ref, T_1))), "NewARef");
+        auto app_Ref_T0 = w.app(Ref, T(0));
+        auto NewRef = w.assume(w.pi({w.star(), T(0)}, w.app(Ref, T(1))), "NewARef");
         printType(NewRef);
-        //  Π(*).Π(ARef[<0:*>]).Σ(<1:*>, ARef[<2:*>])
-        auto ReadRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_0, w.sigma({T_1, w.app(Ref, T_2)}))), "ReadARef");
+        // ReadRef : Π(*).Π(ARef[<0:*>]).Σ(<1:*>, ARef[<2:*>])
+        auto ReadRef = w.assume(w.pi({w.star(), app_Ref_T0}, w.sigma({T(1), w.app(Ref, T(2))})),
+                                "ReadARef");
         printType(ReadRef);
-        auto WriteRef = w.assume(w.pi(w.star(), w.pi({app_Ref_T_0, T_0}, w.unit())), "WriteARef");
+        auto WriteRef = w.assume(w.pi({w.star(), app_Ref_T0, T(0)}, w.unit()), "WriteARef");
         printType(WriteRef);
-        auto FreeRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_0, w.unit())), "FreeARef");
+        auto FreeRef = w.assume(w.pi({w.star(), app_Ref_T0}, w.unit()), "FreeARef");
         printType(FreeRef);
     }
     cout << "--- Affine Capabilities for Refs ---" << endl;
@@ -107,23 +105,33 @@ void testQualifiers() {
         auto Cap = w.assume(w.pi(w.star(), w.star(A)), "ACap");
         printType(Ref);
         printType(Cap);
-        auto T_0 = w.var(w.star(), 0, "T");
-        auto C_0 = w.var(w.star(), 0, "C");
-        auto T_1 = w.var(w.star(), 1, "T");
-        auto C_1 = w.var(w.star(), 1, "C");
-        auto T_2 = w.var(w.star(), 2, "T");
-        auto C_3 = w.var(w.star(), 3, "C");
-        auto T_3 = w.var(w.star(), 3, "T");
-        auto sigma = w.sigma({w.star(), w.app(Ref, {T_1, C_0}), w.app(Cap, C_1)});
-        auto NewRef = w.assume(w.pi({w.star(), T_0}, sigma), "NewCRef");
+        auto C = [&](int i){ return w.var(w.star(), i, "C"); };
+        auto sigma = w.sigma({w.star(), w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))});
+        auto NewRef = w.assume(w.pi({w.star(), T(0)}, sigma), "NewCRef");
         printType(NewRef);
-        auto ReadRef = w.assume(w.pi({w.star(), w.star(), w.app(Ref, {T_1, C_0}), w.app(Cap, C_1)},
-                                     w.sigma({T_3, w.app(Cap, C_3)})), "ReadCRef");
+        // ReadRef : Π(T:*, C:*, CRef[T, C], ᴬACap[C]).ᴬΣ(T, ᴬACap[C])
+        auto ReadRef = w.assume(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))},
+                                     w.sigma({T(3), w.app(Cap, C(3))})), "ReadCRef");
         printType(ReadRef);
-        // auto WriteRef = w.assume(w.pi(w.star(), w.pi({app_Ref_T_0, T_0}, w.unit())), "WriteCRef");
-        // printType(WriteRef);
-        // auto FreeRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_0, w.unit())), "FreeCRef");
-        // printType(FreeRef);
+        // AliasReadRef : Π(T:*, C:*, CRef[T, C]).T
+        auto AliasReadRef = w.assume(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)})}, T(3)),
+                                     "AliasReadCRef");
+        printType(AliasReadRef);
+        // WriteRef : Π(T:*, C:*, CRef[T, C], ᴬACap[C], T).ᴬACap[C]
+        auto WriteRef = w.assume(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1)), T(3)},
+                                      w.app(Cap, C(3))), "WriteCRef");
+        printType(WriteRef);
+        // FreeRef : Π(T:*, C:*, CRef[T, C], ᴬACap[C]).()
+        auto FreeRef = w.assume(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))},
+                                     w.unit()), "FreeCRef");
+        printType(FreeRef);
+        // TODO: this does not work until we have real projections from dependent Σ
+        // auto ref = w.app(w.app(NewRef, Nat), n42);
+        // printValue(ref);
+    }
+    cout << "--- Affine Fractional Capabilities for Refs ---" << endl;
+    {
+        // TODO
     }
     cout << "--- QualifierTest end ---" << endl;
 }
