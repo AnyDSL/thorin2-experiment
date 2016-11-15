@@ -107,21 +107,23 @@ void testQualifiers() {
         auto Cap = w.assume(w.pi(w.star(), w.star(A)), "ACap");
         printType(Ref);
         printType(Cap);
-        auto T_1 = w.var(w.star(), 0, "T");
-        auto C_1 = w.var(w.star(), 0, "C");
-        auto T_2 = w.var(w.star(), 1, "T");
-        auto C_2 = w.var(w.star(), 1, "C");
-        auto T_3 = w.var(w.star(), 2, "T");
-        auto app_Ref_T_1 = w.app(Ref, T_1);
-        auto sigma = w.sigma({w.star(), w.app(Ref, {T_2, C_1}), w.app(Cap, C_2)});
-        auto NewRef = w.assume(w.pi(w.star(), w.pi(T_1, sigma)), "NewCRef");
+        auto T_0 = w.var(w.star(), 0, "T");
+        auto C_0 = w.var(w.star(), 0, "C");
+        auto T_1 = w.var(w.star(), 1, "T");
+        auto C_1 = w.var(w.star(), 1, "C");
+        auto T_2 = w.var(w.star(), 2, "T");
+        auto C_3 = w.var(w.star(), 3, "C");
+        auto T_3 = w.var(w.star(), 3, "T");
+        auto sigma = w.sigma({w.star(), w.app(Ref, {T_1, C_0}), w.app(Cap, C_1)});
+        auto NewRef = w.assume(w.pi({w.star(), T_0}, sigma), "NewCRef");
         printType(NewRef);
-        auto ReadRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_1, w.sigma({T_2, app_Ref_T_1}))), "ReadCRef");
+        auto ReadRef = w.assume(w.pi({w.star(), w.star(), w.app(Ref, {T_1, C_0}), w.app(Cap, C_1)},
+                                     w.sigma({T_3, w.app(Cap, C_3)})), "ReadCRef");
         printType(ReadRef);
-        auto WriteRef = w.assume(w.pi(w.star(), w.pi({app_Ref_T_1, T_1}, w.unit())), "WriteCRef");
-        printType(WriteRef);
-        auto FreeRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_1, w.unit())), "FreeCRef");
-        printType(FreeRef);
+        // auto WriteRef = w.assume(w.pi(w.star(), w.pi({app_Ref_T_0, T_0}, w.unit())), "WriteCRef");
+        // printType(WriteRef);
+        // auto FreeRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_0, w.unit())), "FreeCRef");
+        // printType(FreeRef);
     }
     cout << "--- QualifierTest end ---" << endl;
 }
