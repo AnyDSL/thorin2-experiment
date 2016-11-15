@@ -6,10 +6,29 @@ import islpy as isl
 
 ctx = isl.DEFAULT_CONTEXT
 last_var_number = 0
-def getVarName(name = ''):
+def get_var_name(name =''):
 	global last_var_number
 	last_var_number += 1
 	return str(name)+'_'+str(last_var_number)
+
+
+def set_join(a, b):
+	# TODO unify variables
+	return a.flat_product(b)
+
+def constraint_equal(bset, v1, *args):
+	for v2 in args:
+		if v2 != v1:
+			bset = bset.add_constraint(isl.Constraint.eq_from_names(bset.space, {v1: 1, v2: -1}))
+	return bset
+
+def flatten(x):
+	if isinstance(x, list):
+		result = []
+		for y in x:
+			result += flatten(y)
+		return result
+	return [x]
 
 
 class AstNode:
@@ -34,7 +53,16 @@ class AstNode:
 		return self.__class__(ops)
 
 	def get_constraints(self):
+		"""
+		:return: (varname-list, accepted, possible)
+		"""
 		raise Exception('TODO '+repr(self.__class__))
+
+	def get_nat_variables(self):
+		vars = [op.get_nat_variables() for op in self.ops if isinstance(op, AstNode)]
+		if len(vars) == 1:
+			return vars[0]
+		return vars
 
 
 global_assumptions = {}
@@ -59,6 +87,9 @@ class Assume(AstNode):
 	def get_type(self):
 		return self.ops[1]
 
+	def get_nat_variables(self):
+		raise Exception('NI')
+
 
 class Constant(AstNode):
 	def __init__(self, name):
@@ -76,6 +107,12 @@ class Constant(AstNode):
 	def subst(self, name, value):
 		return self
 
+	def get_nat_variables(self):
+		if self.name == 'Nat':
+			return [get_var_name('p')]
+		else:
+			raise Exception('NI')
+
 
 class ParamDef(AstNode):
 	def __init__(self, name, type):
@@ -84,6 +121,7 @@ class ParamDef(AstNode):
 		AstNode.__init__(self, [type])
 		assert not isinstance(name, AstNode)
 		self.name = str(name)
+		self.constraint_vars = []
 
 	def __str__(self):
 		return self.name
@@ -99,6 +137,20 @@ class ParamDef(AstNode):
 			return value
 		return ParamDef(self.name, self.ops[0].subst(name, value))
 
+	def get_constraints(self):
+		vars = self.constraint_vars
+		unique_vars = set(flatten(vars))
+		space = isl.Space.create_from_names(ctx, set=unique_vars)
+		bset = isl.BasicSet.universe(space)
+		return (vars, bset, bset)
+
+	def get_nat_variables(self):
+		raise Exception('NI')
+
+	def create_new_constraint_vars(self):
+		self.constraint_vars = self.ops[0].get_nat_variables()
+		return self.constraint_vars
+
 
 class Lambda(AstNode):
 	# ops = param, body
@@ -112,6 +164,12 @@ class Lambda(AstNode):
 		if name == self.ops[0].name:
 			return self
 		return AstNode.subst(self, name, value)
+
+	def get_constraints(self):
+		param_vars = self.ops[0].create_new_constraint_vars()
+		body_vars, body_accepted, body_possible = self.ops[1].get_constraints()
+		return ([param_vars, body_vars], body_accepted, body_possible)
+
 
 
 class Pi(AstNode):
@@ -139,6 +197,20 @@ class App(AstNode):
 		result = func.ops[1].subst(func.ops[0].name, self.ops[1])
 		return result
 
+	def get_constraints(self):
+		func_vars, func_accepted, func_possible = self.ops[0].get_constraints()
+		param_vars, param_accepted, param_possible = self.ops[1].get_constraints()
+		accepted = set_join(func_accepted, param_accepted)
+		possible = set_join(func_possible, param_possible)
+		#TODO type error: forall[free vars]. exists[bound vars]. possible not subset of accepted
+		func_param_vars = flatten(func_vars[0])
+		param_vars = flatten(param_vars)
+		assert len(func_param_vars) == len(param_vars)
+		for vf, vp in zip(func_param_vars, param_vars):
+			accepted = constraint_equal(accepted, vf, vp)
+			possible = constraint_equal(possible, vf, vp)
+		return (func_vars[1], accepted, possible)
+
 
 
 class Tupel(AstNode):
@@ -147,6 +219,18 @@ class Tupel(AstNode):
 
 	def get_type(self):
 		return Sigma([op.get_type() for op in self.ops])
+
+	def get_constraints(self):
+		vars, accepted, possible = self.ops[0].get_constraints()
+		vars = [vars]
+		for op in self.ops[1:]:
+			vars2, accepted2, possible2 = op.get_constraints()
+			vars.append(vars2)
+			accepted = set_join(accepted, accepted2)
+			possible = set_join(possible, possible2)
+		return (vars, accepted, possible)
+
+
 
 
 class Sigma(AstNode):
@@ -174,24 +258,24 @@ class Extract(AstNode):
 
 def nat_const_constraints(self):
 	name = self.ops[0]
-	vname = getVarName('c' + str(name))
+	vname = get_var_name('c' + str(name))
 	space = isl.Space.create_from_names(ctx, set=[vname])
 	accepted = isl.BasicSet.universe(space)
-	guaranteed = accepted.add_constraint(isl.Constraint.eq_from_names(space, {vname: 1, 1: -int(name)}))
-	return ([vname], accepted, guaranteed)
+	possible = accepted.add_constraint(isl.Constraint.eq_from_names(space, {vname: 1, 1: -int(name)}))
+	return ([vname], accepted, possible)
 
 
 def nat_add_constraint(self):
-	a = getVarName()
-	b = getVarName()
-	c = getVarName()
+	a = get_var_name()
+	b = get_var_name()
+	c = get_var_name()
 	space = isl.Space.create_from_names(ctx, set=[a, b, c])
 	accepted = isl.BasicSet.universe(space)
 	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {a: 1}))
 	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {b: 1}))
 	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {c: 1}))
-	guaranteed = accepted.add_constraint(isl.Constraint.eq_from_names(space, {a: 1, b: 1, c: -1}))
-	return ([a, b, c], accepted, guaranteed)
+	possible = accepted.add_constraint(isl.Constraint.eq_from_names(space, {a: 1, b: 1, c: -1}))
+	return ([[a, b], c], accepted, possible)
 
 
 
