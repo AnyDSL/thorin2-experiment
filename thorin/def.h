@@ -253,7 +253,6 @@ private:
     friend class Scope;
 };
 
-
 uint64_t UseHash::operator()(Use use) const {
     return use->gid() | (uint64_t(use.index()) << 32);
 }
@@ -280,7 +279,7 @@ protected:
         : Abs(world, tag, type, ops, q, name)
     {}
 
-    static const Def* max_type(World&, Defs);
+    static const Def* max_type(World&, Defs, Qualifier::URAL = Qualifier::Unrestricted);
 
 public:
     virtual const Def* domain() const = 0;
@@ -320,7 +319,7 @@ private:
 
 class Lambda : public Connective {
 private:
-    Lambda(World& world, const Pi* type, const Def* body, const std::string& name);
+    Lambda(World& world, const Def* type, const Def* body, const std::string& name);
 
 public:
     Defs domains() const { return type()->as<Pi>()->domains(); }
@@ -344,8 +343,8 @@ private:
     {
         assert(false && "TODO");
     }
-    Sigma(World& world, Defs ops, const std::string& name, Qualifier::URAL q)
-        : Quantifier(world, Node_Sigma, infer_type(world, ops), ops, q, name)
+    Sigma(World& world, Defs ops, Qualifier::URAL q, const std::string& name)
+        : Quantifier(world, Node_Sigma, max_type(world, ops, q), ops, q, name)
     {
         assert(sort() != Type || qualifier() <= Qualifier::meet(ops));
     }
@@ -369,7 +368,7 @@ private:
     Tuple(World& world, const Sigma* type, Defs ops, const std::string& name)
         : Connective(world, Node_Tuple, type, ops, name)
     {
-        assert(type->num_ops() == ops.size());
+        assert(type->as<Sigma>()->num_ops() == ops.size());
     }
 
     virtual const Def* reduce(Defs defs) const override;
@@ -385,9 +384,11 @@ public:
 
 class Intersection : public Quantifier {
 private:
-    Intersection(World& world, Defs ops, const std::string& name)
-        : Quantifier(world, Node_Intersection, max_type(world, ops), ops, name)
-    {}
+    Intersection(World& world, Defs ops, Qualifier::URAL q, const std::string& name)
+        : Quantifier(world, Node_Intersection, max_type(world, ops, q), ops, q, name)
+    {
+        assert(sort() != Type || qualifier() <= Qualifier::meet(ops));
+    }
 
     virtual const Def* reduce(Defs defs) const override;
     virtual const Def* domain() const override;
@@ -405,7 +406,7 @@ private:
     All(World& world, const Def* type, Defs ops, const std::string& name)
         : Connective(world, Node_Tuple, type, ops, name)
     {
-        assert(type->as<Sigma>()->num_ops() == ops.size());
+        assert(type->as<Intersection>()->num_ops() == ops.size());
     }
 
     virtual const Def* reduce(Defs defs) const override;
@@ -421,8 +422,8 @@ public:
 
 class Variant : public Quantifier {
 private:
-    Variant(World& world, Defs ops, const std::string& name)
-        : Quantifier(world, Node_Variant, max_type(world, ops), ops, name)
+    Variant(World& world, Defs ops, Qualifier::URAL q, const std::string& name)
+        : Quantifier(world, Node_Variant, max_type(world, ops, q), ops, q, name)
     {}
 
     virtual const Def* reduce(Defs defs) const override;
@@ -458,7 +459,7 @@ public:
 class Star : public Def {
 private:
     Star(World& world, Qualifier::URAL q)
-        : Def(world, Node_Star, nullptr, Defs(), q, "type")
+        : Def(world, Node_Star, nullptr, Defs(), q, "*")
     {}
 
 public:
@@ -541,7 +542,7 @@ public:
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubst(Def2Def&, int, Defs) const override;
+    virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
     friend class World;
 };

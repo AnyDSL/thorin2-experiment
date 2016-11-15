@@ -34,7 +34,7 @@ void testQualifiers() {
     auto RNat = w.nat(R);
     auto LNat = w.nat(L);
     auto an0 = w.assume(ANat, "0");
-    auto anx = w.var(ANat, 1, "x");
+    auto anx = w.var(ANat, 0, "x");
     auto anid = w.lambda(ANat, anx, "anid");
     auto app1 = w.app(anid, an0);
     assert(w.app(anid, an0) == w.error());
@@ -49,7 +49,7 @@ void testQualifiers() {
     assert(w.extract(tuple, 0) == w.error());
 
     auto a_id_type = w.pi(Nat, Nat, A);
-    auto nx = w.var(Nat, 1, "x");
+    auto nx = w.var(Nat, 0, "x");
     auto a_id = w.lambda(Nat, nx, A, "a_id");
     assert(a_id_type == a_id->type());
     auto n0 = w.assume(Nat, "0");
@@ -57,9 +57,9 @@ void testQualifiers() {
     assert(w.app(a_id, n0) == w.error());
 
     // λᴬT:*.λx:ᴬT.x
-    auto aT1 = w.var(w.star(A), 1, "T");
-    auto aT2 = w.var(w.star(A), 2, "T");
-    auto x = w.var(aT2, 1, "x");
+    auto aT1 = w.var(w.star(A), 0, "T");
+    auto aT2 = w.var(w.star(A), 1, "T");
+    auto x = w.var(aT2, 0, "x");
     auto poly_aid = w.lambda(aT2->type(), w.lambda(aT1, x));
     cout << poly_aid << " : " << poly_aid->type() << endl;
 
@@ -71,8 +71,8 @@ void testQualifiers() {
     {
         auto Ref = w.assume(w.pi(w.star(), w.star()), "Ref");
         printType(Ref);
-        auto T_1 = w.var(w.star(), 1, "T");
-        auto T_2 = w.var(w.star(), 2, "T");
+        auto T_1 = w.var(w.star(), 0, "T");
+        auto T_2 = w.var(w.star(), 1, "T");
         auto app_Ref_T_1 = w.app(Ref, T_1);
         auto NewRef = w.assume(w.pi(w.star(), w.pi(T_1, w.app(Ref, T_2))), "NewRef");
         printType(NewRef);
@@ -87,16 +87,18 @@ void testQualifiers() {
     {
         auto Ref = w.assume(w.pi(w.star(), w.star(A)), "ARef");
         printType(Ref);
+        auto T_0 = w.var(w.star(), 0, "T");
         auto T_1 = w.var(w.star(), 1, "T");
         auto T_2 = w.var(w.star(), 2, "T");
-        auto app_Ref_T_1 = w.app(Ref, T_1);
-        auto NewRef = w.assume(w.pi(w.star(), w.pi(T_1, w.app(Ref, T_2))), "NewARef");
+        auto app_Ref_T_0 = w.app(Ref, T_0);
+        auto NewRef = w.assume(w.pi(w.star(), w.pi(T_0, w.app(Ref, T_1))), "NewARef");
         printType(NewRef);
-        auto ReadRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_1, w.sigma({T_2, app_Ref_T_1}))), "ReadARef");
+        //  Π(*).Π(ARef[<0:*>]).Σ(<1:*>, ARef[<2:*>])
+        auto ReadRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_0, w.sigma({T_1, w.app(Ref, T_2)}))), "ReadARef");
         printType(ReadRef);
-        auto WriteRef = w.assume(w.pi(w.star(), w.pi({app_Ref_T_1, T_1}, w.unit())), "WriteARef");
+        auto WriteRef = w.assume(w.pi(w.star(), w.pi({app_Ref_T_0, T_0}, w.unit())), "WriteARef");
         printType(WriteRef);
-        auto FreeRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_1, w.unit())), "FreeARef");
+        auto FreeRef = w.assume(w.pi(w.star(), w.pi(app_Ref_T_0, w.unit())), "FreeARef");
         printType(FreeRef);
     }
     cout << "--- Affine Capabilities for Refs ---" << endl;
@@ -105,11 +107,11 @@ void testQualifiers() {
         auto Cap = w.assume(w.pi(w.star(), w.star(A)), "ACap");
         printType(Ref);
         printType(Cap);
-        auto T_1 = w.var(w.star(), 1, "T");
-        auto C_1 = w.var(w.star(), 1, "C");
-        auto T_2 = w.var(w.star(), 2, "T");
-        auto C_2 = w.var(w.star(), 2, "C");
-        auto T_3 = w.var(w.star(), 3, "T");
+        auto T_1 = w.var(w.star(), 0, "T");
+        auto C_1 = w.var(w.star(), 0, "C");
+        auto T_2 = w.var(w.star(), 1, "T");
+        auto C_2 = w.var(w.star(), 1, "C");
+        auto T_3 = w.var(w.star(), 2, "T");
         auto app_Ref_T_1 = w.app(Ref, T_1);
         auto sigma = w.sigma({w.star(), w.app(Ref, {T_2, C_1}), w.app(Cap, C_2)});
         auto NewRef = w.assume(w.pi(w.star(), w.pi(T_1, sigma)), "NewCRef");

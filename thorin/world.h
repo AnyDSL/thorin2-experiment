@@ -91,9 +91,18 @@ public:
                  const std::string& name = "") {
         return insert(alloc<Sigma>(num_ops, *this, num_ops, q, name));
     }
-    const Def* intersection(Defs defs, const std::string& name = "");
-    const Def* variant(Defs defs, const std::string& name = "");
-    const Def* all(Defs defs, const std::string& name = "");
+    const Def* intersection(Defs defs, const std::string& name = "") {
+        return intersection(defs, Qualifier::meet(defs), name);
+    }
+    const Def* intersection(Defs defs, Qualifier::URAL q, const std::string& name = "");
+    const Def* variant(Defs defs, const std::string& name = "") {
+        return variant(defs, Qualifier::meet(defs), name);
+    }
+    const Def* variant(Defs defs, Qualifier::URAL q, const std::string& name = "");
+    const Def* all(Defs defs, const std::string& name = "") {
+        return all(intersection(defs), defs, name);
+    }
+    const Def* all(const Def* type, Defs defs, const std::string& name = "");
     const Def* any(const Def* type, const Def* def, const std::string& name = "");
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
 

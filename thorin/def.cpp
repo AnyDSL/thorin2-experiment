@@ -120,17 +120,21 @@ Pi::Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, const std
 {}
 
 App::App(World& world, const Def* type, const Def* callee, Defs args, const std::string& name)
-    : Def(world, Node_App, type, concat(callee, args), Qualifier::Unrestricted, name)
+    : Def(world, Node_App, type, concat(callee, args), type->qualifier(), name)
 {
     cache_ = nullptr;
 }
 
-const Def* Quantifier::max_type(World& world, Defs ops) {
+const Def* Quantifier::max_type(World& world, Defs ops, Qualifier::URAL q) {
+    auto qualifier = Qualifier::Unrestricted;
     for (auto op : ops) {
         if (!op->type())
             return nullptr;
+        qualifier = Qualifier::meet(qualifier, op->type()->qualifier());
     }
-    return world.star();
+    assert(q <= qualifier &&
+           "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
+    return world.star(q);
 }
 
 //------------------------------------------------------------------------------
@@ -195,6 +199,7 @@ const Def* All         ::rebuild(World& to, const Def*  , Defs ops) const { retu
 const Def* Any         ::rebuild(World& to, const Def* t, Defs ops) const { return to.any(t, ops[0], name()); }
 const Def* App         ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
 const Def* Assume      ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
+const Def* Error       ::rebuild(World& to, const Def*  , Defs    ) const { return to.error(); }
 const Def* Intersection::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(ops, name()); }
 const Def* Lambda      ::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
 const Def* Pi          ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
@@ -287,6 +292,7 @@ const Def* App::vsubstitute(Def2Def& map, int index, Defs args) const {
 
 const Def* Assume::vsubstitute(Def2Def&, int, Defs) const { return this; }
 
+const Def* Error::vsubstitute(Def2Def&, int, Defs) const { return this; }
 
 const Def* Intersection::vsubstitute(Def2Def& map, int index, Defs args) const {
     return world().intersection(thorin::substitute(map, index, ops(), args), name());
@@ -338,7 +344,8 @@ const Def* Variant::vsubstitute(Def2Def& map, int index, Defs args) const {
  */
 
 std::ostream& All::stream(std::ostream& os) const {
-    return stream_list(os, qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")", " ∧ ");
+    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
+                       " ∧ ");
 }
 
 std::ostream& Any::stream(std::ostream& os) const {
@@ -355,7 +362,7 @@ std::ostream& App::stream(std::ostream& os) const {
         begin = "[";
         end = "]";
     }
-    return stream_list(streamf(os, qualifier(), "%", callee()), args(),
+    return stream_list(streamf(os << qualifier(), "%", callee()), args(),
                        [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
 
@@ -364,21 +371,22 @@ std::ostream& Assume::stream(std::ostream& os) const { return os << qualifier() 
 std::ostream& Error::stream(std::ostream& os) const { return os << "Error"; }
 
 std::ostream& Intersection::stream(std::ostream& os) const {
-    return stream_list(os, qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")", " ∩ ");
+    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
+                       " ∩ ");
 }
 
 std::ostream& Lambda::stream(std::ostream& os) const {
-    stream_list(os, qualifier() << "λ", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    stream_list(os << qualifier() << "λ", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
     return body()->name_stream(os << ".");
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
-    stream_list(os, qualifier() << "Π", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    stream_list(os << qualifier() << "Π", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
     return body()->name_stream(os << ".");
 }
 
 std::ostream& Sigma::stream(std::ostream& os) const {
-    return stream_list(os, qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
+    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
 }
 
 std::ostream& Star::stream(std::ostream& os) const {
@@ -386,7 +394,7 @@ std::ostream& Star::stream(std::ostream& os) const {
 }
 
 std::ostream& Tuple::stream(std::ostream& os) const {
-    return stream_list(os, qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
 }
 
 std::ostream& Var::stream(std::ostream& os) const {
@@ -394,17 +402,9 @@ std::ostream& Var::stream(std::ostream& os) const {
     return type()->name_stream(os) << ">";
 }
 
-std::ostream& Tuple::stream(std::ostream& os) const {
-    return stream_list(os, qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
-}
-
-std::ostream& Var::stream(std::ostream& os) const {
-    os << "<" << index() << ":";
-    return type()->name_stream(os) << ">";
-}
-
 std::ostream& Variant::stream(std::ostream& os) const {
-    return stream_list(os, qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")", " ∪ ");
+    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
+                       " ∪ ");
 }
 
 //------------------------------------------------------------------------------

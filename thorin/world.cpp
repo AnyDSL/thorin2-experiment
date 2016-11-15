@@ -41,26 +41,37 @@ const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
     return unify(alloc<Tuple>(defs.size(), *this, type->as<Sigma>(), defs, name));
 }
 
+const Def* single_qualified(Defs defs, Qualifier::URAL q) {
+    assert(defs.size() == 1);
+    auto single = defs.front();
+    // TODO if we use automatic qualifier subtyping, need to allow it here as well
+    assert(!single || single->qualifier() == q);
+    return single;
+}
+
 const Def* World::sigma(Defs defs, Qualifier::URAL q, const std::string& name) {
-    if (defs.size() == 1) {
-        auto single = defs.front();
-        assert(!single || single->qualifier() == q);
-        return single;
-    }
+    if (defs.size() == 1) { return single_qualified(defs, q); }
 
-    return unify(alloc<Sigma>(defs.size(), *this, defs, name, q));
+    return unify(alloc<Sigma>(defs.size(), *this, defs, q, name));
 }
 
-const Def* World::intersection(Defs defs, const std::string& name) {
-    return unify(alloc<Intersection>(defs.size(), *this, defs, name));
+const Def* World::intersection(Defs defs, Qualifier::URAL q, const std::string& name) {
+    if (defs.size() == 1) { return single_qualified(defs, q); }
+
+    return unify(alloc<Intersection>(defs.size(), *this, defs, q, name));
 }
 
-const Def* World::all(Defs defs, const std::string& name) {
-    return unify(alloc<All>(defs.size(), *this, /*TODO*/nullptr, defs, name));
+const Def* World::all(const Def* type, Defs defs, const std::string& name) {
+    if (defs.size() == 1)
+        return defs.front();
+
+    return unify(alloc<All>(defs.size(), *this, type, defs, name));
 }
 
-const Def* World::variant(Defs defs, const std::string& name) {
-    return unify(alloc<Variant>(defs.size(), *this, defs, name));
+const Def* World::variant(Defs defs, Qualifier::URAL q, const std::string& name) {
+    if (defs.size() == 1) { return single_qualified(defs, q); }
+
+    return unify(alloc<Variant>(defs.size(), *this, defs, q, name));
 }
 
 const Def* World::any(const Def* type, const Def* def, const std::string& name) {
