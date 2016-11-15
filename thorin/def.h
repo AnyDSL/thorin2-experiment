@@ -204,7 +204,7 @@ public:
 
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "")
-            return os << name();
+            return os << qualifier() << name();
         return stream(os);
     }
 
