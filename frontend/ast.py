@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import re
+import types
+import islpy as isl
+
+ctx = isl.DEFAULT_CONTEXT
+last_var_number = 0
+def getVarName(name = ''):
+	global last_var_number
+	last_var_number += 1
+	return str(name)+'_'+str(last_var_number)
 
 
 class AstNode:
@@ -23,6 +32,9 @@ class AstNode:
 			else:
 				ops.append(op)
 		return self.__class__(ops)
+
+	def get_constraints(self):
+		raise Exception('TODO '+repr(self.__class__))
 
 
 global_assumptions = {}
@@ -159,6 +171,30 @@ class Extract(AstNode):
 
 
 
+
+def nat_const_constraints(self):
+	name = self.ops[0]
+	vname = getVarName('c' + str(name))
+	space = isl.Space.create_from_names(ctx, set=[vname])
+	accepted = isl.BasicSet.universe(space)
+	guaranteed = accepted.add_constraint(isl.Constraint.eq_from_names(space, {vname: 1, 1: -int(name)}))
+	return ([vname], accepted, guaranteed)
+
+
+def nat_add_constraint(self):
+	a = getVarName()
+	b = getVarName()
+	c = getVarName()
+	space = isl.Space.create_from_names(ctx, set=[a, b, c])
+	accepted = isl.BasicSet.universe(space)
+	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {a: 1}))
+	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {b: 1}))
+	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {c: 1}))
+	guaranteed = accepted.add_constraint(isl.Constraint.eq_from_names(space, {a: 1, b: 1, c: -1}))
+	return ([a, b, c], accepted, guaranteed)
+
+
+
 global_constants = {'Nat': Constant('Nat'), '*': Constant('*')}
 
 def get_constant(name):
@@ -166,8 +202,12 @@ def get_constant(name):
 
 
 def create_assumption(name):
+	# nat consts
 	if re.match(r'^\d+$', name):
-		return Assume([name, get_constant('Nat')])
+		a =  Assume([name, get_constant('Nat')])
+		a.get_constraints = types.MethodType(nat_const_constraints, a)
+		return a
+	# float consts
 	if re.match(r'^\d+\.\d+$', name):
 		return Assume([name, get_assumption('Float')])
 	return None
