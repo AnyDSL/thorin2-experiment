@@ -243,7 +243,7 @@ private:
 };
 
 uint64_t UseHash::operator()(Use use) const {
-        return uint64_t(use.index()) << 48ull | uint64_t(use->gid());
+    return uint64_t(use.index()) << 48ull | uint64_t(use->gid());
 }
 
 class Abs : public Def {
