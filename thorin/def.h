@@ -9,21 +9,21 @@
 namespace thorin {
 
 enum {
+    Node_All,
+    Node_Any,
+    Node_App,
     Node_Assume,
-    Node_Var,
-    Node_Star,
-    Node_Pi,
-    Node_Sigma,
-    Node_Variant,
+    Node_Extract,
     Node_Intersection,
     Node_Lambda,
-    Node_Tuple,
-    Node_Any,
-    Node_All,
-    Node_App,
-    Node_Extract,
     Node_Match,
+    Node_Pi,
     Node_Pick,
+    Node_Sigma,
+    Node_Star,
+    Node_Tuple,
+    Node_Var,
+    Node_Variant,
 };
 
 class Def;
