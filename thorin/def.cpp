@@ -11,6 +11,17 @@ std::ostream& Use::stream(std::ostream& os) const {
 
 //------------------------------------------------------------------------------
 
+Def::Sort Def::sort() const {
+    if (!type())
+        return Kind;
+    else if (!type()->type())
+        return Type;
+    else {
+        assert(!type()->type()->type());
+        return Term;
+    }
+}
+
 size_t Def::gid_counter_ = 1;
 
 void Def::wire_uses() const {

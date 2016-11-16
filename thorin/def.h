@@ -144,17 +144,7 @@ protected:
     }
 
 public:
-    Sort sort() const {
-        if (!type())
-            return Kind;
-        else if (!type()->type())
-            return Type;
-        else {
-            assert(!type()->type()->type());
-            return Term;
-        }
-    }
-
+    Sort sort() const;
     unsigned tag() const { return tag_; }
     World& world() const { return *world_; }
     Defs ops() const { return Defs(ops_, num_ops_); }
