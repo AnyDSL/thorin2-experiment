@@ -1,4 +1,4 @@
-#include "thorin/builder.h"
+#include "thorin/world.h"
 #include "utils/unicodemanager.h"
 
 using namespace thorin;
@@ -11,13 +11,6 @@ int main()  {
 	testMatrix();
 
     World w;
-    {
-        Builder::world_ = &w;
-        // λT:*.λx:T.x
-        using T = BVar<NAME("T"), BStar>;
-        using x = BVar<NAME("x"), T>;
-        BLambda<T, BLambda<x, x>>::emit()->dump();
-    }
 
     w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 
@@ -69,21 +62,6 @@ int main()  {
 
     auto arr = w.app(_Arr, {n23, w.nat()});
     arr->dump();
-
-    {
-#if 0
-        BDEF(Nat, w.nat());
-        BDEF(N0, n0);
-        BDEF(N1, n1);
-        BDEF(N23, n23);
-        BDEF(ARR, Arr);
-        using v = BVar<NAME("v"), Nat, BStar>;
-        using _ARR = BLambda<v, BApp<ARR, BApp<v, N0>, BLambda<B_<Nat>, BApp<v, N1>>>>;
-        _ARR::emit()->dump();
-
-        BApp<_ARR, N23, Nat>::emit()->dump();
-#endif
-    }
 
     // Test projections from dependent sigmas
     auto poly = w.assume(w.pi(w.star(), w.star()), "Poly");
