@@ -27,8 +27,8 @@ public:
     virtual ~World() { for (auto def : defs_) def->~Def(); }
 
     const Star* star() const { return star_; }
-    const Var* type_var(int index, const std::string& name = "") { return unify(alloc<Var>(0, *this, star(), index, name)); }
-    const Var* var(const Def* type, int index, const std::string& name = "") { return unify(alloc<Var>(0, *this, type, index, name)); }
+    const Var* type_var(int index, const std::string& name = "") { return unify<Var>(0, *this, star(), index, name); }
+    const Var* var(const Def* type, int index, const std::string& name = "") { return unify<Var>(0, *this, type, index, name); }
     const Var* var(Defs types, int index, const std::string& name = "") { return var(sigma(types), index, name); }
     const Assume* assume(const Def* type, const std::string& name = "") { return insert(alloc<Assume>(0, *this, type, name)); }
     const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return lambda(Defs({domain}), body, name); }
@@ -66,8 +66,9 @@ private:
     void fix() { for (auto def : defs_) def->world_ = this; }
 
 protected:
-    template<class T>
-    const T* unify(const T* def) {
+    template<class T, class... Args>
+    const T* unify(size_t num_ops, Args&&... args) {
+        auto def = alloc<T>(num_ops, args...);
         assert(!def->is_nominal());
         auto p = defs_.emplace(def);
         if (p.second) {

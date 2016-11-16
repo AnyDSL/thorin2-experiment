@@ -5,7 +5,7 @@ namespace thorin {
 World::World()
     : root_page_(new Page)
     , cur_page_(root_page_.get())
-    , star_(unify(alloc<Star>(0, *this)))
+    , star_(unify<Star>(0, *this))
     , nat_(assume(star(), "Nat"))
     , boolean_(assume(star(), "Boolean"))
 {}
@@ -16,7 +16,7 @@ const Lambda* World::lambda(Defs domains, const Def* body, const std::string& na
 
 const Lambda* World::pi_lambda(const Pi* pi, const Def* body, const std::string& name) {
     assert(pi->body() == body->type());
-    return unify(alloc<Lambda>(1, *this, pi, body, name));
+    return unify<Lambda>(1, *this, pi, body, name);
 }
 
 const Pi* World::pi(Defs domains, const Def* body, const std::string& name) {
@@ -25,21 +25,21 @@ const Pi* World::pi(Defs domains, const Def* body, const std::string& name) {
             return pi(sigma->ops(), body, name);
     }
 
-    return unify(alloc<Pi>(domains.size() + 1, *this, domains, body, name));
+    return unify<Pi>(domains.size() + 1, *this, domains, body, name);
 }
 
 const Def* World::sigma(Defs defs, const std::string& name) {
     if (defs.size() == 1)
         return defs.front();
 
-    return unify(alloc<Sigma>(defs.size(), *this, defs, name));
+    return unify<Sigma>(defs.size(), *this, defs, name);
 }
 
 const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
     if (defs.size() == 1)
         return defs.front();
 
-    return unify(alloc<Tuple>(defs.size(), *this, type, defs, name));
+    return unify<Tuple>(defs.size(), *this, type, defs, name);
 }
 
 const Def* build_extract_type(World& world, const Def* tuple, int index) {
@@ -62,23 +62,23 @@ const Def* World::extract(const Def* def, int index, const std::string& name) {
 
     auto type = build_extract_type(*this, def, index);
 
-    return unify(alloc<Extract>(1, *this, type, def, index, name));
+    return unify<Extract>(1, *this, type, def, index, name);
 }
 
 const Def* World::intersection(Defs defs, const std::string& name) {
-    return unify(alloc<Intersection>(defs.size(), *this, defs, name));
+    return unify<Intersection>(defs.size(), *this, defs, name);
 }
 
 const Def* World::all(Defs defs, const std::string& name) {
-    return unify(alloc<All>(defs.size(), *this, /*TODO*/nullptr, defs, name));
+    return unify<All>(defs.size(), *this, /*TODO*/nullptr, defs, name);
 }
 
 const Def* World::variant(Defs defs, const std::string& name) {
-    return unify(alloc<Variant>(defs.size(), *this, defs, name));
+    return unify<Variant>(defs.size(), *this, defs, name);
 }
 
 const Def* World::any(const Def* type, const Def* def, const std::string& name) {
-    return unify(alloc<Any>(1, *this, type, def, name));
+    return unify<Any>(1, *this, type, def, name);
 }
 
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {
@@ -88,7 +88,7 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
     }
 
     auto type = callee->type()->as<Quantifier>()->reduce(args);
-    auto app = unify(alloc<App>(args.size() + 1, *this, type, callee, args, name));
+    auto app = unify<App>(args.size() + 1, *this, type, callee, args, name);
 
     if (auto cache = app->cache_)
         return cache;
