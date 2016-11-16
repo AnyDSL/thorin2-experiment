@@ -27,6 +27,7 @@ public:
     virtual ~World() { for (auto def : defs_) def->~Def(); }
 
     const Star* star() const { return star_; }
+    const Var* type_var(int index, const std::string& name = "") { return unify(alloc<Var>(0, *this, star(), index, name)); }
     const Var* var(const Def* type, int index, const std::string& name = "") { return unify(alloc<Var>(0, *this, type, index, name)); }
     const Var* var(Defs types, int index, const std::string& name = "") { return var(sigma(types), index, name); }
     const Assume* assume(const Def* type, const std::string& name = "") { return insert(alloc<Assume>(0, *this, type, name)); }
