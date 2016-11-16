@@ -46,7 +46,9 @@ public:
     const Def* variant(Defs defs, const std::string& name = "");
     const Def* all(Defs defs, const std::string& name = "");
     const Def* any(const Def* type, const Def* def, const std::string& name = "");
-    Sigma* sigma(size_t num_ops, const std::string& name = "") { return insert(alloc<Sigma>(num_ops, *this, num_ops, name)); }
+    Sigma* sigma(size_t num_ops, const Def* type, const std::string& name = "") { return insert(alloc<Sigma>(num_ops, *this, type, num_ops, name)); }
+    Sigma* sigma_type(size_t num_ops, const Def* type, const std::string& name = "") { return sigma(num_ops,  star(), name); }
+    Sigma* sigma_kind(size_t num_ops, const Def* type, const std::string& name = "") { return sigma(num_ops, nullptr, name); }
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
     const Assume* nat() { return nat_; }
     const Assume* boolean() { return boolean_; }

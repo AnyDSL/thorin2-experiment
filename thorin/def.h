@@ -323,8 +323,7 @@ class App : public Destructor {
 private:
     App(World& world, const Def* type, const Def* callee, Defs args, const std::string& name)
         : Destructor(world, Node_App, type,  concat(callee, args), name)
-    {
-    }
+    {}
 
 public:
     virtual std::ostream& stream(std::ostream&) const override;
@@ -336,8 +335,8 @@ public:
 
 class Sigma : public Quantifier {
 private:
-    Sigma(World& world, size_t num_ops, const std::string& name)
-        : Quantifier(world, Node_Sigma, nullptr /*TODO*/, num_ops, name)
+    Sigma(World& world, const Def* type, size_t num_ops, const std::string& name)
+        : Quantifier(world, Node_Sigma, type, num_ops, name)
     {
         assert(false && "TODO");
     }
