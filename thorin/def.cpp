@@ -149,8 +149,10 @@ const Def* App         ::rebuild(World& to, const Def*  , Defs ops) const { retu
 const Def* Extract     ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], index(), name()); }
 const Def* Assume      ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Intersection::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(ops, name()); }
+const Def* Match       ::rebuild(World& to, const Def* t, Defs ops) const { return to.match(ops[0], t, name()); }
 const Def* Lambda      ::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
 const Def* Pi          ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
+const Def* Pick        ::rebuild(World& to, const Def* t, Defs ops) const { return to.pick(ops[0], t, name()); }
 const Def* Sigma       ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is_nominal()); return to.sigma(ops, name()); }
 const Def* Star        ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(); }
 const Def* Tuple       ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
@@ -238,16 +240,20 @@ const Def* App::vsubstitute(Def2Def& map, int index, Defs args) const {
     return world().app(ops.front(), ops.skip_front(), name());
 }
 
+const Def* Assume::vsubstitute(Def2Def&, int, Defs) const { return this; }
+
 const Def* Extract::vsubstitute(Def2Def& map, int index, Defs args) const {
     auto op = this->destructee()->substitute(map, index, args);
     return world().extract(op, this->index(), name());
 }
 
-const Def* Assume::vsubstitute(Def2Def&, int, Defs) const { return this; }
-
-
 const Def* Intersection::vsubstitute(Def2Def& map, int index, Defs args) const {
     return world().intersection(thorin::substitute(map, index, ops(), args), name());
+}
+
+const Def* Match::vsubstitute(Def2Def& map, int index, Defs args) const {
+    auto new_type = type()->substitute(map, index, args);
+    return world().any(new_type, destructee()->substitute(map, index, args));
 }
 
 const Def* Lambda::vsubstitute(Def2Def& map, int index, Defs args) const {
@@ -260,6 +266,11 @@ const Def* Pi::vsubstitute(Def2Def& map, int index, Defs args) const {
     auto new_domains = thorin::binder_substitute(map, index, domains(), args);
     Def2Def new_map;
     return world().pi(new_domains, body()->substitute(new_map, index + domains().size(), args), name());
+}
+
+const Def* Pick::vsubstitute(Def2Def& map, int index, Defs args) const {
+    auto new_type = type()->substitute(map, index, args);
+    return world().any(new_type, destructee()->substitute(map, index, args));
 }
 
 const Def* Sigma::vsubstitute(Def2Def& map, int index, Defs args) const {
@@ -300,7 +311,7 @@ std::ostream& All::stream(std::ostream& os) const {
 }
 
 std::ostream& Any::stream(std::ostream& os) const {
-    os << "∧:";
+    os << "∨:";
     type()->name_stream(os);
     def()->name_stream(os << "(");
     return os << ")";
@@ -327,6 +338,13 @@ std::ostream& Intersection::stream(std::ostream& os) const {
     return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")", " ∩ ");
 }
 
+std::ostream& Match::stream(std::ostream& os) const {
+    os << "match:";
+    type()->name_stream(os);
+    destructee()->name_stream(os << "(");
+    return os << ")";
+}
+
 std::ostream& Lambda::stream(std::ostream& os) const {
     stream_list(os << "λ", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
     return body()->name_stream(os << ".");
@@ -335,6 +353,13 @@ std::ostream& Lambda::stream(std::ostream& os) const {
 std::ostream& Pi::stream(std::ostream& os) const {
     stream_list(os << "Π", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
     return body()->name_stream(os << ".");
+}
+
+std::ostream& Pick::stream(std::ostream& os) const {
+    os << "pick:";
+    type()->name_stream(os);
+    destructee()->name_stream(os << "(");
+    return os << ")";
 }
 
 std::ostream& Sigma::stream(std::ostream& os) const {

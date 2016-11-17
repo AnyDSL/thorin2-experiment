@@ -66,11 +66,17 @@ const Def* World::extract(const Def* def, int index, const std::string& name) {
 }
 
 const Def* World::intersection(Defs defs, const std::string& name) {
+    // TODO check for disjunct defs?
     return unify<Intersection>(defs.size(), *this, defs, name);
 }
 
 const Def* World::all(Defs defs, const std::string& name) {
-    return unify<All>(defs.size(), *this, /*TODO*/nullptr, defs, name);
+    // TODO check for disjunct types(defs)?
+    return unify<All>(defs.size(), *this, intersection(types(defs)), defs, name);
+}
+
+const Def* World::pick(const Def* type, const Def* def, const std::string& name) {
+    return unify<Pick>(1, *this, type, def, name);
 }
 
 const Def* World::variant(Defs defs, const std::string& name) {
@@ -79,6 +85,10 @@ const Def* World::variant(Defs defs, const std::string& name) {
 
 const Def* World::any(const Def* type, const Def* def, const std::string& name) {
     return unify<Any>(1, *this, type, def, name);
+}
+
+const Def* World::match(const Def* type, const Def* def, const std::string& name) {
+    return unify<Match>(1, *this, type, def, name);
 }
 
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {

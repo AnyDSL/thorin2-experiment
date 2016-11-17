@@ -27,28 +27,59 @@ public:
     virtual ~World() { for (auto def : defs_) def->~Def(); }
 
     const Star* star() const { return star_; }
-    const Var* type_var(int index, const std::string& name = "") { return unify<Var>(0, *this, star(), index, name); }
-    const Var* var(const Def* type, int index, const std::string& name = "") { return unify<Var>(0, *this, type, index, name); }
-    const Var* var(Defs types, int index, const std::string& name = "") { return var(sigma(types), index, name); }
-    const Assume* assume(const Def* type, const std::string& name = "") { return insert<Assume>(0, *this, type, name); }
-    const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") { return lambda(Defs({domain}), body, name); }
+
+    const Assume* assume(const Def* type, const std::string& name = "") {
+        return insert<Assume>(0, *this, type, name);
+    }
+
+    const Var* type_var(int index, const std::string& name = "") {
+        return unify<Var>(0, *this, star(), index, name);
+    }
+    const Var* var(Defs types, int index, const std::string& name = "") {
+        return var(sigma(types), index, name);
+    }
+    const Var* var(const Def* type, int index, const std::string& name = "") {
+        return unify<Var>(0, *this, type, index, name);
+    }
+
+    const Pi* pi(const Def* domain, const Def* body, const std::string& name = "") {
+        return pi(Defs({domain}), body, name);
+    }
+    const Pi* pi(Defs domains, const Def* body, const std::string& name = "");
+    const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") {
+        return lambda(Defs({domain}), body, name);
+    }
     const Lambda* lambda(Defs domains, const Def* body, const std::string& name = "");
     const Lambda* pi_lambda(const Pi* pi, const Def* body, const std::string& name = "");
-    const Pi* pi(const Def* domain, const Def* body, const std::string& name = "") { return pi(Defs({domain}), body, name); }
-    const Pi* pi(Defs domains, const Def* body, const std::string& name = "");
     const Def* app(const Def* callee, Defs args, const std::string& name = "");
-    const Def* app(const Def* callee, const Def* arg, const std::string& name = "") { return app(callee, Defs({arg}), name); }
-    const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
-    const Def* tuple(Defs defs, const std::string& name = "") { return tuple(sigma(types(defs), name), defs, name); }
-    const Def* extract(const Def* def, int index, const std::string& name = "");
+    const Def* app(const Def* callee, const Def* arg, const std::string& name = "") {
+        return app(callee, Defs({arg}), name);
+    }
+
     const Def* sigma(Defs, const std::string& name = "");
+    Sigma* sigma(size_t num_ops, const Def* type, const std::string& name = "") {
+        return insert<Sigma>(num_ops, *this, type, num_ops, name);
+    }
+    Sigma* sigma_type(size_t num_ops, const Def* type, const std::string& name = "") {
+        return sigma(num_ops, star(), name);
+    }
+    Sigma* sigma_kind(size_t num_ops, const Def* type, const std::string& name = "") {
+        return sigma(num_ops, nullptr, name);
+    }
+    const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
+    const Def* tuple(Defs defs, const std::string& name = "") {
+        return tuple(sigma(types(defs), name), defs, name);
+    }
+    const Def* extract(const Def* def, int index, const std::string& name = "");
+
     const Def* intersection(Defs defs, const std::string& name = "");
-    const Def* variant(Defs defs, const std::string& name = "");
     const Def* all(Defs defs, const std::string& name = "");
+    const Def* pick(const Def* type, const Def* def, const std::string& name = "");
+
+    const Def* variant(Defs defs, const std::string& name = "");
     const Def* any(const Def* type, const Def* def, const std::string& name = "");
-    Sigma* sigma(size_t num_ops, const Def* type, const std::string& name = "") { return insert<Sigma>(num_ops, *this, type, num_ops, name); }
-    Sigma* sigma_type(size_t num_ops, const Def* type, const std::string& name = "") { return sigma(num_ops,  star(), name); }
-    Sigma* sigma_kind(size_t num_ops, const Def* type, const std::string& name = "") { return sigma(num_ops, nullptr, name); }
+    const Def* match(const Def* type, const Def* def, const std::string& name = "");
+
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
     const Assume* nat() { return nat_; }
     const Assume* boolean() { return boolean_; }
