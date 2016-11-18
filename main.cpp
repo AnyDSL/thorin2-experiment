@@ -5,8 +5,12 @@ using namespace thorin;
 
 void testMatrix();
 
+void testQualifiers();
+
 int main()  {
 	prepareUtf8Console();
+
+    testQualifiers();
 
 	testMatrix();
 

@@ -26,12 +26,16 @@ public:
     World();
     virtual ~World() { for (auto def : defs_) def->~Def(); }
 
-    const Star* star() const { return star_; }
-
+    const Star* star(Qualifier::URAL q = Qualifier::Unrestricted) const { return star_[q]; }
     const Assume* assume(const Def* type, const std::string& name = "") {
-        return insert<Assume>(0, *this, type, name);
+        return assume(type, type ? type->qualifier() : Qualifier::Unrestricted, name);
     }
-
+    // TODO Needed to access the differently qualified *s
+    const Assume* assume(const Def* type, Qualifier::URAL q, const std::string& name = "") {
+        assert(!type || type->qualifier() == q);
+        return insert<Assume>(0, *this, type, q, name);
+    }
+    const Error* error() const { return error_; }
     const Var* type_var(int index, const std::string& name = "") {
         return unify<Var>(0, *this, star(), index, name);
     }
@@ -45,40 +49,71 @@ public:
     const Pi* pi(const Def* domain, const Def* body, const std::string& name = "") {
         return pi(Defs({domain}), body, name);
     }
-    const Pi* pi(Defs domains, const Def* body, const std::string& name = "");
-    const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") {
-        return lambda(Defs({domain}), body, name);
+    const Pi* pi(Defs domains, const Def* body, const std::string& name = "") {
+        return pi(domains, body, Qualifier::Unrestricted, name);
     }
-    const Lambda* lambda(Defs domains, const Def* body, const std::string& name = "");
+    const Pi* pi(const Def* domain, const Def* body, Qualifier::URAL q, const std::string& name = "") {
+        return pi(Defs({domain}), body, q, name);
+    }
+    const Pi* pi(Defs domains, const Def* body, Qualifier::URAL q, const std::string& name = "");
+    const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") {
+        return lambda(domain, body, Qualifier::Unrestricted, name);
+    }
+    const Lambda* lambda(const Def* domain, const Def* body, Qualifier::URAL type_q,
+                         const std::string& name = "") {
+        return lambda(Defs({domain}), body, type_q, name);
+    }
+    const Lambda* lambda(Defs domains, const Def* body, const std::string& name = "") {
+        return lambda(domains, body, Qualifier::Unrestricted, name);
+    }
+    const Lambda* lambda(Defs domains, const Def* body, Qualifier::URAL type_q, const std::string& name = "") {
+        return pi_lambda(pi(domains, body->type(), type_q), body, name);
+    }
     const Lambda* pi_lambda(const Pi* pi, const Def* body, const std::string& name = "");
     const Def* app(const Def* callee, Defs args, const std::string& name = "");
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "") {
         return app(callee, Defs({arg}), name);
     }
 
-    const Def* sigma(Defs, const std::string& name = "");
+    const Def* sigma(Defs defs, const std::string& name = "") {
+        return sigma(defs, Qualifier::meet(defs), name);
+    }
+    const Def* sigma(Defs, Qualifier::URAL q, const std::string& name = "");
     Sigma* sigma(size_t num_ops, const Def* type, const std::string& name = "") {
         return insert<Sigma>(num_ops, *this, type, num_ops, name);
     }
-    Sigma* sigma_type(size_t num_ops, const std::string& name = "") { return sigma(num_ops, star(), name); }
-    Sigma* sigma_kind(size_t num_ops, const std::string& name = "") { return sigma(num_ops, nullptr, name); }
-    const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
+    Sigma* sigma_type(size_t num_ops, Qualifier::URAL q, const std::string& name = "") {
+        return sigma(num_ops, star(q), name);
+    }
+    Sigma* sigma_kind(size_t num_ops, Qualifier::URAL q, const std::string& name = "") {
+        return insert<Sigma>(num_ops, *this, num_ops, q, name);
+    }
     const Def* tuple(Defs defs, const std::string& name = "") {
         return tuple(sigma(types(defs), name), defs, name);
     }
+    const Def* tuple(Defs defs, Qualifier::URAL type_q, const std::string& name = "") {
+        return tuple(sigma(types(defs), type_q, name), defs, name);
+    }
+    const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
     const Def* extract(const Def* def, int index, const std::string& name = "");
 
-    const Def* intersection(Defs defs, const std::string& name = "");
+    const Def* intersection(Defs defs, const std::string& name = "") {
+        return intersection(defs, Qualifier::meet(defs), name);
+    }
+    const Def* intersection(Defs defs, Qualifier::URAL q, const std::string& name = "");
     const Def* all(Defs defs, const std::string& name = "");
     const Def* pick(const Def* type, const Def* def, const std::string& name = "");
 
-    const Def* variant(Defs defs, const std::string& name = "");
-    const Def* any(const Def* type, int index, const Def* def, const std::string& name = "");
+    const Def* variant(Defs defs, const std::string& name = "") {
+        return variant(defs, Qualifier::meet(defs), name);
+    }
+    const Def* variant(Defs defs, Qualifier::URAL q, const std::string& name = "");
+    const Def* any(const Def* type, const Def* def, const std::string& name = "");
     const Def* match(const Def* def, Defs handlers, const std::string& name = "");
 
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
-    const Assume* nat() { return nat_; }
-    const Assume* boolean() { return boolean_; }
+    const Assume* nat(Qualifier::URAL q = Qualifier::Unrestricted) { return nat_[q]; }
+    const Assume* boolean(Qualifier::URAL q = Qualifier::Unrestricted) { return boolean_[q]; }
 
     const DefSet& defs() const { return defs_; }
 
@@ -91,6 +126,14 @@ public:
 
 private:
     void fix() { for (auto def : defs_) def->world_ = this; }
+
+    bool too_many_affine_uses(Defs defs) {
+        for (auto def : defs) {
+            if (def->is_term() && def->type()->is_affine() && def->num_uses() > 0)
+                return true;
+        }
+        return false;
+    }
 
 protected:
     template<class T, class... Args>
@@ -162,9 +205,10 @@ protected:
     Page* cur_page_;
     size_t buffer_index_ = 0;
     DefSet defs_;
-    const Star* star_;
-    const Assume* nat_;
-    const Assume* boolean_;
+    const Array<const Star*> star_;
+    const Error* error_;
+    const Array<const Assume*> nat_;
+    const Array<const Assume*> boolean_;
 };
 
 }

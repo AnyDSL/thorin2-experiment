@@ -1,6 +1,8 @@
 #ifndef THORIN_DEF_H
 #define THORIN_DEF_H
 
+#include <numeric>
+
 #include "thorin/util/array.h"
 #include "thorin/util/cast.h"
 #include "thorin/util/hash.h"
@@ -13,6 +15,7 @@ enum {
     Node_Any,
     Node_App,
     Node_Assume,
+    Node_Error,
     Node_Extract,
     Node_Intersection,
     Node_Lambda,
@@ -103,6 +106,26 @@ Array<const Def*> gid_sorted(Defs defs);
 
 //------------------------------------------------------------------------------
 
+namespace Qualifier {
+    enum URAL {
+        Unrestricted,
+        Affine   = 1 << 0,
+        Relevant = 1 << 1,
+        Linear = Affine | Relevant,
+    };
+
+    bool operator==(URAL lhs, URAL rhs);
+    bool operator<(URAL lhs, URAL rhs);
+    bool operator<=(URAL lhs, URAL rhs);
+
+    std::ostream& operator<<(std::ostream& ostream, const URAL q);
+
+    URAL meet(URAL lhs, URAL rhs);
+    URAL meet(const Defs& defs);
+}
+
+//------------------------------------------------------------------------------
+
 /// Base class for all @p Def%s.
 class Def : public Streamable, public MagicCast<Def> {
 public:
@@ -110,40 +133,35 @@ public:
         Term, Type, Kind
     };
 
-    enum Qualifier {
-        Unrestricted,
-        Affine   = 1 << 0,
-        Relevant = 1 << 1,
-        Linear = Affine | Relevant,
-    };
-
 protected:
     Def(const Def&) = delete;
     Def& operator=(const Def&) = delete;
 
     /// Use for nominal @p Def%s.
-    Def(World& world, unsigned tag, const Def* type, size_t num_ops, const std::string& name)
+    Def(World& world, unsigned tag, const Def* type, size_t num_ops, Qualifier::URAL qualifier,
+        const std::string& name)
         : name_(name)
         , world_(&world)
         , type_(type)
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(true)
-        , qualifier_(Unrestricted)
+        , qualifier_(qualifier)
         , num_ops_(num_ops)
         , ops_capacity_(num_ops)
         , ops_(&vla_ops_[0])
     {}
 
     /// Use for structural @p Def%s.
-    Def(World& world, unsigned tag, const Def* type, Defs ops, const std::string& name)
+    Def(World& world, unsigned tag, const Def* type, Defs ops, Qualifier::URAL qualifier,
+        const std::string& name)
         : name_(name)
         , world_(&world)
         , type_(type)
         , gid_(gid_counter_++)
         , tag_(tag)
         , nominal_(false)
-        , qualifier_(Unrestricted)
+        , qualifier_(qualifier)
         , num_ops_(ops.size())
         , ops_capacity_(num_ops_)
         , ops_(&vla_ops_[0])
@@ -179,11 +197,16 @@ public:
     void replace(const Def*) const;
     /// A nominal @p Def is always different from each other @p Def.
     bool is_nominal() const { return nominal_; }
-    Qualifier qualifier() const { return Qualifier(qualifier_); }
-    bool is_unrestricted() const { return qualifier() & Unrestricted; }
-    bool is_affine() const       { return qualifier() & Affine; }
-    bool is_relevant() const     { return qualifier() & Relevant; }
-    bool is_linear() const       { return qualifier() & Linear; }
+    bool is_kind() const { return sort() == Kind; }
+    bool is_type() const { return sort() == Type; }
+    bool is_term() const { return sort() == Term; }
+
+    Qualifier::URAL qualifier() const { return Qualifier::URAL(qualifier_); }
+    bool is_unrestricted() const { return qualifier() & Qualifier::Unrestricted; }
+    bool is_affine() const       { return qualifier() & Qualifier::Affine; }
+    bool is_relevant() const     { return qualifier() & Qualifier::Relevant; }
+    bool is_linear() const       { return qualifier() & Qualifier::Linear; }
+
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
 
@@ -195,7 +218,7 @@ public:
     virtual bool maybe_dependent() const { return true; }
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "")
-            return os << name();
+            return os << qualifier() << name();
         return stream(os);
     }
 
@@ -250,24 +273,26 @@ uint64_t UseHash::operator()(Use use) const {
 
 class Quantifier : public Def {
 protected:
-    Quantifier(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
-        : Def(world, tag, type, num_ops, name)
+    Quantifier(World& world, int tag, const Def* type, size_t num_ops, Qualifier::URAL q,
+               const std::string& name)
+        : Def(world, tag, type, num_ops, q, name)
     {}
-    Quantifier(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : Def(world, tag, type, ops, name)
+    Quantifier(World& world, int tag, const Def* type, Defs ops, Qualifier::URAL q, const std::string& name)
+        : Def(world, tag, type, ops, q, name)
     {}
 
-    static const Def* max_type(World&, Defs);
+    static const Def* max_type(World&, Defs, Qualifier::URAL = Qualifier::Unrestricted);
 };
 
 class Constructor : public Def {
 protected:
     Constructor(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
-        : Def(world, tag, type, num_ops, name)
+        : Def(world, tag, type, num_ops, Qualifier::Unrestricted, name)
     {}
     Constructor(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : Def(world, tag, type, ops, name)
+        : Def(world, tag, type, ops, Qualifier::Unrestricted, name)
     {}
+
 };
 
 class Destructor : public Def {
@@ -276,7 +301,7 @@ protected:
         : Destructor(world, tag, type, Defs({op}), name)
     {}
     Destructor(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : Def(world, tag, type, ops, name)
+        : Def(world, tag, type, ops, type->qualifier(), name)
     {
         cache_ = nullptr;
     }
@@ -291,7 +316,7 @@ public:
 
 class Pi : public Quantifier {
 private:
-    Pi(World& world, Defs domains, const Def* body, const std::string& name);
+    Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, const std::string& name);
 
 public:
     const Def* domain() const;
@@ -330,7 +355,7 @@ private:
 class App : public Destructor {
 private:
     App(World& world, const Def* type, const Def* callee, Defs args, const std::string& name)
-        : Destructor(world, Node_App, type,  concat(callee, args), name)
+        : Destructor(world, Node_App, type, concat(callee, args), name)
     {}
 
 public:
@@ -343,17 +368,28 @@ public:
 
 class Sigma : public Quantifier {
 private:
-    Sigma(World& world, const Def* type, size_t num_ops, const std::string& name)
-        : Quantifier(world, Node_Sigma, type, num_ops, name)
+    /// Nominal Sigma kind
+    Sigma(World& world, size_t num_ops, Qualifier::URAL q, const std::string& name)
+        : Quantifier(world, Node_Sigma, nullptr, num_ops, q, name)
     {
         assert(false && "TODO");
     }
-    Sigma(World& world, Defs ops, const std::string& name)
-        : Quantifier(world, Node_Sigma, max_type(world, ops), ops, name)
-    {}
+    /// Nominal Sigma type, \a type is some Star
+    Sigma(World& world, const Def* type, size_t num_ops, const std::string& name)
+        : Quantifier(world, Node_Sigma, type, num_ops, type->qualifier(), name)
+    {
+        assert(false && "TODO");
+    }
+    Sigma(World& world, Defs ops, Qualifier::URAL q, const std::string& name)
+        : Quantifier(world, Node_Sigma, max_type(world, ops, q), ops, q, name)
+    {
+        assert(sort() != Type || qualifier() <= Qualifier::meet(ops));
+    }
 
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
+
+    bool is_unit() const { return ops().empty(); }
 
 public:
     virtual std::ostream& stream(std::ostream&) const override;
@@ -363,10 +399,10 @@ public:
 
 class Tuple : public Constructor {
 private:
-    Tuple(World& world, const Def* type, Defs ops, const std::string& name)
+    Tuple(World& world, const Sigma* type, Defs ops, const std::string& name)
         : Constructor(world, Node_Tuple, type, ops, name)
     {
-        assert(type->as<Sigma>()->num_ops() == ops.size());
+        assert(type->num_ops() == ops.size());
     }
 
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
@@ -400,9 +436,11 @@ public:
 
 class Intersection : public Quantifier {
 private:
-    Intersection(World& world, Defs ops, const std::string& name)
-        : Quantifier(world, Node_Intersection, max_type(world, ops), gid_sorted(ops), name)
-    {}
+    Intersection(World& world, Defs ops, Qualifier::URAL q, const std::string& name)
+        : Quantifier(world, Node_Intersection, max_type(world, ops, q), gid_sorted(ops), q, name)
+    {
+        assert(sort() != Type || qualifier() <= Qualifier::meet(ops));
+    }
 
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
@@ -415,10 +453,10 @@ public:
 
 class All : public Constructor {
 private:
-    All(World& world, const Def* type, Defs ops, const std::string& name)
+    All(World& world, const Intersection* type, Defs ops, const std::string& name)
         : Constructor(world, Node_All, type, ops, name)
     {
-        assert(type->as<Sigma>()->num_ops() == ops.size());
+        assert(type->num_ops() == ops.size());
     }
 
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
@@ -447,8 +485,8 @@ public:
 
 class Variant : public Quantifier {
 private:
-    Variant(World& world, Defs ops, const std::string& name)
-        : Quantifier(world, Node_Variant, max_type(world, ops), gid_sorted(ops), name)
+    Variant(World& world, Defs ops, Qualifier::URAL q, const std::string& name)
+        : Quantifier(world, Node_Variant, max_type(world, ops, q), gid_sorted(ops), q, name)
     {}
 
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
@@ -462,14 +500,10 @@ public:
 
 class Any : public Constructor {
 private:
-    Any(World& world, const Def* type, int index, const Def* def, const std::string& name)
+    Any(World& world, const Def* type, const Def* def, const std::string& name)
         : Constructor(world, Node_Any, type, {def}, name)
-    {
-        index_ = index;
-    }
+    {}
 
-    virtual uint64_t vhash() const override;
-    virtual bool equal(const Def*) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -498,8 +532,8 @@ public:
 
 class Star : public Def {
 private:
-    Star(World& world)
-        : Def(world, Node_Star, nullptr, Defs(), "*")
+    Star(World& world, Qualifier::URAL q)
+        : Def(world, Node_Star, nullptr, Defs(), q, "*")
     {}
 
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
@@ -514,7 +548,7 @@ public:
 class Var : public Def {
 private:
     Var(World& world, const Def* type, int index, const std::string& name)
-        : Def(world, Node_Var, type, Defs(), name)
+        : Def(world, Node_Var, type, Defs(), type->qualifier(), name)
     {
         index_ = index;
     }
@@ -538,12 +572,28 @@ public:
 
 class Assume : public Def {
 private:
-    Assume(World& world, const Def* type, const std::string& name)
-        : Def(world, Node_Assume, type, 0, name)
+    Assume(World& world, const Def* type, Qualifier::URAL q, const std::string& name)
+        : Def(world, Node_Assume, type, 0, q, name)
     {}
 
 public:
     virtual bool maybe_dependent() const { return false; }
+    virtual std::ostream& stream(std::ostream&) const override;
+
+private:
+    virtual const Def* rebuild(World&, const Def*, Defs) const override;
+    virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
+
+    friend class World;
+};
+
+class Error : public Def {
+private:
+    Error(World& world)
+        : Def(world, Node_Error, nullptr, Defs(), Qualifier::Unrestricted, "error")
+    {}
+
+public:
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
