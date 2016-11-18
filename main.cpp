@@ -34,8 +34,8 @@ int main()  {
     int_id->dump();
     int_id->type()->dump();
 
-    auto fst = w.lambda({w.nat(), w.nat()}, w.app(w.var({w.nat(), w.nat()}, 0, "pair"), n0));
-    auto snd = w.lambda({w.nat(), w.nat()}, w.app(w.var({w.nat(), w.nat()}, 0, "pair"), n1));
+    auto fst = w.lambda({w.nat(), w.nat()}, w.extract(w.var({w.nat(), w.nat()}, 0, "pair"), 0));
+    auto snd = w.lambda({w.nat(), w.nat()}, w.extract(w.var({w.nat(), w.nat()}, 0, "pair"), 1));
     w.app(fst, {n23, n42})->dump(); // 23
     w.app(snd, {n23, n42})->dump(); // 42
 

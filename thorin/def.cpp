@@ -66,6 +66,12 @@ Array<const Def*> types(Defs defs) {
     return result;
 }
 
+Array<const Def*> gid_sorted(Defs defs) {
+    Array<const Def*> result(defs);
+    std::sort(result.begin(), result.end(), [](auto def1, auto def2) { return def1->gid() < def2-> gid(); });
+    return result;
+}
+
 //------------------------------------------------------------------------------
 
 /*
@@ -128,8 +134,12 @@ bool Def::equal(const Def* other) const {
     return result;
 }
 
+uint64_t Any::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 uint64_t Extract::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
+bool Any::equal(const Def* other) const {
+    return Def::equal(other) && this->index() == other->as<Any>()->index();
+}
 bool Extract::equal(const Def* other) const {
     return Def::equal(other) && this->index() == other->as<Extract>()->index();
 }
@@ -144,12 +154,12 @@ bool Var::equal(const Def* other) const {
  */
 
 const Def* All         ::rebuild(World& to, const Def*  , Defs ops) const { return to.all(ops, name()); }
-const Def* Any         ::rebuild(World& to, const Def* t, Defs ops) const { return to.any(t, ops[0], name()); }
+const Def* Any         ::rebuild(World& to, const Def* t, Defs ops) const { return to.any(t, index(), ops[0], name()); }
 const Def* App         ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
 const Def* Extract     ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], index(), name()); }
 const Def* Assume      ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Intersection::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(ops, name()); }
-const Def* Match       ::rebuild(World& to, const Def* t, Defs ops) const { return to.match(ops[0], t, name()); }
+const Def* Match       ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), name()); }
 const Def* Lambda      ::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
 const Def* Pi          ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
 const Def* Pick        ::rebuild(World& to, const Def* t, Defs ops) const { return to.pick(ops[0], t, name()); }
@@ -192,38 +202,6 @@ const Def* Def::substitute(Def2Def& map, int index, Defs args) const {
     return map[this] = vsubstitute(map, index, args);
 }
 
-// reduce
-
-const Def* All::reduce(Defs defs) const {
-    assert(defs.size() == 1);
-    return /*TODO*/nullptr;
-}
-
-const Def* Any::reduce(Defs defs) const {
-    assert(defs.size() == 1);
-    return /*TODO*/nullptr;
-}
-
-const Def* Intersection::reduce(Defs defs) const {
-    assert(defs.size() == 1);
-    return /*TODO*/nullptr;
-}
-
-const Def* Sigma::reduce(Defs defs) const {
-    assert(defs.size() == 1);
-    return op(std::stoi(defs.front()->name()));
-}
-
-const Def* Tuple::reduce(Defs defs) const {
-    assert(defs.size() == 1);
-    return op(std::stoi(defs.front()->name()));
-}
-
-const Def* Variant::reduce(Defs defs) const {
-    assert(defs.size() == 1);
-    return /*TODO*/nullptr;
-}
-
 // vsubstitute
 
 const Def* All::vsubstitute(Def2Def& map, int index, Defs args) const {
@@ -232,7 +210,7 @@ const Def* All::vsubstitute(Def2Def& map, int index, Defs args) const {
 
 const Def* Any::vsubstitute(Def2Def& map, int index, Defs args) const {
     auto new_type = type()->substitute(map, index, args);
-    return world().any(new_type, def()->substitute(map, index, args));
+    return world().any(new_type, this->index(), def()->substitute(map, index, args), name());
 }
 
 const Def* App::vsubstitute(Def2Def& map, int index, Defs args) const {
@@ -252,8 +230,8 @@ const Def* Intersection::vsubstitute(Def2Def& map, int index, Defs args) const {
 }
 
 const Def* Match::vsubstitute(Def2Def& map, int index, Defs args) const {
-    auto new_type = type()->substitute(map, index, args);
-    return world().any(new_type, destructee()->substitute(map, index, args));
+    auto ops = thorin::substitute(map, index, this->ops(), args);
+    return world().match(ops.front(), ops.skip_front(), name());
 }
 
 const Def* Lambda::vsubstitute(Def2Def& map, int index, Defs args) const {
@@ -270,7 +248,7 @@ const Def* Pi::vsubstitute(Def2Def& map, int index, Defs args) const {
 
 const Def* Pick::vsubstitute(Def2Def& map, int index, Defs args) const {
     auto new_type = type()->substitute(map, index, args);
-    return world().any(new_type, destructee()->substitute(map, index, args));
+    return world().pick(new_type, destructee()->substitute(map, index, args), name());
 }
 
 const Def* Sigma::vsubstitute(Def2Def& map, int index, Defs args) const {

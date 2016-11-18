@@ -99,6 +99,8 @@ typedef ArrayRef<const Def*> Defs;
 
 Array<const Def*> types(Defs defs);
 
+Array<const Def*> gid_sorted(Defs defs);
+
 //------------------------------------------------------------------------------
 
 /// Base class for all @p Def%s.
@@ -246,38 +248,25 @@ uint64_t UseHash::operator()(Use use) const {
     return uint64_t(use.index()) << 48ull | uint64_t(use->gid());
 }
 
-class Abs : public Def {
-protected:
-    Abs(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
-        : Def(world, tag, type, num_ops, name)
-    {}
-    Abs(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : Def(world, tag, type, ops, name)
-    {}
-
-public:
-    virtual const Def* reduce(Defs defs) const = 0;
-};
-
-class Quantifier : public Abs {
+class Quantifier : public Def {
 protected:
     Quantifier(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
-        : Abs(world, tag, type, num_ops, name)
+        : Def(world, tag, type, num_ops, name)
     {}
     Quantifier(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : Abs(world, tag, type, ops, name)
+        : Def(world, tag, type, ops, name)
     {}
 
     static const Def* max_type(World&, Defs);
 };
 
-class Constructor : public Abs {
+class Constructor : public Def {
 protected:
     Constructor(World& world, int tag, const Def* type, size_t num_ops, const std::string& name)
-        : Abs(world, tag, type, num_ops, name)
+        : Def(world, tag, type, num_ops, name)
     {}
     Constructor(World& world, int tag, const Def* type, Defs ops, const std::string& name)
-        : Abs(world, tag, type, ops, name)
+        : Def(world, tag, type, ops, name)
     {}
 };
 
@@ -308,7 +297,7 @@ public:
     const Def* domain() const;
     Defs domains() const { return ops().skip_back(); }
     const Def* body() const { return ops().back(); }
-    virtual const Def* reduce(Defs defs) const override { Def2Def map; return body()->substitute(map, 0, defs); }
+    const Def* reduce(Defs defs) const { Def2Def map; return body()->substitute(map, 0, defs); }
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -328,7 +317,7 @@ public:
     const Def* body() const { return op(0); }
     const Pi* type() const { return Constructor::type()->as<Pi>(); }
 
-    virtual const Def* reduce(Defs defs) const override { Def2Def map; return body()->substitute(map, 0, defs); }
+    const Def* reduce(Defs defs) const { Def2Def map; return body()->substitute(map, 0, defs); }
     virtual std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -363,7 +352,6 @@ private:
         : Quantifier(world, Node_Sigma, max_type(world, ops), ops, name)
     {}
 
-    virtual const Def* reduce(Defs defs) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -381,7 +369,6 @@ private:
         assert(type->as<Sigma>()->num_ops() == ops.size());
     }
 
-    virtual const Def* reduce(Defs defs) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -414,10 +401,9 @@ public:
 class Intersection : public Quantifier {
 private:
     Intersection(World& world, Defs ops, const std::string& name)
-        : Quantifier(world, Node_Intersection, max_type(world, ops), ops, name)
+        : Quantifier(world, Node_Intersection, max_type(world, ops), gid_sorted(ops), name)
     {}
 
-    virtual const Def* reduce(Defs defs) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -435,7 +421,6 @@ private:
         assert(type->as<Sigma>()->num_ops() == ops.size());
     }
 
-    virtual const Def* reduce(Defs defs) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -463,10 +448,9 @@ public:
 class Variant : public Quantifier {
 private:
     Variant(World& world, Defs ops, const std::string& name)
-        : Quantifier(world, Node_Variant, max_type(world, ops), ops, name)
+        : Quantifier(world, Node_Variant, max_type(world, ops), gid_sorted(ops), name)
     {}
 
-    virtual const Def* reduce(Defs defs) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
@@ -478,16 +462,20 @@ public:
 
 class Any : public Constructor {
 private:
-    Any(World& world, const Def* type, const Def* def, const std::string& name)
+    Any(World& world, const Def* type, int index, const Def* def, const std::string& name)
         : Constructor(world, Node_Any, type, {def}, name)
-    {}
+    {
+        index_ = index;
+    }
 
-    virtual const Def* reduce(Defs defs) const override;
+    virtual uint64_t vhash() const override;
+    virtual bool equal(const Def*) const override;
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
 public:
     const Def* def() const { return op(0); }
+    int index() const { return index_; }
 
     virtual std::ostream& stream(std::ostream&) const override;
 
@@ -496,8 +484,8 @@ public:
 
 class Match : public Destructor {
 private:
-    Match(World& world, const Def* type, const Def* def, const std::string& name)
-        : Destructor(world, Node_Match, type, def, name)
+    Match(World& world, const Def* type, const Def* def, const Defs handlers, const std::string& name)
+        : Destructor(world, Node_Match, type, concat(def, handlers), name)
     {}
 
 public:
@@ -514,14 +502,13 @@ private:
         : Def(world, Node_Star, nullptr, Defs(), "*")
     {}
 
-public:
-    virtual std::ostream& stream(std::ostream&) const override;
-
-private:
     virtual const Def* rebuild(World&, const Def*, Defs) const override;
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
     friend class World;
+
+public:
+    virtual std::ostream& stream(std::ostream&) const override;
 };
 
 class Var : public Def {
@@ -532,14 +519,6 @@ private:
         index_ = index;
     }
 
-public:
-    int index() const { return index_; }
-    virtual std::ostream& stream(std::ostream&) const override;
-    /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
-    virtual std::ostream& name_stream(std::ostream& os) const override {
-        return stream(os);
-    }
-
 private:
     virtual uint64_t vhash() const override;
     virtual bool equal(const Def*) const override;
@@ -547,6 +526,14 @@ private:
     virtual const Def* vsubstitute(Def2Def&, int, Defs) const override;
 
     friend class World;
+
+public:
+    int index() const { return index_; }
+    virtual std::ostream& stream(std::ostream&) const override;
+    /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
+    virtual std::ostream& name_stream(std::ostream& os) const override {
+        return stream(os);
+    }
 };
 
 class Assume : public Def {

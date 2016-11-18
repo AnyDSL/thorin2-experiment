@@ -60,12 +60,8 @@ public:
     Sigma* sigma(size_t num_ops, const Def* type, const std::string& name = "") {
         return insert<Sigma>(num_ops, *this, type, num_ops, name);
     }
-    Sigma* sigma_type(size_t num_ops, const Def* type, const std::string& name = "") {
-        return sigma(num_ops, star(), name);
-    }
-    Sigma* sigma_kind(size_t num_ops, const Def* type, const std::string& name = "") {
-        return sigma(num_ops, nullptr, name);
-    }
+    Sigma* sigma_type(size_t num_ops, const std::string& name = "") { return sigma(num_ops, star(), name); }
+    Sigma* sigma_kind(size_t num_ops, const std::string& name = "") { return sigma(num_ops, nullptr, name); }
     const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
     const Def* tuple(Defs defs, const std::string& name = "") {
         return tuple(sigma(types(defs), name), defs, name);
@@ -77,8 +73,8 @@ public:
     const Def* pick(const Def* type, const Def* def, const std::string& name = "");
 
     const Def* variant(Defs defs, const std::string& name = "");
-    const Def* any(const Def* type, const Def* def, const std::string& name = "");
-    const Def* match(const Def* type, const Def* def, const std::string& name = "");
+    const Def* any(const Def* type, int index, const Def* def, const std::string& name = "");
+    const Def* match(const Def* def, Defs handlers, const std::string& name = "");
 
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
     const Assume* nat() { return nat_; }

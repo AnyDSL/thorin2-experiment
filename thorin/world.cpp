@@ -66,29 +66,64 @@ const Def* World::extract(const Def* def, int index, const std::string& name) {
 }
 
 const Def* World::intersection(Defs defs, const std::string& name) {
+    if (defs.size() == 1)
+        return defs.front();
+
     // TODO check for disjunct defs?
     return unify<Intersection>(defs.size(), *this, defs, name);
 }
 
 const Def* World::all(Defs defs, const std::string& name) {
+    if (defs.size() == 1)
+        return defs.front();
+
     // TODO check for disjunct types(defs)?
     return unify<All>(defs.size(), *this, intersection(types(defs)), defs, name);
 }
 
 const Def* World::pick(const Def* type, const Def* def, const std::string& name) {
+    if (!type->isa<Intersection>()) {
+        assert(type == def->type());
+        return def;
+    }
+
+    // TODO implement reduction and caching
     return unify<Pick>(1, *this, type, def, name);
 }
 
 const Def* World::variant(Defs defs, const std::string& name) {
+    if (defs.size() == 1)
+        return defs.front();
+
     return unify<Variant>(defs.size(), *this, defs, name);
 }
 
-const Def* World::any(const Def* type, const Def* def, const std::string& name) {
-    return unify<Any>(1, *this, type, def, name);
+const Def* World::any(const Def* type, int index, const Def* def, const std::string& name) {
+    if (!type->isa<Variant>()) {
+        assert(type == def->type());
+        assert(index == 0);
+        return def;
+    }
+
+    return unify<Any>(1, *this, type, index, def, name);
 }
 
-const Def* World::match(const Def* type, const Def* def, const std::string& name) {
-    return unify<Match>(1, *this, type, def, name);
+const Def* build_match_type(const Def* def, const Variant* type, Defs handlers) {
+    // TODO check handler types
+    return /*TODO*/nullptr;
+}
+
+const Def* World::match(const Def* def, Defs handlers, const std::string& name) {
+    auto def_type = def->type();
+    if (handlers.size() == 1) {
+        assert(!def_type->isa<Variant>());
+        return app(handlers.front(), def, name);
+    }
+    auto matched_type = def->type()->as<Variant>();
+    assert(def_type->num_ops() == handlers.size());
+    auto type = build_match_type(def, matched_type, handlers);
+    // TODO implement reduction and caching
+    return unify<Match>(1, *this, type, def, handlers, name);
 }
 
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {
@@ -97,13 +132,14 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
             return app(callee, tuple->ops(), name);
     }
 
-    auto type = callee->type()->as<Quantifier>()->reduce(args);
+    auto type = callee->type()->as<Pi>()->reduce(args);
     auto app = unify<App>(args.size() + 1, *this, type, callee, args, name);
 
     if (auto cache = app->cache_)
         return cache;
-    if (auto abs = app->destructee()->isa<Abs>())
-        return app->cache_ = abs->reduce(args);
+    // Can only really reduce if it's not an Assume of Pi type
+    if (auto lambda = app->destructee()->isa<Lambda>())
+        return app->cache_ = lambda->reduce(args);
     else
         return app->cache_ = app;
 
