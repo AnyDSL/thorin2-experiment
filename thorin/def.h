@@ -27,7 +27,10 @@ enum {
     Node_Tuple,
     Node_Var,
     Node_Variant,
+    Num_Nodes
 };
+
+static_assert(Num_Nodes <= 32, "you must increase the number of bits in Def::tag_");
 
 class Def;
 class World;
