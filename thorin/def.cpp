@@ -118,6 +118,8 @@ Array<const Def*> gid_sorted(Defs defs) {
     return result;
 }
 
+const Def* Pi::domain() const { return world().sigma(domains()); }
+
 //------------------------------------------------------------------------------
 
 /*
@@ -143,15 +145,6 @@ const Def* Quantifier::max_type(World& world, Defs ops, Qualifier::URAL q) {
            "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
     return world.star(q);
 }
-
-//------------------------------------------------------------------------------
-
-/*
- * domain
- */
-
-const Def* Lambda      ::domain() const { return world().sigma(domains()); }
-const Def* Pi          ::domain() const { return world().sigma(domains()); }
 
 //------------------------------------------------------------------------------
 

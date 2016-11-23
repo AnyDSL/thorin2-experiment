@@ -7,14 +7,14 @@
 #include <ostream>
 #include <type_traits>
 
-#include <half.hpp>
+//#include <half.hpp>
 
 #include "thorin/util/cast.h"
 #include "thorin/util/hash.h"
 
 namespace thorin {
 
-using half_float::half;
+//using half_float::half;
 
 // This code assumes two-complement arithmetic for unsigned operations.
 // This is *implementation-defined* but *NOT* *undefined behavior*.
@@ -178,7 +178,7 @@ private:
     UT data_;
 };
 
-inline half        rem(half a, half b)               { return      fmod(a, b); }
+//inline half        rem(half a, half b)               { return      fmod(a, b); }
 inline float       rem(float a, float b)             { return std::fmod(a, b); }
 inline double      rem(double a, double b)           { return std::fmod(a, b); }
 inline long double rem(long double a, long double b) { return std::fmod(a, b); }
@@ -216,6 +216,9 @@ typedef  int8_t  s8; typedef  uint8_t  u8; typedef SInt< s8, true>  ps8; typedef
 typedef int16_t s16; typedef uint16_t u16; typedef SInt<s16, true> ps16; typedef UInt<u16, true> pu16; typedef SInt<s16, false> qs16; typedef UInt<u16, false> qu16;
 typedef int32_t s32; typedef uint32_t u32; typedef SInt<s32, true> ps32; typedef UInt<u32, true> pu32; typedef SInt<s32, false> qs32; typedef UInt<u32, false> qu32;
 typedef int64_t s64; typedef uint64_t u64; typedef SInt<s64, true> ps64; typedef UInt<u64, true> pu64; typedef SInt<s64, false> qs64; typedef UInt<u64, false> qu64;
+
+// HACK
+struct half { uint16_t foo; };
 
 typedef half   f16; typedef Float<f16, true> pf16; typedef Float<f16, false> qf16;
 typedef float  f32; typedef Float<f32, true> pf32; typedef Float<f32, false> qf32;

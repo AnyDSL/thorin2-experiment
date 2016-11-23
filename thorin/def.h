@@ -7,6 +7,7 @@
 #include "thorin/util/cast.h"
 #include "thorin/util/hash.h"
 #include "thorin/util/stream.h"
+#include "thorin/util/types.h"
 
 namespace thorin {
 
@@ -37,7 +38,7 @@ class World;
 
 /**
  * References a user.
- * A \p Def \c u which uses \p Def \c d as \c i^th operand is a \p Use with \p index_ \c i of \p Def \c d.
+ * A @p Def @c u which uses @p Def @c d as @c i^th operand is a @p Use with @p index_ @c i of @p Def @c d.
  */
 class Use {
 public:
@@ -104,7 +105,6 @@ using Def2Def = DefMap<const Def*>;
 typedef ArrayRef<const Def*> Defs;
 
 Array<const Def*> types(Defs defs);
-
 Array<const Def*> gid_sorted(Defs defs);
 
 //------------------------------------------------------------------------------
@@ -233,6 +233,7 @@ protected:
     union {
         mutable const Def* cache_;  ///< Used by @p App.
         size_t index_;              ///< Used by @p Var.
+        Box box_;                   ///< Used by @p Assume.
     };
 
 private:
@@ -340,7 +341,7 @@ private:
     Lambda(World& world, const Pi* type, const Def* body, const std::string& name);
 
 public:
-    const Def* domain() const;
+    const Def* domain() const { return type()->domain(); }
     Defs domains() const { return type()->domains(); }
     const Def* body() const { return op(0); }
     const Pi* type() const { return Constructor::type()->as<Pi>(); }
