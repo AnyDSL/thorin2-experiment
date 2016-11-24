@@ -213,19 +213,44 @@ const Def* Variant     ::rebuild(World& to, const Def* t, Defs ops) const { retu
 //------------------------------------------------------------------------------
 
 /*
+ * reduce
+ */
+
+const Def* reduce(const Def* body, Defs args) {
+    size_t num_args = args.size();
+    Def2Def map;
+    for (size_t i = 0; i < num_args; ++i) {
+        body = body->substitute(map, num_args - 1 - i, {args[i]});
+    }
+    return body;
+}
+
+const Def* Pi::reduce(Defs args) const {
+    assert(args.size() == num_domains());
+    return thorin::reduce(body(), args);
+}
+
+const Def* Lambda::reduce(Defs args) const {
+    assert(args.size() == num_domains());
+    return thorin::reduce(body(), args);
+}
+
+//------------------------------------------------------------------------------
+
+/*
  * substitute
  */
 
 // helpers
 
-Array<const Def*> substitute(Def2Def& map, int index, Defs defs, Defs args) {
+Array<const Def*> substitute(Def2Def& map, size_t index, Defs defs, Defs args) {
     Array<const Def*> result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)
         result[i] = defs[i]->substitute(map, index, args);
     return result;
 }
 
-Array<const Def*> binder_substitute(Def2Def& map, int index, Defs ops, Defs args) {
+Array<const Def*> binder_substitute(Def2Def& map, size_t index, Defs ops, Defs args) {
     Array<const Def*> new_ops(ops.size());
     Def2Def new_map;
     Def2Def* cur_map = &map;
@@ -237,7 +262,7 @@ Array<const Def*> binder_substitute(Def2Def& map, int index, Defs ops, Defs args
     return new_ops;
 }
 
-const Def* Def::substitute(Def2Def& map, int index, Defs args) const {
+const Def* Def::substitute(Def2Def& map, size_t index, Defs args) const {
     if (auto result = find(map, this))
         return result;
     return map[this] = vsubstitute(map, index, args);
@@ -245,56 +270,56 @@ const Def* Def::substitute(Def2Def& map, int index, Defs args) const {
 
 // vsubstitute
 
-const Def* All::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* All::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     return world().all(thorin::substitute(map, index, ops(), args), name());
 }
 
-const Def* Any::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Any::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     auto new_type = type()->substitute(map, index, args);
     return world().any(new_type, def()->substitute(map, index, args), name());
 }
 
-const Def* App::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* App::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     auto ops = thorin::substitute(map, index, this->ops(), args);
     return world().app(ops.front(), ops.skip_front(), name());
 }
 
-const Def* Assume::vsubstitute(Def2Def&, int, Defs) const { return this; }
+const Def* Assume::vsubstitute(Def2Def&, size_t, Defs) const { return this; }
 
-const Def* Error::vsubstitute(Def2Def&, int, Defs) const { return this; }
+const Def* Error::vsubstitute(Def2Def&, size_t, Defs) const { return this; }
 
-const Def* Extract::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Extract::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     auto op = this->destructee()->substitute(map, index, args);
     return world().extract(op, this->index(), name());
 }
 
-const Def* Intersection::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Intersection::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     return world().intersection(thorin::substitute(map, index, ops(), args), name());
 }
 
-const Def* Match::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Match::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     auto ops = thorin::substitute(map, index, this->ops(), args);
     return world().match(ops.front(), ops.skip_front(), name());
 }
 
-const Def* Lambda::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Lambda::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     auto new_pi = type()->substitute(map, index, args)->as<Pi>();
     Def2Def new_map;
     return world().pi_lambda(new_pi, body()->substitute(new_map, index + domains().size(), args), name());
 }
 
-const Def* Pi::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Pi::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     auto new_domains = thorin::binder_substitute(map, index, domains(), args);
     Def2Def new_map;
     return world().pi(new_domains, body()->substitute(new_map, index + domains().size(), args), name());
 }
 
-const Def* Pick::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Pick::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     auto new_type = type()->substitute(map, index, args);
     return world().pick(new_type, destructee()->substitute(map, index, args), name());
 }
 
-const Def* Sigma::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Sigma::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     if (is_nominal()) {
         assert(false && "TODO");
     }  else {
@@ -302,13 +327,13 @@ const Def* Sigma::vsubstitute(Def2Def& map, int index, Defs args) const {
     }
 }
 
-const Def* Star::vsubstitute(Def2Def&, int, Defs) const { return this; }
+const Def* Star::vsubstitute(Def2Def&, size_t, Defs) const { return this; }
 
-const Def* Tuple::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Tuple::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     return world().tuple(thorin::substitute(map, index, ops(), args), name());
 }
 
-const Def* Var::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Var::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     if (this->index() == index)     // substitute
         return world().tuple(type(), args);
     else if (this->index() > index) // this is a free variable - shift by one
@@ -317,7 +342,7 @@ const Def* Var::vsubstitute(Def2Def& map, int index, Defs args) const {
         return world().var(type()->substitute(map, index, args), this->index(), name());
 }
 
-const Def* Variant::vsubstitute(Def2Def& map, int index, Defs args) const {
+const Def* Variant::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     return world().variant(thorin::substitute(map, index, ops(), args), name());
 }
 

@@ -36,13 +36,13 @@ public:
         return insert<Assume>(0, *this, type, q, name);
     }
     const Error* error() const { return error_; }
-    const Var* type_var(int index, const std::string& name = "") {
+    const Var* type_var(size_t index, const std::string& name = "") {
         return unify<Var>(0, *this, star(), index, name);
     }
-    const Var* var(Defs types, int index, const std::string& name = "") {
+    const Var* var(Defs types, size_t index, const std::string& name = "") {
         return var(sigma(types), index, name);
     }
-    const Var* var(const Def* type, int index, const std::string& name = "") {
+    const Var* var(const Def* type, size_t index, const std::string& name = "") {
         return unify<Var>(0, *this, type, index, name);
     }
 
@@ -95,7 +95,7 @@ public:
         return tuple(sigma(types(defs), type_q, name), defs, name);
     }
     const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
-    const Def* extract(const Def* def, int index, const std::string& name = "");
+    const Def* extract(const Def* def, size_t index, const std::string& name = "");
 
     const Def* intersection(Defs defs, const std::string& name = "") {
         return intersection(defs, Qualifier::meet(defs), name);

@@ -3,8 +3,9 @@
 
 using namespace thorin;
 
-#define printValue(x) do{ printUtf8(x->name()); printUtf8(" = "); x->dump(); }while(0)
-#define printType(x) do{ printUtf8(x->name()); printUtf8(": "); x->type()->dump(); }while(0)
+#define printValue(x) do{ printUtf8(x->name() == "" ? #x : x->name()); printUtf8(" = "); x->dump(); }while(0)
+#define printType(x) do{ printUtf8(x->name() == "" ? #x : x->name()); printUtf8(": "); x->type()->dump(); }while(0)
+#define printValueType(x) do{ printUtf8(x->name() == "" ? #x : x->name()); printUtf8(" = "); printUtf8(x->to_string()); printUtf8(": "); x->type()->dump(); }while(0)
 
 void testQualifiers() {
     auto U = Qualifier::Unrestricted;
@@ -47,7 +48,7 @@ void testQualifiers() {
     auto tuple = w.tuple({an1, rn0});
     assert(tuple->type() == tuple_type);
     auto tuple_app0 = w.extract(tuple, 0);
-    assert(w.extract(tuple, 0) == w.error());
+    assert(w.extract(tuple, 0) == tuple_app0);
 
     auto a_id_type = w.pi(Nat, Nat, A);
     auto nx = w.var(Nat, 0, "x");
@@ -88,6 +89,7 @@ void testQualifiers() {
         auto Ref = w.assume(w.pi(w.star(), w.star(A)), "ARef");
         printType(Ref);
         auto app_Ref_T0 = w.app(Ref, T(0));
+        assert(app_Ref_T0->qualifier() == A);
         auto NewRef = w.assume(w.pi({w.star(), T(0)}, w.app(Ref, T(1))), "NewARef");
         printType(NewRef);
         // ReadRef : Π(*).Π(ARef[<0:*>]).Σ(<1:*>, ARef[<2:*>])
@@ -106,8 +108,11 @@ void testQualifiers() {
         printType(Ref);
         printType(Cap);
         auto C = [&](int i){ return w.var(w.star(), i, "C"); };
-        auto sigma = w.sigma({w.star(), w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))});
-        auto NewRef = w.assume(w.pi({w.star(), T(0)}, sigma), "NewCRef");
+        auto NewRef = w.assume(w.pi({w.star(), T(0)},
+                                    w.sigma({w.star(),
+                                             w.app(Ref, {T(2), C(0)}),
+                                             w.app(Cap, C(1))})),
+                               "NewCRef");
         printType(NewRef);
         // ReadRef : Π(T:*, C:*, CRef[T, C], ᴬACap[C]).ᴬΣ(T, ᴬACap[C])
         auto ReadRef = w.assume(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))},
@@ -126,11 +131,16 @@ void testQualifiers() {
                                      w.unit()), "FreeCRef");
         printType(FreeRef);
         // TODO: this does not work until we have real projections from dependent Σ
-        // auto ref = w.app(w.app(NewRef, Nat), n42);
-        // printValue(ref);
+        auto ref42 = w.app(NewRef, {Nat, n42});
+        printValueType(ref42);
+        auto ref = w.extract(ref42, 1);
+        printValueType(ref);
+        auto cap = w.extract(ref42, 2);
+        printValueType(cap);
     }
     cout << "--- Affine Fractional Capabilities for Refs ---" << endl;
     {
+        // Recursive type for 
         // TODO
     }
     cout << "--- QualifierTest end ---" << endl;

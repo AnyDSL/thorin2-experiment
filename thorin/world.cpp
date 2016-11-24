@@ -56,35 +56,28 @@ const Def* World::tuple(const Def* type, Defs defs, const std::string& name) {
     return unify<Tuple>(defs.size(), *this, type->as<Sigma>(), defs, name);
 }
 
-const Def* build_extract_type(World& world, const Def* tuple, int index) {
+const Def* build_extract_type(World& world, const Def* tuple, size_t index) {
     auto sigma = tuple->type()->as<Sigma>();
 
     auto type = sigma->op(index);
     Def2Def map;
-    for (int delta = 1; type->maybe_dependent() && delta <= index; delta++) {
+    for (size_t delta = 1; type->maybe_dependent() && delta <= index; delta++) {
         auto prev_extract = world.extract(tuple, index - delta);
         type = type->substitute(map, delta - 1, {prev_extract});
     }
     return type;
 }
 
-const Def* World::extract(const Def* def, int index, const std::string& name) {
+const Def* World::extract(const Def* def, size_t index, const std::string& name) {
     if (!def->type()->isa<Sigma>()) {
         assert(index == 0);
         return def;
     }
-
-    // TODO instead check disjunct indices during a later type checking step?
-    if (def->type()->is_affine()) {
-        // check all existing uses of def for this index
-        for (auto use : def->uses()) {
-            auto use_index = use->as<Extract>()->index();
-            if (index == use_index)
-                return error();
-        }
+    if (auto tuple = def->isa<Tuple>()) {
+        return tuple->op(index);
     }
-    auto type = build_extract_type(*this, def, index);
 
+    auto type = build_extract_type(*this, def, index);
     return unify<Extract>(1, *this, type, def, index, name);
 }
 
@@ -153,21 +146,30 @@ const Def* World::match(const Def* def, Defs handlers, const std::string& name) 
 
 const Def* World::app(const Def* callee, Defs args, const std::string& name) {
     if (args.size() == 1) {
-        if (auto tuple = args.front()->isa<Tuple>())
+        auto single = args.front();
+        if (auto tuple = single->isa<Tuple>())
             return app(callee, tuple->ops(), name);
+        else if (auto sigma_type = single->type()->isa<Sigma>()) {
+            Array<const Def*> extracts(sigma_type->num_ops());
+            for (size_t i = 0; i < sigma_type->num_ops(); ++i) {
+                extracts[i] = extract(single, i);
+            }
+            return app(callee, extracts, name);
+        }
     }
 
+    // TODO do this checking later during a separate type checking phase
     if (too_many_affine_uses({callee}) || too_many_affine_uses(args))
         return error();
-    // TODO do this checking later during a separate type checking phase
 
     auto type = callee->type()->as<Pi>()->reduce(args);
     auto app = unify<App>(args.size() + 1, *this, type, callee, args, name);
+    assert(app->destructee() == callee);
 
     if (auto cache = app->cache_)
         return cache;
     // Can only really reduce if it's not an Assume of Pi type
-    if (auto lambda = app->destructee()->isa<Lambda>())
+    if (auto lambda = callee->isa<Lambda>())
         return app->cache_ = lambda->reduce(args);
     else
         return app->cache_ = app;
