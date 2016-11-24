@@ -108,15 +108,15 @@ void testQualifiers() {
         printType(Ref);
         printType(Cap);
         auto C = [&](int i){ return w.var(w.star(), i, "C"); };
-        auto NewRef = w.assume(w.pi({w.star(), T(0)},
+        auto NewRef = w.assume(w.pi(w.star(), w.pi(T(0),
                                     w.sigma({w.star(),
                                              w.app(Ref, {T(2), C(0)}),
-                                             w.app(Cap, C(1))})),
+                                             w.app(Cap, C(1))}))),
                                "NewCRef");
         printType(NewRef);
         // ReadRef : Π(T:*, C:*, CRef[T, C], ᴬACap[C]).ᴬΣ(T, ᴬACap[C])
-        auto ReadRef = w.assume(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))},
-                                     w.sigma({T(3), w.app(Cap, C(3))})), "ReadCRef");
+        auto ReadRef = w.assume(w.pi(w.star(), w.pi({w.star(), w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))},
+                                                    w.sigma({T(3), w.app(Cap, C(3))}))), "ReadCRef");
         printType(ReadRef);
         // AliasReadRef : Π(T:*, C:*, CRef[T, C]).T
         auto AliasReadRef = w.assume(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)})}, T(3)),
@@ -130,13 +130,15 @@ void testQualifiers() {
         auto FreeRef = w.assume(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))},
                                      w.unit()), "FreeCRef");
         printType(FreeRef);
-        // TODO: this does not work until we have real projections from dependent Σ
-        auto ref42 = w.app(NewRef, {Nat, n42});
+        auto ref42 = w.app(w.app(NewRef, Nat), n42, "&42");
+        auto phantom = w.extract(ref42, 0);
         printValueType(ref42);
-        auto ref = w.extract(ref42, 1);
+        auto ref = w.extract(ref42, 1, "ref");
         printValueType(ref);
-        auto cap = w.extract(ref42, 2);
+        auto cap = w.extract(ref42, 2, "cap");
         printValueType(cap);
+        auto read42 = w.app(w.app(ReadRef, Nat), {phantom, ref, cap});
+        printValueType(read42);
     }
     cout << "--- Affine Fractional Capabilities for Refs ---" << endl;
     {

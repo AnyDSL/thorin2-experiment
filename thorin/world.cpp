@@ -127,7 +127,7 @@ const Def* World::any(const Def* type, const Def* def, const std::string& name) 
 }
 
 const Def* build_match_type(const Def* def, const Variant* type, Defs handlers) {
-    // TODO check handler types now or in a later type checking step?
+    // TODO check handler types in a later type checking step?
     return /*TODO*/nullptr;
 }
 
@@ -139,6 +139,10 @@ const Def* World::match(const Def* def, Defs handlers, const std::string& name) 
     }
     auto matched_type = def->type()->as<Variant>();
     assert(def_type->num_ops() == handlers.size());
+    if (auto any = def->isa<Any>()) {
+        auto any_def = any->def();
+        return app(handlers[any->index()], any_def, name);
+    }
     auto type = build_match_type(def, matched_type, handlers);
     // TODO implement reduction and caching
     return unify<Match>(1, *this, type, def, handlers, name);

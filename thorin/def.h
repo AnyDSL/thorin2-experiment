@@ -228,11 +228,11 @@ public:
 protected:
     virtual uint64_t vhash() const;
     virtual bool equal(const Def*) const;
-    virtual const Def* vsubstitute(Def2Def&, int, Defs) const = 0;
+    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const = 0;
 
     union {
         mutable const Def* cache_;  ///< Used by @p App.
-        size_t index_;              ///< Used by @p Var.
+        size_t index_;              ///< Used by @p Var, Extract.
         Box box_;                   ///< Used by @p Assume.
     };
 
@@ -516,6 +516,14 @@ private:
 
 public:
     const Def* def() const { return op(0); }
+    size_t index() const {
+        auto def_type = def()->type();
+        auto variant = type()->as<Variant>();
+        for (size_t i = 0; i < variant->num_ops(); ++i)
+            if (def_type == variant->op(i))
+                return i;
+        THORIN_UNREACHABLE;
+    }
 
     virtual std::ostream& stream(std::ostream&) const override;
 
