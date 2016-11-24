@@ -5,6 +5,7 @@ namespace thorin {
 World::World()
     : root_page_(new Page)
     , cur_page_(root_page_.get())
+    , error_(unify<Error>(0, *this))
     , universe_({insert<Universe>(0, *this, Qualifier::Unrestricted),
                  insert<Universe>(0, *this, Qualifier::Affine),
                  insert<Universe>(0, *this, Qualifier::Relevant),
@@ -13,7 +14,6 @@ World::World()
              unify<Star>(0, *this, Qualifier::Affine),
              unify<Star>(0, *this, Qualifier::Relevant),
              unify<Star>(0, *this, Qualifier::Linear)})
-    , error_(unify<Error>(0, *this))
     , nat_({assume(star(Qualifier::Unrestricted), "Nat"),
             assume(star(Qualifier::Affine), "Nat"),
             assume(star(Qualifier::Relevant), "Nat"),
@@ -130,7 +130,7 @@ const Def* World::any(const Def* type, const Def* def, const std::string& name) 
     return unify<Any>(1, *this, type, def, name);
 }
 
-const Def* build_match_type(const Def* def, const Variant* type, Defs handlers) {
+const Def* build_match_type(const Def* /*def*/, const Variant* /*type*/, Defs /*handlers*/) {
     // TODO check handler types in a later type checking step?
     return /*TODO*/nullptr;
 }

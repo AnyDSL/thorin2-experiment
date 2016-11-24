@@ -199,11 +199,11 @@ protected:
     Page* cur_page_;
     size_t buffer_index_ = 0;
     DefSet defs_;
-    const Array<const Universe*> universe_;
-    const Array<const Star*> star_;
     const Error* error_;
-    const Array<const Assume*> nat_;
-    const Array<const Assume*> boolean_;
+    const std::array<const Universe*, 4> universe_;
+    const std::array<const Star*, 4> star_;
+    const std::array<const Assume*, 4> nat_;
+    const std::array<const Assume*, 4> boolean_;
 };
 
 }
