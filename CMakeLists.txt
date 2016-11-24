@@ -9,6 +9,7 @@ add_executable(CoC
     thorin/def.h
     thorin/world.cpp
     thorin/world.h
+    thorin/tables/primtypetable.h
     thorin/util/array.h
     thorin/util/assert.h
     thorin/util/cast.h
