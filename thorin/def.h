@@ -140,7 +140,7 @@ namespace Qualifier {
 //------------------------------------------------------------------------------
 
 /// Base class for all @p Def%s.
-class Def : public Streamable, public MagicCast<Def> {
+class Def : public MagicCast<Def>, public Streamable  {
 public:
     enum Sort {
         Term, Type, Kind, TypeUniverse
@@ -156,10 +156,10 @@ protected:
         , world_(&world)
         , type_(type)
         , gid_(gid_counter_++)
+        , ops_capacity_(num_ops)
         , tag_(tag)
         , nominal_(true)
         , num_ops_(num_ops)
-        , ops_capacity_(num_ops)
         , ops_(&vla_ops_[0])
     {}
 
@@ -169,10 +169,10 @@ protected:
         , world_(&world)
         , type_(type)
         , gid_(gid_counter_++)
+        , ops_capacity_(ops.size())
         , tag_(tag)
         , nominal_(false)
         , num_ops_(ops.size())
-        , ops_capacity_(num_ops_)
         , ops_(&vla_ops_[0])
     {
         std::copy(ops.begin(), ops.end(), ops_);
@@ -238,14 +238,13 @@ protected:
         size_t index_;              ///< Used by @p Var, @p Extract.
         Box box_;                   ///< Used by @p Assume.
         Qualifier::URAL qualifier_; ///< Used by @p Universe.
+        uint64_t dummy_ = 0;        ///< Used to shut up valgrind.
     };
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
-    uint64_t hash_fields() const {
-        // everything except ops_capacity_ (the upper 16 bits) is relevant for hashing
-        return fields_ & 0xFFFFFFFFFFFFFF00;
-    }
+    bool on_heap() const { return ops_ != vla_ops_; }
+    uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
 
     static size_t gid_counter_;
 
@@ -253,16 +252,13 @@ private:
     mutable World* world_;
     const Def* type_;
     mutable uint64_t hash_ = 0;
-    union {
-        struct {
-            unsigned gid_           : 26;
-            unsigned tag_           :  5;
-            unsigned nominal_       :  1;
-            unsigned num_ops_       : 16;
-            unsigned ops_capacity_  : 16;
-            // this sum must be 64   ^^^
-        };
-        uint64_t fields_;
+    struct {
+        unsigned gid_           : 24;
+        unsigned ops_capacity_  : 16;
+        unsigned tag_           :  7;
+        unsigned nominal_       :  1;
+        unsigned num_ops_       : 16;
+        // this sum must be 64   ^^^
     };
 
     mutable Uses uses_;

@@ -181,10 +181,10 @@ uint64_t Def::vhash() const {
     if (is_nominal())
         return gid();
 
-    uint64_t seed = thorin::hash_combine(thorin::hash_begin(hash_fields()), type() ? type()->gid() : 0);
+    uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type() ? type()->gid() : 0);
     for (auto op : ops()) {
         if (op)
-            seed = thorin::hash_combine(seed, op->hash());
+            seed = thorin::hash_combine(seed, op->gid());
     }
     return seed;
 }
@@ -193,8 +193,7 @@ bool Def::equal(const Def* other) const {
     if (is_nominal())
         return this == other;
 
-    bool result = this->tag() == other->tag() && this->type() == other->type()
-        && this->num_ops() == other->num_ops();
+    bool result = this->fields() == other->fields() && this->type() == other->type();
     if (result) {
         for (size_t i = 0, e = num_ops(); result && i != e; ++i)
             result &= this->op(i) == other->op(i);
