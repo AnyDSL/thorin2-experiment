@@ -15,7 +15,7 @@ void testMatrix() {
     auto Star = w.star();
     auto Float = w.assume(Star, "Float");
     auto opFloatPlus = w.assume(w.pi(w.sigma({ Float, Float }), Float), "+");
-    auto opFloatMult = w.assume(w.pi(w.sigma({ Float, Float }), Float), "x");
+    /*auto opFloatMult =*/ w.assume(w.pi(w.sigma({ Float, Float }), Float), "x");
     auto cFloatZero = w.assume(Float, "0.0");
 
     // Some testing
