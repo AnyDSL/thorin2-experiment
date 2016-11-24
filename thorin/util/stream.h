@@ -17,7 +17,6 @@ public:
     void dump() const; ///< Uses @p stream in order to dump to @p std::cout.
 };
 
-
 template<typename T>
 using is_streamable = std::is_base_of<Streamable, typename std::remove_pointer<T>::type>;
 
