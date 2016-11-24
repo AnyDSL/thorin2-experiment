@@ -47,6 +47,16 @@ namespace Qualifier {
 
 //------------------------------------------------------------------------------
 
+void Def::resize(size_t num_ops) {
+    num_ops_ = num_ops;
+    if (num_ops_ > ops_capacity_) {
+        if (on_heap())
+            delete[] ops_;
+        ops_capacity_ *= size_t(2);
+        ops_ = new const Def*[ops_capacity_]();
+    }
+}
+
 Def::Sort Def::sort() const {
     if (!type())
         return TypeUniverse;
@@ -125,6 +135,11 @@ const Def* Pi::domain() const { return world().sigma(domains()); }
 /*
  * constructors
  */
+
+Def::~Def() {
+    if (on_heap())
+        delete[] ops_;
+}
 
 Lambda::Lambda(World& world, const Pi* type, const Def* body, const std::string& name)
     : Constructor(world, Node_Lambda, type, {body}, name)

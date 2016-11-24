@@ -178,18 +178,14 @@ protected:
         std::copy(ops.begin(), ops.end(), ops_);
     }
 
-    void clear_type() { type_ = nullptr; }
-    void set_type(const Def* type) { type_ = type; }
+    ~Def() override;
+
     void set(size_t i, const Def*);
     void wire_uses() const;
     void unset(size_t i);
     void unregister_use(size_t i) const;
     void unregister_uses() const;
-    void resize(size_t num_ops) {
-        num_ops_ = num_ops;
-        if (num_ops_ > ops_capacity_)
-            assert(false && "TODO");
-    }
+    void resize(size_t num_ops);
 
 public:
     Sort sort() const;
