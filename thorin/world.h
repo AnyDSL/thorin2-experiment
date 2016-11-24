@@ -26,14 +26,10 @@ public:
     World();
     virtual ~World() { for (auto def : defs_) def->~Def(); }
 
+    const Universe* universe(Qualifier::URAL q = Qualifier::Unrestricted) const { return universe_[q]; }
     const Star* star(Qualifier::URAL q = Qualifier::Unrestricted) const { return star_[q]; }
     const Assume* assume(const Def* type, const std::string& name = "") {
-        return assume(type, type ? type->qualifier() : Qualifier::Unrestricted, name);
-    }
-    // TODO Needed to access the differently qualified *s
-    const Assume* assume(const Def* type, Qualifier::URAL q, const std::string& name = "") {
-        assert(!type || type->qualifier() == q);
-        return insert<Assume>(0, *this, type, q, name);
+        return insert<Assume>(0, *this, type, name);
     }
     const Error* error() const { return error_; }
     const Var* type_var(size_t index, const std::string& name = "") {
@@ -205,6 +201,7 @@ protected:
     Page* cur_page_;
     size_t buffer_index_ = 0;
     DefSet defs_;
+    const Array<const Universe*> universe_;
     const Array<const Star*> star_;
     const Error* error_;
     const Array<const Assume*> nat_;

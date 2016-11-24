@@ -51,11 +51,13 @@ namespace Qualifier {
 
 Def::Sort Def::sort() const {
     if (!type())
-        return Kind;
+        return TypeUniverse;
     else if (!type()->type())
+        return Kind;
+    else if (!type()->type()->type())
         return Type;
     else {
-        assert(!type()->type()->type());
+        assert(!type()->type()->type()->type());
         return Term;
     }
 }
@@ -131,19 +133,29 @@ Lambda::Lambda(World& world, const Pi* type, const Def* body, const std::string&
 {}
 
 Pi::Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, const std::string& name)
-    : Quantifier(world, Node_Pi, body->type(), concat(domains, body), q, name)
+    : Quantifier(world, Node_Pi, body->type()->is_universe() ? (const Def*) world.universe(q) : world.star(q),
+                 concat(domains, body), name)
+{}
+
+Sigma::Sigma(World& world, size_t num_ops, Qualifier::URAL q, const std::string& name)
+    : Sigma(world, world.universe(q), num_ops, name)
+{}
+
+Star::Star(World& world, Qualifier::URAL q)
+    : Def(world, Node_Star, world.universe(q), Defs(), "*")
 {}
 
 const Def* Quantifier::max_type(World& world, Defs ops, Qualifier::URAL q) {
     auto qualifier = Qualifier::Unrestricted;
+    auto is_kind = false;
     for (auto op : ops) {
-        if (!op->type())
-            return nullptr;
+        assert(op->type() && "Type universes shouldn't be operands");
         qualifier = Qualifier::meet(qualifier, op->type()->qualifier());
+        is_kind |= op->type()->is_kind();
     }
     assert(q <= qualifier &&
            "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
-    return world.star(q);
+    return is_kind ? (const Def*) world.universe(q) : world.star(q);
 }
 
 //------------------------------------------------------------------------------
@@ -169,7 +181,7 @@ bool Def::equal(const Def* other) const {
         return this == other;
 
     bool result = this->tag() == other->tag() && this->type() == other->type()
-        && this->num_ops() == other->num_ops() && this->qualifier() == other->qualifier();
+        && this->num_ops() == other->num_ops();
     if (result) {
         for (size_t i = 0, e = num_ops(); result && i != e; ++i)
             result &= this->op(i) == other->op(i);
@@ -207,6 +219,7 @@ const Def* Pick        ::rebuild(World& to, const Def* t, Defs ops) const { retu
 const Def* Sigma       ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is_nominal()); return to.sigma(ops, name()); }
 const Def* Star        ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
 const Def* Tuple       ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
+const Def* Universe    ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
 const Def* Var         ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), name()); }
 const Def* Variant     ::rebuild(World& to, const Def* t, Defs ops) const { return to.variant(ops, name()); }
 
@@ -333,6 +346,8 @@ const Def* Tuple::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     return world().tuple(thorin::substitute(map, index, ops(), args), name());
 }
 
+const Def* Universe::vsubstitute(Def2Def&, size_t, Defs) const { return this; }
+
 const Def* Var::vsubstitute(Def2Def& map, size_t index, Defs args) const {
     if (this->index() == index)     // substitute
         return world().tuple(type(), args);
@@ -353,12 +368,11 @@ const Def* Variant::vsubstitute(Def2Def& map, size_t index, Defs args) const {
  */
 
 std::ostream& All::stream(std::ostream& os) const {
-    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
-                       " ∧ ");
+    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")", " ∧ ");
 }
 
 std::ostream& Any::stream(std::ostream& os) const {
-    os << qualifier() << "∨:";
+    os << "∨:";
     type()->name_stream(os);
     def()->name_stream(os << "(");
     return os << ")";
@@ -367,11 +381,13 @@ std::ostream& Any::stream(std::ostream& os) const {
 std::ostream& App::stream(std::ostream& os) const {
     auto begin = "(";
     auto end = ")";
-    if (destructee()->sort() == Type) {
+    auto domains = destructee()->type()->as<Pi>()->domains();
+    if (std::any_of(domains.begin(), domains.end(), [](auto t) { return t->is_kind(); })) {
+        os << qualifier();
         begin = "[";
         end = "]";
     }
-    return stream_list(streamf(os << qualifier(), "%", destructee()), args(),
+    return stream_list(streamf(os, "%", destructee()), args(),
                        [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
 
@@ -417,15 +433,19 @@ std::ostream& Sigma::stream(std::ostream& os) const {
 }
 
 std::ostream& Star::stream(std::ostream& os) const {
-    return os << qualifier() << '*';
+    return os << qualifier() << name();
+}
+
+std::ostream& Universe::stream(std::ostream& os) const {
+    return os << qualifier() << name();
 }
 
 std::ostream& Tuple::stream(std::ostream& os) const {
-    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
 }
 
 std::ostream& Var::stream(std::ostream& os) const {
-    os << qualifier() << "<" << index() << ":";
+    os << "<" << index() << ":";
     return type()->name_stream(os) << ">";
 }
 

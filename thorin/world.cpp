@@ -5,6 +5,10 @@ namespace thorin {
 World::World()
     : root_page_(new Page)
     , cur_page_(root_page_.get())
+    , universe_({insert<Universe>(0, *this, Qualifier::Unrestricted),
+                 insert<Universe>(0, *this, Qualifier::Affine),
+                 insert<Universe>(0, *this, Qualifier::Relevant),
+                 insert<Universe>(0, *this, Qualifier::Linear)})
     , star_({unify<Star>(0, *this, Qualifier::Unrestricted),
              unify<Star>(0, *this, Qualifier::Affine),
              unify<Star>(0, *this, Qualifier::Relevant),
