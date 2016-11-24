@@ -327,11 +327,11 @@ public:
     const Def* body() const { return ops().back(); }
     const Def* reduce(Defs) const;
 
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -348,11 +348,11 @@ public:
     const Def* reduce(Defs) const;
     const Pi* type() const { return Constructor::type()->as<Pi>(); }
 
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -364,9 +364,9 @@ private:
     {}
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    std::ostream& stream(std::ostream&) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -385,13 +385,13 @@ private:
         : Quantifier(world, Node_Sigma, max_type(world, ops, q), ops, name)
     {}
 
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
     bool is_unit() const { return ops().empty(); }
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 
     friend class World;
 };
@@ -404,11 +404,11 @@ private:
         assert(type->num_ops() == ops.size());
     }
 
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 
     friend class World;
 };
@@ -421,14 +421,14 @@ private:
         index_ = index;
     }
 
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
 public:
     size_t index() const { return index_; }
-    virtual std::ostream& stream(std::ostream&) const override;
-    virtual uint64_t vhash() const override;
-    virtual bool equal(const Def*) const override;
+    std::ostream& stream(std::ostream&) const override;
+    uint64_t vhash() const override;
+    bool equal(const Def*) const override;
 
     friend class World;
 };
@@ -439,11 +439,11 @@ private:
         : Quantifier(world, Node_Intersection, max_type(world, ops, q), gid_sorted(ops), name)
     {}
 
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 
     friend class World;
 };
@@ -456,11 +456,11 @@ private:
         assert(type->num_ops() == ops.size());
     }
 
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 
     friend class World;
 };
@@ -471,11 +471,11 @@ private:
         : Destructor(world, Node_Pick, type, def, name)
     {}
 
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 
     friend class World;
 };
@@ -486,11 +486,11 @@ private:
         : Quantifier(world, Node_Variant, max_type(world, ops, q), gid_sorted(ops), name)
     {}
 
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 
     friend class World;
 };
@@ -501,8 +501,8 @@ private:
         : Constructor(world, Node_Any, type, {def}, name)
     {}
 
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
 public:
     const Def* def() const { return op(0); }
@@ -515,7 +515,7 @@ public:
         THORIN_UNREACHABLE;
     }
 
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 
     friend class World;
 };
@@ -527,9 +527,9 @@ private:
     {}
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    std::ostream& stream(std::ostream&) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -538,13 +538,13 @@ class Star : public Def {
 private:
     Star(World& world, Qualifier::URAL q);
 
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
     friend class World;
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 };
 
 class Universe : public Def {
@@ -555,13 +555,13 @@ private:
         qualifier_ = q;
     }
 
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
     friend class World;
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 };
 
 class Var : public Def {
@@ -573,18 +573,18 @@ private:
     }
 
 private:
-    virtual uint64_t vhash() const override;
-    virtual bool equal(const Def*) const override;
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    uint64_t vhash() const override;
+    bool equal(const Def*) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
     friend class World;
 
 public:
     size_t index() const { return index_; }
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
-    virtual std::ostream& name_stream(std::ostream& os) const override {
+    std::ostream& name_stream(std::ostream& os) const override {
         return stream(os);
     }
 };
@@ -596,12 +596,12 @@ private:
     {}
 
 public:
-    virtual bool maybe_dependent() const { return false; }
-    virtual std::ostream& stream(std::ostream&) const override;
+    bool maybe_dependent() const override { return false; }
+    std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -615,11 +615,11 @@ private:
     }
 
 public:
-    virtual std::ostream& stream(std::ostream&) const override;
+    std::ostream& stream(std::ostream&) const override;
 
 private:
-    virtual const Def* rebuild(World&, const Def*, Defs) const override;
-    virtual const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };

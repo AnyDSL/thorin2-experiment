@@ -439,8 +439,8 @@ public:
     typedef typename Super::const_iterator const_iterator;
 
     HashSet() {}
-    template<class InputIt>
 
+    template<class InputIt>
     HashSet(InputIt first, InputIt last)
         : Super(first, last)
     {}
