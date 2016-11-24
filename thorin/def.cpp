@@ -1,8 +1,6 @@
 #include "thorin/def.h"
 #include "thorin/world.h"
 
-#include <stack>
-
 namespace thorin {
 
 namespace Qualifier {
@@ -79,7 +77,7 @@ void Def::set(size_t i, const Def* def) {
     assert(def && "setting null pointer");
     ops_[i] = def;
     assert(!def->uses_.contains(Use(i, this)));
-    assert(def->sort() != Sort::Term || !def->type()->is_affine() || def->num_uses() == 0
+    assert((def->sort() != Sort::Term || !def->type()->is_affine() || def->num_uses() == 0)
            && "Affinely typed terms can be used at most once, check before calling this.");
     const auto& p = def->uses_.emplace(i, this);
     assert_unused(p.second);
@@ -98,7 +96,7 @@ void Def::unregister_use(size_t i) const {
 }
 
 void Def::unset(size_t i) {
-    assert(sort() != Sort::Term || !type()->is_relevant()
+    assert((sort() != Sort::Term || !type()->is_relevant())
            && "Do not remove the use of a relevant value.");
     assert(ops_[i] && "must be set");
     unregister_use(i);
@@ -212,7 +210,7 @@ const Def* App         ::rebuild(World& to, const Def*  , Defs ops) const { retu
 const Def* Extract     ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], index(), name()); }
 const Def* Assume      ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Error       ::rebuild(World& to, const Def*  , Defs    ) const { return to.error(); }
-const Def* Intersection::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(ops, name()); }
+const Def* Intersection::rebuild(World& to, const Def*  , Defs ops) const { return to.intersection(ops, name()); }
 const Def* Match       ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), name()); }
 const Def* Lambda      ::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }
 const Def* Pi          ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), name()); }
@@ -222,7 +220,7 @@ const Def* Star        ::rebuild(World& to, const Def*  , Defs    ) const { retu
 const Def* Tuple       ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, name()); }
 const Def* Universe    ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
 const Def* Var         ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), name()); }
-const Def* Variant     ::rebuild(World& to, const Def* t, Defs ops) const { return to.variant(ops, name()); }
+const Def* Variant     ::rebuild(World& to, const Def*  , Defs ops) const { return to.variant(ops, name()); }
 
 //------------------------------------------------------------------------------
 

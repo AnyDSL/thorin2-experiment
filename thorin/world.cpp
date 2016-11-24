@@ -10,10 +10,10 @@ World::World()
                  insert<Universe>(0, *this, Qualifier::Affine),
                  insert<Universe>(0, *this, Qualifier::Relevant),
                  insert<Universe>(0, *this, Qualifier::Linear)})
-    , star_({unify<Star>(0, *this, Qualifier::Unrestricted),
-             unify<Star>(0, *this, Qualifier::Affine),
-             unify<Star>(0, *this, Qualifier::Relevant),
-             unify<Star>(0, *this, Qualifier::Linear)})
+    , star_({insert<Star>(0, *this, Qualifier::Unrestricted),
+             insert<Star>(0, *this, Qualifier::Affine),
+             insert<Star>(0, *this, Qualifier::Relevant),
+             insert<Star>(0, *this, Qualifier::Linear)})
     , nat_({assume(star(Qualifier::Unrestricted), "Nat"),
             assume(star(Qualifier::Affine), "Nat"),
             assume(star(Qualifier::Relevant), "Nat"),

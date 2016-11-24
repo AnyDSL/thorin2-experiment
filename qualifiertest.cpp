@@ -19,7 +19,6 @@ void testQualifiers() {
     assert(L < A);
     assert(L < R);
 
-    auto meet = [](Qualifier::URAL a, Qualifier::URAL b) { return Qualifier::meet(a, b); };
     assert(meet(U, U) == U);
     assert(meet(A, U) == A);
     assert(meet(R, U) == R);
@@ -142,7 +141,7 @@ void testQualifiers() {
     }
     cout << "--- Affine Fractional Capabilities for Refs ---" << endl;
     {
-        // Recursive type for 
+        // Recursive type for
         // TODO
     }
     cout << "--- QualifierTest end ---" << endl;

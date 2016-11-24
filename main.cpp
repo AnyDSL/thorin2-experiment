@@ -18,8 +18,8 @@ int main()  {
 
     w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 
-    auto n0 = w.assume(w.nat(), "0");
-    auto n1 = w.assume(w.nat(), "1");
+    //auto n0 = w.assume(w.nat(), "0");
+    //auto n1 = w.assume(w.nat(), "1");
     //auto n2 = w.assume(w.nat(), "2");
     //auto n3 = w.assume(w.nat(), "3");
     auto n23 = w.assume(w.nat(), "23");
