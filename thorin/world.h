@@ -11,14 +11,12 @@ namespace thorin {
 class World {
 public:
     struct DefHash {
-        uint64_t operator()(const Def* def) const { return def->hash(); }
+        static uint64_t hash(const Def* def) { return def->hash(); }
+        static bool eq(const Def* d1, const Def* d2) { return d2->equal(d1); }
+        static const Def* sentinel() { return (const Def*)(1); }
     };
 
-    struct DefEqual {
-        bool operator()(const Def* d1, const Def* d2) const { return d2->equal(d1); }
-    };
-
-    typedef HashSet<const Def*, DefHash, DefEqual> DefSet;
+    typedef HashSet<const Def*, DefHash> DefSet;
 
     World& operator=(const World&) = delete;
     World(const World&) = delete;

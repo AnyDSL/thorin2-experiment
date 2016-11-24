@@ -192,6 +192,7 @@ bool Def::equal(const Def* other) const {
 
 uint64_t Extract::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
+
 bool Extract::equal(const Def* other) const {
     return Def::equal(other) && this->index() == other->as<Extract>()->index();
 }
@@ -278,7 +279,8 @@ Array<const Def*> binder_substitute(Def2Def& map, size_t index, Defs ops, Defs a
 const Def* Def::substitute(Def2Def& map, size_t index, Defs args) const {
     if (auto result = find(map, this))
         return result;
-    return map[this] = vsubstitute(map, index, args);
+    auto def = vsubstitute(map, index, args);
+    return map[this] = def;
 }
 
 // vsubstitute

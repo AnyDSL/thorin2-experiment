@@ -83,24 +83,33 @@ private:
 //------------------------------------------------------------------------------
 
 struct UseHash {
-    inline uint64_t operator()(Use use) const;
+    inline static uint64_t hash(Use use);
+    static bool eq(Use u1, Use u2) { return u1 == u2; }
+    static Use sentinel() { return Use(size_t(-1), (const Def*)(-1)); }
 };
 
 typedef HashSet<Use, UseHash> Uses;
 
 template<class T>
+struct GIDLt {
+    bool operator()(T a, T b) { return a->gid() < b->gid(); }
+};
+
+template<class T>
 struct GIDHash {
-    uint64_t operator()(T n) const { return n->gid(); }
+    static uint64_t hash(T n) { return n->gid(); }
+    static bool eq(T a, T b) { return a == b; }
+    static T sentinel() { return T(1); }
 };
 
 template<class Key, class Value>
-using GIDMap = HashMap<const Key*, Value, GIDHash<const Key*>>;
+using GIDMap = thorin::HashMap<Key, Value, GIDHash<Key>>;
 template<class Key>
-using GIDSet = HashSet<const Key*, GIDHash<const Key*>>;
+using GIDSet = thorin::HashSet<Key, GIDHash<Key>>;
 
 template<class To>
-using DefMap  = GIDMap<Def, To>;
-using DefSet  = GIDSet<Def>;
+using DefMap  = GIDMap<const Def*, To>;
+using DefSet  = GIDSet<const Def*>;
 using Def2Def = DefMap<const Def*>;
 
 typedef ArrayRef<const Def*> Defs;
@@ -230,7 +239,7 @@ protected:
 
     union {
         mutable const Def* cache_;  ///< Used by @p App.
-        size_t index_;              ///< Used by @p Var, Extract.
+        size_t index_;              ///< Used by @p Var, @p Extract.
         Box box_;                   ///< Used by @p Assume.
         Qualifier::URAL qualifier_; ///< Used by @p Universe.
     };
@@ -245,7 +254,6 @@ private:
     static size_t gid_counter_;
 
     std::string name_;
-    mutable Uses uses_;
     mutable World* world_;
     const Def* type_;
     mutable uint64_t hash_ = 0;
@@ -261,6 +269,7 @@ private:
         uint64_t fields_;
     };
 
+    mutable Uses uses_;
     const Def** ops_;
     const Def* vla_ops_[0];
 
@@ -269,8 +278,8 @@ private:
     friend class Scope;
 };
 
-uint64_t UseHash::operator()(Use use) const {
-    return uint64_t(use.index()) << 48ull | uint64_t(use->gid());
+uint64_t UseHash::hash(Use use) {
+    return uint64_t(use.index() & 0x3) | uint64_t(use->gid()) << 2ull;
 }
 
 class Quantifier : public Def {
