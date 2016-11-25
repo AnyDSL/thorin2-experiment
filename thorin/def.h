@@ -252,14 +252,12 @@ private:
     mutable World* world_;
     const Def* type_;
     mutable uint64_t hash_ = 0;
-    struct {
-        unsigned gid_           : 24;
-        unsigned ops_capacity_  : 16;
-        unsigned tag_           :  7;
-        unsigned nominal_       :  1;
-        unsigned num_ops_       : 16;
-        // this sum must be 64   ^^^
-    };
+    unsigned gid_           : 24;
+    unsigned ops_capacity_  : 16;
+    unsigned tag_           :  7;
+    unsigned nominal_       :  1;
+    unsigned num_ops_       : 16;
+    // this sum must be 64   ^^^
 
     mutable Uses uses_;
     const Def** ops_;
