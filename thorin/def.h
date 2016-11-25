@@ -238,7 +238,6 @@ protected:
         size_t index_;              ///< Used by @p Var, @p Extract.
         Box box_;                   ///< Used by @p Assume.
         Qualifier::URAL qualifier_; ///< Used by @p Universe.
-        uint64_t dummy_ = 0;        ///< Used to shut up valgrind.
     };
 
 private:
