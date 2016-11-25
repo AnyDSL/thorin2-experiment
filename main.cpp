@@ -76,4 +76,22 @@ int main()  {
     cout << fst_sigma << ": " << fst_sigma->type() << endl;
     auto snd_sigma = w.extract(sigma_val, 1);
     cout << snd_sigma << ": " << snd_sigma->type() << endl;
+
+    // Test variant types and matches
+    auto variant = w.variant({w.nat(), w.boolean()});
+    auto any_nat = w.any(variant, n23);
+    auto any_bool = w.any(variant, w.assume(w.boolean(), "false"));
+    auto assumed_var = w.assume(variant, "someval");
+    auto handle_nat = w.lambda(w.nat(), w.var(w.nat(), 0));
+    auto handle_bool = w.lambda(w.boolean(), w.assume(w.nat(), "0"));
+    Defs handlers{handle_nat, handle_bool};
+    auto match_nat = w.match(any_nat, handlers);
+    match_nat->dump();
+    auto match_bool = w.match(any_bool, handlers);
+    match_bool->dump();
+    auto match = w.match(assumed_var, handlers);
+    match->dump();
+    match->type()->dump();
+    // TODO this should not reduce
+    w.match(any_nat, {handle_bool, handle_nat})->dump();
 }

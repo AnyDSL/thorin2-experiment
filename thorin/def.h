@@ -115,7 +115,10 @@ using Def2Def = DefMap<const Def*>;
 typedef ArrayRef<const Def*> Defs;
 
 Array<const Def*> types(Defs defs);
+void gid_sort(Array<const Def*>* defs);
 Array<const Def*> gid_sorted(Defs defs);
+void unique_gid_sort(Array<const Def*>* defs);
+Array<const Def*> unique_gid_sorted(Defs defs);
 
 //------------------------------------------------------------------------------
 
@@ -524,6 +527,8 @@ private:
     {}
 
 public:
+    Defs handlers() const { return ops().skip_front(); }
+
     std::ostream& stream(std::ostream&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     const Def* vsubstitute(Def2Def&, size_t, Defs) const override;

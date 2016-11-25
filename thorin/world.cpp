@@ -67,7 +67,9 @@ const Def* build_extract_type(World& world, const Def* tuple, size_t index) {
     Def2Def map;
     for (size_t delta = 1; type->maybe_dependent() && delta <= index; delta++) {
         auto prev_extract = world.extract(tuple, index - delta);
-        type = type->substitute(map, delta - 1, {prev_extract});
+        // This also shifts any Var with index > 0 by -1
+        type = type->substitute(map, 0, {prev_extract});
+        // TODO Do we need to clear the map here?
     }
     return type;
 }
@@ -130,9 +132,15 @@ const Def* World::any(const Def* type, const Def* def, const std::string& name) 
     return unify<Any>(1, *this, type, def, name);
 }
 
-const Def* build_match_type(const Def* /*def*/, const Variant* /*type*/, Defs /*handlers*/) {
+const Def* build_match_type(World& w, const Def* def, const Variant* type, Defs handlers) {
     // TODO check handler types in a later type checking step?
-    return /*TODO*/nullptr;
+    Array<const Def*> types(handlers.size());
+    for (size_t i = 0; i < handlers.size(); ++i) {
+        types[i] = handlers[i]->type()->as<Pi>()->body();
+    }
+    // We're not actually building a sum type here, we need uniqueness
+    unique_gid_sort(&types);
+    return w.variant(types);
 }
 
 const Def* World::match(const Def* def, Defs handlers, const std::string& name) {
@@ -147,8 +155,7 @@ const Def* World::match(const Def* def, Defs handlers, const std::string& name) 
         auto any_def = any->def();
         return app(handlers[any->index()], any_def, name);
     }
-    auto type = build_match_type(def, matched_type, handlers);
-    // TODO implement reduction and caching
+    auto type = build_match_type(*this, def, matched_type, handlers);
     return unify<Match>(1, *this, type, def, handlers, name);
 }
 
@@ -170,6 +177,7 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
     if (too_many_affine_uses({callee}) || too_many_affine_uses(args))
         return error();
 
+    // TODO what if args types don't match the domains? error?
     auto type = callee->type()->as<Pi>()->reduce(args);
     auto app = unify<App>(args.size() + 1, *this, type, callee, args, name);
     assert(app->destructee() == callee);
@@ -178,6 +186,7 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
         return cache;
     // Can only really reduce if it's not an Assume of Pi type
     if (auto lambda = callee->isa<Lambda>())
+        // TODO can't reduce if args types don't match the domains
         return app->cache_ = lambda->reduce(args);
     else
         return app->cache_ = app;

@@ -122,9 +122,25 @@ Array<const Def*> types(Defs defs) {
     return result;
 }
 
+void gid_sort(Array<const Def*>* defs) {
+    std::sort(defs->begin(), defs->end(), GIDLt<const Def*>());
+}
+
 Array<const Def*> gid_sorted(Defs defs) {
     Array<const Def*> result(defs);
-    std::sort(result.begin(), result.end(), [](auto def1, auto def2) { return def1->gid() < def2-> gid(); });
+    gid_sort(&result);
+    return result;
+}
+
+void unique_gid_sort(Array<const Def*>* defs) {
+    gid_sort(defs);
+    auto first_non_unique = std::unique(defs->begin(), defs->end());
+    defs->shrink(std::distance(defs->begin(), first_non_unique));
+}
+
+Array<const Def*> unique_gid_sorted(Defs defs) {
+    Array<const Def*> result(defs);
+    unique_gid_sort(&result);
     return result;
 }
 
@@ -419,10 +435,10 @@ std::ostream& Intersection::stream(std::ostream& os) const {
 }
 
 std::ostream& Match::stream(std::ostream& os) const {
-    os << "match:";
-    type()->name_stream(os);
-    destructee()->name_stream(os << "(");
-    return os << ")";
+    os << "match ";
+    destructee()->name_stream(os);
+    os << " with ";
+    return stream_list(os, handlers(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
 }
 
 std::ostream& Lambda::stream(std::ostream& os) const {
