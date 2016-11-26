@@ -8,7 +8,8 @@ define x1 = 1;
 assume opAddNat: (Nat,Nat)->Nat;
 define x3 = opAddNat (1,2);
 define x4 = (lambda y: Nat. y) 1;
-define x4 = (lambda y: Nat. (y, y)) 1;
+define x4 = lambda y: Nat. (y, y);
+define x5 = (lambda y: Nat. (y, y)) 1;
 '''
 
 prog = lambdaparser.parse_lambda_code(CODE)

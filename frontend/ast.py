@@ -13,8 +13,18 @@ def get_var_name(name =''):
 
 
 def set_join(a, b):
-	# TODO unify variables
-	return a.flat_product(b)
+	dim_a = a.space.dim(isl.dim_type.set)
+	dim_b = b.space.dim(isl.dim_type.set)
+	vars  = [a.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_a)]
+	vars += [b.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_b)]
+	vars = list(set(vars))
+	if dim_a + dim_b == len(vars):
+		return a.flat_product(b)
+	space = isl.Space.create_from_names(ctx, set=vars)
+	result = isl.BasicSet.universe(space)
+	for constraint in a.get_constraints():
+		result.add_constraint(constraint)
+	return result
 
 def constraint_equal(bset, v1, *args):
 	for v2 in args:
