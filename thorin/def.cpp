@@ -262,9 +262,6 @@ const Def* Variant     ::rebuild(World& to, const Def*  , Defs ops) const { retu
 const Def* reduce(const Def* body, Defs args) {
     size_t num_args = args.size();
     Def2Def nominals;
-    if (is_nominal()) {
-        // TODO Worklist algorithm for this and substitute
-    }
     Def2Def map;
     for (size_t i = 0; i < num_args; ++i) {
         body = body->substitute(nominals, map, num_args - 1 - i, {args[i]});
@@ -279,6 +276,9 @@ const Def* Pi::reduce(Defs args) const {
 
 const Def* Lambda::reduce(Defs args) const {
     assert(args.size() == num_domains());
+    if (is_nominal()) {
+        // TODO Worklist algorithm for this and substitute
+    }
     return thorin::reduce(body(), args);
 }
 
