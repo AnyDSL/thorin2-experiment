@@ -68,6 +68,17 @@ class AstNode:
 		"""
 		raise Exception('TODO '+repr(self.__class__))
 
+	def check_constraints(self):
+		vars, accepted, possible = self.get_constraints()
+		# possible subsetof accepted => everything right
+		if possible.is_subset(accepted):
+			print '[VALID]'
+			return True
+		else:
+			print '???'
+			return None
+
+
 	def get_nat_variables(self):
 		vars = [op.get_nat_variables() for op in self.ops if isinstance(op, AstNode)]
 		if len(vars) == 1:
@@ -212,7 +223,10 @@ class App(AstNode):
 		param_vars, param_accepted, param_possible = self.ops[1].get_constraints()
 		accepted = set_join(func_accepted, param_accepted)
 		possible = set_join(func_possible, param_possible)
+
 		#TODO type error: forall[free vars]. exists[bound vars]. possible not subset of accepted
+		#
+
 		func_param_vars = flatten(func_vars[0])
 		param_vars = flatten(param_vars)
 		assert len(func_param_vars) == len(param_vars)
