@@ -7,10 +7,14 @@ void testMatrix();
 
 void testQualifiers();
 
+void testNominal();
+
 int main()  {
 	prepareUtf8Console();
 
     testQualifiers();
+
+    testNominal();
 
 	testMatrix();
 

@@ -63,6 +63,9 @@ public:
     const Lambda* lambda(Defs domains, const Def* body, Qualifier::URAL type_q, const std::string& name = "") {
         return pi_lambda(pi(domains, body->type(), type_q), body, name);
     }
+    Lambda* pi_lambda(const Pi* pi, const std::string& name = "") {
+        return insert<Lambda>(1, *this, pi, name);
+    }
     const Lambda* pi_lambda(const Pi* pi, const Def* body, const std::string& name = "");
     const Def* app(const Def* callee, Defs args, const std::string& name = "");
     const Def* app(const Def* callee, const Def* arg, const std::string& name = "") {
@@ -76,8 +79,14 @@ public:
     Sigma* sigma(size_t num_ops, const Def* type, const std::string& name = "") {
         return insert<Sigma>(num_ops, *this, type, num_ops, name);
     }
+    Sigma* sigma_type(size_t num_ops, const std::string& name = "") {
+        return sigma_type(num_ops, Qualifier::Unrestricted, name);
+    }
     Sigma* sigma_type(size_t num_ops, Qualifier::URAL q, const std::string& name = "") {
         return sigma(num_ops, star(q), name);
+    }
+    Sigma* sigma_kind(size_t num_ops, const std::string& name = "") {
+        return sigma_kind(num_ops, Qualifier::Unrestricted, name);
     }
     Sigma* sigma_kind(size_t num_ops, Qualifier::URAL q, const std::string& name = "") {
         return insert<Sigma>(num_ops, *this, num_ops, q, name);

@@ -63,12 +63,13 @@ const Def* build_extract_type(World& world, const Def* tuple, size_t index) {
     auto sigma = tuple->type()->as<Sigma>();
 
     auto type = sigma->op(index);
+    Def2Def nominals;
     Def2Def map;
     for (size_t delta = 1; type->maybe_dependent() && delta <= index; delta++) {
         auto prev_extract = world.extract(tuple, index - delta);
         // This also shifts any Var with index > 0 by -1
-        type = type->substitute(map, 0, {prev_extract});
-        // TODO Do we need to clear the map here?
+        type = type->substitute(nominals, map, 0, {prev_extract});
+        map.clear();
     }
     return type;
 }
@@ -184,8 +185,9 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
         return cache;
     // Can only really reduce if it's not an Assume of Pi type
     if (auto lambda = callee->isa<Lambda>())
-        // TODO can't reduce if args types don't match the domains
-        return app->cache_ = lambda->reduce(args);
+        if  (lambda->is_closed())
+            // TODO can't reduce if args types don't match the domains
+            return app->cache_ = lambda->reduce(args);
     else
         return app->cache_ = app;
 
