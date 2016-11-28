@@ -388,9 +388,8 @@ private:
     const Def* rebuild(World&, const Def*, Defs) const override;
     const Def* vsubstitute(Def2Def&, size_t, Defs) const override;
 
-    bool is_unit() const { return ops().empty(); }
-
 public:
+    bool is_unit() const { return ops().empty(); }
     std::ostream& stream(std::ostream&) const override;
 
     friend class World;
