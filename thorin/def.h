@@ -609,11 +609,9 @@ private:
 
 class Error : public Def {
 private:
-    Error(World& world)
-        : Def(world, Node_Error, nullptr, Defs(), "error")
-    {
-        qualifier_ == Qualifier::Unrestricted;
-    }
+    Error(World& world, const Def* type)
+        : Def(world, Node_Error, type, Defs(), "error")
+    {}
 
 public:
     std::ostream& stream(std::ostream&) const override;
@@ -624,6 +622,8 @@ private:
 
     friend class World;
 };
+
+inline bool is_error(const Def* def) { return def->tag() == Node_Error; }
 
 }
 

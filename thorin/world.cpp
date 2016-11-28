@@ -5,7 +5,6 @@ namespace thorin {
 World::World()
     : root_page_(new Page)
     , cur_page_(root_page_.get())
-    , error_(unify<Error>(0, *this))
     , universe_({insert<Universe>(0, *this, Qualifier::Unrestricted),
                  insert<Universe>(0, *this, Qualifier::Affine),
                  insert<Universe>(0, *this, Qualifier::Relevant),
@@ -125,9 +124,8 @@ const Def* World::any(const Def* type, const Def* def, const std::string& name) 
     }
 
     auto variants = type->ops();
-    if (std::none_of(variants.begin(), variants.end(), [&](auto t){ return t == def->type(); })) {
-        return error();
-    }
+    if (std::none_of(variants.begin(), variants.end(), [&](auto t){ return t == def->type(); }))
+        return error(type);
 
     return unify<Any>(1, *this, type, def, name);
 }
@@ -175,7 +173,7 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
 
     // TODO do this checking later during a separate type checking phase
     if (too_many_affine_uses({callee}) || too_many_affine_uses(args))
-        return error();
+        return error(callee->type()->as<Pi>()->body());
 
     // TODO what if args types don't match the domains? error?
     auto type = callee->type()->as<Pi>()->reduce(args);

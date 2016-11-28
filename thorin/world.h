@@ -29,7 +29,7 @@ public:
     const Assume* assume(const Def* type, const std::string& name = "") {
         return insert<Assume>(0, *this, type, name);
     }
-    const Error* error() const { return error_; }
+    const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
     const Var* type_var(size_t index, const std::string& name = "") {
         return unify<Var>(0, *this, star(), index, name);
     }
@@ -199,7 +199,6 @@ protected:
     Page* cur_page_;
     size_t buffer_index_ = 0;
     DefSet defs_;
-    const Error* error_;
     const std::array<const Universe*, 4> universe_;
     const std::array<const Star*, 4> star_;
     const std::array<const Assume*, 4> nat_;

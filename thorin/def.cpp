@@ -198,10 +198,8 @@ uint64_t Def::vhash() const {
         return gid();
 
     uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type() ? type()->gid() : 0);
-    for (auto op : ops()) {
-        if (op)
-            seed = thorin::hash_combine(seed, op->gid());
-    }
+    for (auto op : ops())
+        seed = thorin::hash_combine(seed, op->gid());
     return seed;
 }
 
@@ -239,7 +237,7 @@ const Def* Any         ::rebuild(World& to, const Def* t, Defs ops) const { retu
 const Def* App         ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), name()); }
 const Def* Extract     ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], index(), name()); }
 const Def* Assume      ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
-const Def* Error       ::rebuild(World& to, const Def*  , Defs    ) const { return to.error(); }
+const Def* Error       ::rebuild(World& to, const Def* t, Defs    ) const { return to.error(t); }
 const Def* Intersection::rebuild(World& to, const Def*  , Defs ops) const { return to.intersection(ops, name()); }
 const Def* Match       ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), name()); }
 const Def* Lambda      ::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), name()); }

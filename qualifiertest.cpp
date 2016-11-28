@@ -38,7 +38,7 @@ void testQualifiers() {
     auto anx = w.var(ANat, 0, "x");
     auto anid = w.lambda(ANat, anx, "anid");
     /*auto app1 =*/ w.app(anid, an0);
-    assert(w.app(anid, an0) == w.error());
+    assert(is_error(w.app(anid, an0)));
 
     auto tuple_type = w.sigma({ANat, RNat});
     assert(tuple_type->qualifier() == L);
@@ -55,7 +55,7 @@ void testQualifiers() {
     assert(a_id_type == a_id->type());
     auto n0 = w.assume(Nat, "0");
     /*auto a_id_app =*/ w.app(a_id, n0);
-    assert(w.app(a_id, n0) == w.error());
+    assert(is_error(w.app(a_id, n0)));
 
     // λᴬT:*.λx:ᴬT.x
     auto aT1 = w.var(w.star(A), 0, "T");
