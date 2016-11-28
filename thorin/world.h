@@ -190,7 +190,7 @@ protected:
     void dealloc(const T* def) {
         size_t num_bytes = sizeof(T) + def->num_ops() * sizeof(const Def*);
         def->~T();
-        if (intptr_t(buffer_index_ - num_bytes) > 0) // don't care otherwise
+        if (ptrdiff_t(buffer_index_ - num_bytes) > 0) // don't care otherwise
             buffer_index_-= num_bytes;
         assert(buffer_index_ % alignof(T) == 0);
     }
