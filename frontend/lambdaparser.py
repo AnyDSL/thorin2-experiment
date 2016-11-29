@@ -437,7 +437,7 @@ class InnerDefinition(Plain, LambdaAST):
 	def to_ast(self, scope):
 		body = self.body.to_ast(scope)
 		scope.add_definition(self.name, body)
-		return [body]
+		return [(self.name, body)]
 
 
 class Definition(InnerDefinition):
@@ -468,7 +468,7 @@ class Assumption(Plain, LambdaAST):
 	def to_ast(self, scope):
 		assumption = ast.Assume([self.name, self.body.to_ast(scope)])
 		scope.add_definition(self.name, assumption)
-		return [assumption]
+		return [(self.name, assumption)]
 
 
 class Comment(str, LambdaAST):

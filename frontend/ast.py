@@ -83,9 +83,17 @@ class AstNode:
 		if possible.is_subset(accepted):
 			print '[VALID]'
 			return True
-		else:
-			print '???'
-			return None
+		# possible can't be made accepted by other constraints
+		if possible.is_disjoint(accepted):
+			print '[INVALID]  (disjoint)'
+			return False
+		unbound_vars = flatten(vars)
+		# any outer influence on the breaking parts?
+		if len(unbound_vars) == 0:
+			print '[INVALID]  (not influence on constraints remaining)'
+			return False
+		print '???'
+		return None
 
 	def get_nat_variables(self):
 		vars = [op.get_nat_variables() for op in self.ops if isinstance(op, AstNode)]
@@ -257,15 +265,19 @@ class App(AstNode):
 		accepted = set_join(func_accepted, param_accepted)
 		possible = set_join(func_possible, param_possible)
 
-		#TODO type error: forall[free vars]. exists[bound vars]. possible not subset of accepted
-		#
-
 		func_param_vars = flatten(func_vars[0])
 		param_vars = flatten(param_vars)
 		assert len(func_param_vars) == len(param_vars)
 		for vf, vp in zip(func_param_vars, param_vars):
 			accepted = constraint_equal(accepted, vf, vp)
 			possible = constraint_equal(possible, vf, vp)
+
+		# TODO type error: forall[free vars]. exists[bound vars]. possible not subset of accepted
+		#
+		# Simple form for now
+		if not possible.is_subset(accepted) and possible.is_disjoint(accepted):
+			print '[ERR] This must go wrong: ', self
+
 		return (func_vars[1], accepted, possible)
 
 

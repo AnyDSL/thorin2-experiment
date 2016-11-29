@@ -45,6 +45,11 @@ define a1 = ArrGet (15, lambda _:Nat. Float) testarray1 0;
 define a2 = ArrGet (15, lambda _:Nat. Float) testarray1 16;
 define a3 = lambda n:Nat. ArrGet (n, lambda _:Nat. Float) testarray1 16;
 define a4 = (lambda n:Nat. ArrGet (n, lambda _:Nat. Float) testarray1 16) 20;
+
+define rt1 = sum 10 (lambda i:Nat. (intakeLower10 i, cFloatZero)[1]);
+define rt2 = sum 15 (ArrGet (15, lambda _:Nat. Float) testarray1);
+define rt3 = sum 20 (ArrGet (15, lambda _:Nat. Float) testarray1);
+define rt4 = sum 0 (ArrGet (15, lambda _:Nat. Float) testarray1);
 '''
 
 
@@ -100,9 +105,8 @@ def type_manually():
 	if ass:
 		ass.get_constraints = types.MethodType(arr_get_constraints, ass)
 
-
 	# type unnecessary stuff
-	for x in ['Float']:
+	for x in ['Float', 'cFloatZero', 'opFloatPlus', 'testarray1']:
 		ass = ast.get_assumption(x)
 		if ass:
 			ass.get_constraints = types.MethodType(ast.empty_constraints, ass)
@@ -122,8 +126,8 @@ nodes = prog.to_ast()
 
 type_manually()
 
-for root in nodes:
-	print '- ',root,
+for name, root in nodes:
+	print '- ',name, ':=', root,
 	print ': ',root.get_type()
 	constraints = root.get_constraints()
 	print 'Constraints: ', constraints
@@ -140,8 +144,8 @@ def test_typing():
 	nodes = prog.to_ast()[:-1] # skip matrix dot for now
 	type_manually()
 
-	for root in nodes:
-		print '- ', root,
+	for name, root in nodes:
+		print '- ', name, ':=', root,
 		print ': ', root.get_type()
 		constraints = root.get_constraints()
 		print 'Constraints: ', constraints
