@@ -52,6 +52,18 @@ define rt3 = sum 20 (ArrGet (15, lambda _:Nat. Float) testarray1);
 define rt4 = sum 0 (ArrGet (15, lambda _:Nat. Float) testarray1);
 '''
 
+CODE3 = '''
+define matrixDot = lambda n:Nat. lambda m:Nat. lambda o:Nat. lambda M1: MatrixType n m. lambda M2: MatrixType m o.
+		ArrCreate (n, lambda _:Nat. UArrT (o, Float)) (
+			lambda i:Nat. ArrCreate (o, lambda _:Nat. Float) (lambda j: Nat.
+				sum n (lambda k: Nat. opFloatMult(
+					(ArrGet (m, lambda _:Nat. Float) (ArrGet (n, lambda _:Nat. UArrT (m, Float)) M1 i) k),
+					(ArrGet (o, lambda _:Nat. Float) (ArrGet (m, lambda _:Nat. UArrT (m, Float)) M1 k) j)
+				))
+			)
+		);
+'''
+
 
 def type_manually():
 	# manual typing
@@ -63,7 +75,7 @@ def type_manually():
 		space = isl.Space.create_from_names(ast.ctx, set=[a])
 		possible = isl.BasicSet.universe(space)
 		accepted = isl.BasicSet.universe(space)
-		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(accepted.space, {1: 10, a: -1}))
+		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(accepted.space, {1: 10, a: -1})) # 0 <= 1*10 + -1*a
 		return ([a, a], accepted, possible)
 
 	ass = ast.get_assumption('intakeLower10')
@@ -120,7 +132,10 @@ def type_manually():
 #	arraycode = f.read()
 #	arraycode = '\n'.join(arraycode.split('\n')[:18])
 #	CODE += arraycode
-prog = lambdaparser.parse_lambda_code(CODE+CODE2)
+
+CODE += CODE2
+# CODE += CODE3
+prog = lambdaparser.parse_lambda_code(CODE)
 print prog
 nodes = prog.to_ast()
 
@@ -131,7 +146,7 @@ for name, root in nodes:
 	print ': ',root.get_type()
 	constraints = root.get_constraints()
 	print 'Constraints: ', constraints
-	print root.check_constraints(constraints)
+	root.check_constraints(constraints)
 	print ''
 
 
