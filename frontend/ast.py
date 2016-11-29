@@ -5,6 +5,8 @@ import types
 import islpy as isl
 
 ctx = isl.DEFAULT_CONTEXT
+empty_bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=[]))
+
 last_var_number = 0
 def get_var_name(name =''):
 	global last_var_number
@@ -25,6 +27,10 @@ def set_join(a, b):
 	for constraint in a.get_constraints():
 		result.add_constraint(constraint)
 	return result
+
+def var_in_set(vname, bset):
+	dim = bset.space.dim(isl.dim_type.set)
+	return vname in (bset.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim))
 
 def constraint_equal(bset, v1, *args):
 	for v2 in args:
@@ -68,8 +74,11 @@ class AstNode:
 		"""
 		raise Exception('TODO '+repr(self.__class__))
 
-	def check_constraints(self):
-		vars, accepted, possible = self.get_constraints()
+	def check_constraints(self, constraints = None):
+		if constraints:
+			vars, accepted, possible = constraints
+		else:
+			vars, accepted, possible = self.get_constraints()
 		# possible subsetof accepted => everything right
 		if possible.is_subset(accepted):
 			print '[VALID]'
@@ -77,7 +86,6 @@ class AstNode:
 		else:
 			print '???'
 			return None
-
 
 	def get_nat_variables(self):
 		vars = [op.get_nat_variables() for op in self.ops if isinstance(op, AstNode)]
@@ -109,7 +117,20 @@ class Assume(AstNode):
 		return self.ops[1]
 
 	def get_nat_variables(self):
-		raise Exception('NI')
+		print '[WARN] get_nat_variables not implemented for', self.ops[0]
+		return self.ops[1].get_nat_variables()
+
+	def get_constraints(self):
+		vars, accepted, possible = self.get_isl_sets()
+		print '[WARN] Untyped assume:', self.ops[0]
+		print 'Typing as', (vars, accepted, possible)
+		return (vars, accepted, possible)
+
+	def get_isl_sets(self):
+		vars = self.ops[1].get_nat_variables()
+		bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=flatten(vars)))
+		return (vars, bset, bset)
+
 
 
 class Constant(AstNode):
@@ -131,11 +152,17 @@ class Constant(AstNode):
 	def get_nat_variables(self):
 		if self.name == 'Nat':
 			return [get_var_name('p')]
+		elif self.name == '*':
+			return []
 		else:
 			raise Exception('NI')
 
+	def get_constraints(self):
+		return ([], empty_bset, empty_bset)
+
 
 class ParamDef(AstNode):
+	#ops = [type]
 	def __init__(self, name, type):
 		if isinstance(type, Tupel):
 			type = Sigma(type.ops)
@@ -166,7 +193,7 @@ class ParamDef(AstNode):
 		return (vars, bset, bset)
 
 	def get_nat_variables(self):
-		raise Exception('NI')
+		return self.ops[0].get_nat_variables()
 
 	def create_new_constraint_vars(self):
 		self.constraint_vars = self.ops[0].get_nat_variables()
@@ -189,6 +216,12 @@ class Lambda(AstNode):
 	def get_constraints(self):
 		param_vars = self.ops[0].create_new_constraint_vars()
 		body_vars, body_accepted, body_possible = self.ops[1].get_constraints()
+		undefined_vars = [vname for vname in flatten(param_vars) if not var_in_set(vname, body_accepted)]
+		if len(undefined_vars) > 0:
+			space = isl.Space.create_from_names(ctx, set=undefined_vars)
+			bset = isl.BasicSet.universe(space)
+			body_accepted = set_join(body_accepted, bset)
+			body_possible = set_join(body_possible, bset)
 		return ([param_vars, body_vars], body_accepted, body_possible)
 
 
@@ -266,6 +299,7 @@ class Sigma(AstNode):
 
 
 class Extract(AstNode):
+	# ops = [tupel, index]
 	def __init__(self, ops):
 		AstNode.__init__(self, [ops[0], int(ops[1])])
 
@@ -277,6 +311,12 @@ class Extract(AstNode):
 		assert isinstance(tupeltype, Sigma)
 		return tupeltype.ops[self.ops[1]]
 
+	def get_constraints(self):
+		vars, accepted, possible = self.ops[0].get_constraints()
+		print vars, accepted, possible
+		vars = vars[self.ops[1]]
+		print vars
+		return (vars, accepted, possible)
 
 
 
@@ -288,6 +328,8 @@ def nat_const_constraints(self):
 	possible = accepted.add_constraint(isl.Constraint.eq_from_names(space, {vname: 1, 1: -int(name)}))
 	return ([vname], accepted, possible)
 
+def empty_constraints(self):
+	return ([], empty_bset, empty_bset)
 
 def nat_add_constraint(self):
 	a = get_var_name()
