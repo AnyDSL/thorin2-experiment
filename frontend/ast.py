@@ -46,6 +46,23 @@ def flatten(x):
 		return result
 	return [x]
 
+def valid_input_constraints(vars, accepted, possible):
+	# find islset(vars) so that (forall other vars: possible subset of accepted)
+	# => make (possible \ accepted) empty
+	# => find islset(vars) so that not (exists other vars: possible \ accepted not empty)
+	error_set = possible.subtract(accepted)
+	print '   vars', vars
+	print '   accepted', accepted
+	print '   possible', possible
+	print '   error_set', error_set
+	dim_err = error_set.space.dim(isl.dim_type.set)
+	set_vars = [error_set.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_err)]
+	indices = [set_vars.index(v) for v in vars]
+	for i in xrange(dim_err-1, -1, -1):
+		if not i in indices:
+			error_set = error_set.project_out(isl.dim_type.set, i, 1)
+	return (error_set.complement(), error_set)
+
 
 class AstNode:
 	def __init__(self, ops):
@@ -90,9 +107,13 @@ class AstNode:
 		unbound_vars = flatten(vars)
 		# any outer influence on the breaking parts?
 		if len(unbound_vars) == 0:
-			print '[INVALID]  (not influence on constraints remaining)'
+			print '[INVALID]  (not satisfied, no influence on constraints remaining)'
 			return False
-		print '???'
+		# constraints on "valid" inputs
+		print '[???]'
+		valid_set, error_set = valid_input_constraints(unbound_vars, accepted, possible)
+		print 'Valid if:  ', valid_set
+		print 'Invalid if:', error_set
 		return None
 
 	def get_nat_variables(self):
@@ -353,7 +374,7 @@ def nat_add_constraint(self):
 	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {b: 1}))
 	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {c: 1}))
 	possible = accepted.add_constraint(isl.Constraint.eq_from_names(space, {a: 1, b: 1, c: -1}))
-	return ([[a, b], c], accepted, possible)
+	return ([[a, b], [c]], accepted, possible)
 
 
 
