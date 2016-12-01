@@ -117,6 +117,13 @@ public:
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
     const Assume* nat(Qualifier::URAL q = Qualifier::Unrestricted) { return nat_[q]; }
     const Assume* boolean(Qualifier::URAL q = Qualifier::Unrestricted) { return boolean_[q]; }
+    const Assume* integer() { return integer_; }
+    const Def* integer(const Def* width, const Def* sign, const Def* wrap) { return app(integer(), {width, sign, wrap}); }
+    const Assume* real() { return real_; }
+    const Def* real(const Def* width, const Def* fast) { return app(real(), {width, fast}); }
+    const Assume* iadd() { return iadd_; }
+    const Assume* imul() { return imul_; }
+    const Assume* radd() { return radd_; }
 
     const DefSet& defs() const { return defs_; }
 
@@ -212,6 +219,23 @@ protected:
     const std::array<const Star*, 4> star_;
     const std::array<const Assume*, 4> nat_;
     const std::array<const Assume*, 4> boolean_;
+    const Assume* integer_;
+    const Assume* iadd_;
+    const Assume* isub_;
+    const Assume* imul_;
+    const Assume* idiv_;
+    const Assume* imod_;
+    const Assume* ishl_;
+    const Assume* ishr_;
+    const Assume* iand_;
+    const Assume* i_or_;
+    const Assume* ixor_;
+    const Assume* real_;
+    const Assume* radd_;
+    const Assume* rsub_;
+    const Assume* rmul_;
+    const Assume* rdiv_;
+    const Assume* rmod_;
 };
 
 }

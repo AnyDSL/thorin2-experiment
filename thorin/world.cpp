@@ -21,6 +21,29 @@ World::World()
                 assume(star(Qualifier::Affine), "Boolean"),
                 assume(star(Qualifier::Relevant), "Boolean"),
                 assume(star(Qualifier::Linear), "Boolean")})
+    , integer_(assume(pi({nat(), boolean(), boolean()}, star()), "int"))
+    , iadd_(assume(pi({nat(), boolean(), boolean()},
+            pi({integer(var(nat(), 2), var(boolean(), 1), var(boolean(), 0)),
+                integer(var(nat(), 3), var(boolean(), 2), var(boolean(), 1))},
+                integer(var(nat(), 4), var(boolean(), 3), var(boolean(), 2)))), "iadd"))
+    , isub_(assume(iadd()->type(), "isub"))
+    , imul_(assume(iadd()->type(), "imul"))
+    , idiv_(assume(iadd()->type(), "idiv"))
+    , imod_(assume(iadd()->type(), "imod"))
+    , ishl_(assume(iadd()->type(), "ishl"))
+    , ishr_(assume(iadd()->type(), "ishr"))
+    , iand_(assume(iadd()->type(), "iand"))
+    , i_or_(assume(iadd()->type(), "i_or"))
+    , ixor_(assume(iadd()->type(), "ixor"))
+    , real_(assume(pi({nat(), boolean()}, star()), "real"))
+    , radd_(assume(pi({nat(), boolean()},
+            pi({real(var(nat(), 1), var(real(), 0)),
+                real(var(nat(), 2), var(real(), 1))},
+                real(var(nat(), 3), var(real(), 2)))), "radd"))
+    , rsub_(assume(radd()->type(), "rsub"))
+    , rmul_(assume(radd()->type(), "rmul"))
+    , rdiv_(assume(radd()->type(), "rdiv"))
+    , rmod_(assume(radd()->type(), "rmod"))
 {}
 
 const Pi* World::pi(Defs domains, const Def* body, Qualifier::URAL q, const std::string& name) {
@@ -131,7 +154,7 @@ const Def* World::any(const Def* type, const Def* def, const std::string& name) 
     return unify<Any>(1, *this, type, def, name);
 }
 
-const Def* build_match_type(World& w, const Def* def, const Variant* type, Defs handlers) {
+const Def* build_match_type(World& w, const Def* /*def*/, const Variant* /*type*/, Defs handlers) {
     // TODO check handler types in a later type checking step?
     Array<const Def*> types(handlers.size());
     for (size_t i = 0; i < handlers.size(); ++i) {
@@ -184,11 +207,11 @@ const Def* World::app(const Def* callee, Defs args, const std::string& name) {
     if (auto cache = app->cache_)
         return cache;
     // Can only really reduce if it's not an Assume of Pi type
-    if (auto lambda = callee->isa<Lambda>())
+    if (auto lambda = callee->isa<Lambda>()) {
         if  (lambda->is_closed())
             // TODO can't reduce if args types don't match the domains
             return app->cache_ = lambda->reduce(args);
-    else
+    } else
         return app->cache_ = app;
 
     return app;

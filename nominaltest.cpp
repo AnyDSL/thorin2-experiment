@@ -11,7 +11,7 @@ void testNominal() {
     World w;
     auto Nat = w.nat();
     auto star = w.star();
-    auto n42 = w.assume(Nat, "42");
+    //auto n42 = w.assume(Nat, "42");
     auto list = w.pi_lambda(w.pi(star, star), "list");
     auto cons = w.sigma_type(2, "cons");
     cons->set(0, w.var(star, 0));

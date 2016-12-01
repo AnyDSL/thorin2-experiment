@@ -14,7 +14,7 @@ int main()  {
 
     testQualifiers();
 
-    testNominal();
+    //testNominal();
 
 	testMatrix();
 
@@ -28,6 +28,22 @@ int main()  {
     //auto n3 = w.assume(w.nat(), "3");
     auto n23 = w.assume(w.nat(), "23");
     auto n42 = w.assume(w.nat(), "42");
+    auto n32 = w.assume(w.nat(), "32");
+    auto Top = w.assume(w.boolean(), "⊤");
+    //auto Bot = w.assume(w.boolean(), "⊥");
+
+    {
+        auto s32w = w.integer(n32, Top, Top);
+        auto x = w.assume(s32w, "x");
+        auto y = w.assume(s32w, "y");
+        auto add = w.app(w.app(w.iadd(), {n32, Top, Top}), {x, y});
+        auto mul = w.app(w.app(w.imul(), {n32, Top, Top}), {x, y});
+        add->dump();
+        add->type()->dump();
+        mul->dump();
+        mul->type()->dump();
+    }
+
 
     // λT:*.λx:T.x
     auto T_1 = w.type_var(0, "T");
