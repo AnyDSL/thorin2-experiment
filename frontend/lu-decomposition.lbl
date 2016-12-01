@@ -1,6 +1,6 @@
 // Natural and floating-point numbers
 define Nat = Nat;
-assume cNatZero: Nat;
+assume cNat0: Nat;
 assume opNatPlus:  (Nat, Nat) -> Nat;
 assume opNatMinus: (Nat, Nat) -> Nat;
 
@@ -60,7 +60,7 @@ define LUD = lambda n:Nat. lambda A:MatrixType n n. let
 			            sum j (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (j, k))))
 			        ),
 			        AGet n A i j
-			    ), UGet n U j cNatZero)
+			    ), UGet n U j cNat0)
 			)
 		);
 	in (L, U) end;

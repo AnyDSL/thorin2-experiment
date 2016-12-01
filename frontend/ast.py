@@ -401,6 +401,12 @@ def nat_add_constraint(self):
 	possible = accepted.add_constraint(isl.Constraint.eq_from_names(space, {a: 1, b: 1, c: -1}))
 	return ([[a, b], [c]], accepted, possible)
 
+def nat_sub_constraint(self):
+	vars, accepted, possible = self.get_isl_set()
+	a, b, c = flatten(vars)
+	possible = accepted.add_constraint(isl.Constraint.eq_from_names(accepted.space, {a: 1, b: -1, c: -1}))
+	return (vars, accepted, possible)
+
 
 
 global_constants = {'Nat': Constant('Nat'), '*': Constant('*')}
@@ -411,8 +417,10 @@ def get_constant(name):
 
 def create_assumption(name):
 	# nat consts
+	if re.match(r'^cNat\d+$', name):
+		name = name[4:]
 	if re.match(r'^\d+$', name):
-		a =  Assume([name, get_constant('Nat')])
+		a = Assume([name, get_constant('Nat')])
 		a.get_constraints = types.MethodType(nat_const_constraints, a)
 		return a
 	# float consts

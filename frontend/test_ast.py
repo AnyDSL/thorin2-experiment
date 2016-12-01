@@ -68,7 +68,14 @@ define matrixDot = lambda n:Nat. lambda m:Nat. lambda o:Nat. lambda M1: MatrixTy
 def type_manually():
 	# manual typing
 	ass = ast.get_assumption('opAddNat')
-	ass.get_constraints = types.MethodType(ast.nat_add_constraint, ass)
+	if ass:
+		ass.get_constraints = types.MethodType(ast.nat_add_constraint, ass)
+	ass = ast.get_assumption('opNatPlus')
+	if ass:
+		ass.get_constraints = types.MethodType(ast.nat_add_constraint, ass)
+	ass = ast.get_assumption('opNatMinus')
+	if ass:
+		ass.get_constraints = types.MethodType(ast.nat_sub_constraint, ass)
 
 	def intakeLower10_constraints(self):
 		a = ast.get_var_name()
