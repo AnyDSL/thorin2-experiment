@@ -117,8 +117,22 @@ def type_manually():
 	if ass:
 		ass.get_constraints = types.MethodType(arr_get_constraints, ass)
 
+	def arr_create_constraints(self):
+		vars, accepted, possible = self.get_isl_sets()
+		v_len, v_typeindex, v_valueindex = ast.flatten(vars)
+		# 0 <= (value|type)index < len
+		possible = possible.add_constraint(isl.Constraint.ineq_from_names(possible.space, {v_len: 1, 1: -1, v_valueindex: -1}))
+		possible = possible.add_constraint(isl.Constraint.ineq_from_names(possible.space, {v_valueindex: 1}))
+		possible = possible.add_constraint(isl.Constraint.ineq_from_names(possible.space, {v_len: 1, 1: -1, v_typeindex: -1}))
+		possible = possible.add_constraint(isl.Constraint.ineq_from_names(possible.space, {v_typeindex: 1}))
+		return vars, accepted, possible
+
+	ass = ast.get_assumption('ArrCreate')
+	if ass:
+		ass.get_constraints = types.MethodType(arr_create_constraints, ass)
+
 	# type unnecessary stuff
-	for x in ['Float', 'cFloatZero', 'opFloatPlus', 'testarray1']:
+	for x in ['Float', 'cFloatZero', 'opFloatPlus']:
 		ass = ast.get_assumption(x)
 		if ass:
 			ass.get_constraints = types.MethodType(ast.empty_constraints, ass)
@@ -134,7 +148,7 @@ def type_manually():
 #	CODE += arraycode
 
 CODE += CODE2
-# CODE += CODE3
+CODE += CODE3
 prog = lambdaparser.parse_lambda_code(CODE)
 print prog
 nodes = prog.to_ast()

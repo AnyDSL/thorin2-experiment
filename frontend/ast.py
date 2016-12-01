@@ -156,7 +156,7 @@ class Assume(AstNode):
 		return self.ops[1]
 
 	def get_nat_variables(self):
-		print '[WARN] get_nat_variables not implemented for', self.ops[0]
+		#print '[WARN] get_nat_variables not implemented for', self.ops[0]
 		return self.ops[1].get_nat_variables()
 
 	def get_constraints(self):
@@ -297,9 +297,17 @@ class App(AstNode):
 		possible = set_join(func_possible, param_possible)
 
 		func_param_vars = flatten(func_vars[0])
-		param_vars = flatten(param_vars)
-		assert len(func_param_vars) == len(param_vars)
-		for vf, vp in zip(func_param_vars, param_vars):
+		param_vars_flat = flatten(param_vars)
+		if len(func_param_vars) != len(param_vars_flat):
+			print 'APP ERROR'
+			print 'Function:', self.ops[0]
+			print 'Param:   ', self.ops[1]
+			print 'Func var type:', func_vars
+			print 'Param type:   ', param_vars
+			print 'Accepted:', func_param_vars
+			print 'Given:   ', param_vars_flat
+		assert len(func_param_vars) == len(param_vars_flat)
+		for vf, vp in zip(func_param_vars, param_vars_flat):
 			accepted = constraint_equal(accepted, vf, vp)
 			possible = constraint_equal(possible, vf, vp)
 
@@ -361,10 +369,12 @@ class Extract(AstNode):
 
 	def get_constraints(self):
 		vars, accepted, possible = self.ops[0].get_constraints()
-		print vars, accepted, possible
 		vars = vars[self.ops[1]]
-		print vars
 		return (vars, accepted, possible)
+
+	def get_nat_variables(self):
+		vars = self.ops[0].get_nat_variables()
+		return vars[self.ops[1]]
 
 
 
