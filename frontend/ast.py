@@ -389,6 +389,9 @@ def nat_const_constraints(self):
 def empty_constraints(self):
 	return ([], empty_bset, empty_bset)
 
+def auto_constraints(self):
+	return self.get_isl_sets()
+
 def nat_add_constraint(self):
 	a = get_var_name()
 	b = get_var_name()
@@ -402,7 +405,7 @@ def nat_add_constraint(self):
 	return ([[a, b], [c]], accepted, possible)
 
 def nat_sub_constraint(self):
-	vars, accepted, possible = self.get_isl_set()
+	vars, accepted, possible = self.get_isl_sets()
 	a, b, c = flatten(vars)
 	possible = accepted.add_constraint(isl.Constraint.eq_from_names(accepted.space, {a: 1, b: -1, c: -1}))
 	return (vars, accepted, possible)

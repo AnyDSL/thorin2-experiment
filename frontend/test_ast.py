@@ -139,10 +139,15 @@ def type_manually():
 		ass.get_constraints = types.MethodType(arr_create_constraints, ass)
 
 	# type unnecessary stuff
-	for x in ['Float', 'cFloatZero', 'opFloatPlus']:
+	for x in ['Float', 'cFloatZero']:
 		ass = ast.get_assumption(x)
 		if ass:
 			ass.get_constraints = types.MethodType(ast.empty_constraints, ass)
+
+	for x in ['opFloatPlus', 'opFloatMinus', 'opFloatMult', 'opFloatDiv']:
+		ass = ast.get_assumption(x)
+		if ass:
+			ass.get_constraints = types.MethodType(ast.auto_constraints, ass)
 
 
 
