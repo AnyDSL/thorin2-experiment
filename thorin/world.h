@@ -6,6 +6,31 @@
 
 #include "thorin/def.h"
 
+#define THORIN_xy_y(x, y) y
+
+#define THORIN_I_OP_xy(f, g, x, y) \
+    f(g, x ## add ## y) \
+    f(g, x ## sub ## y) \
+    f(g, x ## mul ## y) \
+    f(g, x ## div ## y) \
+    f(g, x ## mod ## y) \
+    f(g, x ## shl ## y) \
+    f(g, x ## shr ## y) \
+    f(g, x ## and ## y) \
+    f(g, x ## or ## y) \
+    f(g, x ## xorul ## y)
+
+#define THORIN_I_WIDTH(f, x) THORIN_I_FLAGS(f, 1 ## x) THORIN_I_FLAGS(f, 8 ## x) THORIN_I_FLAGS(f, 16 ## x) THORIN_I_FLAGS(f, 32 ## x) THORIN_I_FLAGS(f, 64 ## x)
+#define THORIN_I_FLAGS(f, x) f(sw ## x) f(uw ## x) f(so ## x) f(uo ## x)
+#define THORIN_I_TYPE(f) THORIN_I_OP_xy(THORIN_xy_y, f, i,)
+#define THORIN_I_OP(f) THORIN_I_OP_xy(THORIN_I_WIDTH, f, _,)
+
+#define THORIN_R_OP_xy(f, g, x, y) f(g, x ## add ## y) f(g, x ## mul ## y)
+#define THORIN_R_WIDTH(f, x) THORIN_R_FLAGS(f, 16 ## x) THORIN_R_FLAGS(f, 32 ## x) THORIN_R_FLAGS(f, 64 ## x)
+#define THORIN_R_FLAGS(g, x) g(f ## x) g(p ## x)
+#define THORIN_R_TYPE(f) THORIN_R_OP_xy(THORIN_xy_y, f, r,)
+#define THORIN_R_OP(f) THORIN_R_OP_xy(THORIN_R_WIDTH, f, _,)
+
 namespace thorin {
 
 class World {
@@ -124,6 +149,10 @@ public:
     const Assume* iadd() { return iadd_; }
     const Assume* imul() { return imul_; }
     const Assume* radd() { return radd_; }
+
+#define DECL(x) const Def* x(const Def*, const Def*) { return nullptr; }
+    THORIN_I_OP(DECL)
+#undef DECL
 
     const DefSet& defs() const { return defs_; }
 
