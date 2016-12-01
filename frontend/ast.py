@@ -25,8 +25,18 @@ def set_join(a, b):
 	space = isl.Space.create_from_names(ctx, set=vars)
 	result = isl.BasicSet.universe(space)
 	for constraint in a.get_constraints():
-		result.add_constraint(constraint)
+		result.add_constraint(clone_constraint(space, constraint))
 	return result
+
+def clone_constraint(space, constraint):
+	assert not constraint.is_div_constraint()
+	c = {1: constraint.get_constant_val()}
+	for i in xrange(constraint.space.dim(isl.dim_type.set)):
+		c[constraint.get_dim_name(isl.dim_type.set, i)] = constraint.get_coefficient_val(isl.dim_type.set, i)
+	if constraint.is_equality():
+		return isl.Constraint.eq_from_names(space, c)
+	else:
+		return isl.Constraint.ineq_from_names(space, c)
 
 def var_in_set(vname, bset):
 	dim = bset.space.dim(isl.dim_type.set)
@@ -300,6 +310,11 @@ class App(AstNode):
 			print '[ERR] This must go wrong: ', self
 
 		return (func_vars[1], accepted, possible)
+
+	def get_nat_variables(self):
+		func_vars = self.ops[0].get_nat_variables()
+		#param_vars = self.ops[1].get_nat_variables()
+		return func_vars[1]
 
 
 
