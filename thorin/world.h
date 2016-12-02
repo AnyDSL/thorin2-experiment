@@ -5,22 +5,7 @@
 #include <string>
 
 #include "thorin/def.h"
-
-#define THORIN_I_ARITHOP(f) \
-    f(iadd) f(isub) f(imul) f(idiv) f(imod) f(ishl) f(ishr) f(iand) f(ior) f(ixor)
-
-#define THORIN_R_ARITHOP(f) \
-    f(radd) f(rsub) f(rmul) f(rdiv) f(rmod)
-
-#define THORIN_I_WIDTH(f, x) \
-    f(x ## 1) f(x ## 8) f(x ## 16) f(x ## 32) f(x ## 64)
-#define THORIN_I_TYPE(f) \
-    THORIN_I_WIDTH(f, sw) THORIN_I_WIDTH(f, uw) THORIN_I_WIDTH(f, so) THORIN_I_WIDTH(f, uo)
-
-#define THORIN_R_WIDTH(f, x) \
-    f(x ## 16) f(x ## 32) f(x ## 64)
-#define THORIN_R_TYPE(g) \
-    THORIN_I_WIDTH(g, f) THORIN_I_WIDTH(g, p)
+#include "thorin/tables.h"
 
 namespace thorin {
 
