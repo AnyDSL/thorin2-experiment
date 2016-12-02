@@ -135,9 +135,14 @@ public:
     const Assume* real() { return real_; }
     const Def* real(const Def* width, const Def* fast) { return app(real(), {width, fast}); }
     const Assume* mem() const { return mem_; }
+
+    // HACK
+    const Assume* nat0() { return assume(nat(), "0"); }
+
     const Def* ptr(const Def* referenced_type, const Def* addr_space) {
         return app(ptr_, {referenced_type, addr_space});
     }
+    const Def* ptr(const Def* referenced_type) { return ptr(referenced_type, nat0()); }
 
 #define DECL(x) \
     const Assume* type_ ## x() const { return x ## _; } \

@@ -34,15 +34,23 @@ int main()  {
 
     {
         auto s32w = w.integer(n32, Top, Top);
-        auto x = w.assume(s32w, "x");
-        auto y = w.assume(s32w, "y");
-        auto add = w.app(w.app(w.iadd(), {n32, Top, Top}), {x, y});
-        auto mul = w.app(w.app(w.imul(), {n32, Top, Top}), {x, y});
+        auto a = w.assume(s32w, "a");
+        auto b = w.assume(s32w, "b");
+        auto add = w.app(w.app(w.iadd(), {n32, Top, Top}), {a, b});
+        auto mul = w.app(w.app(w.imul(), {n32, Top, Top}), {a, b});
         add->dump();
         add->type()->dump();
         mul->dump();
         mul->type()->dump();
         w.mem()->dump();
+
+        auto load = w.assume(w.pi(w.star(), w.pi({w.mem(), w.ptr(w.var(w.star(), 1))}, w.sigma({w.mem(), w.var(w.star(), 2)}))), "load");
+        load->type()->dump();
+        auto x = w.assume(w.ptr(w.nat()), "x");
+        auto m = w.assume(w.mem(), "m");
+        auto p = w.app(w.app(load, w.nat()), {m, x});
+        p->dump();
+        p->type()->dump();
     }
 
 
