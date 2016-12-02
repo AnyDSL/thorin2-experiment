@@ -6,30 +6,21 @@
 
 #include "thorin/def.h"
 
-#define THORIN_xy_y(x, y) y
+#define THORIN_I_ARITHOP(f) \
+    f(iadd) f(isub) f(imul) f(idiv) f(imod) f(ishl) f(ishr) f(iand) f(ior) f(ixor)
 
-#define THORIN_I_OP_xy(f, g, x, y) \
-    f(g, x ## add ## y) \
-    f(g, x ## sub ## y) \
-    f(g, x ## mul ## y) \
-    f(g, x ## div ## y) \
-    f(g, x ## mod ## y) \
-    f(g, x ## shl ## y) \
-    f(g, x ## shr ## y) \
-    f(g, x ## and ## y) \
-    f(g, x ## or ## y) \
-    f(g, x ## xorul ## y)
+#define THORIN_R_ARITHOP(f) \
+    f(radd) f(rsub) f(rmul) f(rdiv) f(rmod)
 
-#define THORIN_I_WIDTH(f, x) THORIN_I_FLAGS(f, 1 ## x) THORIN_I_FLAGS(f, 8 ## x) THORIN_I_FLAGS(f, 16 ## x) THORIN_I_FLAGS(f, 32 ## x) THORIN_I_FLAGS(f, 64 ## x)
-#define THORIN_I_FLAGS(f, x) f(sw ## x) f(uw ## x) f(so ## x) f(uo ## x)
-#define THORIN_I_TYPE(f) THORIN_I_OP_xy(THORIN_xy_y, f, i,)
-#define THORIN_I_OP(f) THORIN_I_OP_xy(THORIN_I_WIDTH, f, _,)
+#define THORIN_I_WIDTH(f, x) \
+    f(x ## 1) f(x ## 8) f(x ## 16) f(x ## 32) f(x ## 64)
+#define THORIN_I_TYPE(f) \
+    THORIN_I_WIDTH(f, sw) THORIN_I_WIDTH(f, uw) THORIN_I_WIDTH(f, so) THORIN_I_WIDTH(f, uo)
 
-#define THORIN_R_OP_xy(f, g, x, y) f(g, x ## add ## y) f(g, x ## mul ## y)
-#define THORIN_R_WIDTH(f, x) THORIN_R_FLAGS(f, 16 ## x) THORIN_R_FLAGS(f, 32 ## x) THORIN_R_FLAGS(f, 64 ## x)
-#define THORIN_R_FLAGS(g, x) g(f ## x) g(p ## x)
-#define THORIN_R_TYPE(f) THORIN_R_OP_xy(THORIN_xy_y, f, r,)
-#define THORIN_R_OP(f) THORIN_R_OP_xy(THORIN_R_WIDTH, f, _,)
+#define THORIN_R_WIDTH(f, x) \
+    f(x ## 16) f(x ## 32) f(x ## 64)
+#define THORIN_R_TYPE(g) \
+    THORIN_I_WIDTH(g, f) THORIN_I_WIDTH(g, p)
 
 namespace thorin {
 
@@ -55,9 +46,6 @@ public:
         return insert<Assume>(0, *this, type, name);
     }
     const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
-    const Var* type_var(size_t index, const std::string& name = "") {
-        return unify<Var>(0, *this, star(), index, name);
-    }
     const Var* var(Defs types, size_t index, const std::string& name = "") {
         return var(sigma(types), index, name);
     }
@@ -146,12 +134,23 @@ public:
     const Def* integer(const Def* width, const Def* sign, const Def* wrap) { return app(integer(), {width, sign, wrap}); }
     const Assume* real() { return real_; }
     const Def* real(const Def* width, const Def* fast) { return app(real(), {width, fast}); }
-    const Assume* iadd() { return iadd_; }
-    const Assume* imul() { return imul_; }
-    const Assume* radd() { return radd_; }
+    const Assume* mem() const { return mem_; }
+    const Def* ptr(const Def* referenced_type, const Def* addr_space) {
+        return app(ptr_, {referenced_type, addr_space});
+    }
 
-#define DECL(x) const Def* x(const Def*, const Def*) { return nullptr; }
-    THORIN_I_OP(DECL)
+#define DECL(x) \
+    const Assume* type_ ## x() const { return x ## _; } \
+    const Assume* literal_ ## x(/*x val*/) const { return nullptr; }
+    THORIN_I_TYPE(DECL)
+    THORIN_R_TYPE(DECL)
+#undef DECL
+
+#define DECL(x) \
+    const Assume* x() { return x ## _; } \
+    const Def* x(const Def*, const Def*) { return nullptr; }
+    THORIN_I_ARITHOP(DECL)
+    THORIN_R_ARITHOP(DECL)
 #undef DECL
 
     const DefSet& defs() const { return defs_; }
@@ -249,22 +248,23 @@ protected:
     const std::array<const Assume*, 4> nat_;
     const std::array<const Assume*, 4> boolean_;
     const Assume* integer_;
-    const Assume* iadd_;
-    const Assume* isub_;
-    const Assume* imul_;
-    const Assume* idiv_;
-    const Assume* imod_;
-    const Assume* ishl_;
-    const Assume* ishr_;
-    const Assume* iand_;
-    const Assume* i_or_;
-    const Assume* ixor_;
     const Assume* real_;
-    const Assume* radd_;
-    const Assume* rsub_;
-    const Assume* rmul_;
-    const Assume* rdiv_;
-    const Assume* rmod_;
+    const Assume* mem_;
+    const Assume* frame_;
+    const Assume* ptr_;
+    const Pi* iarithop_type_;
+    const Pi* rarithop_type_;
+    const Pi* icmpop_type_;
+    const Pi* rcmpop_type_;
+#define DECL(x) \
+    const Assume* x ## _;
+    THORIN_I_TYPE(DECL)
+    THORIN_R_TYPE(DECL)
+    THORIN_I_ARITHOP(DECL)
+    THORIN_R_ARITHOP(DECL)
+#undef DECL
+    const Assume* icmp_;
+    const Assume* rcmp_;
 };
 
 }

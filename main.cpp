@@ -42,12 +42,13 @@ int main()  {
         add->type()->dump();
         mul->dump();
         mul->type()->dump();
+        w.mem()->dump();
     }
 
 
     // λT:*.λx:T.x
-    auto T_1 = w.type_var(0, "T");
-    auto T_2 = w.type_var(1, "T");
+    auto T_1 = w.var(w.star(), 0, "T");
+    auto T_2 = w.var(w.star(), 1, "T");
     auto x = w.var(T_2, 0, "x");
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
     poly_id->dump();
