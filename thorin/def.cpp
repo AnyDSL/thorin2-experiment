@@ -161,11 +161,11 @@ Def::~Def() {
 }
 
 Lambda::Lambda(World& world, const Pi* type, const Def* body, const std::string& name)
-    : Constructor(world, Node_Lambda, type, {body}, name)
+    : Constructor(world, Tag::Lambda, type, {body}, name)
 {}
 
 Pi::Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, const std::string& name)
-    : Quantifier(world, Node_Pi, body->type()->is_universe() ? (const Def*) world.universe(q) : world.star(q),
+    : Quantifier(world, Tag::Pi, body->type()->is_universe() ? (const Def*) world.universe(q) : world.star(q),
                  concat(domains, body), name)
 {}
 
@@ -174,7 +174,7 @@ Sigma::Sigma(World& world, size_t num_ops, Qualifier::URAL q, const std::string&
 {}
 
 Star::Star(World& world, Qualifier::URAL q)
-    : Def(world, Node_Star, world.universe(q), Defs(), "*")
+    : Def(world, Tag::Star, world.universe(q), Defs(), "*")
 {}
 
 const Def* Quantifier::max_type(World& world, Defs ops, Qualifier::URAL q) {
