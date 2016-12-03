@@ -146,7 +146,7 @@ namespace Qualifier {
 class Def : public MagicCast<Def>, public Streamable  {
 public:
     enum Sort {
-        Term, Type, Kind, TypeUniverse
+        Term, Type, Kind, Universe
     };
 
 protected:
@@ -209,7 +209,7 @@ public:
     void replace(const Def*) const;
     /// A nominal @p Def is always different from each other @p Def.
     bool is_nominal() const { return nominal_; }
-    bool is_universe() const { return sort() == TypeUniverse; }
+    bool is_universe() const { return sort() == Universe; }
     bool is_kind() const { return sort() == Kind; }
     bool is_type() const { return sort() == Type; }
     bool is_term() const { return sort() == Term; }
