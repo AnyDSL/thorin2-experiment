@@ -246,15 +246,38 @@ protected:
     const Pi* rarithop_type_;
     const Pi* icmpop_type_;
     const Pi* rcmpop_type_;
+
 #define DECL(x) \
-    const Assume* x ## _;
-    THORIN_I_TYPE(DECL)
-    THORIN_R_TYPE(DECL)
+    const Assume* x ## _; \
+    const Assume* x ## s_[IType::Num];
     THORIN_I_ARITHOP(DECL)
+#undef DECL
+
+#define DECL(x) \
+    const Assume* x ## _; \
+    const Assume* x ## s_[IType::Num];
     THORIN_R_ARITHOP(DECL)
 #undef DECL
-    const Assume* icmp_;
-    const Assume* rcmp_;
+
+    union {
+        struct {
+#define DECL(x) \
+            const Assume* x ## _;
+            THORIN_I_TYPE(DECL)
+#undef DECL
+        };
+        const Assume* integers_[IType::Num];
+    };
+
+    union {
+        struct {
+#define DECL(x) \
+            const Assume* x ## _;
+            THORIN_R_TYPE(DECL)
+#undef DECL
+        };
+        const Assume* reals_[RType::Num];
+    };
 };
 
 }

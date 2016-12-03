@@ -9,15 +9,60 @@
 
 #define THORIN_I_WIDTH(f, x) \
     f(x ## 1) f(x ## 8) f(x ## 16) f(x ## 32) f(x ## 64)
+
 #define THORIN_I_TYPE(f) \
     THORIN_I_WIDTH(f, sw) THORIN_I_WIDTH(f, uw) THORIN_I_WIDTH(f, so) THORIN_I_WIDTH(f, uo)
 
 #define THORIN_R_WIDTH(f, x) \
     f(x ## 16) f(x ## 32) f(x ## 64)
+
 #define THORIN_R_TYPE(g) \
     THORIN_I_WIDTH(g, f) THORIN_I_WIDTH(g, p)
 
 namespace thorin {
+
+namespace IType {
+
+enum {
+#define DECL(x) THORIN_I_TYPE(x),
+#undef DECL
+    Num,
+};
+
+}
+
+namespace RType {
+
+enum {
+#define DECL(x) \
+    THORIN_R_ARITHOP(x),
+#undef DECL
+    Num,
+};
+
+}
+
+namespace IArithOp {
+
+enum {
+#define DECL(x) \
+    THORIN_I_ARITHOP(x),
+#undef DECL
+    Num,
+};
+
+}
+
+namespace RArithOp {
+
+enum {
+#define DECL(x) \
+    THORIN_R_ARITHOP(x),
+#undef DECL
+    Num,
+};
+
+}
 
 enum class IRel {
     T = 0,                  ///< always true
