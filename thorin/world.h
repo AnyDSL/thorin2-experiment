@@ -130,7 +130,7 @@ public:
     const Def* ptr(const Def* referenced_type) { return ptr(referenced_type, nat0()); }
 
 #define DECL(x) \
-    const Assume* type_ ## x() const { return x ## _; } \
+    const App* type_ ## x() const { return x ## _; } \
     const Assume* literal_ ## x(/*x val*/) const { return nullptr; }
     THORIN_I_TYPE(DECL)
     THORIN_R_TYPE(DECL)
@@ -138,7 +138,7 @@ public:
 
 #define DECL(x) \
     const Assume* x() { return x ## _; } \
-    const Def* x(const Def*, const Def*) { return nullptr; }
+    const App* x(const Def*, const Def*) { return nullptr; }
     THORIN_I_ARITHOP(DECL)
     THORIN_R_ARITHOP(DECL)
 #undef DECL
@@ -249,34 +249,56 @@ protected:
 
 #define DECL(x) \
     const Assume* x ## _; \
-    const Assume* x ## s_[IType::Num];
+    const App* x ## s_[size_t(IType::Num)];
     THORIN_I_ARITHOP(DECL)
 #undef DECL
 
 #define DECL(x) \
     const Assume* x ## _; \
-    const Assume* x ## s_[IType::Num];
+    const App* x ## s_[size_t(IType::Num)];
     THORIN_R_ARITHOP(DECL)
 #undef DECL
 
     union {
         struct {
 #define DECL(x) \
-            const Assume* x ## _;
+            const App* x ## _;
             THORIN_I_TYPE(DECL)
 #undef DECL
         };
-        const Assume* integers_[IType::Num];
+        const App* integers_[size_t(IType::Num)];
     };
 
     union {
         struct {
 #define DECL(x) \
-            const Assume* x ## _;
+            const App* x ## _;
             THORIN_R_TYPE(DECL)
 #undef DECL
         };
-        const Assume* reals_[RType::Num];
+        const App* reals_[size_t(RType::Num)];
+    };
+
+    const Assume* icmp_;
+    union {
+        struct {
+#define DECL(x) \
+            const App* icmp_ ## x ## _;
+            THORIN_I_REL(DECL)
+#undef DECL
+        };
+        const App* icmps_[size_t(IRel::Num)];
+    };
+
+    const Assume* rcmp_;
+    union {
+        struct {
+#define DECL(x) \
+            const App* rcmp_ ## x ## _;
+            THORIN_I_REL(DECL)
+#undef DECL
+        };
+        const App* rcmps_[size_t(IRel::Num)];
     };
 };
 

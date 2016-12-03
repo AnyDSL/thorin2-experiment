@@ -2,7 +2,7 @@
 #define THORIN_TABLES_H
 
 #define THORIN_I_ARITHOP(f) \
-    f(iadd) f(isub) f(imul) f(idiv) f(imod) f(ishl) f(ishr) f(iand) f(ior) f(ixor)
+    f(iadd) f(isub) f(imul) f(idiv) f(imod) f(ishl) f(ishr) f(iand) f(i_or) f(ixor)
 
 #define THORIN_R_ARITHOP(f) \
     f(radd) f(rsub) f(rmul) f(rdiv) f(rmod)
@@ -19,78 +19,77 @@
 #define THORIN_R_TYPE(g) \
     THORIN_I_WIDTH(g, f) THORIN_I_WIDTH(g, p)
 
+#define THORIN_I_REL(f) \
+    /*       E G L                         */ \
+    f(T)  /* o o o - always true           */ \
+    f(LT) /* o o x - less than             */ \
+    f(GT) /* o x o - greater than          */ \
+    f(NE) /* o x x - not equal             */ \
+    f(EQ) /* x o o - qual                  */ \
+    f(LE) /* x o x - less than or equal    */ \
+    f(GE) /* x x o - greater than or equal */ \
+    f(F)  /* x x x - always false          */
+
+#define THORIN_R_REL(f) \
+    /*        O E G L                                      */ \
+    f(T)   /* o o o o - always true                        */ \
+    f(ULT) /* o o o x - unordered or less than             */ \
+    f(UGT) /* o o x o - unordered or greater than          */ \
+    f(UNE) /* o o x x - unordered or not equal             */ \
+    f(UEQ) /* o x o o - unordered or qual                  */ \
+    f(ULE) /* o x o x - unordered or less than or equal    */ \
+    f(UGE) /* o x x o - unordered or greater than or equal */ \
+    f(UNO) /* o x x x - unordered (either NaNs)            */ \
+    f(ORD) /* x o o o - ordered (no NaNs)                  */ \
+    f(OLT) /* x o o x - ordered and less than              */ \
+    f(OGT) /* x o x o - ordered and greater than           */ \
+    f(ONE) /* x o x x - ordered and not equal              */ \
+    f(OEQ) /* x x o o - ordered and qual                   */ \
+    f(OLE) /* x x o x - ordered and less than or equal     */ \
+    f(OGE) /* x x x o - ordered and greater than or equal  */ \
+    f(F)   /* x x x x - always false                       */
+
 namespace thorin {
 
-namespace IType {
-
-enum {
+enum class IType {
 #define DECL(x) THORIN_I_TYPE(x),
 #undef DECL
     Num,
 };
 
-}
-
-namespace RType {
-
-enum {
+enum class RType {
 #define DECL(x) \
     THORIN_R_ARITHOP(x),
 #undef DECL
     Num,
 };
 
-}
-
-namespace IArithOp {
-
-enum {
+enum class IARithOp {
 #define DECL(x) \
     THORIN_I_ARITHOP(x),
 #undef DECL
     Num,
 };
 
-}
-
-namespace RArithOp {
-
-enum {
+enum class RArithOp {
 #define DECL(x) \
     THORIN_R_ARITHOP(x),
 #undef DECL
     Num,
 };
 
-}
-
 enum class IRel {
-    T = 0,                  ///< always true
-    LT = 1,                 ///< less than
-    GT = 2,                 ///< greater than
-    EQ = 4,                 ///< qual
-    LE = LT | EQ,           ///< less than or equal
-    GE = GT | EQ,           ///< greater than or equal
-    NE = LT | GT,           ///< not equal
-    F = LT | GT | EQ,       ///< always false
+#define DECL(x) \
+    THORIN_I_REL(x),
+#undef DECL
+    Num,
 };
 
 enum class RRel {
-    T = 0,                      ///< always true
-    ORD = 1,                    ///< ordered (no NaNs)
-    ULT = 2,                    ///< unordered or less than
-    UGT = 4,                    ///< unordered or greater than
-    UEQ = 8,                    ///< unordered or equal
-    ULE = ULT | UEQ,            ///< unordered or less than or equal
-    UGE = UGT | UEQ,            ///< unordered or greater than or equal
-    UNE = ULT | UGT,            ///< unordered or not equal
-    UNO = ULT | UGT | UEQ,      ///< unordered (either NaNs)
-    OLT = ORD | ULT,            ///< ordered and less than
-    OGT = ORD | UGT,            ///< ordered and greater than
-    OEQ = ORD | UEQ,            ///< ordered and equal
-    OLE = ORD | ULT | UEQ,      ///< ordered and less than or equal
-    ONE = ORD | ULT | UGT,      ///< ordered and not equal
-    F = ORD | ULT | UGT | UEQ,  ///< always false
+#define DECL(x) \
+    THORIN_R_REL(x),
+#undef DECL
+    Num,
 };
 
 }
