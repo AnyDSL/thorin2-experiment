@@ -22,15 +22,13 @@ int main()  {
 
     w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 
-    //auto n0 = w.assume(w.nat(), {"0"});
-    //auto n1 = w.assume(w.nat(), {"1"});
-    //auto n2 = w.assume(w.nat(), {"2"});
-    //auto n3 = w.assume(w.nat(), {"3"});
-    auto n23 = w.axiom(w.nat(), {"23"});
-    auto n42 = w.axiom(w.nat(), {"42"});
-    auto n32 = w.axiom(w.nat(), {"32"});
-    auto Top = w.axiom(w.boolean(), {"⊤"});
-    //auto Bot = w.axiom(w.boolean(), "⊥");
+    auto n23 = w.assume(w.nat(), {23});
+    auto n23x = w.assume(w.nat(), {23});
+    assert(n23 == n23x);
+    auto n42 = w.assume(w.nat(), {42});
+    auto n32 = w.assume(w.nat(), {32});
+    auto Top = w.assume(w.boolean(), {true});
+    //auto Bot = w.axiom(w.boolean(), {false});
 
     {
         auto s32w = w.integer(n32, Top, Top);
