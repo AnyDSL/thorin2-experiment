@@ -28,10 +28,7 @@ public:
     const Universe* universe(Qualifier::URAL q = Qualifier::Unrestricted) const { return universe_[q]; }
     const Star* star(Qualifier::URAL q = Qualifier::Unrestricted) const { return star_[q]; }
 
-    const Axiom* axiom(const Def* type, Debug dbg = {}) {
-        return insert<Axiom>(0, *this, type, dbg);
-    }
-
+    const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
     const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
         return unify<Axiom>(0, *this, type, box, dbg);
     }

@@ -226,16 +226,16 @@ typedef double f64; typedef Float<f64, true> pf64; typedef Float<f64, false> qf6
 
 union Box {
 public:
-    Box()        { reset(); }
-#define THORIN_ALL_TYPE(T, M) Box(T val) { reset(); M##_ = (M)val; }
+    Box()        { u64_ = 0; }
+#define THORIN_ALL_TYPE(T, M) Box(T val) { u64_ = 0; M##_ = (M)val; }
 #include "thorin/tables/primtypetable.h"
-    Box( s8 val) { reset();  s8_ = val; } Box( u8 val) { reset();  u8_ = val; }
-    Box(s16 val) { reset(); s16_ = val; } Box(u16 val) { reset(); u16_ = val; }
-    Box(s32 val) { reset(); s32_ = val; } Box(u32 val) { reset(); u32_ = val; }
-    Box(s64 val) { reset(); s64_ = val; } Box(u64 val) { reset(); u64_ = val; }
-    Box(f16 val) { reset(); f16_ = val; }
-    Box(f32 val) { reset(); f32_ = val; }
-    Box(f64 val) { reset(); f64_ = val; }
+    Box( s8 val) { u64_ = 0;  s8_ = val; } Box( u8 val) { u64_ = 0;  u8_ = val; }
+    Box(s16 val) { u64_ = 0; s16_ = val; } Box(u16 val) { u64_ = 0; u16_ = val; }
+    Box(s32 val) { u64_ = 0; s32_ = val; } Box(u32 val) { u64_ = 0; u32_ = val; }
+    Box(s64 val) { u64_ = 0; s64_ = val; } Box(u64 val) { u64_ = 0; u64_ = val; }
+    Box(f16 val) { u64_ = 0; f16_ = val; }
+    Box(f32 val) { u64_ = 0; f32_ = val; }
+    Box(f64 val) { u64_ = 0; f64_ = val; }
 
     bool operator==(const Box& other) const { return bcast<uint64_t, Box>(*this) == bcast<uint64_t, Box>(other); }
     template <typename T> inline T get() { THORIN_UNREACHABLE; }
@@ -251,8 +251,6 @@ public:
     f64 get_f64() const { return f64_; }
 
 private:
-    void reset() { memset(this, 0, sizeof(Box)); }
-
     bool bool_;
     s8 s8_; s16 s16_; s32 s32_; s64 s64_;
     u8 u8_; u16 u16_; u32 u32_; u64 u64_;
