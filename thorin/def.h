@@ -4,6 +4,7 @@
 #include <numeric>
 
 #include "thorin/util/array.h"
+#include "thorin/util/debug.h"
 #include "thorin/util/cast.h"
 #include "thorin/util/hash.h"
 #include "thorin/util/stream.h"
@@ -126,7 +127,7 @@ public:
         All,
         Any,
         App,
-        Assume,
+        Axiom,
         Error,
         Extract,
         Intersection,
@@ -152,8 +153,8 @@ protected:
     Def& operator=(const Def&) = delete;
 
     /// Use for nominal @p Def%s.
-    Def(World& world, Tag tag, const Def* type, size_t num_ops, const std::string& name)
-        : name_(name)
+    Def(World& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
+        : debug_(dbg)
         , world_(&world)
         , type_(type)
         , gid_(gid_counter_++)
@@ -168,8 +169,8 @@ protected:
     }
 
     /// Use for structural @p Def%s.
-    Def(World& world, Tag tag, const Def* type, Defs ops, const std::string& name)
-        : name_(name)
+    Def(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+        : debug_(dbg)
         , world_(&world)
         , type_(type)
         , gid_(gid_counter_++)
@@ -202,7 +203,9 @@ public:
     const Uses& uses() const { return uses_; }
     size_t num_uses() const { return uses().size(); }
     const Def* type() const { return type_; }
-    const std::string& name() const { return name_; }
+    Debug& debug() const { return debug_; }
+    Location location() const { return debug_; }
+    const std::string& name() const { return debug().name(); }
     std::string unique_name() const;
     void replace(const Def*) const;
     /// A nominal @p Def is always different from each other @p Def.
@@ -242,7 +245,7 @@ protected:
     union {
         mutable const Def* cache_;  ///< Used by @p App.
         size_t index_;              ///< Used by @p Var, @p Extract.
-        Box box_;                   ///< Used by @p Assume.
+        Box box_;                   ///< Used by @p Axiom.
         Qualifier::URAL qualifier_; ///< Used by @p Universe.
     };
 
@@ -254,7 +257,7 @@ private:
 
     static size_t gid_counter_;
 
-    std::string name_;
+    mutable Debug debug_;
     mutable World* world_;
     const Def* type_;
     mutable uint64_t hash_ = 0;
@@ -283,11 +286,11 @@ uint64_t UseHash::hash(Use use) {
 
 class Quantifier : public Def {
 protected:
-    Quantifier(World& world, Tag tag, const Def* type, size_t num_ops, const std::string& name)
-        : Def(world, tag, type, num_ops, name)
+    Quantifier(World& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
+        : Def(world, tag, type, num_ops, dbg)
     {}
-    Quantifier(World& world, Tag tag, const Def* type, Defs ops, const std::string& name)
-        : Def(world, tag, type, ops, name)
+    Quantifier(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+        : Def(world, tag, type, ops, dbg)
     {}
 
     static const Def* max_type(World&, Defs, Qualifier::URAL = Qualifier::Unrestricted);
@@ -295,22 +298,22 @@ protected:
 
 class Constructor : public Def {
 protected:
-    Constructor(World& world, Tag tag, const Def* type, size_t num_ops, const std::string& name)
-        : Def(world, tag, type, num_ops, name)
+    Constructor(World& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
+        : Def(world, tag, type, num_ops, dbg)
     {}
-    Constructor(World& world, Tag tag, const Def* type, Defs ops, const std::string& name)
-        : Def(world, tag, type, ops, name)
+    Constructor(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+        : Def(world, tag, type, ops, dbg)
     {}
 
 };
 
 class Destructor : public Def {
 protected:
-    Destructor(World& world, Tag tag, const Def* type, const Def* op, const std::string& name)
-        : Destructor(world, tag, type, Defs({op}), name)
+    Destructor(World& world, Tag tag, const Def* type, const Def* op, Debug dbg)
+        : Destructor(world, tag, type, Defs({op}), dbg)
     {}
-    Destructor(World& world, Tag tag, const Def* type, Defs ops, const std::string& name)
-        : Def(world, tag, type, ops, name)
+    Destructor(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+        : Def(world, tag, type, ops, dbg)
     {
         cache_ = nullptr;
     }
@@ -325,7 +328,7 @@ public:
 
 class Pi : public Quantifier {
 private:
-    Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, const std::string& name);
+    Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, Debug dbg);
 
 public:
     const Def* domain() const;
@@ -346,10 +349,10 @@ private:
 class Lambda : public Constructor {
 private:
     /// Nominal/recursive Lambda
-    Lambda(World& world, const Pi* type, const std::string& name)
-        : Constructor(world, Tag::Lambda, type, 1, name)
+    Lambda(World& world, const Pi* type, Debug dbg)
+        : Constructor(world, Tag::Lambda, type, 1, dbg)
     {}
-    Lambda(World& world, const Pi* type, const Def* body, const std::string& name);
+    Lambda(World& world, const Pi* type, const Def* body, Debug dbg);
 
 public:
     const Def* domain() const { return type()->domain(); }
@@ -371,8 +374,8 @@ private:
 
 class App : public Destructor {
 private:
-    App(World& world, const Def* type, const Def* callee, Defs args, const std::string& name)
-        : Destructor(world, Tag::App, type, concat(callee, args), name)
+    App(World& world, const Def* type, const Def* callee, Defs args, Debug dbg)
+        : Destructor(world, Tag::App, type, concat(callee, args), dbg)
     {}
 
 public:
@@ -386,13 +389,13 @@ public:
 class Sigma : public Quantifier {
 private:
     /// Nominal Sigma kind
-    Sigma(World& world, size_t num_ops, Qualifier::URAL q, const std::string& name);
+    Sigma(World& world, size_t num_ops, Qualifier::URAL q, Debug dbg);
     /// Nominal Sigma type, \a type is some Star/Universe
-    Sigma(World& world, const Def* type, size_t num_ops, const std::string& name)
-        : Quantifier(world, Tag::Sigma, type, num_ops, name)
+    Sigma(World& world, const Def* type, size_t num_ops, Debug dbg)
+        : Quantifier(world, Tag::Sigma, type, num_ops, dbg)
     {}
-    Sigma(World& world, Defs ops, Qualifier::URAL q, const std::string& name)
-        : Quantifier(world, Tag::Sigma, max_type(world, ops, q), ops, name)
+    Sigma(World& world, Defs ops, Qualifier::URAL q, Debug dbg)
+        : Quantifier(world, Tag::Sigma, max_type(world, ops, q), ops, dbg)
     {}
 
 public:
@@ -409,8 +412,8 @@ private:
 
 class Tuple : public Constructor {
 private:
-    Tuple(World& world, const Sigma* type, Defs ops, const std::string& name)
-        : Constructor(world, Tag::Tuple, type, ops, name)
+    Tuple(World& world, const Sigma* type, Defs ops, Debug dbg)
+        : Constructor(world, Tag::Tuple, type, ops, dbg)
     {
         assert(type->num_ops() == ops.size());
     }
@@ -427,8 +430,8 @@ private:
 
 class Extract : public Destructor {
 private:
-    Extract(World& world, const Def* type, const Def* tuple, size_t index, const std::string& name)
-        : Destructor(world, Tag::Extract, type, tuple, name)
+    Extract(World& world, const Def* type, const Def* tuple, size_t index, Debug dbg)
+        : Destructor(world, Tag::Extract, type, tuple, dbg)
     {
         index_ = index;
     }
@@ -448,8 +451,8 @@ private:
 
 class Intersection : public Quantifier {
 private:
-    Intersection(World& world, Defs ops, Qualifier::URAL q, const std::string& name)
-        : Quantifier(world, Tag::Intersection, max_type(world, ops, q), gid_sorted(ops), name)
+    Intersection(World& world, Defs ops, Qualifier::URAL q, Debug dbg)
+        : Quantifier(world, Tag::Intersection, max_type(world, ops, q), gid_sorted(ops), dbg)
     {}
 
 public:
@@ -464,8 +467,8 @@ private:
 
 class All : public Constructor {
 private:
-    All(World& world, const Intersection* type, Defs ops, const std::string& name)
-        : Constructor(world, Tag::All, type, ops, name)
+    All(World& world, const Intersection* type, Defs ops, Debug dbg)
+        : Constructor(world, Tag::All, type, ops, dbg)
     {
         assert(type->num_ops() == ops.size());
     }
@@ -482,8 +485,8 @@ private:
 
 class Pick : public Destructor {
 private:
-    Pick(World& world, const Def* type, const Def* def, const std::string& name)
-        : Destructor(world, Tag::Pick, type, def, name)
+    Pick(World& world, const Def* type, const Def* def, Debug dbg)
+        : Destructor(world, Tag::Pick, type, def, dbg)
     {}
 
 public:
@@ -498,8 +501,8 @@ private:
 
 class Variant : public Quantifier {
 private:
-    Variant(World& world, Defs ops, Qualifier::URAL q, const std::string& name)
-        : Quantifier(world, Tag::Variant, max_type(world, ops, q), gid_sorted(ops), name)
+    Variant(World& world, Defs ops, Qualifier::URAL q, Debug dbg)
+        : Quantifier(world, Tag::Variant, max_type(world, ops, q), gid_sorted(ops), dbg)
     {}
 
 public:
@@ -514,8 +517,8 @@ private:
 
 class Any : public Constructor {
 private:
-    Any(World& world, const Def* type, const Def* def, const std::string& name)
-        : Constructor(world, Tag::Any, type, {def}, name)
+    Any(World& world, const Def* type, const Def* def, Debug dbg)
+        : Constructor(world, Tag::Any, type, {def}, dbg)
     {}
 
 public:
@@ -540,8 +543,8 @@ private:
 
 class Match : public Destructor {
 private:
-    Match(World& world, const Def* type, const Def* def, const Defs handlers, const std::string& name)
-        : Destructor(world, Tag::Match, type, concat(def, handlers), name)
+    Match(World& world, const Def* type, const Def* def, const Defs handlers, Debug dbg)
+        : Destructor(world, Tag::Match, type, concat(def, handlers), dbg)
     {}
 
 public:
@@ -573,7 +576,7 @@ private:
 class Universe : public Def {
 private:
     Universe(World& world, Qualifier::URAL q)
-        : Def(world, Tag::Universe, nullptr, 0, "□")
+        : Def(world, Tag::Universe, nullptr, 0, {"□"})
     {
         qualifier_ = q;
     }
@@ -590,8 +593,8 @@ private:
 
 class Var : public Def {
 private:
-    Var(World& world, const Def* type, size_t index, const std::string& name)
-        : Def(world, Tag::Var, type, Defs(), name)
+    Var(World& world, const Def* type, size_t index, Debug dbg)
+        : Def(world, Tag::Var, type, Defs(), dbg)
     {
         index_ = index;
     }
@@ -613,11 +616,19 @@ private:
     friend class World;
 };
 
-class Assume : public Def {
+class Axiom : public Def {
 private:
-    Assume(World& world, const Def* type, const std::string& name)
-        : Def(world, Tag::Assume, type, 0, name)
+    /// @em nominal axiom.
+    Axiom(World& world, const Def* type, Debug dbg)
+        : Def(world, Tag::Axiom, type, 0, dbg)
     {}
+
+    /// @em structural axiom.
+    Axiom(World& world, const Def* type, Box box, Debug dbg)
+        : Def(world, Tag::Axiom, type, Defs(), dbg)
+    {
+        box_ = box;
+    }
 
 public:
     bool maybe_dependent() const override { return false; }
@@ -633,7 +644,7 @@ private:
 class Error : public Def {
 private:
     Error(World& world, const Def* type)
-        : Def(world, Tag::Error, type, Defs(), "error")
+        : Def(world, Tag::Error, type, Defs(), {"<error>"})
     {}
 
 public:

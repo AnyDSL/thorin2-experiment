@@ -27,102 +27,108 @@ public:
 
     const Universe* universe(Qualifier::URAL q = Qualifier::Unrestricted) const { return universe_[q]; }
     const Star* star(Qualifier::URAL q = Qualifier::Unrestricted) const { return star_[q]; }
-    const Assume* assume(const Def* type, const std::string& name = "") {
-        return insert<Assume>(0, *this, type, name);
-    }
-    const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
-    const Var* var(Defs types, size_t index, const std::string& name = "") {
-        return var(sigma(types), index, name);
-    }
-    const Var* var(const Def* type, size_t index, const std::string& name = "") {
-        return unify<Var>(0, *this, type, index, name);
+
+    const Axiom* axiom(const Def* type, Debug dbg = {}) {
+        return insert<Axiom>(0, *this, type, dbg);
     }
 
-    const Pi* pi(const Def* domain, const Def* body, const std::string& name = "") {
-        return pi(Defs({domain}), body, name);
+    const Axiom* assume_(const Def* type, Box box, Debug dbg = {}) {
+        return unify<Axiom>(0, *this, type, box, dbg);
     }
-    const Pi* pi(Defs domains, const Def* body, const std::string& name = "") {
-        return pi(domains, body, Qualifier::Unrestricted, name);
+
+    const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
+    const Var* var(Defs types, size_t index, Debug dbg = {}) {
+        return var(sigma(types), index, dbg);
     }
-    const Pi* pi(const Def* domain, const Def* body, Qualifier::URAL q, const std::string& name = "") {
-        return pi(Defs({domain}), body, q, name);
+    const Var* var(const Def* type, size_t index, Debug dbg = {}) {
+        return unify<Var>(0, *this, type, index, dbg);
     }
-    const Pi* pi(Defs domains, const Def* body, Qualifier::URAL q, const std::string& name = "");
-    const Lambda* lambda(const Def* domain, const Def* body, const std::string& name = "") {
-        return lambda(domain, body, Qualifier::Unrestricted, name);
+
+    const Pi* pi(const Def* domain, const Def* body, Debug dbg = {}) {
+        return pi(Defs({domain}), body, dbg);
+    }
+    const Pi* pi(Defs domains, const Def* body, Debug dbg = {}) {
+        return pi(domains, body, Qualifier::Unrestricted, dbg);
+    }
+    const Pi* pi(const Def* domain, const Def* body, Qualifier::URAL q, Debug dbg = {}) {
+        return pi(Defs({domain}), body, q, dbg);
+    }
+    const Pi* pi(Defs domains, const Def* body, Qualifier::URAL q, Debug dbg = {});
+    const Lambda* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
+        return lambda(domain, body, Qualifier::Unrestricted, dbg);
     }
     const Lambda* lambda(const Def* domain, const Def* body, Qualifier::URAL type_q,
-                         const std::string& name = "") {
-        return lambda(Defs({domain}), body, type_q, name);
+                         Debug dbg = {}) {
+        return lambda(Defs({domain}), body, type_q, dbg);
     }
-    const Lambda* lambda(Defs domains, const Def* body, const std::string& name = "") {
-        return lambda(domains, body, Qualifier::Unrestricted, name);
+    const Lambda* lambda(Defs domains, const Def* body, Debug dbg = {}) {
+        return lambda(domains, body, Qualifier::Unrestricted, dbg);
     }
-    const Lambda* lambda(Defs domains, const Def* body, Qualifier::URAL type_q, const std::string& name = "") {
-        return pi_lambda(pi(domains, body->type(), type_q), body, name);
+    const Lambda* lambda(Defs domains, const Def* body, Qualifier::URAL type_q, Debug dbg = {}) {
+        return pi_lambda(pi(domains, body->type(), type_q), body, dbg);
     }
-    Lambda* pi_lambda(const Pi* pi, const std::string& name = "") {
-        return insert<Lambda>(1, *this, pi, name);
+    Lambda* pi_lambda(const Pi* pi, Debug dbg = {}) {
+        return insert<Lambda>(1, *this, pi, dbg);
     }
-    const Lambda* pi_lambda(const Pi* pi, const Def* body, const std::string& name = "");
-    const Def* app(const Def* callee, Defs args, const std::string& name = "");
-    const Def* app(const Def* callee, const Def* arg, const std::string& name = "") {
-        return app(callee, Defs({arg}), name);
+    const Lambda* pi_lambda(const Pi* pi, const Def* body, Debug dbg = {});
+    const Def* app(const Def* callee, Defs args, Debug dbg = {});
+    const Def* app(const Def* callee, const Def* arg, Debug dbg = {}) {
+        return app(callee, Defs({arg}), dbg);
     }
 
-    const Def* sigma(Defs defs, const std::string& name = "") {
-        return sigma(defs, Qualifier::meet(defs), name);
+    const Def* sigma(Defs defs, Debug dbg = {}) {
+        return sigma(defs, Qualifier::meet(defs), dbg);
     }
-    const Def* sigma(Defs, Qualifier::URAL q, const std::string& name = "");
-    Sigma* sigma(size_t num_ops, const Def* type, const std::string& name = "") {
-        return insert<Sigma>(num_ops, *this, type, num_ops, name);
+    const Def* sigma(Defs, Qualifier::URAL q, Debug dbg = {});
+    Sigma* sigma(size_t num_ops, const Def* type, Debug dbg = {}) {
+        return insert<Sigma>(num_ops, *this, type, num_ops, dbg);
     }
-    Sigma* sigma_type(size_t num_ops, const std::string& name = "") {
-        return sigma_type(num_ops, Qualifier::Unrestricted, name);
+    Sigma* sigma_type(size_t num_ops, Debug dbg = {}) {
+        return sigma_type(num_ops, Qualifier::Unrestricted, dbg);
     }
-    Sigma* sigma_type(size_t num_ops, Qualifier::URAL q, const std::string& name = "") {
-        return sigma(num_ops, star(q), name);
+    Sigma* sigma_type(size_t num_ops, Qualifier::URAL q, Debug dbg = {}) {
+        return sigma(num_ops, star(q), dbg);
     }
-    Sigma* sigma_kind(size_t num_ops, const std::string& name = "") {
-        return sigma_kind(num_ops, Qualifier::Unrestricted, name);
+    Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) {
+        return sigma_kind(num_ops, Qualifier::Unrestricted, dbg);
     }
-    Sigma* sigma_kind(size_t num_ops, Qualifier::URAL q, const std::string& name = "") {
-        return insert<Sigma>(num_ops, *this, num_ops, q, name);
+    Sigma* sigma_kind(size_t num_ops, Qualifier::URAL q, Debug dbg = {}) {
+        return insert<Sigma>(num_ops, *this, num_ops, q, dbg);
     }
-    const Def* tuple(Defs defs, const std::string& name = "") {
-        return tuple(sigma(types(defs), name), defs, name);
+    const Def* tuple(Defs defs, Debug dbg = {}) {
+        return tuple(sigma(types(defs), dbg), defs, dbg);
     }
-    const Def* tuple(Defs defs, Qualifier::URAL type_q, const std::string& name = "") {
-        return tuple(sigma(types(defs), type_q, name), defs, name);
+    const Def* tuple(Defs defs, Qualifier::URAL type_q, Debug dbg = {}) {
+        return tuple(sigma(types(defs), type_q, dbg), defs, dbg);
     }
-    const Def* tuple(const Def* type, Defs defs, const std::string& name = "");
-    const Def* extract(const Def* def, size_t index, const std::string& name = "");
+    const Def* tuple(const Def* type, Defs defs, Debug dbg = {});
+    const Def* extract(const Def* def, size_t index, Debug dbg = {});
 
-    const Def* intersection(Defs defs, const std::string& name = "") {
-        return intersection(defs, Qualifier::meet(defs), name);
+    const Def* intersection(Defs defs, Debug dbg = {}) {
+        return intersection(defs, Qualifier::meet(defs), dbg);
     }
-    const Def* intersection(Defs defs, Qualifier::URAL q, const std::string& name = "");
-    const Def* all(Defs defs, const std::string& name = "");
-    const Def* pick(const Def* type, const Def* def, const std::string& name = "");
+    const Def* intersection(Defs defs, Qualifier::URAL q, Debug dbg = {});
+    const Def* all(Defs defs, Debug dbg = {});
+    const Def* pick(const Def* type, const Def* def, Debug dbg = {});
 
-    const Def* variant(Defs defs, const std::string& name = "") {
-        return variant(defs, Qualifier::meet(defs), name);
+    const Def* variant(Defs defs, Debug dbg = {}) {
+        return variant(defs, Qualifier::meet(defs), dbg);
     }
-    const Def* variant(Defs defs, Qualifier::URAL q, const std::string& name = "");
-    const Def* any(const Def* type, const Def* def, const std::string& name = "");
-    const Def* match(const Def* def, Defs handlers, const std::string& name = "");
+    const Def* variant(Defs defs, Qualifier::URAL q, Debug dbg = {});
+    const Def* any(const Def* type, const Def* def, Debug dbg = {});
+    const Def* match(const Def* def, Defs handlers, Debug dbg = {});
 
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
-    const Assume* nat(Qualifier::URAL q = Qualifier::Unrestricted) { return nat_[q]; }
-    const Assume* boolean(Qualifier::URAL q = Qualifier::Unrestricted) { return boolean_[q]; }
-    const Assume* integer() { return integer_; }
+    const Axiom* nat(Qualifier::URAL q = Qualifier::Unrestricted) { return nat_[q]; }
+    const Axiom* boolean(Qualifier::URAL q = Qualifier::Unrestricted) { return boolean_[q]; }
+    const Axiom* integer() { return integer_; }
     const Def* integer(const Def* width, const Def* sign, const Def* wrap) { return app(integer(), {width, sign, wrap}); }
-    const Assume* real() { return real_; }
+    const Axiom* real() { return real_; }
     const Def* real(const Def* width, const Def* fast) { return app(real(), {width, fast}); }
-    const Assume* mem() const { return mem_; }
+    const Axiom* mem() const { return mem_; }
 
     // HACK
-    const Assume* nat0() { return assume(nat(), "0"); }
+    const Axiom* nat0() { return axiom(nat(), {"0"}); }
 
     const Def* ptr(const Def* referenced_type, const Def* addr_space) {
         return app(ptr_, {referenced_type, addr_space});
@@ -131,13 +137,13 @@ public:
 
 #define DECL(x) \
     const App* type_ ## x() const { return x ## _; } \
-    const Assume* literal_ ## x(/*x val*/) const { return nullptr; }
+    const Axiom* literal_ ## x(/*x val*/) const { return nullptr; }
     THORIN_I_TYPE(DECL)
     THORIN_R_TYPE(DECL)
 #undef DECL
 
 #define DECL(x) \
-    const Assume* x() { return x ## _; } \
+    const Axiom* x() { return x ## _; } \
     const App* x(const Def*, const Def*) { return nullptr; }
     THORIN_I_ARITHOP(DECL)
     THORIN_R_ARITHOP(DECL)
@@ -235,26 +241,26 @@ protected:
     DefSet defs_;
     const std::array<const Universe*, 4> universe_;
     const std::array<const Star*, 4> star_;
-    const std::array<const Assume*, 4> nat_;
-    const std::array<const Assume*, 4> boolean_;
-    const Assume* integer_;
-    const Assume* real_;
-    const Assume* mem_;
-    const Assume* frame_;
-    const Assume* ptr_;
+    const std::array<const Axiom*, 4> nat_;
+    const std::array<const Axiom*, 4> boolean_;
+    const Axiom* integer_;
+    const Axiom* real_;
+    const Axiom* mem_;
+    const Axiom* frame_;
+    const Axiom* ptr_;
     const Pi* iarithop_type_;
     const Pi* rarithop_type_;
     const Pi* icmpop_type_;
     const Pi* rcmpop_type_;
 
 #define DECL(x) \
-    const Assume* x ## _; \
+    const Axiom* x ## _; \
     const App* x ## s_[size_t(IType::Num)];
     THORIN_I_ARITHOP(DECL)
 #undef DECL
 
 #define DECL(x) \
-    const Assume* x ## _; \
+    const Axiom* x ## _; \
     const App* x ## s_[size_t(IType::Num)];
     THORIN_R_ARITHOP(DECL)
 #undef DECL
@@ -279,7 +285,7 @@ protected:
         const App* reals_[size_t(RType::Num)];
     };
 
-    const Assume* icmp_;
+    const Axiom* icmp_;
     union {
         struct {
 #define DECL(x) \
@@ -290,7 +296,7 @@ protected:
         const App* icmps_[size_t(IRel::Num)];
     };
 
-    const Assume* rcmp_;
+    const Axiom* rcmp_;
     union {
         struct {
 #define DECL(x) \

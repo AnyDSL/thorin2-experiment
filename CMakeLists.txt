@@ -15,6 +15,8 @@ add_executable(CoC
     thorin/util/array.h
     thorin/util/assert.h
     thorin/util/cast.h
+    thorin/util/debug.h
+    thorin/util/debug.cpp
     thorin/util/hash.h
     thorin/util/stream.cpp
     thorin/util/stream.h

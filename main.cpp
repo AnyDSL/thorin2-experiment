@@ -22,20 +22,20 @@ int main()  {
 
     w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 
-    //auto n0 = w.assume(w.nat(), "0");
-    //auto n1 = w.assume(w.nat(), "1");
-    //auto n2 = w.assume(w.nat(), "2");
-    //auto n3 = w.assume(w.nat(), "3");
-    auto n23 = w.assume(w.nat(), "23");
-    auto n42 = w.assume(w.nat(), "42");
-    auto n32 = w.assume(w.nat(), "32");
-    auto Top = w.assume(w.boolean(), "⊤");
-    //auto Bot = w.assume(w.boolean(), "⊥");
+    //auto n0 = w.assume(w.nat(), {"0"});
+    //auto n1 = w.assume(w.nat(), {"1"});
+    //auto n2 = w.assume(w.nat(), {"2"});
+    //auto n3 = w.assume(w.nat(), {"3"});
+    auto n23 = w.axiom(w.nat(), {"23"});
+    auto n42 = w.axiom(w.nat(), {"42"});
+    auto n32 = w.axiom(w.nat(), {"32"});
+    auto Top = w.axiom(w.boolean(), {"⊤"});
+    //auto Bot = w.axiom(w.boolean(), "⊥");
 
     {
         auto s32w = w.integer(n32, Top, Top);
-        auto a = w.assume(s32w, "a");
-        auto b = w.assume(s32w, "b");
+        auto a = w.axiom(s32w, {"a"});
+        auto b = w.axiom(s32w, {"b"});
         auto add = w.app(w.app(w.iadd(), {n32, Top, Top}), {a, b});
         auto mul = w.app(w.app(w.imul(), {n32, Top, Top}), {a, b});
         add->dump();
@@ -44,10 +44,10 @@ int main()  {
         mul->type()->dump();
         w.mem()->dump();
 
-        auto load = w.assume(w.pi(w.star(), w.pi({w.mem(), w.ptr(w.var(w.star(), 1))}, w.sigma({w.mem(), w.var(w.star(), 2)}))), "load");
+        auto load = w.axiom(w.pi(w.star(), w.pi({w.mem(), w.ptr(w.var(w.star(), 1))}, w.sigma({w.mem(), w.var(w.star(), 2)}))), {"load"});
         load->type()->dump();
-        auto x = w.assume(w.ptr(w.nat()), "x");
-        auto m = w.assume(w.mem(), "m");
+        auto x = w.axiom(w.ptr(w.nat()), {"x"});
+        auto m = w.axiom(w.mem(), {"m"});
         auto p = w.app(w.app(load, w.nat()), {m, x});
         p->dump();
         p->type()->dump();
@@ -55,9 +55,9 @@ int main()  {
 
 
     // λT:*.λx:T.x
-    auto T_1 = w.var(w.star(), 0, "T");
-    auto T_2 = w.var(w.star(), 1, "T");
-    auto x = w.var(T_2, 0, "x");
+    auto T_1 = w.var(w.star(), 0, {"T"});
+    auto T_2 = w.var(w.star(), 1, {"T"});
+    auto x = w.var(T_2, 0, {"x"});
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
     poly_id->dump();
     poly_id->type()->dump();
@@ -67,8 +67,8 @@ int main()  {
     int_id->dump();
     int_id->type()->dump();
 
-    auto fst = w.lambda({w.nat(), w.nat()}, w.extract(w.var({w.nat(), w.nat()}, 0, "pair"), 0));
-    auto snd = w.lambda({w.nat(), w.nat()}, w.extract(w.var({w.nat(), w.nat()}, 0, "pair"), 1));
+    auto fst = w.lambda({w.nat(), w.nat()}, w.extract(w.var({w.nat(), w.nat()}, 0, {"pair"}), 0));
+    auto snd = w.lambda({w.nat(), w.nat()}, w.extract(w.var({w.nat(), w.nat()}, 0, {"pair"}), 1));
     w.app(fst, {n23, n42})->dump(); // 23
     w.app(snd, {n23, n42})->dump(); // 42
 
@@ -80,15 +80,15 @@ int main()  {
     //w.extract(w.tuple({n1, n2, n3}), 2)->dump();
     ////w.extract(n3, 0)->dump();
 
-    //auto make_pair = w.assume(w.pi(w.unit(), w.sigma({w.nat(), w.nat()})), "make_pair");
+    //auto make_pair = w.axiom(w.pi(w.unit(), w.sigma({w.nat(), w.nat()})), {"make_pair"});
 	//make_pair->dump();
     //w.app(make_pair, n1)->dump();
 
-    //auto plus = w.assume(w.pi({w.nat(), w.nat()}, w.nat()), "+");
+    //auto plus = w.axiom(w.pi({w.nat(), w.nat()}, w.nat()), {"+"});
     //plus->type()->dump();
     //w.app(int_id, w.app(plus, {w.app(plus, {n1, n2}), n3}))->dump();
 
-    auto Arr = w.assume(w.pi({w.nat(), w.pi(w.nat(), w.star())}, w.star()), "Arr");
+    auto Arr = w.axiom(w.pi({w.nat(), w.pi(w.nat(), w.star())}, w.star()),{"Arr"});
     Defs dom{w.nat(), w.star()};
     auto _Arr = w.lambda(dom, w.app(Arr, {w.extract(w.var(dom, 0), 0), w.lambda(w.nat(), w.extract(w.var(dom, 1), 1))}));
     _Arr->dump();
@@ -97,9 +97,9 @@ int main()  {
     arr->dump();
 
     // Test projections from dependent sigmas
-    auto poly = w.assume(w.pi(w.star(), w.star()), "Poly");
-    auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))}, "sig");
-    auto sigma_val = w.assume(sigma, "val");
+    auto poly = w.axiom(w.pi(w.star(), w.star()),{"Poly"});
+    auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))}, {"sig"});
+    auto sigma_val = w.axiom(sigma,{"val"});
     cout << sigma_val << ": " << sigma << endl;
     auto fst_sigma = w.extract(sigma_val, 0);
     cout << fst_sigma << ": " << fst_sigma->type() << endl;
@@ -109,10 +109,10 @@ int main()  {
     // Test variant types and matches
     auto variant = w.variant({w.nat(), w.boolean()});
     auto any_nat = w.any(variant, n23);
-    auto any_bool = w.any(variant, w.assume(w.boolean(), "false"));
-    auto assumed_var = w.assume(variant, "someval");
+    auto any_bool = w.any(variant, w.axiom(w.boolean(),{"false"}));
+    auto assumed_var = w.axiom(variant,{"someval"});
     auto handle_nat = w.lambda(w.nat(), w.var(w.nat(), 0));
-    auto handle_bool = w.lambda(w.boolean(), w.assume(w.nat(), "0"));
+    auto handle_bool = w.lambda(w.boolean(), w.axiom(w.nat(),{"0"}));
     Defs handlers{handle_nat, handle_bool};
     auto match_nat = w.match(any_nat, handlers);
     match_nat->dump();
