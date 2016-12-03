@@ -32,7 +32,7 @@ public:
         return insert<Axiom>(0, *this, type, dbg);
     }
 
-    const Axiom* assume_(const Def* type, Box box, Debug dbg = {}) {
+    const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
         return unify<Axiom>(0, *this, type, box, dbg);
     }
 

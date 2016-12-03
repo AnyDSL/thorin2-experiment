@@ -195,6 +195,7 @@ protected:
 
 public:
     Sort sort() const;
+    uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
     Tag tag() const { return Tag(tag_); }
     World& world() const { return *world_; }
     Defs ops() const { return Defs(ops_, num_ops_); }
@@ -253,7 +254,6 @@ private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
     bool on_heap() const { return ops_ != vla_ops_; }
     // this must match with the 64bit fields below
-    uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
 
     static size_t gid_counter_;
 
@@ -631,10 +631,13 @@ private:
     }
 
 public:
+    Box box() const { assert(!is_nominal()); return box_; }
     bool maybe_dependent() const override { return false; }
     std::ostream& stream(std::ostream&) const override;
 
 private:
+    uint64_t vhash() const override;
+    bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 

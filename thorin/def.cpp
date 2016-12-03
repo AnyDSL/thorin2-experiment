@@ -219,8 +219,24 @@ bool Def::equal(const Def* other) const {
     return result;
 }
 
+uint64_t Axiom::vhash() const {
+    auto seed = Def::vhash();
+    if (is_nominal())
+        return seed;
+
+    return thorin::hash_combine(seed, box_.get_u64());
+}
+
 uint64_t Extract::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
+
+bool Axiom::equal(const Def* other) const {
+    if (is_nominal())
+        return this == other;
+
+    return this->fields() == other->fields() && this->type() == other->type()
+        && this->box_.get_u64() == other->as<Axiom>()->box().get_u64();
+}
 
 bool Extract::equal(const Def* other) const {
     return Def::equal(other) && this->index() == other->as<Extract>()->index();
