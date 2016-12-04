@@ -1,6 +1,8 @@
 #ifndef THORIN_TABLES_H
 #define THORIN_TABLES_H
 
+#include <half.hpp>
+
 #define THORIN_I_WIDTH(m) m(1) m(8) m(16) m(32) m(64)
 #define THORIN_R_WIDTH(m) m(16) m(32) m(64)
 
@@ -93,11 +95,9 @@ enum class RRel {
     Num,
 };
 
-// HACK
-struct half { uint16_t foo; };
 typedef bool s1; typedef  int8_t s8; typedef  int16_t s16; typedef  int32_t s32; typedef  int64_t s64;
 typedef bool u1; typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t u64;
-/*                                    */ typedef half r16; typedef float    r32; typedef double   r64;
+/*                        */ typedef half_float::half r16; typedef float    r32; typedef double   r64;
 
 #define CODE(x, y) typedef y x;
 THORIN_I_TYPE(CODE)

@@ -116,16 +116,34 @@ public:
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
 
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
+
     const Axiom* nat(Qualifier::URAL q = Qualifier::Unrestricted) { return nat_[q]; }
+    const Axiom* nat(int64_t val, Qualifier::URAL q = Qualifier::Unrestricted) {
+        return assume(nat(q), {val}, {std::to_string(val)});
+    }
+    const Axiom*  nat0(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[0][q]; }
+    const Axiom*  nat1(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[1][q]; }
+    const Axiom*  nat2(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[2][q]; }
+    const Axiom*  nat4(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[3][q]; }
+    const Axiom*  nat8(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[4][q]; }
+    const Axiom* nat16(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[5][q]; }
+    const Axiom* nat32(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[6][q]; }
+    const Axiom* nat64(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[7][q]; }
+
     const Axiom* boolean(Qualifier::URAL q = Qualifier::Unrestricted) { return boolean_[q]; }
+    const Axiom* boolean(bool val, Qualifier::URAL q = Qualifier::Unrestricted) {
+        return assume(boolean(q), {val}, {val ? "⊤" : "⊥"});
+    }
+    const Axiom* boolean_bot(Qualifier::URAL q = Qualifier::Unrestricted) { return booleans_[0][q]; }
+    const Axiom* boolean_top(Qualifier::URAL q = Qualifier::Unrestricted) { return booleans_[1][q]; }
+
     const Axiom* integer() { return integer_; }
     const Def* integer(const Def* width, const Def* sign, const Def* wrap) { return app(integer(), {width, sign, wrap}); }
+
     const Axiom* real() { return real_; }
     const Def* real(const Def* width, const Def* fast) { return app(real(), {width, fast}); }
-    const Axiom* mem() const { return mem_; }
 
-    // HACK
-    const Axiom* nat0() { return axiom(nat(), {"0"}); }
+    const Axiom* mem() const { return mem_; }
 
     const Def* ptr(const Def* referenced_type, const Def* addr_space) {
         return app(ptr_, {referenced_type, addr_space});
@@ -134,7 +152,7 @@ public:
 
 #define CODE(x, y) \
     const App* type_ ## x() { return type_ ## x ## _; } \
-    const Axiom* literal_ ## x(y val, Debug dbg = {}) { return assume(type_ ## x ## _, {val}, dbg); }
+    const Axiom* literal_ ## x(y val) { return assume(type_ ## x ## _, {val}, {std::to_string(val)}); }
     THORIN_I_TYPE(CODE)
     THORIN_R_TYPE(CODE)
 #undef CODE
@@ -239,7 +257,9 @@ protected:
     const std::array<const Universe*, 4> universe_;
     const std::array<const Star*, 4> star_;
     const std::array<const Axiom*, 4> nat_;
+    const std::array<std::array<const Axiom*, 4>, 8> nats_;
     const std::array<const Axiom*, 4> boolean_;
+    const std::array<std::array<const Axiom*, 4>, 2> booleans_;
     const Axiom* integer_;
     const Axiom* real_;
     const Axiom* mem_;

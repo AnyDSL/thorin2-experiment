@@ -17,10 +17,20 @@ World::World()
             axiom(star(Qualifier::Affine),{"Nat"}),
             axiom(star(Qualifier::Relevant),{"Nat"}),
             axiom(star(Qualifier::Linear),{"Nat"})})
+    , nats_({{{{nat( 0, Qualifier::Unrestricted), nat( 0, Qualifier::Affine), nat( 0, Qualifier::Relevant), nat( 0, Qualifier::Linear)}},
+              {{nat( 1, Qualifier::Unrestricted), nat( 1, Qualifier::Affine), nat( 1, Qualifier::Relevant), nat( 1, Qualifier::Linear)}},
+              {{nat( 2, Qualifier::Unrestricted), nat( 2, Qualifier::Affine), nat( 2, Qualifier::Relevant), nat( 2, Qualifier::Linear)}},
+              {{nat( 4, Qualifier::Unrestricted), nat( 4, Qualifier::Affine), nat( 4, Qualifier::Relevant), nat( 4, Qualifier::Linear)}},
+              {{nat( 8, Qualifier::Unrestricted), nat( 8, Qualifier::Affine), nat( 8, Qualifier::Relevant), nat( 8, Qualifier::Linear)}},
+              {{nat(16, Qualifier::Unrestricted), nat(16, Qualifier::Affine), nat(16, Qualifier::Relevant), nat(16, Qualifier::Linear)}},
+              {{nat(32, Qualifier::Unrestricted), nat(32, Qualifier::Affine), nat(32, Qualifier::Relevant), nat(32, Qualifier::Linear)}},
+              {{nat(64, Qualifier::Unrestricted), nat(64, Qualifier::Affine), nat(64, Qualifier::Relevant), nat(64, Qualifier::Linear)}}}})
     , boolean_({axiom(star(Qualifier::Unrestricted),{"Boolean"}),
                 axiom(star(Qualifier::Affine),{"Boolean"}),
                 axiom(star(Qualifier::Relevant),{"Boolean"}),
                 axiom(star(Qualifier::Linear),{"Boolean"})})
+    , booleans_({{{{boolean( false, Qualifier::Unrestricted), boolean(false, Qualifier::Affine), boolean(false, Qualifier::Relevant), boolean(false, Qualifier::Linear)}},
+                  {{boolean( true, Qualifier::Unrestricted), boolean( true, Qualifier::Affine), boolean( true, Qualifier::Relevant), boolean( true, Qualifier::Linear)}}}})
     , integer_(axiom(pi({nat(), boolean(), boolean()}, star()),{"int"}))
     , real_(axiom(pi({nat(), boolean()}, star()),{"real"}))
     , mem_(axiom(star(Qualifier::Linear),{"M"}))

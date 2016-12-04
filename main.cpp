@@ -19,15 +19,17 @@ int main()  {
 	testMatrix();
 
     World w;
+    auto n16 = w.nat16();
+    n16->dump();
+    assert(n16 == w.nat(16));
     w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 
-    auto n23 = w.assume(w.nat(), {23});
-    auto n23x = w.assume(w.nat(), {23});
+    auto n23 = w.nat(23);
+    auto n23x = w.nat(23);
     assert(n23 == n23x);
-    auto n42 = w.assume(w.nat(), {42});
-    auto n32 = w.assume(w.nat(), {32});
-    auto Top = w.assume(w.boolean(), {true});
-    //auto Bot = w.axiom(w.boolean(), {false});
+    auto n42 = w.nat(42);
+    auto n32 = w.nat(32);
+    auto Top = w.boolean_top();
 
     {
         auto s32w = w.integer(n32, Top, Top);
