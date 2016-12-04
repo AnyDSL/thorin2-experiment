@@ -41,14 +41,14 @@ World::World()
     //, rcmpop_type_(pi({nat(), boolean()}, pi(nat(), pi({
             //real(var(nat(), 2), var(boolean(), 1)),
             //real(var(nat(), 3), var(boolean(), 2))}, type_uo1()))))
-#define DECL(x) \
+#define CODE(x) \
     , x ## _(axiom(iarithop_type_, {# x}))
-    THORIN_I_ARITHOP(DECL)
-#undef DECL
-#define DECL(x) \
+    THORIN_I_ARITHOP(CODE)
+#undef CODE
+#define CODE(x) \
     , x ## _(axiom(rarithop_type_, {# x}))
-    THORIN_R_ARITHOP(DECL)
-#undef DECL
+    THORIN_R_ARITHOP(CODE)
+#undef CODE
 {}
 
 const Pi* World::pi(Defs domains, const Def* body, Qualifier::URAL q, Debug dbg) {

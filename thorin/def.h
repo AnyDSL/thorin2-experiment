@@ -8,7 +8,7 @@
 #include "thorin/util/cast.h"
 #include "thorin/util/hash.h"
 #include "thorin/util/stream.h"
-#include "thorin/util/types.h"
+#include "thorin/tables.h"
 
 namespace thorin {
 

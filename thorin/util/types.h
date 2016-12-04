@@ -1,3 +1,4 @@
+#if 0
 #ifndef THORIN_UTIL_TYPES_H
 #define THORIN_UTIL_TYPES_H
 
@@ -266,4 +267,5 @@ inline size_t hash_value(Box box) { return hash_value(bcast<u64, Box>(box)); }
 
 }
 
+#endif
 #endif

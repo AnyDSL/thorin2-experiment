@@ -19,7 +19,6 @@ int main()  {
 	testMatrix();
 
     World w;
-
     w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 
     auto n23 = w.assume(w.nat(), {23});
