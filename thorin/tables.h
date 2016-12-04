@@ -28,7 +28,7 @@
     f(lt) /* o o x - less than             */ \
     f(gt) /* o x o - greater than          */ \
     f(ne) /* o x x - not equal             */ \
-    f(eq) /* x o o - qual                  */ \
+    f(eq) /* x o o - equal                 */ \
     f(le) /* x o x - less than or equal    */ \
     f(ge) /* x x o - greater than or equal */ \
     f(f)  /* x x x - always false          */
@@ -39,7 +39,7 @@
     f(ult) /* o o o x - unordered or less than             */ \
     f(ugt) /* o o x o - unordered or greater than          */ \
     f(une) /* o o x x - unordered or not equal             */ \
-    f(ueq) /* o x o o - unordered or qual                  */ \
+    f(ueq) /* o x o o - unordered or equal                 */ \
     f(ule) /* o x o x - unordered or less than or equal    */ \
     f(uge) /* o x x o - unordered or greater than or equal */ \
     f(uno) /* o x x x - unordered (either NaNs)            */ \
