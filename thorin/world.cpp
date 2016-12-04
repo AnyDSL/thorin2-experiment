@@ -29,8 +29,10 @@ World::World()
                 axiom(star(Qualifier::Affine),{"Boolean"}),
                 axiom(star(Qualifier::Relevant),{"Boolean"}),
                 axiom(star(Qualifier::Linear),{"Boolean"})})
-    , booleans_({{{{boolean( false, Qualifier::Unrestricted), boolean(false, Qualifier::Affine), boolean(false, Qualifier::Relevant), boolean(false, Qualifier::Linear)}},
-                  {{boolean( true, Qualifier::Unrestricted), boolean( true, Qualifier::Affine), boolean( true, Qualifier::Relevant), boolean( true, Qualifier::Linear)}}}})
+    , booleans_({{{{boolean(false, Qualifier::Unrestricted), boolean(false, Qualifier::Affine),
+                    boolean(false, Qualifier::Relevant), boolean(false, Qualifier::Linear)}},
+                  {{boolean( true, Qualifier::Unrestricted), boolean( true, Qualifier::Affine),
+                    boolean( true, Qualifier::Relevant), boolean( true, Qualifier::Linear)}}}})
     , integer_(axiom(pi({nat(), boolean(), boolean()}, star()),{"int"}))
     , real_(axiom(pi({nat(), boolean()}, star()),{"real"}))
     , mem_(axiom(star(Qualifier::Linear),{"M"}))

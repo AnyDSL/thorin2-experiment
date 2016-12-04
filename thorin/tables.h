@@ -47,7 +47,7 @@
     f(olt) /* x o o x - ordered and less than              */ \
     f(ogt) /* x o x o - ordered and greater than           */ \
     f(one) /* x o x x - ordered and not equal              */ \
-    f(oeq) /* x x o o - ordered and qual                   */ \
+    f(oeq) /* x x o o - ordered and equal                  */ \
     f(ole) /* x x o x - ordered and less than or equal     */ \
     f(oge) /* x x x o - ordered and greater than or equal  */ \
     f(f)   /* x x x x - always false                       */
@@ -103,7 +103,6 @@ typedef bool u1; typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32;
 THORIN_I_TYPE(CODE)
 THORIN_R_TYPE(CODE)
 #undef CODE
-
 
 #define THORIN_TYPES(m) \
     m(s8)   m(s16) m(s32) m(s64) \
