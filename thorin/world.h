@@ -138,7 +138,11 @@ public:
     const Axiom* boolean_top(Qualifier::URAL q = Qualifier::Unrestricted) { return booleans_[1][q]; }
 
     const Axiom* integer() { return integer_; }
-    const Def* integer(const Def* width, const Def* sign, const Def* wrap) { return app(integer(), {width, sign, wrap}); }
+    const Def* integer(const Def* width, const Def* flags) { return app(integer(), {width, flags}); }
+    const Def* integer(int64_t width, ITypeFlags flags) {
+        auto f = nat(int64_t(flags));
+        return app(integer_, {nat(width), f});
+    }
 
     const Axiom* real() { return real_; }
     const Def* real(const Def* width, const Def* fast) { return app(real(), {width, fast}); }

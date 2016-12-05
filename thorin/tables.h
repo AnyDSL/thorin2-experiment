@@ -54,45 +54,54 @@
 
 namespace thorin {
 
+enum class ITypeFlags {
+        /* W S */
+    uo, /* o o */
+    so, /* o x */
+    uw, /* x o */
+    sw, /* x x */
+    Num
+};
+
 enum class IType {
 #define CODE(x, y) THORIN_I_TYPE(x),
 #undef CODE
-    Num,
+    Num
 };
 
 enum class RType {
 #define CODE(x, y) \
     THORIN_R_ARITHOP(x),
 #undef CODE
-    Num,
+    Num
 };
 
 enum class IARithOp {
 #define CODE(x) \
     THORIN_I_ARITHOP(x),
 #undef CODE
-    Num,
+    Num
 };
 
 enum class RArithOp {
 #define CODE(x) \
     THORIN_R_ARITHOP(x),
 #undef CODE
-    Num,
+    Num
 };
 
 enum class IRel {
 #define CODE(x) \
     THORIN_I_REL(x),
 #undef CODE
-    Num,
+    Num
 };
 
 enum class RRel {
 #define CODE(x) \
     THORIN_R_REL(x),
 #undef CODE
-    Num,
+    Num
 };
 
 typedef bool s1; typedef  int8_t s8; typedef  int16_t s16; typedef  int32_t s32; typedef  int64_t s64;

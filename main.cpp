@@ -30,13 +30,14 @@ int main()  {
     auto n42 = w.nat(42);
     auto n32 = w.nat(32);
     auto Top = w.boolean_top();
+    Top->dump();
 
     {
-        auto s32w = w.integer(n32, Top, Top);
+        auto s32w = w.integer(32, ITypeFlags::sw);
         auto a = w.axiom(s32w, {"a"});
         auto b = w.axiom(s32w, {"b"});
-        auto add = w.app(w.app(w.iadd(), {n32, Top, Top}), {a, b});
-        auto mul = w.app(w.app(w.imul(), {n32, Top, Top}), {a, b});
+        auto add = w.app(w.app(w.iadd(), {n32, w.nat(3)}), {a, b});
+        auto mul = w.app(w.app(w.imul(), {n32, w.nat(3)}), {a, b});
         add->dump();
         add->type()->dump();
         mul->dump();

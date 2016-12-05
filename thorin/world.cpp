@@ -33,19 +33,19 @@ World::World()
                     boolean(false, Qualifier::Relevant), boolean(false, Qualifier::Linear)}},
                   {{boolean( true, Qualifier::Unrestricted), boolean( true, Qualifier::Affine),
                     boolean( true, Qualifier::Relevant), boolean( true, Qualifier::Linear)}}}})
-    , integer_(axiom(pi({nat(), boolean(), boolean()}, star()),{"int"}))
+    , integer_(axiom(pi({nat(), nat()}, star()),{"int"}))
     , real_(axiom(pi({nat(), boolean()}, star()),{"real"}))
     , mem_(axiom(star(Qualifier::Linear),{"M"}))
     , frame_(axiom(star(Qualifier::Linear),{"F"}))
     , ptr_(axiom(pi({star(), nat()}, star(),{"ptr"})))
-    , iarithop_type_(pi({nat(), boolean(), boolean()}, pi({
-            integer(var(nat(), 2), var(boolean(), 1), var(boolean(), 0)),
-            integer(var(nat(), 3), var(boolean(), 2), var(boolean(), 1))},
-            integer(var(nat(), 4), var(boolean(), 3), var(boolean(), 2)))))
+    , iarithop_type_(pi({nat(), nat()}, pi({
+            integer(var(nat(), 1), var(nat(), 0)),
+            integer(var(nat(), 2), var(nat(), 1))},
+            integer(var(nat(), 3), var(nat(), 2)))))
     , rarithop_type_(pi({nat(), boolean()}, pi({
-            real(var(nat(), 1), var(real(), 0)),
-            real(var(nat(), 2), var(real(), 1))},
-            real(var(nat(), 3), var(real(), 2)))))
+            real(var(nat(), 1), var(nat(), 0)),
+            real(var(nat(), 2), var(nat(), 1))},
+            real(var(nat(), 3), var(nat(), 2)))))
     //, icmpop_type_(pi({nat(), boolean(), boolean()}, pi(nat(), pi({
             //integer(var(nat(), 3), var(boolean(), 2), var(boolean(), 1)),
             //integer(var(nat(), 4), var(boolean(), 3), var(boolean(), 2))},
