@@ -25,8 +25,8 @@ public:
     World();
     virtual ~World() { for (auto def : defs_) def->~Def(); }
 
-    const Universe* universe(Qualifier::URAL q = Qualifier::Unrestricted) const { return universe_[q]; }
-    const Star* star(Qualifier::URAL q = Qualifier::Unrestricted) const { return star_[q]; }
+    const Universe* universe(Qualifier q = Qualifier::Unrestricted) const { return universe_[size_t(q)]; }
+    const Star* star(Qualifier q = Qualifier::Unrestricted) const { return star_[size_t(q)]; }
 
     const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
     const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
@@ -47,21 +47,21 @@ public:
     const Pi* pi(Defs domains, const Def* body, Debug dbg = {}) {
         return pi(domains, body, Qualifier::Unrestricted, dbg);
     }
-    const Pi* pi(const Def* domain, const Def* body, Qualifier::URAL q, Debug dbg = {}) {
+    const Pi* pi(const Def* domain, const Def* body, Qualifier q, Debug dbg = {}) {
         return pi(Defs({domain}), body, q, dbg);
     }
-    const Pi* pi(Defs domains, const Def* body, Qualifier::URAL q, Debug dbg = {});
+    const Pi* pi(Defs domains, const Def* body, Qualifier q, Debug dbg = {});
     const Lambda* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
         return lambda(domain, body, Qualifier::Unrestricted, dbg);
     }
-    const Lambda* lambda(const Def* domain, const Def* body, Qualifier::URAL type_q,
+    const Lambda* lambda(const Def* domain, const Def* body, Qualifier type_q,
                          Debug dbg = {}) {
         return lambda(Defs({domain}), body, type_q, dbg);
     }
     const Lambda* lambda(Defs domains, const Def* body, Debug dbg = {}) {
         return lambda(domains, body, Qualifier::Unrestricted, dbg);
     }
-    const Lambda* lambda(Defs domains, const Def* body, Qualifier::URAL type_q, Debug dbg = {}) {
+    const Lambda* lambda(Defs domains, const Def* body, Qualifier type_q, Debug dbg = {}) {
         return pi_lambda(pi(domains, body->type(), type_q), body, dbg);
     }
     Lambda* pi_lambda(const Pi* pi, Debug dbg = {}) {
@@ -74,74 +74,74 @@ public:
     }
 
     const Def* sigma(Defs defs, Debug dbg = {}) {
-        return sigma(defs, Qualifier::meet(defs), dbg);
+        return sigma(defs, meet(defs), dbg);
     }
-    const Def* sigma(Defs, Qualifier::URAL q, Debug dbg = {});
+    const Def* sigma(Defs, Qualifier q, Debug dbg = {});
     Sigma* sigma(size_t num_ops, const Def* type, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, type, num_ops, dbg);
     }
     Sigma* sigma_type(size_t num_ops, Debug dbg = {}) {
         return sigma_type(num_ops, Qualifier::Unrestricted, dbg);
     }
-    Sigma* sigma_type(size_t num_ops, Qualifier::URAL q, Debug dbg = {}) {
+    Sigma* sigma_type(size_t num_ops, Qualifier q, Debug dbg = {}) {
         return sigma(num_ops, star(q), dbg);
     }
     Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) {
         return sigma_kind(num_ops, Qualifier::Unrestricted, dbg);
     }
-    Sigma* sigma_kind(size_t num_ops, Qualifier::URAL q, Debug dbg = {}) {
+    Sigma* sigma_kind(size_t num_ops, Qualifier q, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, num_ops, q, dbg);
     }
     const Def* tuple(Defs defs, Debug dbg = {}) {
         return tuple(sigma(types(defs), dbg), defs, dbg);
     }
-    const Def* tuple(Defs defs, Qualifier::URAL type_q, Debug dbg = {}) {
+    const Def* tuple(Defs defs, Qualifier type_q, Debug dbg = {}) {
         return tuple(sigma(types(defs), type_q, dbg), defs, dbg);
     }
     const Def* tuple(const Def* type, Defs defs, Debug dbg = {});
     const Def* extract(const Def* def, size_t index, Debug dbg = {});
 
     const Def* intersection(Defs defs, Debug dbg = {}) {
-        return intersection(defs, Qualifier::meet(defs), dbg);
+        return intersection(defs, meet(defs), dbg);
     }
-    const Def* intersection(Defs defs, Qualifier::URAL q, Debug dbg = {});
+    const Def* intersection(Defs defs, Qualifier q, Debug dbg = {});
     const Def* all(Defs defs, Debug dbg = {});
     const Def* pick(const Def* type, const Def* def, Debug dbg = {});
 
     const Def* variant(Defs defs, Debug dbg = {}) {
-        return variant(defs, Qualifier::meet(defs), dbg);
+        return variant(defs, meet(defs), dbg);
     }
-    const Def* variant(Defs defs, Qualifier::URAL q, Debug dbg = {});
+    const Def* variant(Defs defs, Qualifier q, Debug dbg = {});
     const Def* any(const Def* type, const Def* def, Debug dbg = {});
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
 
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
 
-    const Axiom* nat(Qualifier::URAL q = Qualifier::Unrestricted) { return nat_[q]; }
-    const Axiom* nat(int64_t val, Qualifier::URAL q = Qualifier::Unrestricted) {
+    const Axiom* nat(Qualifier q = Qualifier::Unrestricted) { return nat_[size_t(q)]; }
+    const Axiom* nat(int64_t val, Qualifier q = Qualifier::Unrestricted) {
         return assume(nat(q), {val}, {std::to_string(val)});
     }
-    const Axiom*  nat0(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[0][q]; }
-    const Axiom*  nat1(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[1][q]; }
-    const Axiom*  nat2(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[2][q]; }
-    const Axiom*  nat4(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[3][q]; }
-    const Axiom*  nat8(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[4][q]; }
-    const Axiom* nat16(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[5][q]; }
-    const Axiom* nat32(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[6][q]; }
-    const Axiom* nat64(Qualifier::URAL q = Qualifier::Unrestricted) { return nats_[7][q]; }
+    const Axiom*  nat0(Qualifier q = Qualifier::Unrestricted) { return nats_[0][size_t(q)]; }
+    const Axiom*  nat1(Qualifier q = Qualifier::Unrestricted) { return nats_[1][size_t(q)]; }
+    const Axiom*  nat2(Qualifier q = Qualifier::Unrestricted) { return nats_[2][size_t(q)]; }
+    const Axiom*  nat4(Qualifier q = Qualifier::Unrestricted) { return nats_[3][size_t(q)]; }
+    const Axiom*  nat8(Qualifier q = Qualifier::Unrestricted) { return nats_[4][size_t(q)]; }
+    const Axiom* nat16(Qualifier q = Qualifier::Unrestricted) { return nats_[5][size_t(q)]; }
+    const Axiom* nat32(Qualifier q = Qualifier::Unrestricted) { return nats_[6][size_t(q)]; }
+    const Axiom* nat64(Qualifier q = Qualifier::Unrestricted) { return nats_[7][size_t(q)]; }
 
-    const Axiom* boolean(Qualifier::URAL q = Qualifier::Unrestricted) { return boolean_[q]; }
-    const Axiom* boolean(bool val, Qualifier::URAL q = Qualifier::Unrestricted) {
+    const Axiom* boolean(Qualifier q = Qualifier::Unrestricted) { return boolean_[size_t(q)]; }
+    const Axiom* boolean(bool val, Qualifier q = Qualifier::Unrestricted) {
         return assume(boolean(q), {val}, {val ? "⊤" : "⊥"});
     }
-    const Axiom* boolean_bot(Qualifier::URAL q = Qualifier::Unrestricted) { return booleans_[0][q]; }
-    const Axiom* boolean_top(Qualifier::URAL q = Qualifier::Unrestricted) { return booleans_[1][q]; }
+    const Axiom* boolean_bot(Qualifier q = Qualifier::Unrestricted) { return booleans_[0][size_t(q)]; }
+    const Axiom* boolean_top(Qualifier q = Qualifier::Unrestricted) { return booleans_[1][size_t(q)]; }
 
-    const Axiom* integer(Qualifier::URAL q = Qualifier::Unrestricted) { return integer_[q]; }
-    const Def* integer(const Def* width, const Def* flags, Qualifier::URAL q = Qualifier::Unrestricted) {
+    const Axiom* integer(Qualifier q = Qualifier::Unrestricted) { return integer_[size_t(q)]; }
+    const Def* integer(const Def* width, const Def* flags, Qualifier q = Qualifier::Unrestricted) {
         return app(integer(q), {width, flags});
     }
-    const Def* integer(int64_t width, ITypeFlags flags, Qualifier::URAL q = Qualifier::Unrestricted) {
+    const Def* integer(int64_t width, ITypeFlags flags, Qualifier q = Qualifier::Unrestricted) {
         auto f = nat(int64_t(flags));
         return app(integer(q), {nat(width), f});
     }
@@ -157,8 +157,8 @@ public:
     const Def* ptr(const Def* pointee) { return ptr(pointee, nat0()); }
 
 #define CODE(x, y) \
-    const App* type_ ## x(Qualifier::URAL q = Qualifier::Unrestricted) { return type_ ## x ## _[q]; } \
-    const Axiom* literal_ ## x(y val, Qualifier::URAL q = Qualifier::Unrestricted) { \
+    const App* type_ ## x(Qualifier q = Qualifier::Unrestricted) { return type_ ## x ## _[size_t(q)]; } \
+    const Axiom* literal_ ## x(y val, Qualifier q = Qualifier::Unrestricted) { \
         return assume(type_ ## x(q), {val}, {std::to_string(val)}); \
     }
     THORIN_I_TYPE(CODE)

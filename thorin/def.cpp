@@ -3,46 +3,40 @@
 
 namespace thorin {
 
-namespace Qualifier {
-    bool operator==(URAL lhs, URAL rhs) {
-        return static_cast<int>(lhs) == static_cast<int>(rhs);
-    }
+bool operator<(Qualifier lhs, Qualifier rhs) {
+    if (lhs == rhs) return false;
+    if (rhs == Qualifier::Unrestricted) return true;
+    if (lhs == Qualifier::Linear) return true;
+    return false;
+}
 
-    bool operator<(URAL lhs, URAL rhs) {
-        if (lhs == rhs) return false;
-        if (rhs == Unrestricted) return true;
-        if (lhs == Linear) return true;
-        return false;
-    }
+bool operator<=(Qualifier lhs, Qualifier rhs) {
+    return lhs == rhs || lhs < rhs;
+}
 
-    bool operator<=(URAL lhs, URAL rhs) {
-        return lhs == rhs || lhs < rhs;
+std::ostream& operator<<(std::ostream& ostream, const Qualifier s) {
+    switch (s) {
+    case Qualifier::Unrestricted:
+        return ostream << ""; //ᵁ
+    case Qualifier::Affine:
+        return ostream << "ᴬ";
+    case Qualifier::Relevant:
+        return ostream << "ᴿ";
+    case Qualifier::Linear:
+        return ostream << "ᴸ";
+    default:
+        THORIN_UNREACHABLE;
     }
+}
 
-    std::ostream& operator<<(std::ostream& ostream, const URAL s) {
-        switch (s) {
-        case Unrestricted:
-            return ostream << ""; //ᵁ
-        case Affine:
-            return ostream << "ᴬ";
-        case Relevant:
-            return ostream << "ᴿ";
-        case Linear:
-            return ostream << "ᴸ";
-        default:
-            THORIN_UNREACHABLE;
-        }
-    }
+Qualifier meet(Qualifier lhs, Qualifier rhs) {
+    return Qualifier(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
 
-    URAL meet(URAL lhs, URAL rhs) {
-        return URAL(static_cast<int>(lhs) | static_cast<int>(rhs));
-    }
-
-    URAL meet(const Defs& defs) {
-        return std::accumulate(defs.begin(), defs.end(), Unrestricted,
-                               [](URAL q, const Def* const def) {
-                                   return def ? meet(q, def->qualifier()) : q;});
-    }
+Qualifier meet(const Defs& defs) {
+    return std::accumulate(defs.begin(), defs.end(), Qualifier::Unrestricted,
+                            [](Qualifier q, const Def* const def) {
+                                return def ? meet(q, def->qualifier()) : q;});
 }
 
 //------------------------------------------------------------------------------
@@ -164,25 +158,25 @@ Lambda::Lambda(World& world, const Pi* type, const Def* body, Debug dbg)
     : Constructor(world, Tag::Lambda, type, {body}, dbg)
 {}
 
-Pi::Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, Debug dbg)
+Pi::Pi(World& world, Defs domains, const Def* body, Qualifier q, Debug dbg)
     : Quantifier(world, Tag::Pi, body->type()->is_universe() ? (const Def*) world.universe(q) : world.star(q),
                  concat(domains, body), dbg)
 {}
 
-Sigma::Sigma(World& world, size_t num_ops, Qualifier::URAL q, Debug dbg)
+Sigma::Sigma(World& world, size_t num_ops, Qualifier q, Debug dbg)
     : Sigma(world, world.universe(q), num_ops, dbg)
 {}
 
-Star::Star(World& world, Qualifier::URAL q)
+Star::Star(World& world, Qualifier q)
     : Def(world, Tag::Star, world.universe(q), Defs(), {"*"})
 {}
 
-const Def* Quantifier::max_type(World& world, Defs ops, Qualifier::URAL q) {
+const Def* Quantifier::max_type(World& world, Defs ops, Qualifier q) {
     auto qualifier = Qualifier::Unrestricted;
     auto is_kind = false;
     for (auto op : ops) {
         assert(op->type() && "Type universes shouldn't be operands");
-        qualifier = Qualifier::meet(qualifier, op->type()->qualifier());
+        qualifier = meet(qualifier, op->type()->qualifier());
         is_kind |= op->type()->is_kind();
     }
     assert(q <= qualifier &&

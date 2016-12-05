@@ -36,12 +36,12 @@ int main()  {
         auto s32w = w.integer(32, ITypeFlags::sw);
         auto a = w.axiom(s32w, {"a"});
         auto b = w.axiom(s32w, {"b"});
-        auto add = w.app(w.app(w.iadd(), {n32, w.nat(3)}), {a, b});
-        auto mul = w.app(w.app(w.imul(), {n32, w.nat(3)}), {a, b});
-        add->dump();
-        add->type()->dump();
-        mul->dump();
-        mul->type()->dump();
+        //auto add = w.app(w.app(w.iadd(), {n32, w.nat(3)}), {a, b});
+        //auto mul = w.app(w.app(w.imul(), {n32, w.nat(3)}), {a, b});
+        //add->dump();
+        //add->type()->dump();
+        //mul->dump();
+        //mul->type()->dump();
         w.mem()->dump();
 
         auto load = w.axiom(w.pi(w.star(), w.pi({w.mem(), w.ptr(w.var(w.star(), 1))}, w.sigma({w.mem(), w.var(w.star(), 2)}))), {"load"});

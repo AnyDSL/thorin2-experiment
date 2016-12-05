@@ -68,7 +68,7 @@ World::World()
 #endif
 {}
 
-const Pi* World::pi(Defs domains, const Def* body, Qualifier::URAL q, Debug dbg) {
+const Pi* World::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
     if (domains.size() == 1 && domains.front()->type()) {
         if (auto sigma = domains.front()->type()->isa<Sigma>())
             return pi(sigma->ops(), body, q, dbg);
@@ -82,7 +82,7 @@ const Lambda* World::pi_lambda(const Pi* pi, const Def* body, Debug dbg) {
     return unify<Lambda>(1, *this, pi, body, dbg);
 }
 
-const Def* single_qualified(Defs defs, Qualifier::URAL q) {
+const Def* single_qualified(Defs defs, Qualifier q) {
     assert(defs.size() == 1);
     auto single = defs.front();
     // TODO if we use automatic qualifier coercion/subtyping, need to allow it here as well
@@ -90,7 +90,7 @@ const Def* single_qualified(Defs defs, Qualifier::URAL q) {
     return single;
 }
 
-const Def* World::sigma(Defs defs, Qualifier::URAL q, Debug dbg) {
+const Def* World::sigma(Defs defs, Qualifier q, Debug dbg) {
     if (defs.size() == 1) { return single_qualified(defs, q); }
 
     return unify<Sigma>(defs.size(), *this, defs, q, dbg);
@@ -132,7 +132,7 @@ const Def* World::extract(const Def* def, size_t index, Debug dbg) {
     return unify<Extract>(1, *this, type, def, index, dbg);
 }
 
-const Def* World::intersection(Defs defs, Qualifier::URAL q, Debug dbg) {
+const Def* World::intersection(Defs defs, Qualifier q, Debug dbg) {
     if (defs.size() == 1) { return single_qualified(defs, q); }
 
     // TODO check disjunct defs during a later type checking step or now?
@@ -157,7 +157,7 @@ const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
     return unify<Pick>(1, *this, type, def, dbg);
 }
 
-const Def* World::variant(Defs defs, Qualifier::URAL q, Debug dbg) {
+const Def* World::variant(Defs defs, Qualifier q, Debug dbg) {
     if (defs.size() == 1) { return single_qualified(defs, q); }
 
     return unify<Variant>(defs.size(), *this, defs, q, dbg);

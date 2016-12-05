@@ -100,23 +100,20 @@ Array<const Def*> unique_gid_sorted(Defs defs);
 
 //------------------------------------------------------------------------------
 
-namespace Qualifier {
-    enum URAL {
-        Unrestricted,
-        Affine   = 1 << 0,
-        Relevant = 1 << 1,
-        Linear = Affine | Relevant,
-    };
+enum class Qualifier {
+    Unrestricted,
+    Affine   = 1 << 0,
+    Relevant = 1 << 1,
+    Linear = Affine | Relevant,
+};
 
-    bool operator==(URAL lhs, URAL rhs);
-    bool operator<(URAL lhs, URAL rhs);
-    bool operator<=(URAL lhs, URAL rhs);
+bool operator<(Qualifier lhs, Qualifier rhs);
+bool operator<=(Qualifier lhs, Qualifier rhs);
 
-    std::ostream& operator<<(std::ostream& ostream, const URAL q);
+std::ostream& operator<<(std::ostream& ostream, const Qualifier q);
 
-    URAL meet(URAL lhs, URAL rhs);
-    URAL meet(const Defs& defs);
-}
+Qualifier meet(Qualifier lhs, Qualifier rhs);
+Qualifier meet(const Defs& defs);
 
 //------------------------------------------------------------------------------
 
@@ -217,11 +214,11 @@ public:
     bool is_term() const { return sort() == Term; }
     bool is_closed() const { return closed_; }
 
-    Qualifier::URAL qualifier() const { return type() ? type()->qualifier() : Qualifier::URAL(qualifier_); }
-    bool is_unrestricted() const { return qualifier() & Qualifier::Unrestricted; }
-    bool is_affine() const       { return qualifier() & Qualifier::Affine; }
-    bool is_relevant() const     { return qualifier() & Qualifier::Relevant; }
-    bool is_linear() const       { return qualifier() & Qualifier::Linear; }
+    Qualifier qualifier() const { return type() ? type()->qualifier() : Qualifier(qualifier_); }
+    bool is_unrestricted() const { return int(qualifier()) & int(Qualifier::Unrestricted); }
+    bool is_affine() const       { return int(qualifier()) & int(Qualifier::Affine); }
+    bool is_relevant() const     { return int(qualifier()) & int(Qualifier::Relevant); }
+    bool is_linear() const       { return int(qualifier()) & int(Qualifier::Linear); }
 
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
@@ -247,7 +244,7 @@ protected:
         mutable const Def* cache_;  ///< Used by @p App.
         size_t index_;              ///< Used by @p Var, @p Extract.
         Box box_;                   ///< Used by @p Axiom.
-        Qualifier::URAL qualifier_; ///< Used by @p Universe.
+        Qualifier qualifier_; ///< Used by @p Universe.
     };
 
 private:
@@ -293,7 +290,7 @@ protected:
         : Def(world, tag, type, ops, dbg)
     {}
 
-    static const Def* max_type(World&, Defs, Qualifier::URAL = Qualifier::Unrestricted);
+    static const Def* max_type(World&, Defs, Qualifier = Qualifier::Unrestricted);
 };
 
 class Constructor : public Def {
@@ -328,7 +325,7 @@ public:
 
 class Pi : public Quantifier {
 private:
-    Pi(World& world, Defs domains, const Def* body, Qualifier::URAL q, Debug dbg);
+    Pi(World& world, Defs domains, const Def* body, Qualifier q, Debug dbg);
 
 public:
     const Def* domain() const;
@@ -389,12 +386,12 @@ public:
 class Sigma : public Quantifier {
 private:
     /// Nominal Sigma kind
-    Sigma(World& world, size_t num_ops, Qualifier::URAL q, Debug dbg);
+    Sigma(World& world, size_t num_ops, Qualifier q, Debug dbg);
     /// Nominal Sigma type, \a type is some Star/Universe
     Sigma(World& world, const Def* type, size_t num_ops, Debug dbg)
         : Quantifier(world, Tag::Sigma, type, num_ops, dbg)
     {}
-    Sigma(World& world, Defs ops, Qualifier::URAL q, Debug dbg)
+    Sigma(World& world, Defs ops, Qualifier q, Debug dbg)
         : Quantifier(world, Tag::Sigma, max_type(world, ops, q), ops, dbg)
     {}
 
@@ -451,7 +448,7 @@ private:
 
 class Intersection : public Quantifier {
 private:
-    Intersection(World& world, Defs ops, Qualifier::URAL q, Debug dbg)
+    Intersection(World& world, Defs ops, Qualifier q, Debug dbg)
         : Quantifier(world, Tag::Intersection, max_type(world, ops, q), gid_sorted(ops), dbg)
     {}
 
@@ -501,7 +498,7 @@ private:
 
 class Variant : public Quantifier {
 private:
-    Variant(World& world, Defs ops, Qualifier::URAL q, Debug dbg)
+    Variant(World& world, Defs ops, Qualifier q, Debug dbg)
         : Quantifier(world, Tag::Variant, max_type(world, ops, q), gid_sorted(ops), dbg)
     {}
 
@@ -561,7 +558,7 @@ private:
 
 class Star : public Def {
 private:
-    Star(World& world, Qualifier::URAL q);
+    Star(World& world, Qualifier q);
 
 public:
     std::ostream& stream(std::ostream&) const override;
@@ -575,7 +572,7 @@ private:
 
 class Universe : public Def {
 private:
-    Universe(World& world, Qualifier::URAL q)
+    Universe(World& world, Qualifier q)
         : Def(world, Tag::Universe, nullptr, 0, {"□"})
     {
         qualifier_ = q;
