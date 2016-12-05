@@ -53,14 +53,14 @@ void Def::resize(size_t num_ops) {
 
 Def::Sort Def::sort() const {
     if (!type())
-        return Universe;
+        return Sort::Universe;
     else if (!type()->type())
-        return Kind;
+        return Sort::Kind;
     else if (!type()->type()->type())
-        return Type;
+        return Sort::Type;
     else {
         assert(!type()->type()->type()->type());
-        return Term;
+        return Sort::Term;
     }
 }
 

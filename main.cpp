@@ -36,6 +36,8 @@ int main()  {
         auto s32w = w.integer(32, ITypeFlags::sw);
         auto a = w.axiom(s32w, {"a"});
         auto b = w.axiom(s32w, {"b"});
+        a->dump();
+        b->dump();
         //auto add = w.app(w.app(w.iadd(), {n32, w.nat(3)}), {a, b});
         //auto mul = w.app(w.app(w.imul(), {n32, w.nat(3)}), {a, b});
         //add->dump();

@@ -141,7 +141,7 @@ public:
         Num
     };
 
-    enum Sort {
+    enum class Sort {
         Term, Type, Kind, Universe
     };
 
@@ -208,10 +208,10 @@ public:
     void replace(const Def*) const;
     /// A nominal @p Def is always different from each other @p Def.
     bool is_nominal() const { return nominal_; }
-    bool is_universe() const { return sort() == Universe; }
-    bool is_kind() const { return sort() == Kind; }
-    bool is_type() const { return sort() == Type; }
-    bool is_term() const { return sort() == Term; }
+    bool is_universe() const { return sort() == Sort::Universe; }
+    bool is_kind() const { return sort() == Sort::Kind; }
+    bool is_type() const { return sort() == Sort::Type; }
+    bool is_term() const { return sort() == Sort::Term; }
     bool is_closed() const { return closed_; }
 
     Qualifier qualifier() const { return type() ? type()->qualifier() : Qualifier(qualifier_); }
