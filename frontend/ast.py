@@ -264,6 +264,31 @@ class Lambda(AstNode):
 		return ([param_vars, body_vars], body_accepted, body_possible)
 
 
+class LambdaNominal(Lambda):
+	# ops = param, returntype, [body]
+	def __init__(self, ops):
+		if len(ops) == 2:
+			ops.append(None)
+		Lambda.__init__(self, ops)
+
+	def set_body(self, body):
+		self.ops[2] = body
+		
+	def __str__(self):
+		return 'λ rec ('+str(self.ops[0].name)+':'+str(self.ops[0].ops[0])+'): '+str(self.ops[1])
+
+	def get_type(self):
+		return Pi([self.ops[0], self.ops[1]])
+
+	def subst(self, name, value):
+		raise Exception('TODO')
+
+	def get_constraints(self):
+		raise Exception('???')
+
+
+
+
 
 class Pi(AstNode):
 	# ops = param, body

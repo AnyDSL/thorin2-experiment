@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
-from pypeg2 import *
 import re
+from Queue import Queue
+from pypeg2 import *
 import ast
 
 """
@@ -137,6 +138,24 @@ class CppCodeGen:
 		return warnings
 
 
+class AstCreator:
+	def __init__(self):
+		self.queue = Queue()
+		self.seen = [] # set does not work, as nodes are unhashable / mutable
+
+	def append(self, node, scope, callback):
+		if node not in self.seen:
+			self.seen.append(node)
+			self.queue.put((node, scope, callback))
+
+	def progress_all(self):
+		while not self.queue.empty():
+			node, scope, callback = self.queue.get()
+			obj = node.to_ast(scope, self)
+			callback(obj)
+
+
+
 
 class LambdaAST:
 	"""
@@ -185,7 +204,7 @@ class Identifier(str, LambdaAST):
 	def __repr__(self):
 		return 'Identifier('+repr(self.name)+')'
 
-	def to_ast(self, scope):
+	def to_ast(self, scope, astcreator):
 		if self.name not in scope.vars:
 			asm = ast.get_assumption(self.name)
 			if asm:
@@ -209,7 +228,7 @@ class Constant(Symbol, LambdaAST):
 		else:
 			return self.name
 
-	def to_ast(self, scope):
+	def to_ast(self, scope, astcreator):
 		return ast.get_constant(self.name)
 
 
@@ -228,11 +247,11 @@ class Tupel(List, LambdaAST):
 				tuple = 'w.tuple('+tuple+')'
 			return tuple
 
-	def to_ast(self, scope):
+	def to_ast(self, scope, astcreator):
 		if len(self) == 1:
-			return self[0].to_ast(scope)
+			return self[0].to_ast(scope, astcreator)
 		else:
-			return ast.Tupel([element.to_ast(scope) for element in self])
+			return ast.Tupel([element.to_ast(scope, astcreator) for element in self])
 
 
 class Lambda(Plain, LambdaAST):
@@ -245,10 +264,10 @@ class Lambda(Plain, LambdaAST):
 		paramtype = self.type.to_cpp(scope, codegen, {'accept_inline_tuple':True})
 		return 'w.lambda('+paramtype+', '+self.body.to_cpp(scope.push_param(self.name, self.type), codegen)+')'
 
-	def to_ast(self, scope):
-		tp = self.type.to_ast(scope)
+	def to_ast(self, scope, astcreator):
+		tp = self.type.to_ast(scope, astcreator)
 		param = ast.ParamDef(self.name, tp)
-		return ast.Lambda([param, self.body.to_ast(scope.push_param(self.name, param))])
+		return ast.Lambda([param, self.body.to_ast(scope.push_param(self.name, param), astcreator)])
 
 
 class LambdaRec(Plain, LambdaAST):
@@ -294,8 +313,15 @@ class LambdaRec(Plain, LambdaAST):
 		codegen.set_unknown_identifiers_list(old_unknown)
 		return result
 
-	def to_ast(self, scope):
-		raise Exception('TODO')
+	def to_ast(self, scope, astcreator):
+		tp = self.type.to_ast(scope, astcreator)
+		param = ast.ParamDef(self.param.thing, tp)
+		scope.add_definition(self.name, self)
+		pscope = scope.push_param(self.param.thing, param)
+		result = ast.LambdaNominal([param, self.returntype.to_ast(pscope, astcreator)])
+		# enqueue body
+		astcreator.append(self.body, pscope, lambda n: result.set_body(n))
+		return result
 
 
 class Pi(Plain, LambdaAST):
@@ -319,10 +345,10 @@ class Pi(Plain, LambdaAST):
 		paramtype = self.type.to_cpp(scope, codegen, {'accept_inline_tuple':True})
 		return 'w.pi('+paramtype+', '+self.body.to_cpp(scope.push_param(self.name, self.type), codegen)+')'
 
-	def to_ast(self, scope):
-		tp = self.type.to_ast(scope)
+	def to_ast(self, scope, astcreator):
+		tp = self.type.to_ast(scope, astcreator)
 		param = ast.ParamDef(self.name, tp)
-		return ast.Pi([param, self.body.to_ast(scope.push_param(self.name, ast.ParamDef(self.name, tp)))])
+		return ast.Pi([param, self.body.to_ast(scope.push_param(self.name, ast.ParamDef(self.name, tp)), astcreator)])
 
 
 class Extract(List, LambdaAST):
@@ -343,8 +369,8 @@ class Extract(List, LambdaAST):
 			result = 'w.extract('+result+', '+index+')'
 		return result
 
-	def to_ast(self, scope):
-		result = self.base.to_ast(scope)
+	def to_ast(self, scope, astcreator):
+		result = self.base.to_ast(scope, astcreator)
 		for index in self:
 			result = ast.Extract([result, index])
 		return result
@@ -368,8 +394,11 @@ class SpecialApp(Plain, LambdaAST):
 		else:
 			raise Exception("Unknown special function ("+str(self.func)+")")
 
-	def to_ast(self, scope):
-		return self.param.to_ast(scope)
+	def to_ast(self, scope, astcreator):
+		tpl = self.param.to_ast(scope, astcreator)
+		if self.func.name == 'sigma':
+			return ast.Sigma(tpl.ops)
+		return tpl
 
 
 
@@ -415,10 +444,10 @@ class App(List, LambdaAST):
 			result += '@'+repr(param)
 		return result + ')'
 
-	def to_ast(self, scope):
-		result = self.func.to_ast(scope)
+	def to_ast(self, scope, astcreator):
+		result = self.func.to_ast(scope, astcreator)
 		for param in self:
-			result = ast.App([result, param.to_ast(scope)])
+			result = ast.App([result, param.to_ast(scope, astcreator)])
 		return result
 
 
@@ -434,8 +463,8 @@ class InnerDefinition(Plain, LambdaAST):
 		scope.add_definition(self.name)
 		codegen.add_decl(self.name, 'auto '+self.name+' = '+body+';')
 
-	def to_ast(self, scope):
-		body = self.body.to_ast(scope)
+	def to_ast(self, scope, astcreator):
+		body = self.body.to_ast(scope, astcreator)
 		scope.add_definition(self.name, body)
 		return [(self.name, body)]
 
@@ -465,8 +494,8 @@ class Assumption(Plain, LambdaAST):
 		codegen.progress_depending()
 		codegen.add_blank()
 
-	def to_ast(self, scope):
-		assumption = ast.Assume([self.name, self.body.to_ast(scope)])
+	def to_ast(self, scope, astcreator):
+		assumption = ast.Assume([self.name, self.body.to_ast(scope, astcreator)])
 		scope.add_definition(self.name, assumption)
 		return [(self.name, assumption)]
 
@@ -477,7 +506,7 @@ class Comment(str, LambdaAST):
 	def to_cpp(self, scope, codegen, opts={}):
 		return ''
 
-	def to_ast(self, scope):
+	def to_ast(self, scope, astcreator):
 		return []
 
 
@@ -493,6 +522,14 @@ class LetIn(List, LambdaAST):
 		for definition in self:
 			definition.to_cpp(inner_scope, codegen)
 		return self.expr.to_cpp(inner_scope, codegen)
+
+	def to_ast(self, scope, astcreator):
+		inner_scope = scope.push()
+		for definition in self:
+			# this also adds the created nodes to inner_scope
+			definition.to_ast(inner_scope, astcreator)
+		return self.expr.to_ast(inner_scope, astcreator)
+
 
 
 Expression.extend([LambdaRec, Lambda, Pi, LetIn, App])
@@ -516,9 +553,11 @@ class Program(List, LambdaAST):
 
 	def to_ast(self):
 		scope = Scope()
+		astcreator = AstCreator()
 		defs = []
 		for x in self:
-			defs += x.to_ast(scope)
+			defs += x.to_ast(scope, astcreator)
+		astcreator.progress_all()
 		return defs
 
 

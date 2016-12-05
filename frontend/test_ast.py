@@ -64,6 +64,22 @@ define matrixDot = lambda n:Nat. lambda m:Nat. lambda o:Nat. lambda M1: MatrixTy
 		);
 '''
 
+CODE4 = '''
+assume opAddNat: (Nat,Nat)->Nat;
+
+define test1 = lambda n:Nat. let
+		define a = n;
+		define b = a;
+		define c = opAddNat (a, b);
+	in (n, a, b, c) end;
+
+define test2 = lambda rec (n:Nat): sigma(Nat, Nat, Nat, Nat). let
+		define a = n;
+		define b = a;
+		define c = opAddNat a b;
+	in (n, a, b, c) end;
+'''
+
 
 def type_manually():
 	# manual typing
@@ -161,6 +177,7 @@ def type_manually():
 
 CODE += CODE2
 CODE += CODE3
+CODE = CODE4
 prog = lambdaparser.parse_lambda_code(CODE)
 print prog
 nodes = prog.to_ast()
