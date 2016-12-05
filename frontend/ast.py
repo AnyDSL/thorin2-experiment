@@ -25,7 +25,9 @@ def set_join(a, b):
 	space = isl.Space.create_from_names(ctx, set=vars)
 	result = isl.BasicSet.universe(space)
 	for constraint in a.get_constraints():
-		result.add_constraint(clone_constraint(space, constraint))
+		result = result.add_constraint(clone_constraint(result.space, constraint))
+	for constraint in b.get_constraints():
+		result = result.add_constraint(clone_constraint(result.space, constraint))
 	return result
 
 def clone_constraint(space, constraint):
@@ -284,7 +286,13 @@ class LambdaNominal(Lambda):
 		raise Exception('TODO')
 
 	def get_constraints(self):
-		raise Exception('???')
+		print '[WARN] Constraint checker did not inspect nominal lambda', self
+		param_vars = self.ops[0].get_nat_variables()
+		result_vars = self.ops[1].get_nat_variables()
+		vars = [param_vars, result_vars]
+		bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=flatten(vars)))
+		return (vars, bset, bset)
+
 
 
 

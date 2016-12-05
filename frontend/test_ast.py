@@ -56,7 +56,7 @@ CODE3 = '''
 define matrixDot = lambda n:Nat. lambda m:Nat. lambda o:Nat. lambda M1: MatrixType n m. lambda M2: MatrixType m o.
 		ArrCreate (n, lambda _:Nat. UArrT (o, Float)) (
 			lambda i:Nat. ArrCreate (o, lambda _:Nat. Float) (lambda j: Nat.
-				sum n (lambda k: Nat. opFloatMult(
+				sum m (lambda k: Nat. opFloatMult(
 					(ArrGet (m, lambda _:Nat. Float) (ArrGet (n, lambda _:Nat. UArrT (m, Float)) M1 i) k),
 					(ArrGet (o, lambda _:Nat. Float) (ArrGet (m, lambda _:Nat. UArrT (m, Float)) M1 k) j)
 				))
@@ -177,7 +177,7 @@ def type_manually():
 
 CODE += CODE2
 CODE += CODE3
-CODE = CODE4
+#CODE = CODE4
 prog = lambdaparser.parse_lambda_code(CODE)
 print prog
 nodes = prog.to_ast()
