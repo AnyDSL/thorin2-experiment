@@ -137,11 +137,13 @@ public:
     const Axiom* boolean_bot(Qualifier::URAL q = Qualifier::Unrestricted) { return booleans_[0][q]; }
     const Axiom* boolean_top(Qualifier::URAL q = Qualifier::Unrestricted) { return booleans_[1][q]; }
 
-    const Axiom* integer() { return integer_; }
-    const Def* integer(const Def* width, const Def* flags) { return app(integer(), {width, flags}); }
-    const Def* integer(int64_t width, ITypeFlags flags) {
+    const Axiom* integer(Qualifier::URAL q = Qualifier::Unrestricted) { return integer_[q]; }
+    const Def* integer(const Def* width, const Def* flags, Qualifier::URAL q = Qualifier::Unrestricted) {
+        return app(integer(q), {width, flags});
+    }
+    const Def* integer(int64_t width, ITypeFlags flags, Qualifier::URAL q = Qualifier::Unrestricted) {
         auto f = nat(int64_t(flags));
-        return app(integer_, {nat(width), f});
+        return app(integer(q), {nat(width), f});
     }
 
     const Axiom* real() { return real_; }
@@ -149,10 +151,10 @@ public:
 
     const Axiom* mem() const { return mem_; }
 
-    const Def* ptr(const Def* referenced_type, const Def* addr_space) {
-        return app(ptr_, {referenced_type, addr_space});
+    const Def* ptr(const Def* pointee, const Def* addr_space) {
+        return app(ptr_, {pointee, addr_space});
     }
-    const Def* ptr(const Def* referenced_type) { return ptr(referenced_type, nat0()); }
+    const Def* ptr(const Def* pointee) { return ptr(pointee, nat0()); }
 
 #define CODE(x, y) \
     const App* type_ ## x(Qualifier::URAL q = Qualifier::Unrestricted) { return type_ ## x ## _[q]; } \
@@ -266,7 +268,7 @@ protected:
     const std::array<std::array<const Axiom*, 4>, 8> nats_;
     const std::array<const Axiom*, 4> boolean_;
     const std::array<std::array<const Axiom*, 4>, 2> booleans_;
-    const Axiom* integer_;
+    const std::array<const Axiom*, 4> integer_;
     const Axiom* real_;
     const Axiom* mem_;
     const Axiom* frame_;

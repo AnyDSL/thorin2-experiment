@@ -33,7 +33,10 @@ World::World()
                     boolean(false, Qualifier::Relevant), boolean(false, Qualifier::Linear)}},
                   {{boolean( true, Qualifier::Unrestricted), boolean( true, Qualifier::Affine),
                     boolean( true, Qualifier::Relevant), boolean( true, Qualifier::Linear)}}}})
-    , integer_(axiom(pi({nat(), nat()}, star()),{"int"}))
+    , integer_({axiom(pi({nat(), nat()}, star(Qualifier::Unrestricted)), {"int"}),
+                axiom(pi({nat(), nat()}, star(Qualifier::Affine      )), {"int"}),
+                axiom(pi({nat(), nat()}, star(Qualifier::Relevant    )), {"int"}),
+                axiom(pi({nat(), nat()}, star(Qualifier::Linear      )), {"int"})})
     , real_(axiom(pi({nat(), boolean()}, star()),{"real"}))
     , mem_(axiom(star(Qualifier::Linear),{"M"}))
     , frame_(axiom(star(Qualifier::Linear),{"F"}))
@@ -53,6 +56,7 @@ World::World()
     //, rcmpop_type_(pi({nat(), boolean()}, pi(nat(), pi({
             //real(var(nat(), 2), var(boolean(), 1)),
             //real(var(nat(), 3), var(boolean(), 2))}, type_uo1()))))
+#if 0
 #define CODE(x) \
     , x ## _(axiom(iarithop_type_, {# x}))
     THORIN_I_ARITHOP(CODE)
@@ -61,6 +65,7 @@ World::World()
     , x ## _(axiom(rarithop_type_, {# x}))
     THORIN_R_ARITHOP(CODE)
 #undef CODE
+#endif
 {}
 
 const Pi* World::pi(Defs domains, const Def* body, Qualifier::URAL q, Debug dbg) {
