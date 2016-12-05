@@ -155,17 +155,19 @@ public:
     const Def* ptr(const Def* referenced_type) { return ptr(referenced_type, nat0()); }
 
 #define CODE(x, y) \
-    const App* type_ ## x() { return type_ ## x ## _; } \
-    const Axiom* literal_ ## x(y val) { return assume(type_ ## x ## _, {val}, {std::to_string(val)}); }
+    const App* type_ ## x(Qualifier::URAL q = Qualifier::Unrestricted) { return type_ ## x ## _[q]; } \
+    const Axiom* literal_ ## x(y val, Qualifier::URAL q = Qualifier::Unrestricted) { \
+        return assume(type_ ## x(q), {val}, {std::to_string(val)}); \
+    }
     THORIN_I_TYPE(CODE)
-    THORIN_R_TYPE(CODE)
+    //THORIN_R_TYPE(CODE)
 #undef CODE
 
 #define CODE(x) \
     const Axiom* x() { return x ## _; } \
     const App* x(const Def*, const Def*) { return nullptr; }
     THORIN_I_ARITHOP(CODE)
-    THORIN_R_ARITHOP(CODE)
+    //THORIN_R_ARITHOP(CODE)
 #undef CODE
 
     const DefSet& defs() const { return defs_; }
@@ -289,11 +291,11 @@ protected:
     union {
         struct {
 #define CODE(x, y) \
-            const App* type_ ## x ## _;
+            const std::array<const App*, 4> type_ ## x ## _;
             THORIN_I_TYPE(CODE)
 #undef CODE
         };
-        const App* integers_[size_t(IType::Num)];
+        const std::array<const std::array<const App*,  size_t(IType::Num)>, 4> integers_;
     };
 
     union {
