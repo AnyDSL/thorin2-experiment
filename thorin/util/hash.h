@@ -130,6 +130,7 @@ private:
             swap(i1.id_,    i2.id_);
 #endif
         }
+        pointer ptr() const { assert(this->table_->id_ == this->id_); return ptr_; }
 
     private:
         static iterator_base skip(value_type* ptr, const HashTable* table) {

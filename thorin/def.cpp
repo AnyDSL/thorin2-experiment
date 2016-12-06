@@ -1,3 +1,5 @@
+#include <stack>
+
 #include "thorin/def.h"
 #include "thorin/world.h"
 
@@ -256,11 +258,14 @@ const Def* All         ::rebuild(World& to, const Def*  , Defs ops) const { retu
 const Def* Any         ::rebuild(World& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App         ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
 const Def* Extract     ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], index(), debug()); }
-const Def* Axiom       ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
+const Def* Axiom       ::rebuild(World& to, const Def* t, Defs    ) const {
+    assert(!is_nominal());
+    return to.assume(t, box(), debug());
+}
 const Def* Error       ::rebuild(World& to, const Def* t, Defs    ) const { return to.error(t); }
 const Def* Intersection::rebuild(World& to, const Def*  , Defs ops) const { return to.intersection(ops, debug()); }
 const Def* Match       ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
-const Def* Lambda      ::rebuild(World& to, const Def*  , Defs ops) const {
+const Def* Lambda      ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     assert(!is_nominal());
     return to.pi_lambda(t->as<Pi>(), ops.front(), debug());
@@ -270,46 +275,116 @@ const Def* Pick        ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* Sigma       ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is_nominal()); return to.sigma(ops, qualifier(), debug()); }
+const Def* Sigma       ::rebuild(World& to, const Def*  , Defs ops) const {
+    assert(!is_nominal());
+    return to.sigma(ops, qualifier(), debug());
+}
 const Def* Star        ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
 const Def* Tuple       ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
 const Def* Universe    ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
 const Def* Var         ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
 const Def* Variant     ::rebuild(World& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
 
-Assume* Assume::stub(World& to, const Def* type) const {
+Axiom* Axiom::stub(World& to, const Def* type) const {
     assert(&world() != &to);
-    return const_cast<Assume*>(this);
+    assert(is_nominal());
+    return const_cast<Axiom*>(this);
 }
 Lambda* Lambda::stub(World& to, const Def* type) const { return to.pi_lambda(type->as<Pi>(), name()); }
 Sigma* Sigma::stub(World& to, const Def* type) const { return to.sigma(num_ops(), type, name()); }
+
 //------------------------------------------------------------------------------
 
 /*
  * reduce
  */
 
-const Def* reduce(const Def* body, Defs args) {
-    size_t num_args = args.size();
-    Def2Def nominals;
-    Def2Def map;
-    for (size_t i = 0; i < num_args; ++i) {
-        body = body->substitute(nominals, map, num_args - 1 - i, {args[i]});
+class NominalSubstitution {
+public:
+    NominalSubstitution(const NominalSubstitution&) = default;
+    NominalSubstitution(NominalSubstitution&&) = default;
+    NominalSubstitution& operator=(NominalSubstitution&&) = default;
+
+    NominalSubstitution() : nominal_(nullptr), index_(0), replacement_(nullptr) {}
+    NominalSubstitution(const Def* n, size_t i, Def* r)
+        : nominal_(n), index_(i), replacement_(r)
+    {}
+
+    bool operator==(const NominalSubstitution& b) const {
+        return nominal_ == b.nominal_ && index_ == b.index_;
     }
-    return body;
-}
+
+    const Def* nominal() const { return nominal_; }
+    size_t index() const { return index_; }
+    Def* replacement() const { return replacement_; }
+
+private:
+    const Def* nominal_;
+    size_t index_;
+    Def* replacement_;
+};
+
+class NominalSubstitutionHash {
+public:
+    static uint64_t hash(const NominalSubstitution& s) {
+        return hash_combine(hash_begin(), s.nominal(), s.index());
+    }
+    static bool eq(const NominalSubstitution& a, const NominalSubstitution& b) { return a == b; }
+    static NominalSubstitution sentinel() { return NominalSubstitution(); }
+};
+
+typedef thorin::HashSet<NominalSubstitution, NominalSubstitutionHash> NominalSubs;
+typedef std::stack<NominalSubstitution> NominalSubsTodo;
 
 const Def* Pi::reduce(Defs args) const {
     assert(args.size() == num_domains());
-    return thorin::reduce(body(), args);
+    Def2Def map;
+    // TODO might we need the nominal stuff here as well?
+    return body()->substitute(map, 0, args);
 }
 
 const Def* Lambda::reduce(Defs args) const {
     assert(args.size() == num_domains());
-    if (is_nominal()) {
-        // TODO Worklist algorithm for this and substitute
+    return world().app(this, args);
+}
+
+const Def* App::try_reduce() const {
+    if (cache_)
+        return cache_;
+    // Can only really reduce if it's not an Assume of Pi type
+    if (auto lambda = callee()->isa<Lambda>()) {
+        if  (!lambda->is_closed()) {
+            // do not set cache here as a real reduce attempt might be made later when the lambda is closed
+            return this;
+        }
+        // TODO can't reduce if args types don't match the domains
+        auto args = ops().skip_front();
+        size_t num_args = args.size();
+
+        Def2Def map;
+        NominalSubs nominals;
+        NominalSubsTodo todo;
+
+        auto reduced = lambda->body()->substitute(nominals, todo, map, 0, args);
+        cache_ = reduced; // possibly an unclosed Def
+
+        while (!todo.empty()) {
+            const auto& subst = todo.top();
+            todo.pop();
+            auto nominal = subst.nominal();
+            auto replacement = subst.replacement();
+            if (replacement == nullptr || replacement->is_closed()) // XXX why is_closed?
+                continue;
+            auto set_new_op = [&] (size_t op_index, const Def* op, size_t indexed_index) {
+                Def2Def map;
+                auto new_op = op->substitute(nominals, todo, map, indexed_index, args);
+                replacement->set(op_index, new_op);
+            };
+            nominal->foreach_op_index(subst.index(), set_new_op);
+        }
+        return reduced;
     }
-    return thorin::reduce(body(), args);
+    return cache_ = this;
 }
 
 //------------------------------------------------------------------------------
@@ -318,129 +393,81 @@ const Def* Lambda::reduce(Defs args) const {
  * substitute
  */
 
-// helpers
+const Def* Def::substitute(Def2Def& map, size_t shift, Defs args) const {
+    if (!has_free_var_in(shift, args.size())) {
+        map[this] = this;
+        return this;
+    }
 
-Array<const Def*> substitute(Def2Def& nominals, Def2Def& map, size_t index, Defs defs, Defs args) {
-    Array<const Def*> result(defs.size());
-    for (size_t i = 0, e = result.size(); i != e; ++i)
-        result[i] = defs[i]->substitute(nominals, map, index, args);
+    NominalSubs nominals;
+    NominalSubsTodo todo;
+    auto result = substitute(nominals, todo, map, shift, args);
+    assert(todo.empty() &&
+           "This substitute should only be used when no nominal(recursive) types must be substituted.");
+
     return result;
 }
 
-Array<const Def*> binder_substitute(Def2Def& nominals, Def2Def& map, size_t index, Defs ops, Defs args) {
-    Array<const Def*> new_ops(ops.size());
-    Def2Def new_map;
-    Def2Def* cur_map = &map;
-    for (size_t i = 0, e = new_ops.size(); i != e; ++i) {
-        new_ops[i] = ops[i]->substitute(nominals, *cur_map, index + i, args);
-        cur_map = &new_map;
-        new_map.clear();
-    }
-    return new_ops;
-}
-
-const Def* Def::substitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    if (is_nominal())
-        if (auto result = find(nominals, this))
-            return result;
-    if (auto result = find(map, this))
+const Def* Def::substitute(NominalSubs& nominals, NominalSubsTodo& todo, Def2Def& map, size_t shift,
+                           Defs args) const {
+    if (auto result = find(map, this)) {
         return result;
-    auto def = vsubstitute(nominals, map, index, args);
-    return map[this] = def;
-}
-
-// vsubstitute
-
-const Def* All::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    return world().all(thorin::substitute(nominals, map, index, ops(), args), debug());
-}
-
-const Def* Any::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    auto new_type = type()->substitute(nominals, map, index, args);
-    return world().any(new_type, def()->substitute(nominals, map, index, args), debug());
-}
-
-const Def* App::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    auto ops = thorin::substitute(nominals, map, index, this->ops(), args);
-    return world().app(ops.front(), ops.skip_front(), debug());
-}
-
-const Def* Axiom::vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const { return this; }
-
-const Def* Error::vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const { return this; }
-
-const Def* Extract::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    auto op = this->destructee()->substitute(nominals, map, index, args);
-    return world().extract(op, this->index(), debug());
-}
-
-const Def* Intersection::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    return world().intersection(thorin::substitute(nominals, map, index, ops(), args), debug());
-}
-
-const Def* Match::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    auto ops = thorin::substitute(nominals, map, index, this->ops(), args);
-    return world().match(ops.front(), ops.skip_front(), debug());
-}
-
-const Def* Lambda::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    auto new_pi = type()->substitute(nominals, map, index, args)->as<Pi>();
-    Def2Def new_map;
-    if (is_nominal()) {
-        auto lambda = world().pi_lambda(new_pi, debug());
-        nominals[this] = lambda;
-        lambda->set(body()->substitute(nominals, new_map, index + domains().size(), args));
-        return lambda;
-    } else {
-        return world().pi_lambda(new_pi, body()->substitute(nominals, new_map, index + domains().size(), args),
-                                 debug());
     }
-}
-
-const Def* Pi::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    auto new_domains = thorin::binder_substitute(nominals, map, index, domains(), args);
-    Def2Def new_map;
-    return world().pi(new_domains, body()->substitute(nominals, new_map, index + domains().size(), args),
-                      debug());
-}
-
-const Def* Pick::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    auto new_type = type()->substitute(nominals, map, index, args);
-    return world().pick(new_type, destructee()->substitute(nominals, map, index, args), debug());
-}
-
-const Def* Sigma::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
     if (is_nominal()) {
-        auto sigma = world().sigma(num_ops(), type(), debug());
-        nominals[this] = sigma;
-        auto new_operands = binder_substitute(nominals, map, index, ops(), args);
-        for (size_t i = 0, e = num_ops(); i != e; ++i)
-            sigma->set(i, new_operands[i]);
-        return sigma;
-    }  else {
-        return world().sigma(binder_substitute(nominals, map, index, ops(), args), debug());
+        auto i = nominals.find({this, shift, nullptr});
+        if (i == nominals.end()) {
+            if (!has_free_var_in(shift, args.size())) {
+                nominals.emplace(this, shift, nullptr);
+                return this;
+            }
+            auto new_type = type()->substitute(nominals, todo, map, shift, args);
+            Def* replacement = this->stub(new_type);
+            auto p = nominals.emplace(this, shift, replacement);
+            assert(p.second);
+            todo.push({this, shift, replacement});
+            return replacement;
+        } else {
+            return i->replacement() == nullptr ? i->nominal() : i->replacement();
+        }
+    } else if (!has_free_var_in(shift, args.size())) {
+        map[this] = this;
+        return this;
     }
+
+    auto new_type = type()->substitute(nominals, todo, map, shift, args);
+
+    if (auto var = this->isa<Var>()) {
+        return var->substitute(shift, args, new_type);
+    }
+    return rebuild_substitute(nominals, todo, map, shift, args, new_type);
 }
 
-const Def* Star::vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const { return this; }
-
-const Def* Tuple::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    return world().tuple(thorin::substitute(nominals, map, index, ops(), args), debug());
+const Def* Var::substitute(size_t shift, Defs args, const Def* new_type) const {
+    // The shift argument always corresponds to args.back() and thus corresponds to args.size() - 1.
+    // Map index() back into the original argument array.
+    int arg_index = args.size() - 1 - index() + shift;
+    if (arg_index >= 0 && arg_index < args.size()) {
+        // TODO replace with error instead of assert
+        assert(new_type == args[arg_index]->type());
+        return args[arg_index];
+    } else if (arg_index < 0) {
+        // this is a free variable - need to shift by args.size() for the current reduction
+        return world().var(type(), index() - args.size(), debug());
+    }
+    // this variable is not free - keep index, substitute type
+    return world().var(new_type, index(), debug());
 }
 
-const Def* Universe::vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const { return this; }
-
-const Def* Var::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    if (this->index() == index)     // substitute
-        return world().tuple(type(), args);
-    else if (this->index() > index) // this is a free variable - shift by one
-        return world().var(type(), this->index()-1, debug());
-    else                            // this variable is not free - keep index, substitute type
-        return world().var(type()->substitute(nominals, map, index, args), this->index(), debug());
-}
-
-const Def* Variant::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, Defs args) const {
-    return world().variant(thorin::substitute(nominals, map, index, ops(), args), debug());
+const Def* Def::rebuild_substitute(NominalSubs& nominals, NominalSubsTodo& todo, Def2Def& map, size_t shift,
+                                   Defs args, const Def* new_type) const {
+    Array<const Def*> new_ops(num_ops());
+    auto build_new_op = [&] (size_t op_index, const Def* op, size_t shifted_index) {
+        Def2Def map;
+        auto new_op = op->substitute(nominals, todo, map, shifted_index, args);
+        new_ops[op_index] = new_op;
+    };
+    foreach_op_index(shift, build_new_op);
+    return map[this] = this->rebuild(world(), new_type, new_ops);
 }
 
 const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
@@ -449,8 +476,8 @@ const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
     Def2Def map;
     for (size_t delta = 1; type->maybe_dependent() && delta <= index; delta++) {
         auto prev_extract = world.extract(tuple, index - delta);
-        // This also shifts any Var with index > 0 by -1
-        type = type->substitute(map, 0, prev_extract);
+        // This also indexs any Var with index > 0 by -1
+        type = type->substitute(map, 0, {prev_extract});
         map.clear();
     }
     return type;

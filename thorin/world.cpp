@@ -104,21 +104,6 @@ const Def* World::tuple(const Def* type, Defs defs, Debug dbg) {
     return unify<Tuple>(defs.size(), *this, type->as<Sigma>(), defs, dbg);
 }
 
-const Def* build_extract_type(World& world, const Def* tuple, size_t index) {
-    auto sigma = tuple->type()->as<Sigma>();
-
-    auto type = sigma->op(index);
-    Def2Def nominals;
-    Def2Def map;
-    for (size_t delta = 1; type->maybe_dependent() && delta <= index; delta++) {
-        auto prev_extract = world.extract(tuple, index - delta);
-        // This also shifts any Var with index > 0 by -1
-        type = type->substitute(nominals, map, 0, {prev_extract});
-        map.clear();
-    }
-    return type;
-}
-
 const Def* World::extract(const Def* def, size_t index, Debug dbg) {
     if (!def->type()->isa<Sigma>()) {
         assert(index == 0);
@@ -128,7 +113,7 @@ const Def* World::extract(const Def* def, size_t index, Debug dbg) {
         return tuple->op(index);
     }
 
-    auto type = build_extract_type(*this, def, index);
+    auto type = Tuple::extract_type(*this, def, index);
     return unify<Extract>(1, *this, type, def, index, dbg);
 }
 
@@ -226,17 +211,7 @@ const Def* World::app(const Def* callee, Defs args, Debug dbg) {
     auto app = unify<App>(args.size() + 1, *this, type, callee, args, dbg);
     assert(app->destructee() == callee);
 
-    if (auto cache = app->cache_)
-        return cache;
-    // Can only really reduce if it's not an Assume of Pi type
-    if (auto lambda = callee->isa<Lambda>()) {
-        if  (lambda->is_closed())
-            // TODO can't reduce if args types don't match the domains
-            return app->cache_ = lambda->reduce(args);
-    } else
-        return app->cache_ = app;
-
-    return app;
+    return app->try_reduce();
 }
 
 }

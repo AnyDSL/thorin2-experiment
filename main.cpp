@@ -14,7 +14,7 @@ int main()  {
 
     testQualifiers();
 
-    //testNominal();
+    testNominal();
 
 	testMatrix();
 
@@ -22,9 +22,6 @@ int main()  {
     auto n16 = w.nat16();
     n16->dump();
     assert(n16 == w.nat(16));
-
-    // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
-    w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 
     auto n23 = w.nat(23);
     auto n23x = w.nat(23);
@@ -48,11 +45,14 @@ int main()  {
         //mul->type()->dump();
         w.mem()->dump();
 
-        auto load = w.axiom(w.pi(w.star(), w.pi({w.mem(), w.ptr(w.var(w.star(), 1))}, w.sigma({w.mem(), w.var(w.star(), 2)}))), {"load"});
+        auto load = w.axiom(w.pi(w.star(), w.pi({w.mem(), w.ptr(w.var(w.star(), 1))}, w.sigma({w.mem(), w.var(w.star(), 3)}))), {"load"});
         load->type()->dump();
         auto x = w.axiom(w.ptr(w.nat()), {"x"});
         auto m = w.axiom(w.mem(), {"m"});
-        auto p = w.app(w.app(load, w.nat()), {m, x});
+        auto nat_load = w.app(load, w.nat());
+        nat_load->dump();
+        nat_load->type()->dump();
+        auto p = w.app(nat_load, {m, x});
         p->dump();
         p->type()->dump();
     }
@@ -64,10 +64,12 @@ int main()  {
     assert(!T_1->has_free_var(1));
     auto T_2 = w.var(w.star(), 1, {"T"});
     assert(T_2->has_free_var(1));
+    assert(T_2->has_free_var_in(1, 1));
     auto x = w.var(T_2, 0, {"x"});
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
     assert(!poly_id->has_free_var(0));
     assert(!poly_id->has_free_var(1));
+    assert(!poly_id->has_free_var_in(0, 2));
     poly_id->dump();
     poly_id->type()->dump();
 
@@ -132,4 +134,7 @@ int main()  {
     match->type()->dump();
     // TODO this should not reduce
     w.match(any_nat, {handle_bool, handle_nat})->dump();
+    // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
+    w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
+
 }

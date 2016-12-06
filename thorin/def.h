@@ -3,6 +3,7 @@
 
 #include <bitset>
 #include <numeric>
+#include <stack>
 
 #include "thorin/util/array.h"
 #include "thorin/util/debug.h"
@@ -98,6 +99,11 @@ void gid_sort(Array<const Def*>* defs);
 Array<const Def*> gid_sorted(Defs defs);
 void unique_gid_sort(Array<const Def*>* defs);
 Array<const Def*> unique_gid_sorted(Defs defs);
+
+class NominalSubstitution;
+class NominalSubstitutionHash;
+typedef thorin::HashSet<NominalSubstitution, NominalSubstitutionHash> NominalSubs;
+typedef std::stack<NominalSubstitution> NominalSubsTodo;
 
 //------------------------------------------------------------------------------
 
@@ -236,13 +242,24 @@ public:
         }
         return free_vars_[index];
     }
+    /// Whether his Def has a free variable with index in [index, index+length).
+    bool has_free_var_in(size_t index, size_t length) const {
+        if (index+length > 64)
+            // TODO check in dynamic bitset
+            assert(false && "TODO indices too large");
+        std::bitset<64> range;
+        for (auto i = 0; i < length; ++i)
+            range.set(index + i);
+        return (free_vars() & range).any();
+    }
     // TODO return (dynamic) bitset (wrapper)
     const std::bitset<64>& free_vars() const { return free_vars_; }
 
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
 
-    const Def* substitute(Def2Def&, Def2Def&, size_t, Defs) const;
+    const Def* substitute(Def2Def&, size_t, Defs) const;
+    const Def* substitute(NominalSubs&, NominalSubsTodo&, Def2Def&, size_t, Defs) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const { return stub(world(), type); }
 
@@ -257,13 +274,13 @@ public:
     }
 
 protected:
+    // TODO could replace this with something that returns an iterator
     virtual void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const {
         for (size_t i = 0, e = num_ops(); i < e; ++i)
             fn(i, op(i), index);
     }
     virtual uint64_t vhash() const;
     virtual bool equal(const Def*) const;
-    virtual const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const = 0;
 
     union {
         mutable const Def* cache_;  ///< Used by @p App.
@@ -275,6 +292,7 @@ protected:
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
+    const Def* rebuild_substitute(NominalSubs&, NominalSubsTodo&, Def2Def&, size_t, Defs, const Def*) const;
     bool on_heap() const { return ops_ != vla_ops_; }
     // this must match with the 64bit fields below
 
@@ -298,6 +316,7 @@ private:
     const Def** ops_;
     const Def* vla_ops_[0];
 
+    friend class App;
     friend class World;
     friend class Cleaner;
     friend class Scope;
@@ -368,7 +387,6 @@ private:
             fn(i, op(i), index++);
     }
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -399,7 +417,6 @@ private:
             fn(i, op(i), index + num_domains());
     }
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -413,9 +430,10 @@ private:
     }
 
 public:
+    const Def* callee() const { return destructee(); }
     std::ostream& stream(std::ostream&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
+    const Def* try_reduce() const;
 
     friend class World;
 };
@@ -446,7 +464,6 @@ private:
             fn(i, op(i), index++);
     }
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -466,7 +483,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -488,7 +504,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -506,7 +521,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -525,7 +539,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -543,7 +556,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -561,7 +573,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -589,7 +600,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -609,7 +619,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -623,7 +632,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -641,7 +649,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -652,11 +659,13 @@ private:
         : Def(world, Tag::Var, type, Defs(), dbg)
     {
         index_ = index;
+        compute_free_vars();
         free_vars_.set(index);
     }
 
 public:
     size_t index() const { return index_; }
+    const Def* substitute(size_t, Defs, const Def*) const;
     std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
     std::ostream& name_stream(std::ostream& os) const override {
@@ -667,7 +676,6 @@ private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -692,13 +700,12 @@ public:
     Box box() const { assert(!is_nominal()); return box_; }
     bool maybe_dependent() const override { return false; }
     std::ostream& stream(std::ostream&) const override;
-    Assume* stub(World&, const Def*) const override;
+    Axiom* stub(World&, const Def*) const override;
 
 private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };
@@ -714,7 +721,6 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
     friend class World;
 };

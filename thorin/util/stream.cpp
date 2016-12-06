@@ -34,6 +34,8 @@ void Streamable::dump() const {
 }
 std::ostream& operator<<(std::ostream& ostream, const Streamable* s) { return s->stream(ostream); }
 
+std::ostream& operator<<(std::ostream& ostream, const Streamable& s) { return s.stream(ostream); }
+
 std::ostream& streamf(std::ostream& os, const char* fmt) {
     while (*fmt) {
         if (*fmt == '%')

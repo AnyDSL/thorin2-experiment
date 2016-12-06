@@ -21,6 +21,7 @@ template<typename T>
 using is_streamable = std::is_base_of<Streamable, typename std::remove_pointer<T>::type>;
 
 std::ostream& operator<<(std::ostream&, const Streamable*); ///< Use @p Streamable in C++ streams via @c operator<<.
+std::ostream& operator<<(std::ostream&, const Streamable&); ///< Use @p Streamable in C++ streams via @c operator<<.
 
 namespace detail {
     template<typename T> inline std::ostream& stream(std::ostream& os, T val) { return os << val; }

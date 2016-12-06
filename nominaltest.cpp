@@ -3,30 +3,58 @@
 
 using namespace thorin;
 
-#define printValue(x) do{ printUtf8(x->name() == "" ? #x : x->name()); printUtf8(" = "); x->dump(); }while(0)
-#define printType(x) do{ printUtf8(x->name() == "" ? #x : x->name()); printUtf8(": "); x->type()->dump(); }while(0)
-#define printValueType(x) do{ printUtf8(x->name() == "" ? #x : x->name()); printUtf8(" = "); printUtf8(x->to_string()); printUtf8(": "); x->type()->dump(); }while(0)
+#define print_value_type(x) do{ cout << (x->name() == "" ? #x : x->name()) << " <" << x->gid() << "> = " << x << ": " << x->type() << endl; }while(0)
 
 void testNominal() {
     World w;
     auto Nat = w.nat();
     auto star = w.star();
-    //auto n42 = w.assume(Nat, {"42"});
+
+    cout << "--- NominalTest begin ---" << endl;
+    auto s1 = w.sigma_type(1, {"N"});
+    auto v1 = w.var(star, 0);
+    s1->set(0, v1);
+    assert(s1->is_closed());
+    assert(s1->has_free_var(0));
+    assert(s1->has_free_var_in(0, 1));
+    print_value_type(s1);
+    auto l1 = w.lambda(star, w.sigma({s1, s1}));
+    print_value_type(l1);
+    auto a1 = w.app(l1, Nat);
+    print_value_type(a1);
+    a1->ops().dump();
+    assert(a1->op(0) != a1->op(1));
+
     auto list = w.pi_lambda(w.pi(star, star), {"list"});
     auto cons = w.sigma_type(2, {"cons"});
     cons->set(0, w.var(star, 0));
     cons->set(1, w.app(list, w.var(star, 1)));
     assert(cons->is_closed());
-    printValueType(cons);
+    assert(cons->has_free_var_in(0, 1));
+    print_value_type(cons);
     auto nil = w.sigma_type(0, {"nil"});
     assert(nil->is_closed());
-    printValueType(nil);
+    print_value_type(nil);
     auto list_or_nil = w.variant({cons, nil});
     list->set(list_or_nil);
     assert(list->is_closed());
-    printValueType(list);
-    auto app = w.app(list, Nat);
-    printValueType(app);
+    print_value_type(list);
+    cout << "app list Nat" << endl;
+    auto apped = w.app(list, Nat);
+    print_value_type(apped);
+    print_value_type(apped->op(0));
+    print_value_type(apped->op(1));
 
+    auto body_type = w.app(list, w.var(star, 0));
+    auto pi_wrap = w.pi(star, body_type);
+    print_value_type(pi_wrap);
+    print_value_type(pi_wrap->op(1)->op(0));
+    print_value_type(pi_wrap->op(1)->op(1));
+    auto wrap = w.axiom(pi_wrap, {"axiom_wrap"});
+    auto wrap_app = w.app(wrap, Nat);
+    print_value_type(wrap_app);
+    print_value_type(wrap_app->type()->op(0));
+    print_value_type(wrap_app->type()->op(1));
+    auto lam = w.pi_lambda(pi_wrap, w.any(body_type, w.unit()));
     cout << "--- NominalTest end ---" << endl;
 }
