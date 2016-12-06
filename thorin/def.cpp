@@ -86,8 +86,11 @@ void Def::set(size_t i, const Def* def) {
            && "Affinely typed terms can be used at most once, check before calling this.");
     const auto& p = def->uses_.emplace(i, this);
     assert_unused(p.second);
-    if (i == num_ops() - 1)
+    if (i == num_ops() - 1) {
+        assert(std::all_of(ops().begin(), ops().end(), [](const Def* def) { return static_cast<bool>(def); }));
+        compute_free_vars();
         closed_ = true;
+    }
 }
 
 void Def::unregister_uses() const {
@@ -156,12 +159,16 @@ Def::~Def() {
 
 Lambda::Lambda(World& world, const Pi* type, const Def* body, Debug dbg)
     : Constructor(world, Tag::Lambda, type, {body}, dbg)
-{}
+{
+    compute_free_vars();
+}
 
 Pi::Pi(World& world, Defs domains, const Def* body, Qualifier q, Debug dbg)
     : Quantifier(world, Tag::Pi, body->type()->is_universe() ? (const Def*) world.universe(q) : world.star(q),
                  concat(domains, body), dbg)
-{}
+{
+    compute_free_vars();
+}
 
 Sigma::Sigma(World& world, size_t num_ops, Qualifier q, Debug dbg)
     : Sigma(world, world.universe(q), num_ops, dbg)
@@ -177,7 +184,7 @@ const Def* Quantifier::max_type(World& world, Defs ops, Qualifier q) {
     for (auto op : ops) {
         assert(op->type() && "Type universes shouldn't be operands");
         qualifier = meet(qualifier, op->type()->qualifier());
-        is_kind |= op->type()->is_kind();
+        is_kind |= op->is_kind();
     }
     assert(q <= qualifier &&
            "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
@@ -253,16 +260,29 @@ const Def* Axiom       ::rebuild(World&   , const Def*  , Defs    ) const { THOR
 const Def* Error       ::rebuild(World& to, const Def* t, Defs    ) const { return to.error(t); }
 const Def* Intersection::rebuild(World& to, const Def*  , Defs ops) const { return to.intersection(ops, debug()); }
 const Def* Match       ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
-const Def* Lambda      ::rebuild(World& to, const Def*  , Defs ops) const { return to.lambda(ops.skip_back(), ops.back(), debug()); }
+const Def* Lambda      ::rebuild(World& to, const Def*  , Defs ops) const {
+    assert(ops.size() == 1);
+    assert(!is_nominal());
+    return to.pi_lambda(t->as<Pi>(), ops.front(), debug());
+}
 const Def* Pi          ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), debug()); }
-const Def* Pick        ::rebuild(World& to, const Def* t, Defs ops) const { return to.pick(ops[0], t, debug()); }
-const Def* Sigma       ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is_nominal()); return to.sigma(ops, debug()); }
+const Def* Pick        ::rebuild(World& to, const Def* t, Defs ops) const {
+    assert(ops.size() == 1);
+    return to.pick(ops.front(), t, debug());
+}
+const Def* Sigma       ::rebuild(World& to, const Def*  , Defs ops) const { assert(!is_nominal()); return to.sigma(ops, qualifier(), debug()); }
 const Def* Star        ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
 const Def* Tuple       ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
 const Def* Universe    ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
 const Def* Var         ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
 const Def* Variant     ::rebuild(World& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
 
+Assume* Assume::stub(World& to, const Def* type) const {
+    assert(&world() != &to);
+    return const_cast<Assume*>(this);
+}
+Lambda* Lambda::stub(World& to, const Def* type) const { return to.pi_lambda(type->as<Pi>(), name()); }
+Sigma* Sigma::stub(World& to, const Def* type) const { return to.sigma(num_ops(), type, name()); }
 //------------------------------------------------------------------------------
 
 /*
@@ -423,6 +443,18 @@ const Def* Variant::vsubstitute(Def2Def& nominals, Def2Def& map, size_t index, D
     return world().variant(thorin::substitute(nominals, map, index, ops(), args), debug());
 }
 
+const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
+    auto sigma = tuple->type()->as<Sigma>();
+    auto type = sigma->op(index);
+    Def2Def map;
+    for (size_t delta = 1; type->maybe_dependent() && delta <= index; delta++) {
+        auto prev_extract = world.extract(tuple, index - delta);
+        // This also shifts any Var with index > 0 by -1
+        type = type->substitute(map, 0, prev_extract);
+        map.clear();
+    }
+    return type;
+}
 //------------------------------------------------------------------------------
 
 /*

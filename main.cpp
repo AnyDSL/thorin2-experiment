@@ -22,6 +22,8 @@ int main()  {
     auto n16 = w.nat16();
     n16->dump();
     assert(n16 == w.nat(16));
+
+    // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
     w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 
     auto n23 = w.nat(23);
@@ -58,9 +60,14 @@ int main()  {
 
     // λT:*.λx:T.x
     auto T_1 = w.var(w.star(), 0, {"T"});
+    assert(T_1->has_free_var(0));
+    assert(!T_1->has_free_var(1));
     auto T_2 = w.var(w.star(), 1, {"T"});
+    assert(T_2->has_free_var(1));
     auto x = w.var(T_2, 0, {"x"});
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
+    assert(!poly_id->has_free_var(0));
+    assert(!poly_id->has_free_var(1));
     poly_id->dump();
     poly_id->type()->dump();
 
@@ -69,8 +76,8 @@ int main()  {
     int_id->dump();
     int_id->type()->dump();
 
-    auto fst = w.lambda({w.nat(), w.nat()}, w.extract(w.var({w.nat(), w.nat()}, 0, {"pair"}), 0));
-    auto snd = w.lambda({w.nat(), w.nat()}, w.extract(w.var({w.nat(), w.nat()}, 0, {"pair"}), 1));
+    auto fst = w.lambda({w.nat(), w.nat()}, w.var(w.nat(), 0));
+    auto snd = w.lambda({w.nat(), w.nat()}, w.var(w.nat(), 1));
     w.app(fst, {n23, n42})->dump(); // 23
     w.app(snd, {n23, n42})->dump(); // 42
 
@@ -92,7 +99,7 @@ int main()  {
 
     auto Arr = w.axiom(w.pi({w.nat(), w.pi(w.nat(), w.star())}, w.star()),{"Arr"});
     Defs dom{w.nat(), w.star()};
-    auto _Arr = w.lambda(dom, w.app(Arr, {w.extract(w.var(dom, 0), 0), w.lambda(w.nat(), w.extract(w.var(dom, 1), 1))}));
+    auto _Arr = w.lambda(dom, w.app(Arr, {w.var(w.nat(), 1), w.lambda(w.nat(), w.var(w.star(), 1))}));
     _Arr->dump();
 
     auto arr = w.app(_Arr, {n23, w.nat()});
@@ -117,11 +124,11 @@ int main()  {
     auto handle_bool = w.lambda(w.boolean(), w.axiom(w.nat(),{"0"}));
     Defs handlers{handle_nat, handle_bool};
     auto match_nat = w.match(any_nat, handlers);
-    match_nat->dump();
+    match_nat->dump(); // 23
     auto match_bool = w.match(any_bool, handlers);
-    match_bool->dump();
+    match_bool->dump(); // 0
     auto match = w.match(assumed_var, handlers);
-    match->dump();
+    match->dump(); // match someval with ...
     match->type()->dump();
     // TODO this should not reduce
     w.match(any_nat, {handle_bool, handle_nat})->dump();

@@ -120,8 +120,8 @@ private:
         iterator_base operator++(int) { assert(this->table_->id_ == this->id_); iterator_base res = *this; ++(*this); return res; }
         reference operator*() const { assert(this->table_->id_ == this->id_); return *ptr_; }
         pointer operator->() const { assert(this->table_->id_ == this->id_); return ptr_; }
-        bool operator==(const iterator_base& other) { assert(this->table_ == other.table_ && this->id_ == other.id_ && this->table_->id_ == this->id_); return this->ptr_ == other.ptr_; }
-        bool operator!=(const iterator_base& other) { assert(this->table_ == other.table_ && this->id_ == other.id_ && this->table_->id_ == this->id_); return this->ptr_ != other.ptr_; }
+        bool operator==(const iterator_base& other) const { assert(this->table_ == other.table_ && this->id_ == other.id_ && this->table_->id_ == this->id_); return this->ptr_ == other.ptr_; }
+        bool operator!=(const iterator_base& other) const { assert(this->table_ == other.table_ && this->id_ == other.id_ && this->table_->id_ == this->id_); return this->ptr_ != other.ptr_; }
         friend void swap(iterator_base& i1, iterator_base& i2) {
             using std::swap;
             swap(i1.ptr_,   i2.ptr_);
@@ -414,8 +414,8 @@ private:
 
     uint32_t capacity_;
     uint32_t size_;
-    value_type* nodes_;
     std::array<value_type, StackCapacity> array_;
+    value_type* nodes_;
 #ifndef NDEBUG
     int id_;
 #endif

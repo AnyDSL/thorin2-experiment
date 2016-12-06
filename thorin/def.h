@@ -1,6 +1,7 @@
 #ifndef THORIN_DEF_H
 #define THORIN_DEF_H
 
+#include <bitset>
 #include <numeric>
 
 #include "thorin/util/array.h"
@@ -147,6 +148,7 @@ public:
 
 protected:
     Def(const Def&) = delete;
+    Def(Def&&) = delete;
     Def& operator=(const Def&) = delete;
 
     /// Use for nominal @p Def%s.
@@ -183,6 +185,13 @@ protected:
 
     ~Def() override;
 
+    void compute_free_vars() {
+        auto update_free_vars = [&] (size_t, const Def* op, size_t shift) {
+            free_vars_ |= op->free_vars_ >> shift;
+        };
+        foreach_op_index(0, update_free_vars);
+        free_vars_ |= type()->free_vars_;
+    }
     void set(size_t i, const Def*);
     void wire_uses() const;
     void unset(size_t i);
@@ -220,14 +229,26 @@ public:
     bool is_relevant() const     { return int(qualifier()) & int(Qualifier::Relevant); }
     bool is_linear() const       { return int(qualifier()) & int(Qualifier::Linear); }
 
+    bool has_free_var(size_t index) const {
+        if (index > 64) {
+            // TODO check in dynamic bitset
+            assert(false && "TODO index too large");
+        }
+        return free_vars_[index];
+    }
+    // TODO return (dynamic) bitset (wrapper)
+    const std::bitset<64>& free_vars() const { return free_vars_; }
+
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
 
     const Def* substitute(Def2Def&, Def2Def&, size_t, Defs) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
+    Def* stub(const Def* type) const { return stub(world(), type); }
 
     static size_t gid_counter() { return gid_counter_; }
 
+    virtual Def* stub(World&, const Def*) const { THORIN_UNREACHABLE; }
     virtual bool maybe_dependent() const { return true; }
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "" || is_nominal())
@@ -236,6 +257,10 @@ public:
     }
 
 protected:
+    virtual void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const {
+        for (size_t i = 0, e = num_ops(); i < e; ++i)
+            fn(i, op(i), index);
+    }
     virtual uint64_t vhash() const;
     virtual bool equal(const Def*) const;
     virtual const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const = 0;
@@ -246,6 +271,7 @@ protected:
         Box box_;                   ///< Used by @p Axiom.
         Qualifier qualifier_; ///< Used by @p Universe.
     };
+    std::bitset<64> free_vars_;
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
@@ -337,6 +363,10 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
+    void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const override {
+        for (size_t i = 0, e = num_ops(); i < e; ++i)
+            fn(i, op(i), index++);
+    }
     const Def* rebuild(World&, const Def*, Defs) const override;
     const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
@@ -359,10 +389,15 @@ public:
     const Def* reduce(Defs) const;
     void set(const Def* def) { Def::set(0, def); };
     const Pi* type() const { return Constructor::type()->as<Pi>(); }
+    Lambda* stub(World&, const Def*) const override;
 
     std::ostream& stream(std::ostream&) const override;
 
 private:
+    void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const override {
+        for (size_t i = 0, e = num_ops(); i < e; ++i)
+            fn(i, op(i), index + num_domains());
+    }
     const Def* rebuild(World&, const Def*, Defs) const override;
     const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
@@ -373,7 +408,9 @@ class App : public Destructor {
 private:
     App(World& world, const Def* type, const Def* callee, Defs args, Debug dbg)
         : Destructor(world, Tag::App, type, concat(callee, args), dbg)
-    {}
+    {
+        compute_free_vars();
+    }
 
 public:
     std::ostream& stream(std::ostream&) const override;
@@ -393,14 +430,21 @@ private:
     {}
     Sigma(World& world, Defs ops, Qualifier q, Debug dbg)
         : Quantifier(world, Tag::Sigma, max_type(world, ops, q), ops, dbg)
-    {}
+    {
+        compute_free_vars();
+    }
 
 public:
     bool is_unit() const { return ops().empty(); }
     void set(size_t i, const Def* def) { Def::set(i, def); };
     std::ostream& stream(std::ostream&) const override;
+    Sigma* stub(World&, const Def*) const override;
 
 private:
+    void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const override {
+        for (size_t i = 0, e = num_ops(); i < e; ++i)
+            fn(i, op(i), index++);
+    }
     const Def* rebuild(World&, const Def*, Defs) const override;
     const Def* vsubstitute(Def2Def&, Def2Def&, size_t, Defs) const override;
 
@@ -413,10 +457,12 @@ private:
         : Constructor(world, Tag::Tuple, type, ops, dbg)
     {
         assert(type->num_ops() == ops.size());
+        compute_free_vars();
     }
 
 public:
     std::ostream& stream(std::ostream&) const override;
+    static const Def* extract_type(World&, const Def* tuple, size_t index);
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -431,6 +477,7 @@ private:
         : Destructor(world, Tag::Extract, type, tuple, dbg)
     {
         index_ = index;
+        compute_free_vars();
     }
 
 public:
@@ -450,7 +497,9 @@ class Intersection : public Quantifier {
 private:
     Intersection(World& world, Defs ops, Qualifier q, Debug dbg)
         : Quantifier(world, Tag::Intersection, max_type(world, ops, q), gid_sorted(ops), dbg)
-    {}
+    {
+        compute_free_vars();
+    }
 
 public:
     std::ostream& stream(std::ostream&) const override;
@@ -468,6 +517,7 @@ private:
         : Constructor(world, Tag::All, type, ops, dbg)
     {
         assert(type->num_ops() == ops.size());
+        compute_free_vars();
     }
 
 public:
@@ -484,7 +534,9 @@ class Pick : public Destructor {
 private:
     Pick(World& world, const Def* type, const Def* def, Debug dbg)
         : Destructor(world, Tag::Pick, type, def, dbg)
-    {}
+    {
+        compute_free_vars();
+    }
 
 public:
     std::ostream& stream(std::ostream&) const override;
@@ -500,7 +552,9 @@ class Variant : public Quantifier {
 private:
     Variant(World& world, Defs ops, Qualifier q, Debug dbg)
         : Quantifier(world, Tag::Variant, max_type(world, ops, q), gid_sorted(ops), dbg)
-    {}
+    {
+        compute_free_vars();
+    }
 
 public:
     std::ostream& stream(std::ostream&) const override;
@@ -516,7 +570,9 @@ class Any : public Constructor {
 private:
     Any(World& world, const Def* type, const Def* def, Debug dbg)
         : Constructor(world, Tag::Any, type, {def}, dbg)
-    {}
+    {
+        compute_free_vars();
+    }
 
 public:
     const Def* def() const { return op(0); }
@@ -542,7 +598,9 @@ class Match : public Destructor {
 private:
     Match(World& world, const Def* type, const Def* def, const Defs handlers, Debug dbg)
         : Destructor(world, Tag::Match, type, concat(def, handlers), dbg)
-    {}
+    {
+        compute_free_vars();
+    }
 
 public:
     Defs handlers() const { return ops().skip_front(); }
@@ -594,6 +652,7 @@ private:
         : Def(world, Tag::Var, type, Defs(), dbg)
     {
         index_ = index;
+        free_vars_.set(index);
     }
 
 public:
@@ -618,7 +677,9 @@ private:
     /// @em nominal axiom.
     Axiom(World& world, const Def* type, Debug dbg)
         : Def(world, Tag::Axiom, type, 0, dbg)
-    {}
+    {
+        assert(type->free_vars().none());
+    }
 
     /// @em structural axiom.
     Axiom(World& world, const Def* type, Box box, Debug dbg)
@@ -631,6 +692,7 @@ public:
     Box box() const { assert(!is_nominal()); return box_; }
     bool maybe_dependent() const override { return false; }
     std::ostream& stream(std::ostream&) const override;
+    Assume* stub(World&, const Def*) const override;
 
 private:
     uint64_t vhash() const override;

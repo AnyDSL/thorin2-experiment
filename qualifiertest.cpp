@@ -118,8 +118,8 @@ void testQualifiers() {
                                                     w.sigma({T(3), w.app(Cap, C(3))}))), {"ReadCRef"});
         printType(ReadRef);
         // AliasReadRef : Π(T:*, C:*, CRef[T, C]).T
-        auto AliasReadRef = w.axiom(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)})}, T(3)),
-                {"AliasReadCRef"});
+        auto AliasReadRef = w.axiom(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)})}, T(2)),
+                                    "AliasReadCRef");
         printType(AliasReadRef);
         // WriteRef : Π(T:*, C:*, CRef[T, C], ᴬACap[C], T).ᴬACap[C]
         auto WriteRef = w.axiom(w.pi({w.star(), w.star(), w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1)), T(3)},
