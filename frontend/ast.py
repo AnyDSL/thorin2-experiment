@@ -134,6 +134,14 @@ class AstNode:
 			return vars[0]
 		return vars
 
+	def get_special_function_param_count(self):
+		return 0
+
+
+
+
+
+
 
 global_assumptions = {}
 
@@ -145,17 +153,29 @@ def get_assumption(name):
 		global_assumptions[name] = na
 	return na
 
+def set_assumption(name, node):
+	global_assumptions[name] = node
+
+def has_predefined_assumption(name):
+	return name in global_assumptions and global_assumptions[name].predefined
+
+
+
 class Assume(AstNode):
 	# ops = [name, type]
 	def __init__(self, ops):
 		AstNode.__init__(self, ops)
 		global_assumptions[ops[0]] = self
+		self.predefined = False
 
 	def __str__(self):
 		return self.ops[0]
 
 	def get_type(self):
 		return self.ops[1]
+
+	def get_name(self):
+		return self.ops[0]
 
 	def get_nat_variables(self):
 		#print '[WARN] get_nat_variables not implemented for', self.ops[0]
@@ -175,11 +195,18 @@ class Assume(AstNode):
 
 class SpecialFunction(Assume):
 	# ops = [name, type]
+	def __init__(self, name, type, param_count):
+		Assume.__init__(self, [name, type])
+		self.param_count = param_count
+
 	def get_constraints(self):
 		raise Exception('Special function '+str(self.ops[0])+' incorrectly used!')
 
-	def get_app_constraints(self, app, param):
+	def get_app_constraints(self, app, params):
 		raise Exception('Not implemented')
+
+	def get_special_function_param_count(self):
+		return self.param_count
 
 
 
@@ -317,6 +344,16 @@ class Pi(AstNode):
 
 
 class App(AstNode):
+	def __init__(self, ops):
+		AstNode.__init__(self, ops)
+		self.special_param_count = ops[0].get_special_function_param_count()
+		self.is_special_function_app = self.special_param_count > 0
+		if self.special_param_count > 0:
+			self.special_param_count -= 1
+
+	def get_special_function_param_count(self):
+		return self.special_param_count
+
 	def __str__(self):
 		return str(self.ops[0])+'('+str(self.ops[1])+')'
 
@@ -333,8 +370,8 @@ class App(AstNode):
 		return result
 
 	def get_constraints(self):
-		if isinstance(self.ops[0], SpecialFunction):
-			return self.ops[0].get_app_constraints(self, self.ops[1])
+		if self.is_special_function_app:
+			return self.get_special_function_constraints()
 
 		func_vars, func_accepted, func_possible = self.ops[0].get_constraints()
 		param_vars, param_accepted, param_possible = self.ops[1].get_constraints()
@@ -363,6 +400,16 @@ class App(AstNode):
 			print '[ERR] This must go wrong: ', self
 
 		return (func_vars[1], accepted, possible)
+
+	def get_special_function_constraints(self):
+		node = self
+		params = []
+		while isinstance(node, App):
+			params = [node.ops[1]] + params
+			node = node.ops[0]
+		assert isinstance(node, SpecialFunction)
+		return node.get_app_constraints(self, params)
+
 
 	def get_nat_variables(self):
 		func_vars = self.ops[0].get_nat_variables()
@@ -437,24 +484,6 @@ def empty_constraints(self):
 def auto_constraints(self):
 	return self.get_isl_sets()
 
-def nat_add_constraint(self):
-	a = get_var_name()
-	b = get_var_name()
-	c = get_var_name()
-	space = isl.Space.create_from_names(ctx, set=[a, b, c])
-	accepted = isl.BasicSet.universe(space)
-	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {a: 1}))
-	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {b: 1}))
-	# bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {c: 1}))
-	possible = accepted.add_constraint(isl.Constraint.eq_from_names(space, {a: 1, b: 1, c: -1}))
-	return ([[a, b], [c]], accepted, possible)
-
-def nat_sub_constraint(self):
-	vars, accepted, possible = self.get_isl_sets()
-	a, b, c = flatten(vars)
-	possible = accepted.add_constraint(isl.Constraint.eq_from_names(accepted.space, {a: 1, b: -1, c: -1}))
-	return (vars, accepted, possible)
-
 
 
 global_constants = {'Nat': Constant('Nat'), '*': Constant('*')}
@@ -475,4 +504,5 @@ def create_assumption(name):
 	if re.match(r'^\d+\.\d+$', name):
 		return Assume([name, get_assumption('Float')])
 	return None
+
 

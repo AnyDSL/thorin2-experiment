@@ -2,13 +2,14 @@ import ast
 import lambdaparser
 import types
 import islpy as isl
+import predefined_functions
 
 
 CODE = '''
 define x1 = 1;
-assume opAddNat: (Nat,Nat)->Nat;
+assume opNatPlus: (Nat,Nat)->Nat;
 assume intakeLower10: Nat->Nat;
-define x3 = opAddNat (1,2);
+define x3 = opNatPlus (1,2);
 define x4 = (lambda y: Nat. y) 1;
 define x4 = lambda y: Nat. (y, y);
 define x5 = (lambda y: Nat. (y, y)) 1;
@@ -16,7 +17,7 @@ define x6 = (lambda y: Nat. 1);
 
 define c1 = intakeLower10 0;
 define c2 = intakeLower10 12;
-define c3 = intakeLower10 (opAddNat (3, 5));
+define c3 = intakeLower10 (opNatPlus (3, 5));
 '''
 
 CODE2 = '''
@@ -65,34 +66,24 @@ define matrixDot = lambda n:Nat. lambda m:Nat. lambda o:Nat. lambda M1: MatrixTy
 '''
 
 CODE4 = '''
-assume opAddNat: (Nat,Nat)->Nat;
+assume opNatPlus: (Nat,Nat)->Nat;
 
 define test1 = lambda n:Nat. let
 		define a = n;
 		define b = a;
-		define c = opAddNat (a, b);
+		define c = opNatPlus (a, b);
 	in (n, a, b, c) end;
 
 define test2 = lambda rec (n:Nat): sigma(Nat, Nat, Nat, Nat). let
 		define a = n;
 		define b = a;
-		define c = opAddNat a b;
+		define c = opNatPlus a b;
 	in (n, a, b, c) end;
 '''
 
 
 def type_manually():
 	# manual typing
-	ass = ast.get_assumption('opAddNat')
-	if ass:
-		ass.get_constraints = types.MethodType(ast.nat_add_constraint, ass)
-	ass = ast.get_assumption('opNatPlus')
-	if ass:
-		ass.get_constraints = types.MethodType(ast.nat_add_constraint, ass)
-	ass = ast.get_assumption('opNatMinus')
-	if ass:
-		ass.get_constraints = types.MethodType(ast.nat_sub_constraint, ass)
-
 	def intakeLower10_constraints(self):
 		a = ast.get_var_name()
 		space = isl.Space.create_from_names(ast.ctx, set=[a])
@@ -104,22 +95,6 @@ def type_manually():
 	ass = ast.get_assumption('intakeLower10')
 	if ass:
 		ass.get_constraints = types.MethodType(intakeLower10_constraints, ass)
-
-	def reduce_constraints(self):
-		var_len = ast.get_var_name('len')
-		var_i = ast.get_var_name('i')
-		vars = [[], [[[[], []], []], [[], [[var_len], [[[var_i], []], []]]]]]
-		space = isl.Space.create_from_names(ast.ctx, set=[var_len, var_i])
-		possible = isl.BasicSet.universe(space)
-		accepted = isl.BasicSet.universe(space)
-		# 0 <= i <= (len-1)
-		possible = possible.add_constraint(isl.Constraint.ineq_from_names(possible.space, {var_i: 1}))
-		possible = possible.add_constraint(isl.Constraint.ineq_from_names(possible.space, {var_len: 1, 1: -1, var_i: -1}))
-		return (vars, accepted, possible)
-
-	ass = ast.get_assumption('reduce')
-	if ass:
-		ass.get_constraints = types.MethodType(reduce_constraints, ass)
 
 	def arr_get_constraints(self):
 		var_len = ast.get_var_name('len')

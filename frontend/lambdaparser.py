@@ -466,7 +466,7 @@ class InnerDefinition(Plain, LambdaAST):
 	def to_ast(self, scope, astcreator):
 		body = self.body.to_ast(scope, astcreator)
 		scope.add_definition(self.name, body)
-		return [(self.name, body)]
+		return [(str(self.name), body)]
 
 
 class Definition(InnerDefinition):
@@ -495,9 +495,13 @@ class Assumption(Plain, LambdaAST):
 		codegen.add_blank()
 
 	def to_ast(self, scope, astcreator):
-		assumption = ast.Assume([self.name, self.body.to_ast(scope, astcreator)])
+		if ast.has_predefined_assumption(self.name):
+			assumption = ast.get_assumption(self.name)
+			# TODO assert type equality
+		else:
+			assumption = ast.Assume([self.name, self.body.to_ast(scope, astcreator)])
 		scope.add_definition(self.name, assumption)
-		return [(self.name, assumption)]
+		return [(str(self.name), assumption)]
 
 
 class Comment(str, LambdaAST):
