@@ -52,3 +52,16 @@ print 'Result: ', m_result
 [x, n, r]     -> [x2, n2 = n, r2 = r] : x2 < n and x2 < x
 [x, n, r = n] -> [x2, n2 = n, r2 = n] : n <= x2 < x
 '''
+
+
+print '\n\n'
+space = isl.Space.create_from_names(ctx, set=['a', 'b', 'c'])
+bset1 = isl.BasicSet.universe(space)
+bset1 = bset1.add_constraint(isl.Constraint.eq_from_names(space, {'a': 1, 1: -1}))
+space = isl.Space.create_from_names(ctx, set=['c', 'b', 'a'])
+bset2 = isl.BasicSet.universe(space)
+bset2 = bset2.add_constraint(isl.Constraint.eq_from_names(space, {'a': 1, 1: -3}))
+print bset1
+print bset2
+print bset1.union(bset2)
+

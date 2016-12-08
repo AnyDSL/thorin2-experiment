@@ -81,6 +81,13 @@ define test2 = lambda rec (n:Nat): sigma(Nat, Nat, Nat, Nat). let
 	in (n, a, b, c) end;
 '''
 
+CODE5 = '''
+assume intakeLower10: Nat->Nat;
+
+//define if1 = lambda n: Nat. if_gez Nat n (1, 2);
+define if2 = lambda n: Nat. if_gez Nat n (intakeLower10 n, intakeLower10 (opNatPlus (n,7)));
+'''
+
 
 def type_manually():
 	# manual typing
@@ -90,6 +97,7 @@ def type_manually():
 		possible = isl.BasicSet.universe(space)
 		accepted = isl.BasicSet.universe(space)
 		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(accepted.space, {1: 10, a: -1})) # 0 <= 1*10 + -1*a
+		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(accepted.space, {a: 1})) # 0 <= a
 		return ([a, a], accepted, possible)
 
 	ass = ast.get_assumption('intakeLower10')
@@ -153,6 +161,7 @@ def type_manually():
 CODE += CODE2
 CODE += CODE3
 #CODE = CODE4
+CODE = CODE5
 prog = lambdaparser.parse_lambda_code(CODE)
 print prog
 nodes = prog.to_ast()

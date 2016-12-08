@@ -11,8 +11,8 @@ assume opFloatMult:  (Float, Float) -> Float;
 assume opFloatDiv:   (Float, Float) -> Float;
 assume cFloatZero: Float;
 
-// if <type> <condition> <then> <else> := (<condition> ? <then> : <else>): <type>
-assume ifcond: pi t:*. Nat -> sigma(t, t) ->  t;
+// if_gz <type> <condition> (<then>, <else>) := (<condition> > 0 ? <then> : <else>): <type>
+assume if_gz: pi t:*. Nat -> sigma(t, t) ->  t;
 
 // Arrays
 assume ArrT: pi_:(Nat, Nat -> *). *;
@@ -43,7 +43,7 @@ define LGet = lambda n:Nat. lambda L:LType n. lambda i:Nat. lambda j:Nat.
 define LUD = lambda n:Nat. lambda A:MatrixType n n. let
 		define U = ArrCreate (UTypePair n) (lambda i:Nat.
 			ArrCreate (opNatMinus(n,i), lambda _:Nat. Float) (lambda rec (j:Nat): Float.
-			    ifcond Float i (
+			    if_gz Float i (
 			        opFloatMinus (
 			            AGet n A i (opNatPlus (i,j)),
 			            sum i (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (opNatPlus(i, j), k))))
@@ -54,7 +54,7 @@ define LUD = lambda n:Nat. lambda A:MatrixType n n. let
 		);
 		define L = ArrCreate (LTypePair n) (lambda i:Nat.
 			ArrCreate (i, lambda _:Nat. Float) (lambda rec (j:Nat): Float.
-				opFloatDiv (ifcond Float j (
+				opFloatDiv (if_gz Float j (
 			        opFloatMinus (
 			            AGet n A i j,
 			            sum j (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (j, k))))

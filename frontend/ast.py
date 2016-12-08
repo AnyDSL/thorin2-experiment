@@ -18,8 +18,10 @@ def set_join(a, b):
 	dim_a = a.space.dim(isl.dim_type.set)
 	dim_b = b.space.dim(isl.dim_type.set)
 	vars  = [a.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_a)]
-	vars += [b.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_b)]
-	vars = list(set(vars))
+	vars2 = [b.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_b)]
+	for v in vars2:
+		if v not in vars:
+			vars.append(v)
 	if dim_a + dim_b == len(vars):
 		return a.flat_product(b)
 	space = isl.Space.create_from_names(ctx, set=vars)
@@ -44,11 +46,43 @@ def var_in_set(vname, bset):
 	dim = bset.space.dim(isl.dim_type.set)
 	return vname in (bset.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim))
 
+def set_vars(bset):
+	dim = bset.space.dim(isl.dim_type.set)
+	return [bset.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim)]
+
+def add_variables(bset, vars):
+	vars2 = []
+	for v in vars:
+		if not var_in_set(v, bset) and not v in vars2:
+			vars2.append(v)
+	if len(vars) == 0:
+		return bset
+	return set_join(bset, isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=vars)))
+
+
 def constraint_equal(bset, v1, *args):
 	for v2 in args:
 		if v2 != v1:
 			bset = bset.add_constraint(isl.Constraint.eq_from_names(bset.space, {v1: 1, v2: -1}))
 	return bset
+
+def constraint_vars_equal(bset, vars1, vars2):
+	if isinstance(vars1, list):
+		assert isinstance(vars2, list)
+		assert len(vars1) == len(vars2)
+		for v1, v2 in zip(vars1, vars2):
+			bset = constraint_vars_equal(bset, v1, v2)
+		return bset
+	return constraint_equal(bset, vars1, vars2)
+
+def constraint_inverse(constraint):
+	assert not constraint.is_div_constraint()
+	assert not constraint.is_equality()
+	c = {1: - constraint.get_constant_val()}
+	for i in xrange(constraint.space.dim(isl.dim_type.set)):
+		c[constraint.get_dim_name(isl.dim_type.set, i)] = - constraint.get_coefficient_val(isl.dim_type.set, i)
+	c[1] -= 1
+	return isl.Constraint.ineq_from_names(constraint.space, c)
 
 def flatten(x):
 	if isinstance(x, list):
@@ -58,11 +92,20 @@ def flatten(x):
 		return result
 	return [x]
 
+def simplify_set(s):
+	return s.coalesce().detect_equalities().remove_redundancies()
+
+def clone_variables(vars):
+	if isinstance(vars, list):
+		return [clone_variables(x) for x in vars]
+	return get_var_name()
+
 def valid_input_constraints(vars, accepted, possible):
 	# find islset(vars) so that (forall other vars: possible subset of accepted)
 	# => make (possible \ accepted) empty
 	# => find islset(vars) so that not (exists other vars: possible \ accepted not empty)
 	error_set = possible.subtract(accepted)
+	possible2 = possible
 	print '   vars', vars
 	print '   accepted', accepted
 	print '   possible', possible
@@ -73,7 +116,8 @@ def valid_input_constraints(vars, accepted, possible):
 	for i in xrange(dim_err-1, -1, -1):
 		if not i in indices:
 			error_set = error_set.project_out(isl.dim_type.set, i, 1)
-	return (error_set.complement(), error_set)
+			possible2 = possible2.project_out(isl.dim_type.set, i, 1)
+	return (error_set.complement().intersect(possible2), error_set)
 
 
 class AstNode:
@@ -124,8 +168,8 @@ class AstNode:
 		# constraints on "valid" inputs
 		print '[???]'
 		valid_set, error_set = valid_input_constraints(unbound_vars, accepted, possible)
-		print 'Valid if:  ', valid_set
-		print 'Invalid if:', error_set
+		print 'Valid if:  ', simplify_set(valid_set)
+		print 'Invalid if:', simplify_set(error_set)
 		return None
 
 	def get_nat_variables(self):
