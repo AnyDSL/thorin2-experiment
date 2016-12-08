@@ -173,6 +173,15 @@ class Assume(AstNode):
 		return (vars, bset, bset)
 
 
+class SpecialFunction(Assume):
+	# ops = [name, type]
+	def get_constraints(self):
+		raise Exception('Special function '+str(self.ops[0])+' incorrectly used!')
+
+	def get_app_constraints(self, app, param):
+		raise Exception('Not implemented')
+
+
 
 class Constant(AstNode):
 	def __init__(self, name):
@@ -324,6 +333,9 @@ class App(AstNode):
 		return result
 
 	def get_constraints(self):
+		if isinstance(self.ops[0], SpecialFunction):
+			return self.ops[0].get_app_constraints(self, self.ops[1])
+
 		func_vars, func_accepted, func_possible = self.ops[0].get_constraints()
 		param_vars, param_accepted, param_possible = self.ops[1].get_constraints()
 		accepted = set_join(func_accepted, param_accepted)
