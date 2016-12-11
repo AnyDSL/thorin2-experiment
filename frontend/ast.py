@@ -347,7 +347,7 @@ class Lambda(AstNode):
 
 
 class LambdaNominal(Lambda):
-	# ops = param, returntype, [body]
+	# ops = param, returntype, body||None
 	def __init__(self, ops):
 		if len(ops) == 2:
 			ops.append(None)

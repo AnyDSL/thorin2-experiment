@@ -316,9 +316,10 @@ class LambdaRec(Plain, LambdaAST):
 	def to_ast(self, scope, astcreator):
 		tp = self.type.to_ast(scope, astcreator)
 		param = ast.ParamDef(self.param.thing, tp)
-		scope.add_definition(self.name, self)
 		pscope = scope.push_param(self.param.thing, param)
 		result = ast.LambdaNominal([param, self.returntype.to_ast(pscope, astcreator)])
+		scope.add_definition(self.name, result)
+		pscope.add_definition(self.name, result)
 		# enqueue body
 		astcreator.append(self.body, pscope, lambda n: result.set_body(n))
 		return result
