@@ -65,3 +65,17 @@ print bset1
 print bset2
 print bset1.union(bset2)
 
+
+
+
+
+print '\n\n'
+space = isl.Space.create_from_names(ctx, set=['a', 'b', 'c'])
+bset = isl.BasicSet.universe(space)
+bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {'a': -1, 'b': 1, 1: -1})) # a < b
+bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {'b': -1, 'c': 1, 1: -1})) # a < b
+print bset
+bset = bset.project_out(isl.dim_type.set, 1, 1)
+print bset
+
+

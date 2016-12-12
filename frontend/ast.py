@@ -123,6 +123,21 @@ def valid_input_constraints(vars, accepted, possible):
 	return (error_set.complement().intersect(possible2), error_set)
 
 
+def is_subset(left, right, equal_vars = {}):
+	'''
+	:param islpy.Set left:
+	:param islpy.Set right:
+	:return: (left subset of right, left-repr, right-repr)
+	'''
+	#TODO
+	# variables in right, but not in left: make existential in right
+	# variables in left, but not in right: add to right
+	# re-order (and rename) right
+	# do the subset check
+	return (left.is_subset(right), left, right)
+
+
+
 class AstNode:
 	def __init__(self, ops):
 		self.ops = ops
@@ -399,6 +414,18 @@ class LambdaNominal(Lambda):
 		vars = [param_vars, result_vars]
 		bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=flatten(vars)))
 		return (vars, bset, bset)
+
+	def get_constraints_recursive(self):
+		# copied from Lambda.get_constraints
+		param_vars = self.ops[0].create_new_constraint_vars()
+		body_vars, body_accepted, body_possible = self.ops[2].get_constraints()
+		undefined_vars = [vname for vname in flatten(param_vars) if not var_in_set(vname, body_accepted)]
+		if len(undefined_vars) > 0:
+			space = isl.Space.create_from_names(ctx, set=undefined_vars)
+			bset = isl.BasicSet.universe(space)
+			body_accepted = set_join(body_accepted, bset)
+			body_possible = set_join(body_possible, bset)
+		return ([param_vars, body_vars], body_accepted, body_possible)
 
 
 

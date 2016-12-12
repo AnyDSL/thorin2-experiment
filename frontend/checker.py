@@ -12,6 +12,12 @@ import islpy as isl
 
 
 def find_all_nominals(node, nominals=[]):
+	'''
+	:param node:
+	:param nominals:
+	:rtype: List(ast.LambdaNominal)
+	:return:
+	'''
 	if isinstance(node, ast.AstNode):
 		if isinstance(node, ast.LambdaNominal):
 			if node in nominals:
@@ -23,6 +29,10 @@ def find_all_nominals(node, nominals=[]):
 
 
 def type_inference(nodes):
+	'''
+	:param List(ast.LambdaNominal) nodes:
+	:return:
+	'''
 	# filter out functions that are already types
 	nodes = [node for node in nodes if node.cstr_vars is None]
 	#TODO some fancy heuristic
@@ -36,13 +46,34 @@ def type_inference(nodes):
 			func.cstr_possible = bset
 
 
+def check_nominal(node):
+	'''
+	:param ast.LambdaNominal node:
+	:return:
+	'''
+	print 'Checking', node
+	print 'matching', node.cstr_vars, node.cstr_accepted, node.cstr_possible
+	body_vars, body_accepted, body_possible = node.get_constraints_recursive()
+	# check if body_vars matches node.cstr_vars
+	# check if accepted superset of node.cstr_accepted
+	# check if (possible intersect node.cstr_accepted) subset of node.cstr_possible
+
+
 def check_definition(node):
+	'''
+	:param ast.AstNode node:
+	:return:
+	'''
 	nominals = find_all_nominals(node)
 	print 'Nominal lambdas:', nominals
 	type_inference(nominals)
-	#TODO Check all nominal lambda bodies
-
-	check_definition_simple(node)
+	# Check all nominal lambda bodies
+	for node in nominals:
+		if not check_nominal(node):
+			print '[ERR]', node, 'violates its constraints!'
+			return False
+	# check "real" program - assuming all recursive functions are safe
+	return check_definition_simple(node)
 
 
 def check_definition_simple(node):
