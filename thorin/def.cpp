@@ -305,9 +305,9 @@ public:
     NominalSubstitution(NominalSubstitution&&) = default;
     NominalSubstitution& operator=(NominalSubstitution&&) = default;
 
-    NominalSubstitution() : nominal_(nullptr), index_(0), replacement_(nullptr) {}
-    NominalSubstitution(const Def* n, size_t i, Def* r)
-        : nominal_(n), index_(i), replacement_(r)
+    NominalSubstitution() : nominal_(nullptr), index_(0) {}
+    NominalSubstitution(const Def* n, size_t i)
+        : nominal_(n), index_(i)
     {}
 
     bool operator==(const NominalSubstitution& b) const {
@@ -316,12 +316,10 @@ public:
 
     const Def* nominal() const { return nominal_; }
     size_t index() const { return index_; }
-    Def* replacement() const { return replacement_; }
 
 private:
     const Def* nominal_;
     size_t index_;
-    Def* replacement_;
 };
 
 class NominalSubstitutionHash {
@@ -333,13 +331,13 @@ public:
     static NominalSubstitution sentinel() { return NominalSubstitution(); }
 };
 
-typedef thorin::HashSet<NominalSubstitution, NominalSubstitutionHash> NominalSubs;
+typedef thorin::HashMap<NominalSubstitution, Def*, NominalSubstitutionHash> NominalSubs;
 typedef std::stack<NominalSubstitution> NominalSubsTodo;
 
 const Def* Pi::reduce(Defs args) const {
     assert(args.size() == num_domains());
     Def2Def map;
-    // TODO might we need the nominal stuff here as well?
+    // TODO we might need the nominal stuff here as well
     return body()->substitute(map, 0, args);
 }
 
@@ -372,15 +370,16 @@ const Def* App::try_reduce() const {
             const auto& subst = todo.top();
             todo.pop();
             auto nominal = subst.nominal();
-            auto replacement = subst.replacement();
-            if (replacement == nullptr || replacement->is_closed()) // XXX why is_closed?
-                continue;
-            auto set_new_op = [&] (size_t op_index, const Def* op, size_t indexed_index) {
-                Def2Def map;
-                auto new_op = op->substitute(nominals, todo, map, indexed_index, args);
-                replacement->set(op_index, new_op);
-            };
-            nominal->foreach_op_index(subst.index(), set_new_op);
+            if (auto replacement = find(nominals, subst)) {
+                if (replacement == nullptr || replacement->is_closed()) // XXX why is_closed?
+                    continue;
+                auto set_new_op = [&] (size_t op_index, const Def* op, size_t indexed_index) {
+                    Def2Def map;
+                    auto new_op = op->substitute(nominals, todo, map, indexed_index, args);
+                    replacement->set(op_index, new_op);
+                };
+                nominal->foreach_op_index(subst.index(), set_new_op);
+            }
         }
         return reduced;
     }
@@ -414,20 +413,18 @@ const Def* Def::substitute(NominalSubs& nominals, NominalSubsTodo& todo, Def2Def
         return result;
     }
     if (is_nominal()) {
-        auto i = nominals.find({this, shift, nullptr});
-        if (i == nominals.end()) {
+        if (auto replacement = find(nominals, {this, shift})) {
+            return replacement == nullptr ? this : replacement;
+        } else {
             if (!has_free_var_in(shift, args.size())) {
-                nominals.emplace(this, shift, nullptr);
+                nominals[{this, shift}] = nullptr;
                 return this;
             }
             auto new_type = type()->substitute(nominals, todo, map, shift, args);
-            Def* replacement = this->stub(new_type);
-            auto p = nominals.emplace(this, shift, replacement);
-            assert(p.second);
-            todo.push({this, shift, replacement});
+            replacement = this->stub(new_type);
+            nominals[{this, shift}] = replacement;
+            todo.push({this, shift});
             return replacement;
-        } else {
-            return i->replacement() == nullptr ? i->nominal() : i->replacement();
         }
     } else if (!has_free_var_in(shift, args.size())) {
         map[this] = this;

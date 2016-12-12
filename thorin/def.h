@@ -102,7 +102,7 @@ Array<const Def*> unique_gid_sorted(Defs defs);
 
 class NominalSubstitution;
 class NominalSubstitutionHash;
-typedef thorin::HashSet<NominalSubstitution, NominalSubstitutionHash> NominalSubs;
+typedef thorin::HashMap<NominalSubstitution, Def*, NominalSubstitutionHash> NominalSubs;
 typedef std::stack<NominalSubstitution> NominalSubsTodo;
 
 //------------------------------------------------------------------------------
