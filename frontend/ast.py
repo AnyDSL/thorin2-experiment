@@ -95,10 +95,13 @@ def flatten(x):
 def simplify_set(s):
 	return s.coalesce().detect_equalities().remove_redundancies()
 
-def clone_variables(vars):
+def clone_variables(vars, translation = None):
 	if isinstance(vars, list):
 		return [clone_variables(x) for x in vars]
-	return get_var_name()
+	vname = get_var_name(vars)
+	if translation is not None:
+		translation[vars] = vname
+	return vname
 
 def valid_input_constraints(vars, accepted, possible):
 	# find islset(vars) so that (forall other vars: possible subset of accepted)
@@ -256,6 +259,7 @@ class SpecialFunction(Assume):
 
 class Constant(AstNode):
 	def __init__(self, name):
+		AstNode.__init__(self, [])
 		self.name = name
 
 	def __str__(self):
@@ -352,9 +356,30 @@ class LambdaNominal(Lambda):
 		if len(ops) == 2:
 			ops.append(None)
 		Lambda.__init__(self, ops)
+		self.cstr_vars = None
+		self.cstr_accepted = None
+		self.cstr_possible = None
 
 	def set_body(self, body):
 		self.ops[2] = body
+
+	def get_constraint_clone(self):
+		translation = {}
+		#TODO add outer params as identity
+		vars = clone_variables(self.cstr_vars, translation)
+		for i in xrange(self.cstr_accepted.space.dim(isl.dim_type.set)):
+			v = self.cstr_accepted.space.get_dim_name(isl.dim_type.set, i)
+			if not v in translation:
+				translation[v] = get_var_name(v)
+		accepted = self.cstr_accepted.copy()
+		possible = self.cstr_possible.copy()
+		for i in xrange(accepted.space.dim(isl.dim_type.set)):
+			v_old = accepted.space.get_dim_name(isl.dim_type.set, i)
+			if v_old in translation:
+				accepted = accepted.set_dim_name(isl.dim_type.set, i, translation[v_old])
+				possible = possible.set_dim_name(isl.dim_type.set, i, translation[v_old])
+		return (vars, accepted, possible)
+
 		
 	def __str__(self):
 		return 'λ rec ('+str(self.ops[0].name)+':'+str(self.ops[0].ops[0])+'): '+str(self.ops[1])
@@ -366,6 +391,8 @@ class LambdaNominal(Lambda):
 		raise Exception('TODO')
 
 	def get_constraints(self):
+		if self.cstr_vars is not None:
+			return self.get_constraint_clone()
 		print '[WARN] Constraint checker did not inspect nominal lambda', self
 		param_vars = self.ops[0].get_nat_variables()
 		result_vars = self.ops[1].get_nat_variables()

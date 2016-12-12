@@ -3,6 +3,7 @@ import lambdaparser
 import types
 import islpy as isl
 import predefined_functions
+import checker
 
 
 CODE = '''
@@ -88,6 +89,10 @@ assume intakeLower10: Nat->Nat;
 define if2 = lambda n: Nat. if_gez Nat n (intakeLower10 n, intakeLower10 (opNatPlus (n,7)));
 '''
 
+CODE6 = '''
+define t1 = lambda rec f (x:Nat):Nat. if_gz Nat x (x, f (opNatPlus(x, 5)));
+'''
+
 
 def type_manually():
 	# manual typing
@@ -161,7 +166,8 @@ def type_manually():
 CODE += CODE2
 CODE += CODE3
 #CODE = CODE4
-CODE = CODE5
+#CODE = CODE5
+CODE = CODE6
 prog = lambdaparser.parse_lambda_code(CODE)
 print prog
 nodes = prog.to_ast()
@@ -171,9 +177,10 @@ type_manually()
 for name, root in nodes:
 	print '- ',name, ':=', root,
 	print ': ',root.get_type()
-	constraints = root.get_constraints()
-	print 'Constraints: ', constraints
-	root.check_constraints(constraints)
+	#constraints = root.get_constraints()
+	#print 'Constraints: ', constraints
+	#root.check_constraints(constraints)
+	checker.check_definition(root)
 	print ''
 
 
