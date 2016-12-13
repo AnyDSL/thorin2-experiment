@@ -44,10 +44,10 @@ Qualifier meet(const Defs& defs) {
 //------------------------------------------------------------------------------
 
 void Def::compute_free_vars() {
-    auto update_free_vars = [&] (size_t, const Def* op, size_t shift) {
-        free_vars_ |= op->free_vars_ >> shift;
-    };
-    foreach_op_index(0, update_free_vars);
+    foreach_op_index(0, [&] (size_t, const Def* op, size_t shift) {
+            free_vars_ |= op->free_vars_ >> shift;
+    });
+
     free_vars_ |= type()->free_vars_;
 }
 
@@ -380,12 +380,11 @@ const Def* App::try_reduce() const {
             if (auto replacement = find(nominals, subst)) {
                 if (replacement == nullptr || replacement->is_closed()) // XXX why is_closed?
                     continue;
-                auto set_new_op = [&] (size_t op_index, const Def* op, size_t indexed_index) {
+                nominal->foreach_op_index(subst.index(), [&] (size_t op_index, const Def* op, size_t indexed_index) {
                     Def2Def map;
                     auto new_op = op->substitute(nominals, todo, map, indexed_index, args);
                     replacement->set(op_index, new_op);
-                };
-                nominal->foreach_op_index(subst.index(), set_new_op);
+                });
             }
         }
         return reduced;
@@ -465,12 +464,11 @@ const Def* Var::substitute(size_t shift, Defs args, const Def* new_type) const {
 const Def* Def::rebuild_substitute(NominalSubs& nominals, NominalSubsTodo& todo, Def2Def& map, size_t shift,
                                    Defs args, const Def* new_type) const {
     Array<const Def*> new_ops(num_ops());
-    auto build_new_op = [&] (size_t op_index, const Def* op, size_t shifted_index) {
+    foreach_op_index(shift, [&] (size_t op_index, const Def* op, size_t shifted_index) {
         Def2Def map;
         auto new_op = op->substitute(nominals, todo, map, shifted_index, args);
         new_ops[op_index] = new_op;
-    };
-    foreach_op_index(shift, build_new_op);
+    });
     auto new_def = this->rebuild(world(), new_type, new_ops);
     return map[this] = new_def;
 }
