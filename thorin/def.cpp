@@ -494,7 +494,7 @@ const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
     Substitutions map;
     size_t skipped_shifts = 0;
     for (size_t delta = 1; delta <= index; delta++) {
-        if (!type->has_free_var(0)) {
+        if (!type->has_free_var(skipped_shifts)) {
             skipped_shifts++;
             continue;
         }
