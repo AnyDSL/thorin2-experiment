@@ -55,11 +55,10 @@ public:
     bool operator==(TaggedPtr other) const { return this->ptr() == other.ptr() && this->tag() == other.tag(); }
 
 private:
-#if defined(__x86_64__) || (_M_X64)
-    unsigned tag_ : 16;
-    int64_t  ptr_ : 48; // sign extend to make pointer canonical
-#else
     uint16_t tag_;
+#if defined(__x86_64__) || (_M_X64)
+    int64_t ptr_ : 48; // sign extend to make pointer canonical
+#else
     T* ptr_;
 #endif
 };
