@@ -12,7 +12,7 @@ add_executable(CoC
     thorin/world.h
     thorin/tables.h
     thorin/util/array.h
-    thorin/util/assert.h
+    thorin/util/utility.h
     thorin/util/cast.h
     thorin/util/debug.h
     thorin/util/debug.cpp

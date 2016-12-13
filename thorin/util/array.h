@@ -2,13 +2,14 @@
 #define THORIN_UTIL_ARRAY_H
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstring>
 #include <initializer_list>
+#include <iostream>
 #include <iterator>
 #include <vector>
 
-#include "thorin/util/hash.h"
 #include "thorin/util/stream.h"
 
 namespace thorin {

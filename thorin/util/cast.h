@@ -4,7 +4,7 @@
 #include <cstring>
 #include <type_traits>
 
-#include "thorin/util/assert.h"
+#include "thorin/util/utility.h"
 
 namespace thorin {
 

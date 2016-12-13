@@ -3,24 +3,18 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
+#include <utility>
 #include <cassert>
 #include <cstdint>
-#include <iostream>
-#include <memory>
 #include <type_traits>
-#include <utility>
 
-#include "thorin/util/stream.h"
+#include "thorin/util/utility.h"
 
 namespace thorin {
 
-//------------------------------------------------------------------------------
-
-// currently no better place to fit this
-/// Determines whether \p i is a power of two.
-constexpr size_t is_power_of_2(size_t i) { return ((i != 0) && !(i & (i - 1))); }
-
-constexpr unsigned log2(unsigned n, unsigned p = 0) { return (n <= 1) ? p : log2(n / 2, p + 1); }
+// HACK
+extern uint16_t g_hash_gid_counter;
 
 //------------------------------------------------------------------------------
 
@@ -33,7 +27,8 @@ struct FNV1 {
 /// Returns a new hash by combining the hash @p seed with @p val.
 template<class T>
 uint64_t hash_combine(uint64_t seed, T val) {
-    static_assert(std::is_signed<T>::value || std::is_unsigned<T>::value, "please provide your own hash function");
+    static_assert(std::is_signed<T>::value || std::is_unsigned<T>::value,
+                  "please provide your own hash function");
 
     if (std::is_signed<T>::value)
         return hash_combine(seed, typename std::make_unsigned<T>::type(val));
@@ -51,7 +46,9 @@ template<class T>
 uint64_t hash_combine(uint64_t seed, T* val) { return hash_combine(seed, uintptr_t(val)); }
 
 template<class T, class... Args>
-uint64_t hash_combine(uint64_t seed, T val, Args... args) { return hash_combine(hash_combine(seed, val), args...); }
+uint64_t hash_combine(uint64_t seed, T val, Args&&... args) {
+    return hash_combine(hash_combine(seed, val), std::forward<Args>(args)...);
+}
 
 template<class T>
 uint64_t hash_begin(T val) { return hash_combine(FNV1::offset, val); }
@@ -72,6 +69,11 @@ struct Hash<T*> {
 /// Used internally for @p HashSet and @p HashMap.
 template<class Key, class T, class H = Hash<Key>>
 class HashTable {
+public:
+    typedef Key key_type;
+    typedef typename std::conditional<std::is_void<T>::value, Key, T>::type mapped_type;
+    typedef typename std::conditional<std::is_void<T>::value, Key, std::pair<Key, T>>::type value_type;
+
 private:
     template<class K, class V>
     struct get_key { static K& get(std::pair<K, V>& pair) { return pair.first; } };
@@ -79,17 +81,11 @@ private:
     template<class K>
     struct get_key<K, void> { static K& get(K& key) { return key; } };
 
-public:
-    typedef Key key_type;
-    typedef typename std::conditional<std::is_void<T>::value, Key, T>::type mapped_type;
-    typedef typename std::conditional<std::is_void<T>::value, Key, std::pair<Key, T>>::type value_type;
-
-private:
     static key_type& key(value_type* ptr) { return get_key<Key, T>::get(*ptr); }
     static bool is_invalid(value_type* ptr) { return key(ptr) == H::sentinel(); }
     bool is_invalid(size_t i) { return is_invalid(nodes_+i); }
 
-private:
+public:
     template<bool is_const>
     class iterator_base {
     public:
@@ -115,22 +111,19 @@ private:
 #endif
         {}
 
-        iterator_base& operator=(iterator_base other) { swap(*this, other); return *this; }
-        iterator_base& operator++() { assert(this->table_->id_ == this->id_); *this = skip(ptr_+1, table_); return *this; }
-        iterator_base operator++(int) { assert(this->table_->id_ == this->id_); iterator_base res = *this; ++(*this); return res; }
-        reference operator*() const { assert(this->table_->id_ == this->id_); return *ptr_; }
-        pointer operator->() const { assert(this->table_->id_ == this->id_); return ptr_; }
-        bool operator==(const iterator_base& other) const { assert(this->table_ == other.table_ && this->id_ == other.id_ && this->table_->id_ == this->id_); return this->ptr_ == other.ptr_; }
-        bool operator!=(const iterator_base& other) const { assert(this->table_ == other.table_ && this->id_ == other.id_ && this->table_->id_ == this->id_); return this->ptr_ != other.ptr_; }
-        friend void swap(iterator_base& i1, iterator_base& i2) {
-            using std::swap;
-            swap(i1.ptr_,   i2.ptr_);
-            swap(i1.table_, i2.table_);
-#ifndef NDEBUG
-            swap(i1.id_,    i2.id_);
-#endif
+        inline void verify() const { assert(table_->id_ == id_); }
+        inline void verify(iterator_base i) const {
+            assert(table_ == i.table_ && id_ == i.id_);
+            verify();
         }
-        pointer ptr() const { assert(this->table_->id_ == this->id_); return ptr_; }
+
+        iterator_base& operator=(const iterator_base& other) = default;
+        iterator_base& operator++() { verify(); *this = skip(ptr_+1, table_); return *this; }
+        iterator_base operator++(int) { verify(); iterator_base res = *this; ++(*this); return res; }
+        reference operator*() const { verify(); return *ptr_; }
+        pointer operator->() const { verify(); return ptr_; }
+        bool operator==(const iterator_base& other) { verify(other); return this->ptr_ == other.ptr_; }
+        bool operator!=(const iterator_base& other) { verify(other); return this->ptr_ != other.ptr_; }
 
     private:
         static iterator_base skip(value_type* ptr, const HashTable* table) {
@@ -147,7 +140,6 @@ private:
         friend class HashTable;
     };
 
-public:
     typedef std::size_t size_type;
     typedef iterator_base<false> iterator;
     typedef iterator_base<true> const_iterator;
@@ -159,6 +151,7 @@ public:
     HashTable()
         : capacity_(StackCapacity)
         , size_(0)
+        , gid_(g_hash_gid_counter++)
         , nodes_(array_.data())
 #ifndef NDEBUG
         , id_(0)
@@ -176,6 +169,7 @@ public:
     HashTable(const HashTable& other)
         : capacity_(other.capacity_)
         , size_(other.size_)
+        , gid_(g_hash_gid_counter++)
 #ifndef NDEBUG
         , id_(0)
 #endif
@@ -191,13 +185,13 @@ public:
 
     template<class InputIt>
     HashTable(InputIt first, InputIt last)
-        : HashTable(capacity)
+        : HashTable()
     {
         insert(first, last);
     }
 
     HashTable(std::initializer_list<value_type> ilist)
-        : HashTable(capacity)
+        : HashTable()
     {
         insert(ilist);
     }
@@ -205,6 +199,9 @@ public:
     ~HashTable() {
         if (on_heap())
             delete[] nodes_;
+#ifndef NDEBUG
+        //assert(num_misses_ <= num_operations_ * 10 && "your hash function is garbage");
+#endif
     }
 
     // iterators
@@ -223,15 +220,22 @@ public:
     // emplace/insert
     template<class... Args>
     std::pair<iterator,bool> emplace(Args&&... args) {
+        if (size_ > capacity_/size_t(4) + capacity_/size_t(2))
+            rehash(capacity_*size_t(2));
+
+        return emplace_no_rehash(std::forward<Args>(args)...);
+    }
+
+    // emplace/insert
+    template<class... Args>
+    std::pair<iterator,bool> emplace_no_rehash(Args&&... args) {
         using std::swap;
 #ifndef NDEBUG
         ++id_;
+        ++num_operations_;
 #endif
         auto n = value_type(std::forward<Args>(args)...);
         auto& k = key(&n);
-
-        if (size_ > capacity_/size_t(4) + capacity_/size_t(2))
-            rehash(capacity_*size_t(2));
 
         auto result = end_ptr();
         for (size_t i = desired_pos(k), distance = 0; true; i = mod(i+1), ++distance) {
@@ -243,6 +247,9 @@ public:
             } else if (result == end_ptr() && H::eq(key(nodes_+i), k)) {
                 return std::make_pair(iterator(nodes_+i, this), false);
             } else {
+#ifndef NDEBUG
+                ++num_misses_;
+#endif
                 size_t cur_distance = probe_distance(i);
                 if (cur_distance < distance) {
                     result = result == end_ptr() ? nodes_+i : result;
@@ -262,17 +269,26 @@ public:
 
     template<class I>
     bool insert(I begin, I end) {
+        size_t s = size() + std::distance(begin, end);
+        size_t c = round_to_power_of_2(s);
+
+        if (s > c/size_t(4) + c/size_t(2))
+            c *= size_t(2);
+
+        if (c != capacity_)
+            rehash(c);
+
         bool changed = false;
         for (auto i = begin; i != end; ++i)
-            changed |= insert(*i).second;
+            changed |= emplace_no_rehash(*i).second;
         return changed;
     }
 
     void erase(const_iterator pos) {
         using std::swap;
 
+        pos.verify();
         assert(pos.table_ == this && "iterator does not match to this table");
-        assert(pos.id_ == id_ && "iterator used after emplace/insert");
         assert(!empty());
         assert(pos != end() && !is_invalid(pos.ptr_));
         --size_;
@@ -283,11 +299,17 @@ public:
         if (capacity_ > MinCapacity && size_ < capacity_/size_t(4))
             rehash(capacity_/size_t(2));
         else {
-            for (size_t curr = pos.ptr_-nodes_, next = mod(curr+1); !is_invalid(next) && probe_distance(next) != 0; curr = next, next = mod(next+1))
+            for (size_t curr = pos.ptr_-nodes_, next = mod(curr+1);
+                !is_invalid(next) && probe_distance(next) != 0; curr = next, next = mod(next+1)) {
                 swap(nodes_[curr], nodes_[next]);
+#ifndef NDEBUG
+                ++num_misses_;
+#endif
+            }
         }
 #ifndef NDEBUG
         ++id_;
+        ++num_operations_;
 #endif
     }
 
@@ -317,6 +339,9 @@ public:
     }
 
     iterator find(const key_type& k) {
+#ifndef NDEBUG
+        ++num_operations_;
+#endif
         if (empty())
             return end();
 
@@ -325,15 +350,23 @@ public:
                 return end();
             if (H::eq(key(nodes_+i), k))
                 return iterator(nodes_+i, this);
+#ifndef NDEBUG
+            ++num_misses_;
+#endif
         }
     }
 
-    const_iterator find(const key_type& key) const { return const_iterator(const_cast<HashTable*>(this)->find(key).ptr_, this); }
+    const_iterator find(const key_type& key) const {
+        return const_iterator(const_cast<HashTable*>(this)->find(key).ptr_, this);
+    }
+
     size_t count(const key_type& key) const { return find(key) == end() ? 0 : 1; }
     bool contains(const key_type& key) const { return count(key) == 1; }
 
     void rehash(size_t new_capacity) {
         using std::swap;
+
+        assert(is_power_of_2(new_capacity));
 
         auto old_capacity = capacity_;
         capacity_ = new_capacity;
@@ -343,11 +376,17 @@ public:
         for (size_t i = 0; i != old_capacity; ++i) {
             auto& old = old_nodes[i];
             if (!is_invalid(&old)) {
+#ifndef NDEBUG
+                ++num_operations_;
+#endif
                 for (size_t i = desired_pos(key(&old)), distance = 0; true; i = mod(i+1), ++distance) {
                     if (is_invalid(i)) {
                         swap(nodes_[i], old);
                         break;
                     } else {
+#ifndef NDEBUG
+                        ++num_misses_;
+#endif
                         size_t cur_distance = probe_distance(i);
                         if (cur_distance < distance) {
                             distance = cur_distance;
@@ -384,6 +423,7 @@ public:
 
         swap(t1.capacity_, t2.capacity_);
         swap(t1.size_,     t2.size_);
+        swap(t1.gid_,      t2.gid_);
 #ifndef NDEBUG
         swap(t1.id_,       t2.id_);
 #endif
@@ -396,7 +436,7 @@ private:
     int id() const { return id_; }
 #endif
     size_t mod(size_t i) const { return i & (capacity_-1); }
-    size_t desired_pos(const key_type& key) const { return mod(H::hash(key)); }
+    size_t desired_pos(const key_type& key) const { return mod(hash_combine(H::hash(key), gid_)); }
     size_t probe_distance(size_t i) { return mod(i + capacity() - desired_pos(key(nodes_+i))); }
     value_type* end_ptr() const { return nodes_ + capacity(); }
     bool on_heap() const { return capacity_ != StackCapacity; }
@@ -415,9 +455,12 @@ private:
 
     uint32_t capacity_;
     uint32_t size_;
+    uint16_t gid_;
     std::array<value_type, StackCapacity> array_;
     value_type* nodes_;
 #ifndef NDEBUG
+    int num_operations_ = 0;
+    int num_misses_ = 0;
     int id_;
 #endif
 };
@@ -440,12 +483,10 @@ public:
     typedef typename Super::const_iterator const_iterator;
 
     HashSet() {}
-
     template<class InputIt>
     HashSet(InputIt first, InputIt last)
         : Super(first, last)
     {}
-
     HashSet(std::initializer_list<value_type> ilist)
         : Super(ilist)
     {}
@@ -461,7 +502,7 @@ public:
  * This container is for the most part compatible with <tt>std::unordered_map</tt>.
  * We use our own implementation in order to have a consistent and deterministic behavior across different platforms.
  */
-template<class Key, class T, class H>
+template<class Key, class T, class H = Hash<Key>>
 class HashMap : public HashTable<Key, T, H> {
 public:
     typedef HashTable<Key, T, H> Super;
@@ -486,7 +527,9 @@ public:
     {}
 
     mapped_type& operator[](const key_type& key) { return Super::insert(value_type(key, T())).first->second; }
-    mapped_type& operator[](key_type&& key) { return Super::insert(value_type(std::move(key), T())).first->second; }
+    mapped_type& operator[](key_type&& key) {
+        return Super::insert(value_type(std::move(key), T())).first->second;
+    }
 
     void dump() const {
         stream_list(std::cout, *this, [&] (const auto& p) { std::cout << p.first << " : " << p.second; }, "{", "}\n");

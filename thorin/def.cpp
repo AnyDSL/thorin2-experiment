@@ -5,6 +5,9 @@
 
 namespace thorin {
 
+// HACK
+uint16_t g_hash_gid_counter = 0;
+
 bool operator<(Qualifier lhs, Qualifier rhs) {
     if (lhs == rhs) return false;
     if (rhs == Qualifier::Unrestricted) return true;
