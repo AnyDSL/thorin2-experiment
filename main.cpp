@@ -87,7 +87,7 @@ int main()  {
     ////w.extract(n3, 0)->dump();
 
     //auto make_pair = w.axiom(w.pi(w.unit(), w.sigma({w.nat(), w.nat()})), {"make_pair"});
-	//make_pair->dump();
+    //make_pair->dump();
     //w.app(make_pair, n1)->dump();
 
     //auto plus = w.axiom(w.pi({w.nat(), w.nat()}, w.nat()), {"+"});
