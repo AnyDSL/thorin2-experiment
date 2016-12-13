@@ -297,11 +297,7 @@ const Def* Universe    ::rebuild(World& to, const Def*  , Defs    ) const { retu
 const Def* Var         ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
 const Def* Variant     ::rebuild(World& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
 
-<<<<<<< HEAD
-Axiom* Axiom::stub(World& to, const Def*) const {
-=======
 Axiom* Axiom::stub(World& to, const Def* type, Debug dbg) const {
->>>>>>> cc0c8d3... Use fixpoint for nominals for all substitutions, renaming
     assert(&world() != &to);
     assert(is_nominal());
     return const_cast<Axiom*>(this);
@@ -419,11 +415,11 @@ void Def::substitute_nominals(NominalSubs& nominals, NominalTodos& todo, Substit
         if (auto replacement = find(nominals, subst)) {
             if (replacement == nullptr || replacement->is_closed()) // XXX why is_closed?
                 continue;
-            subst.def()->foreach_op_index(
-                    subst.index(), [&] (size_t op_index, const Def* op, size_t indexed_index) {
+            subst.def()->foreach_op_index(subst.index(),
+                    [&] (size_t op_index, const Def* op, size_t indexed_index) {
                 auto new_op = op->substitute(nominals, todo, map, indexed_index, args);
                 replacement->set(op_index, new_op);
-            };
+            });
         }
     }
 }
@@ -440,12 +436,6 @@ const Def* Def::substitute(NominalSubs& nominals, NominalTodos& todo, Substituti
             }
             auto new_type = type()->substitute(nominals, todo, map, shift, args);
             std::stringstream ss;
-#ifndef NDEBUG
-            if (args.size() == 1)
-                streamf(ss, "[%/%]", args, shift);
-            else
-                streamf(ss, "[%/%..%]", args, shift, shift + args.size() - 1);
-#endif
             replacement = this->stub(new_type, debug() + ss.str());
             nominals[{this, shift}] = replacement;
             todo.push({this, shift});
@@ -489,7 +479,7 @@ const Def* Def::rebuild_substitute(NominalSubs& nominals, NominalTodos& todo, Su
     foreach_op_index(shift, [&] (size_t op_index, const Def* op, size_t shifted_index) {
         auto new_op = op->substitute(nominals, todo, map, shifted_index, args);
         new_ops[op_index] = new_op;
-    };
+    });
 
     auto new_def = this->rebuild(world(), new_type, new_ops);
     return map[{this, shift}] = new_def;

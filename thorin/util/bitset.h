@@ -29,7 +29,7 @@ inline size_t bitcount(uint64_t v) {
 
 /**
  * A tagged pointer: first 16 bits is tag, remaining 48 bits is the actual pointer.
- * For non-x86_64 there is a fallback impplementation.
+ * For non-x86_64 there is a fallback implementation.
  */
 template<class T>
 class TaggedPtr {
