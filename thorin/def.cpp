@@ -297,7 +297,7 @@ const Def* Universe    ::rebuild(World& to, const Def*  , Defs    ) const { retu
 const Def* Var         ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
 const Def* Variant     ::rebuild(World& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
 
-Axiom* Axiom::stub(World& to, const Def* type, Debug dbg) const {
+Axiom* Axiom::stub(World& to, const Def*, Debug) const {
     assert(&world() != &to);
     assert(is_nominal());
     return const_cast<Axiom*>(this);

@@ -258,7 +258,7 @@ public:
     //@}
 
     const Def* substitute(Substitutions&, size_t, Defs) const;
-    const Def* rebuild(const Def* type, Defs defs, Debug debug = {}) const { return rebuild(world(), type, defs); }
+    const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const { return stub(type, debug()); }
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
 
