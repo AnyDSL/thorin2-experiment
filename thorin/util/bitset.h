@@ -1,9 +1,29 @@
 #ifndef THORIN_UTIL_BITSET_H
 #define THORIN_UTIL_BITSET_H
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
 #include "thorin/util/utility.h"
 
 namespace thorin {
+
+inline size_t bitcount(uint64_t v) {
+#if defined(__GNUC__) | defined(__clang__)
+    return __builtin_popcountll(v);
+#elif defined(_MSC_VER)
+    return __popcnt64(v);
+#else
+    // see https://stackoverflow.com/questions/3815165/how-to-implement-bitcount-using-only-bitwise-operators
+    auto c = v - ((v >>  1ull)      & 0x5555555555555555ull);
+    c =          ((c >>  2ull)      & 0x3333333333333333ull) + (c & 0x3333333333333333ull);
+    c =          ((c >>  4ull) + c) & 0x0F0F0F0F0F0F0F0Full;
+    c =          ((c >>  8ull) + c) & 0x00FF00FF00FF00FFull;
+    c =          ((c >> 16ull) + c) & 0x0000FFFF0000FFFFull;
+    return       ((c >> 32ull) + c) & 0x00000000FFFFFFFFull;
+#endif
+}
 
 /**
  * A tagged pointer: first 16 bits is index, remaining 48 bits is the actual pointer.
