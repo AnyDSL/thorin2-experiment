@@ -55,6 +55,8 @@ void testNominal() {
     print_value_type(wrap_app);
     print_value_type(wrap_app->type()->op(0));
     print_value_type(wrap_app->type()->op(1));
-    /*auto lam =*/ w.pi_lambda(pi_wrap, w.any(body_type, w.unit()));
-    std::cout << "--- NominalTest end ---" << endl;
+    auto lam = w.pi_lambda(pi_wrap, w.any(body_type, w.tuple(nil, {})));
+    print_value_type(lam);
+    print_value_type(w.app(lam, Nat));
+    cout << "--- NominalTest end ---" << endl;
 }

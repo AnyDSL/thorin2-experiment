@@ -79,10 +79,11 @@ Array<const Def*> gid_sorted(Defs defs);
 void unique_gid_sort(Array<const Def*>* defs);
 Array<const Def*> unique_gid_sorted(Defs defs);
 
-class NominalSubstitution;
-class NominalSubstitutionHash;
-typedef thorin::HashMap<NominalSubstitution, Def*, NominalSubstitutionHash> NominalSubs;
-typedef std::stack<NominalSubstitution> NominalSubsTodo;
+class DefIndex;
+class DefIndexHash;
+typedef thorin::HashMap<DefIndex, Def*, DefIndexHash> NominalSubs;
+typedef thorin::HashMap<DefIndex, const Def*, DefIndexHash> Substitutions;
+typedef std::stack<DefIndex> NominalTodos;
 
 //------------------------------------------------------------------------------
 
@@ -256,12 +257,12 @@ public:
     }
     //@}
 
-    const Def* substitute(Def2Def&, size_t, Defs) const;
-    const Def* substitute(NominalSubs&, NominalSubsTodo&, Def2Def&, size_t, Defs) const;
-    const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
-    Def* stub(const Def* type) const { return stub(world(), type); }
+    const Def* substitute(Substitutions&, size_t, Defs) const;
+    const Def* rebuild(const Def* type, Defs defs, Debug debug = {}) const { return rebuild(world(), type, defs); }
+    Def* stub(const Def* type) const { return stub(type, debug()); }
+    Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
 
-    virtual Def* stub(World&, const Def*) const { THORIN_UNREACHABLE; }
+    virtual Def* stub(World&, const Def*, Debug) const { THORIN_UNREACHABLE; }
     virtual bool maybe_dependent() const { return true; }
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "" || is_nominal())
@@ -293,7 +294,9 @@ protected:
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
-    const Def* rebuild_substitute(NominalSubs&, NominalSubsTodo&, Def2Def&, size_t, Defs, const Def*) const;
+    const Def* rebuild_substitute(NominalSubs&, NominalTodos&, Substitutions&, size_t, Defs, const Def*) const;
+    const Def* substitute(NominalSubs&, NominalTodos&, Substitutions&, size_t, Defs) const;
+    static void substitute_nominals(NominalSubs&, NominalTodos&, Substitutions&, Defs);
     bool on_heap() const { return ops_ != vla_ops_; }
     // this must match with the 64bit fields below
 
@@ -408,7 +411,7 @@ public:
     const Def* reduce(Defs) const;
     void set(const Def* def) { Def::set(0, def); };
     const Pi* type() const { return Constructor::type()->as<Pi>(); }
-    Lambda* stub(World&, const Def*) const override;
+    Lambda* stub(World&, const Def*, Debug) const override;
 
     std::ostream& stream(std::ostream&) const override;
 
@@ -457,7 +460,7 @@ public:
     bool is_unit() const { return ops().empty(); }
     void set(size_t i, const Def* def) { Def::set(i, def); };
     std::ostream& stream(std::ostream&) const override;
-    Sigma* stub(World&, const Def*) const override;
+    Sigma* stub(World&, const Def*, Debug) const override;
 
 private:
     void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const override {
@@ -701,7 +704,7 @@ public:
     Box box() const { assert(!is_nominal()); return box_; }
     bool maybe_dependent() const override { return false; }
     std::ostream& stream(std::ostream&) const override;
-    Axiom* stub(World&, const Def*) const override;
+    Axiom* stub(World&, const Def*, Debug) const override;
 
 private:
     uint64_t vhash() const override;
