@@ -8,17 +8,17 @@ add_executable(CoC
     qualifiertest.cpp
     thorin/def.cpp
     thorin/def.h
+    thorin/tables.h
     thorin/world.cpp
     thorin/world.h
-    thorin/tables.h
     thorin/util/array.h
-    thorin/util/utility.h
     thorin/util/cast.h
-    thorin/util/debug.h
     thorin/util/debug.cpp
+    thorin/util/debug.h
     thorin/util/hash.h
     thorin/util/stream.cpp
     thorin/util/stream.h
+    thorin/util/utility.h
 )
 set_property(TARGET CoC PROPERTY CXX_STANDARD 14)
 set_property(TARGET CoC PROPERTY CXX_STANDARD_REQUIRED on)
