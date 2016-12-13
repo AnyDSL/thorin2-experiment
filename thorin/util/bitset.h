@@ -140,7 +140,7 @@ private:
         };
 
         struct {
-            unsigned dummy_ :  1; ///< same as @p heap - just there for layouting.
+            unsigned dummy_ :  1; ///< same as @p heap_ - just there for layouting
             uint64_t data_  : 63;
         };
 
