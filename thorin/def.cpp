@@ -498,8 +498,16 @@ const Def* Def::rebuild_substitute(NominalSubs& nominals, NominalTodos& todo, Su
 const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
     auto sigma = tuple->type()->as<Sigma>();
     auto type = sigma->op(index);
+    if (!type->has_free_var_in(0, index))
+        return type;
+
     Substitutions map;
-    for (size_t delta = 1; type->maybe_dependent() && delta <= index; delta++) {
+    size_t skipped_shifts = 0;
+    for (size_t delta = 1; delta <= index; delta++) {
+        if (!type->has_free_var(0)) {
+            skipped_shifts++;
+            continue;
+        }
         auto prev_extract = world.extract(tuple, index - delta);
 
         // This also shifts any Var with index > skipped_shifts by -1
