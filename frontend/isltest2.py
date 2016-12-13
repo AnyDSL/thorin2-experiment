@@ -77,5 +77,7 @@ bset = bset.add_constraint(isl.Constraint.ineq_from_names(space, {'b': -1, 'c': 
 print bset
 bset = bset.project_out(isl.dim_type.set, 1, 1)
 print bset
+print bset.find_dim_by_name(isl.dim_type.set, 'd')
+print bset.find_dim_by_name(isl.dim_type.set, 'a')
 
 

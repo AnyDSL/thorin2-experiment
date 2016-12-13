@@ -30,7 +30,7 @@ def find_all_nominals(node, nominals=[]):
 
 def type_inference(nodes):
 	'''
-	:param List(ast.LambdaNominal) nodes:
+	:param list(ast.LambdaNominal) nodes:
 	:return:
 	'''
 	# filter out functions that are already types
@@ -39,11 +39,8 @@ def type_inference(nodes):
 	# permissive-type those that have not been typed yet
 	for func in nodes:
 		if func.cstr_vars is None:
-			print '[WARN] No explicit constraints given for '+repr(func)
-			func.cstr_vars = func.ops[1].get_nat_variables()
-			bset = isl.BasicSet.universe(isl.Space.create_from_names(ast.ctx, set=ast.flatten(func.cstr_vars)))
-			func.cstr_accepted = bset
-			func.cstr_possible = bset
+			print '[WARN] No explicit constraints given for '+repr(func)+'. Using permissive default.'
+			func.set_default_constraints()
 
 
 def check_nominal(node):
@@ -55,8 +52,28 @@ def check_nominal(node):
 	print 'matching', node.cstr_vars, node.cstr_accepted, node.cstr_possible
 	body_vars, body_accepted, body_possible = node.get_constraints_recursive()
 	# check if body_vars matches node.cstr_vars
+	var_mapping = {}
+	if not ast.check_variables_structure_equal(body_vars, node.cstr_vars):
+		raise Exception('Invalid type (vnames) of '+repr(node))
 	# check if accepted superset of node.cstr_accepted
+	subset, left, right = ast.is_subset(node.cstr_accepted, body_accepted, var_mapping)
+	if not subset:
+		valid_set, error_set = ast.valid_input_constraints(ast.flatten(node.cstr_vars), right, left)
+		print '[ERR]', node, 'violates its given constraints (accepted range)'
+		print 'Valid if:  ', ast.simplify_set(valid_set)
+		print 'Invalid if:', ast.simplify_set(error_set)
+		return False
 	# check if (possible intersect node.cstr_accepted) subset of node.cstr_possible
+	_, cstr_accepted, possible_ext = ast.is_subset(node.cstr_accepted, body_possible) # bring body_possible to common form
+	subset, left, right = ast.is_subset(cstr_accepted.intersect(possible_ext), node.cstr_possible)
+	if not subset:
+		valid_set, error_set = ast.valid_input_constraints(ast.flatten(node.cstr_vars), right, left)
+		print '[ERR]', node, 'violates its given constraints (possible range)'
+		print 'Valid if:  ', ast.simplify_set(valid_set)
+		print 'Invalid if:', ast.simplify_set(error_set)
+		return False
+	return True
+
 
 
 def check_definition(node):
@@ -72,6 +89,7 @@ def check_definition(node):
 		if not check_nominal(node):
 			print '[ERR]', node, 'violates its constraints!'
 			return False
+		print '[INFO] Recursive function', node, 'has been verified.'
 	# check "real" program - assuming all recursive functions are safe
 	return check_definition_simple(node)
 
