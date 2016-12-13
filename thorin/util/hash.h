@@ -3,12 +3,12 @@
 
 #include <algorithm>
 #include <array>
-#include <memory>
-#include <utility>
 #include <cassert>
 #include <cstdint>
-#include <functional>
+#include <iostream>
+#include <memory>
 #include <type_traits>
+#include <utility>
 
 #include "thorin/util/stream.h"
 
@@ -428,7 +428,7 @@ private:
  * This container is for the most part compatible with <tt>std::unordered_set</tt>.
  * We use our own implementation in order to have a consistent and deterministic behavior across different platforms.
  */
-template<class Key, class H = Hash<Key>, class=void>
+template<class Key, class H = Hash<Key>>
 class HashSet : public HashTable<Key, void, H> {
 public:
     typedef HashTable<Key, void, H> Super;
@@ -450,25 +450,10 @@ public:
         : Super(ilist)
     {}
 
+    void dump() const { stream_list(std::cout, *this, [&] (const auto& elem) { std::cout << elem; }, "{", "}\n"); }
+
     friend void swap(HashSet& s1, HashSet& s2) { swap(static_cast<Super&>(s1), static_cast<Super&>(s2)); }
 };
-
-#ifndef NDEBUG
-template<class Key, class H>
-class HashSet<Key, H, class std::enable_if<is_streamable<Key>::value, void>::type>
-    : public HashSet<Key, H, bool>, public Streamable {
-protected:
-    std::ostream& stream(std::ostream& os) const {
-        os << "{";
-        auto sep = "";
-        for (auto key : *this) {
-            os << sep << key;
-            sep = ", ";
-        }
-        return os << "}";
-    }
-};
-#endif
 
 //------------------------------------------------------------------------------
 
@@ -476,7 +461,7 @@ protected:
  * This container is for the most part compatible with <tt>std::unordered_map</tt>.
  * We use our own implementation in order to have a consistent and deterministic behavior across different platforms.
  */
-template<class Key, class T, class H, class=void>
+template<class Key, class T, class H>
 class HashMap : public HashTable<Key, T, H> {
 public:
     typedef HashTable<Key, T, H> Super;
@@ -503,25 +488,12 @@ public:
     mapped_type& operator[](const key_type& key) { return Super::insert(value_type(key, T())).first->second; }
     mapped_type& operator[](key_type&& key) { return Super::insert(value_type(std::move(key), T())).first->second; }
 
+    void dump() const {
+        stream_list(std::cout, *this, [&] (const auto& p) { std::cout << p.first << " : " << p.second; }, "{", "}\n");
+    }
+
     friend void swap(HashMap& m1, HashMap& m2) { swap(static_cast<Super&>(m1), static_cast<Super&>(m2)); }
 };
-
-#ifdef NDEBUG
-template<class Key, class T, class H>
-class HashMap<Key, T, H, typename std::enable_if<is_streamable<Key>::value && is_streamable<T>::value, void>::type>
-    : public HashMap<Key, T, H, bool> , public Streamable {
-public:
-    std::ostream& stream(std::ostream& os) const {
-        os << "{";
-        auto sep = "";
-        for (auto key_mapped : *this) {
-            os << sep << key_mapped.first << " : " << key_mapped.second;
-            sep = ", ";
-        }
-        return os << "}";
-    }
-};
-#endif
 
 //------------------------------------------------------------------------------
 

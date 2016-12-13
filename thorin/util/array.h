@@ -13,7 +13,8 @@
 
 namespace thorin {
 
-template<class T> class Array;
+template<class T>
+class Array;
 
 //------------------------------------------------------------------------------
 
@@ -26,7 +27,7 @@ template<class T> class Array;
  * Note that you can often construct an @p ArrayRef inline with an initializer_list: <code>foo(arg1, {elem1, elem2, elem3}, arg3)</code>.
  * Useful operations are @p skip_front and @p skip_back to create other @p ArrayRef%s.
  */
-template<class T, typename=void>
+template<class T>
 class ArrayRef {
 public:
     typedef T value_type;
@@ -74,30 +75,12 @@ public:
     Array<T> cut(ArrayRef<size_t> indices, size_t reserve = 0) const;
     template<class Other>
     bool operator==(const Other& other) const { return this->size() == other.size() && std::equal(begin(), end(), other.begin()); }
+    void dump() const { stream_list(std::cout, *this, [&] (const auto& elem) { std::cout << elem; }, "{", "}\n"); }
 
 private:
     size_t size_;
     const T* ptr_;
 };
-
-#ifndef NDEBUG
-template<class T>
-class ArrayRef<T, typename std::enable_if<is_streamable<T>::value>::type>
-    : public ArrayRef<T, bool>, public Streamable {
-public:
-    using ArrayRef<T, bool>::ArrayRef;
-
-    std::ostream& stream(std::ostream& os) const {
-        os << "[";
-        auto sep = "";
-        for (auto element : *this) {
-            os << sep << element;
-            sep = ", ";
-        }
-        return os << "]";
-    }
-};
-#endif
 
 //------------------------------------------------------------------------------
 
@@ -200,6 +183,7 @@ public:
     T const& operator[](size_t i) const { assert(i < size() && "index out of bounds"); return ptr_[i]; }
     bool operator==(const Array<T>& other) const { return ArrayRef<T>(*this) == ArrayRef<T>(other); }
     Array<T>& operator=(Array<T> other) { swap(*this, other); return *this; }
+    void dump() const { ref().dump(); }
 
     friend void swap(Array& a, Array& b) {
         using std::swap;
@@ -212,8 +196,8 @@ private:
     T* ptr_;
 };
 
-template<class T, typename V>
-Array<T> ArrayRef<T, V>::cut(ArrayRef<size_t> indices, size_t reserve) const {
+template<class T>
+Array<T> ArrayRef<T>::cut(ArrayRef<size_t> indices, size_t reserve) const {
     size_t num_old = size();
     size_t num_idx = indices.size();
     size_t num_res = num_old - num_idx;
@@ -257,27 +241,6 @@ template<class T>
 Array<typename T::value_type> make_array(const T& container) {
     return Array<typename T::value_type>(container.begin(), container.end());
 }
-
-//------------------------------------------------------------------------------
-
-template<class T>
-inline size_t hash_combine(size_t seed, thorin::ArrayRef<T> aref) {
-    for (size_t i = 0, e = aref.size(); i != e; ++i)
-        seed = hash_combine(seed, aref[i]);
-    return seed;
-}
-
-template<class T>
-struct Hash<thorin::ArrayRef<T>> {
-    uint64_t operator()(thorin::ArrayRef<T> aref) const { return hash_combine(hash_begin(), aref); }
-};
-
-template<class T>
-struct Hash<thorin::Array<T>> {
-    uint64_t operator()(const thorin::Array<T>& array) const { return hash_value(array.ref()); }
-};
-
-//------------------------------------------------------------------------------
 
 }
 
