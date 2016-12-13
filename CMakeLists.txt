@@ -12,6 +12,7 @@ add_executable(CoC
     thorin/world.cpp
     thorin/world.h
     thorin/util/array.h
+    thorin/util/bitset.h
     thorin/util/cast.h
     thorin/util/debug.cpp
     thorin/util/debug.h

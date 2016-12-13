@@ -6,6 +6,7 @@
 #include <stack>
 
 #include "thorin/util/array.h"
+#include "thorin/util/bitset.h"
 #include "thorin/util/debug.h"
 #include "thorin/util/cast.h"
 #include "thorin/util/hash.h"
@@ -24,40 +25,18 @@ class World;
 class Use {
 public:
     Use() {}
-#if defined(__x86_64__) || (_M_X64)
-    Use(size_t index, const Def* def)
-        : uptr_(reinterpret_cast<uintptr_t>(def) | (uintptr_t(index) << 48ull))
+    Use(uint16_t index, const Def* def)
+        : tagged_ptr_(index, def)
     {}
 
-    size_t index() const { return uptr_ >> 48ull; }
-    const Def* def() const {
-        // sign extend to make pointer canonical
-        return reinterpret_cast<const Def*>((iptr_  << 16) >> 16) ;
-    }
-#else
-    Use(size_t index, const Def* def)
-        : index_(index)
-        , def_(def)
-    {}
-
-    size_t index() const { return index_; }
-    const Def* def() const { return def_; }
-#endif
-    operator const Def*() const { return def(); }
-    const Def* operator->() const { return def(); }
-    bool operator==(Use other) const { return this->def() == other.def() && this->index() == other.index(); }
+    size_t index() const { return tagged_ptr_.index(); }
+    const Def* def() const { return tagged_ptr_.ptr(); }
+    operator const Def*() const { return tagged_ptr_; }
+    const Def* operator->() const { return tagged_ptr_; }
+    bool operator==(Use other) const { return this->tagged_ptr_ == other.tagged_ptr_; }
 
 private:
-#if defined(__x86_64__) || (_M_X64)
-    /// A tagged pointer: first 16 bits is index, remaining 48 bits is the actual pointer.
-    union {
-        uintptr_t uptr_;
-        intptr_t iptr_;
-    };
-#else
-    size_t index_;
-    const Def* def_;
-#endif
+    TaggedPtr<const Def> tagged_ptr_;
 };
 
 //------------------------------------------------------------------------------
@@ -65,7 +44,7 @@ private:
 struct UseHash {
     inline static uint64_t hash(Use use);
     static bool eq(Use u1, Use u2) { return u1 == u2; }
-    static Use sentinel() { return Use(size_t(-1), (const Def*)(-1)); }
+    static Use sentinel() { return Use(uint16_t(-1), (const Def*)(-1)); }
 };
 
 typedef HashSet<Use, UseHash> Uses;
