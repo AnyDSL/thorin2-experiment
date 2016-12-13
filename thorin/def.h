@@ -201,20 +201,20 @@ protected:
 
 public:
     //@{
-    /** get operands */
+    /// get operands
     Defs ops() const { return Defs(ops_, num_ops_); }
     const Def* op(size_t i) const { return ops()[i]; }
     size_t num_ops() const { return num_ops_; }
     //@}
 
     //@{
-    /** get @p Uses%s */
+    /// get @p Uses%s
     const Uses& uses() const { return uses_; }
     size_t num_uses() const { return uses().size(); }
     //@}
 
     //@{
-    /** get @p Debug information */
+    /// get @p Debug information
     Debug& debug() const { return debug_; }
     Location location() const { return debug_; }
     const std::string& name() const { return debug().name(); }
@@ -222,7 +222,8 @@ public:
     //@}
 
     //@{
-    /** get @p Sort */
+    /// get type and @p Sort
+    const Def* type() const { return type_; }
     Sort sort() const;
     bool is_term() const { return sort() == Sort::Term; }
     bool is_type() const { return sort() == Sort::Type; }
@@ -231,18 +232,7 @@ public:
     //@}
 
     //@{
-    /** misc getters */
-    Tag tag() const { return Tag(tag_); }
-    const Def* type() const { return type_; }
-    uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
-    World& world() const { return *world_; }
-    /// A nominal @p Def is always different from each other @p Def.
-    bool is_nominal() const { return nominal_; }
-    bool is_closed() const { return closed_; }
-    //@}
-
-    //@{
-    ///** get @p Qualifier */
+    /// get @p Qualifier
     Qualifier qualifier() const  { return type() ? type()->qualifier() : Qualifier(qualifier_); }
     bool is_unrestricted() const { return bool(qualifier()) & bool(Qualifier::Unrestricted); }
     bool is_affine() const       { return bool(qualifier()) & bool(Qualifier::Affine); }
@@ -251,7 +241,19 @@ public:
     //@}
 
     //@{
-    /** free variables */
+    /// misc getters
+    uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
+    size_t gid() const { return gid_; }
+    static size_t gid_counter() { return gid_counter_; }
+    /// A nominal @p Def is always different from each other @p Def.
+    bool is_nominal() const { return nominal_; }
+    bool is_closed() const { return closed_; }
+    Tag tag() const { return Tag(tag_); }
+    World& world() const { return *world_; }
+    //@}
+
+    //@{
+    /// free variables
     // TODO return (dynamic) bitset (wrapper)
     const std::bitset<64>& free_vars() const { return free_vars_; }
 
@@ -275,15 +277,10 @@ public:
     }
     //@}
 
-    size_t gid() const { return gid_; }
-    uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
-
     const Def* substitute(Def2Def&, size_t, Defs) const;
     const Def* substitute(NominalSubs&, NominalSubsTodo&, Def2Def&, size_t, Defs) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const { return stub(world(), type); }
-
-    static size_t gid_counter() { return gid_counter_; }
 
     virtual Def* stub(World&, const Def*) const { THORIN_UNREACHABLE; }
     virtual bool maybe_dependent() const { return true; }
@@ -299,8 +296,13 @@ protected:
         for (size_t i = 0, e = num_ops(); i < e; ++i)
             fn(i, op(i), index);
     }
+
+    //@{
+    /// hash and equal
+    uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
     virtual uint64_t vhash() const;
     virtual bool equal(const Def*) const;
+    //@}
 
     union {
         mutable const Def* cache_;  ///< Used by @p App.
