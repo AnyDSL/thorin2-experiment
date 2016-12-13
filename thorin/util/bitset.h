@@ -26,7 +26,7 @@ inline size_t bitcount(uint64_t v) {
 }
 
 /**
- * A tagged pointer: first 16 bits is index, remaining 48 bits is the actual pointer.
+ * A tagged pointer: first 16 bits is tag, remaining 48 bits is the actual pointer.
  * For non-x86_64 there is a fallback impplementation.
  */
 template<class T>
@@ -34,39 +34,30 @@ class TaggedPtr {
 public:
     TaggedPtr() {}
 #if defined(__x86_64__) || (_M_X64)
-    TaggedPtr(uint16_t index, T* ptr)
-        : uptr_(reinterpret_cast<uint64_t>(ptr) | (uint64_t(index) << 48ull))
+    TaggedPtr(uint16_t tag, T* ptr)
+        : tag_(tag)
+        , ptr_(reinterpret_cast<int64_t>(ptr))
     {}
-
-    uint16_t index() const { return uptr_ >> 48ull; }
-    void tag(uint16_t index) const { uptr_ = (uint64_t(index) << 48ull) | (uptr_ & 0x0000FFFFFFFFFFFFull); }
-    T* ptr() const {
-        // sign extend to make pointer canonical
-        return reinterpret_cast<T*>((iptr_  << 16) >> 16) ;
-    }
-    bool operator==(TaggedPtr other) const { return this->uptr_ == other.uptr_; }
 #else
-    TaggedPtr(uint16_t index, T* ptr)
-        : index_(index)
+    TaggedPtr(uint16_t tag, T* ptr)
+        : tag_(tag)
         , ptr_(ptr)
     {}
-
-    void tag(uint16_t index) { index_ = index; }
-    uint16_t index() const { return index_; }
-    T* ptr() const { return ptr_; }
-    bool operator==(TaggedPtr other) const { return this->ptr() == other.def() && this->index() == other.index(); }
 #endif
+
+    T* ptr() const { return reinterpret_cast<T*>(ptr_); }
     T* operator->() const { return ptr(); }
     operator T*() const { return ptr(); }
+    void tag(uint16_t tag) { tag_ = tag; }
+    uint16_t tag() const { return tag_; }
+    bool operator==(TaggedPtr other) const { return this->ptr() == other.ptr() && this->tag() == other.tag(); }
 
 private:
 #if defined(__x86_64__) || (_M_X64)
-    union {
-        uint64_t uptr_;
-        int64_t iptr_;
-    };
+    unsigned tag_ : 16;
+    int64_t  ptr_ : 48; // sign extend to make pointer canonical
 #else
-    uint16_t index_;
+    uint16_t tag_;
     T* ptr_;
 #endif
 };
@@ -93,45 +84,68 @@ public:
     private:
         const uint64_t& word() const { return *tagged_ptr_.ptr(); }
         uint64_t& word() { return *tagged_ptr_.ptr(); }
-        uint64_t index() const { return tagged_ptr_.index(); }
+        uint64_t index() const { return tagged_ptr_.tag(); }
 
         TaggedPtr<uint64_t> tagged_ptr_;
         friend class BitSet;
     };
 
     BitSet()
-        : word_(0)
+        : u64_(0)
     {}
 
     reference operator[](size_t i) {
-        //if (!on_heap()) {
-            //if (i <= 63)
+        if (!on_heap()) {
+            if (i <= 63)
                 return reference(i, stack_word_ptr());
-            //else {
-            //}
-        //}
+            else {
+                // TODO
+            }
+        } else {
+            // TODO
+            return reference(uint16_t(-1), nullptr);
+        }
     }
 
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
+
+    size_t count() {
+        if (on_heap()) {
+            auto words = heap_word_ptr();
+            size_t result = 0;
+            for (size_t i = 0, e = num_heap_words(); i != e; ++i)
+                result += bitcount(words[i]);
+            return result;
+        }
+
+        return bitcount(stack_word());
+    }
 
 private:
     //void resize(size_t i) {
         //size_t num = (i+size_t(63)) / size_t(64);
     //}
 
-    bool on_heap() const { return word_ & 0x8000000000000000ull; }
-    uint64_t stack_word() const { assert(!on_heap()); return word_; }
-    uint64_t* stack_word_ptr() { assert(!on_heap()); return &word_; }
-    size_t num_heap_words() const { assert(on_heap()); return (word_ & 0x7FFFFFFFFFFFFFFFull) >> 48ull; }
-    uint64_t* heap_word_ptr() const {
-        assert(on_heap());
-        return reinterpret_cast<uint64_t*>((iptr_ << 16) >> 16);
-    }
+    bool on_heap() const { return heap_; }
+    uint64_t stack_word() const { assert(!on_heap()); return u64_; }
+    uint64_t* stack_word_ptr() { assert(!on_heap()); return &u64_; }
+    uint64_t* heap_word_ptr() const { assert(on_heap()); return reinterpret_cast<uint64_t*>(ptr_); }
+    size_t num_heap_words() const { assert(on_heap()); return num_; }
 
     union {
-        uint64_t word_;
-        uint64_t* words_;
-        intptr_t iptr_;
+        struct {
+            unsigned heap_  :  1;
+            unsigned num_   : 15;
+            int64_t  ptr_   : 48; // sign extend to make pointer canonical
+        };
+
+        struct {
+            unsigned dummy_ :  1; ///< same as @p heap - just there for layouting.
+            uint64_t data_  : 63;
+        };
+
+        uint64_t u64_;
+        int64_t  i64_;
     };
 };
 

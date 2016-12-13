@@ -29,7 +29,7 @@ public:
         : tagged_ptr_(index, def)
     {}
 
-    size_t index() const { return tagged_ptr_.index(); }
+    size_t index() const { return tagged_ptr_.tag(); }
     const Def* def() const { return tagged_ptr_.ptr(); }
     operator const Def*() const { return tagged_ptr_; }
     const Def* operator->() const { return tagged_ptr_; }
