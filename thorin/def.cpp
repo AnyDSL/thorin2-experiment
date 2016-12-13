@@ -285,7 +285,7 @@ const Def* Universe    ::rebuild(World& to, const Def*  , Defs    ) const { retu
 const Def* Var         ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
 const Def* Variant     ::rebuild(World& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
 
-Axiom* Axiom::stub(World& to, const Def* type) const {
+Axiom* Axiom::stub(World& to, const Def*) const {
     assert(&world() != &to);
     assert(is_nominal());
     return const_cast<Axiom*>(this);
@@ -357,7 +357,6 @@ const Def* App::try_reduce() const {
         }
         // TODO can't reduce if args types don't match the domains
         auto args = ops().skip_front();
-        size_t num_args = args.size();
 
         Def2Def map;
         NominalSubs nominals;
@@ -443,7 +442,7 @@ const Def* Var::substitute(size_t shift, Defs args, const Def* new_type) const {
     // The shift argument always corresponds to args.back() and thus corresponds to args.size() - 1.
     // Map index() back into the original argument array.
     int arg_index = args.size() - 1 - index() + shift;
-    if (arg_index >= 0 && arg_index < args.size()) {
+    if (arg_index >= 0 && size_t(arg_index) < args.size()) {
         // TODO replace with error instead of assert
         assert(new_type == args[arg_index]->type());
         return args[arg_index];

@@ -27,7 +27,7 @@ int main()  {
     auto n23x = w.nat(23);
     assert(n23 == n23x);
     auto n42 = w.nat(42);
-    auto n32 = w.nat(32);
+    /*auto n32 =*/ w.nat(32);
     auto Top = w.boolean_top();
     Top->dump();
 
