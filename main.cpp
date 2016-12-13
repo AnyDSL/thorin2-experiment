@@ -9,6 +9,7 @@ void testQualifiers();
 void testNominal();
 
 int main()  {
+    std::cout<< sizeof(BitSet) << std::endl;
     testQualifiers();
     testNominal();
     testMatrix();

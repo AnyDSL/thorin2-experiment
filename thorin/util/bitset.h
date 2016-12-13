@@ -1,6 +1,8 @@
 #ifndef THORIN_UTIL_BITSET_H
 #define THORIN_UTIL_BITSET_H
 
+#include <limits>
+
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
@@ -101,15 +103,13 @@ public:
             else {
                 // TODO
             }
-        } else {
-            // TODO
-            return reference(uint16_t(-1), nullptr);
         }
+        THORIN_UNREACHABLE;
     }
 
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
 
-    size_t count() {
+    size_t count() const {
         if (on_heap()) {
             auto words = heap_word_ptr();
             size_t result = 0;
@@ -119,6 +119,18 @@ public:
         }
 
         return bitcount(stack_word());
+    }
+
+    size_t all() const {
+        if (on_heap()) {
+            auto words = heap_word_ptr();
+            size_t result = true;
+            for (size_t i = 0, e = num_heap_words(); result && i != e; ++i)
+                result &= words[i] == uint64_t(-1);
+            return result;
+        }
+
+        return idata_ == std::numeric_limits<int64_t>::min();
     }
 
 private:
@@ -136,16 +148,15 @@ private:
         struct {
             unsigned heap_  :  1;
             unsigned num_   : 15;
-            int64_t  ptr_   : 48; // sign extend to make pointer canonical
+            int64_t  ptr_   : 48; ///< sign-extend to make pointer canonical
         };
 
         struct {
             unsigned dummy_ :  1; ///< same as @p heap_ - just there for layouting
-            uint64_t data_  : 63;
+            int64_t idata_  : 63; ///< for sign extension.
         };
 
-        uint64_t u64_;
-        int64_t  i64_;
+        uint64_t u64_;            ///< whole 64-bit word.
     };
 };
 
