@@ -360,7 +360,8 @@ class ParamDef(AstNode):
 		AstNode.__init__(self, [type])
 		assert not isinstance(name, AstNode)
 		self.name = str(name)
-		self.constraint_vars = []
+		self.constraint_vars = None
+		self.default_vars = None
 
 	def __str__(self):
 		return self.name
@@ -377,7 +378,10 @@ class ParamDef(AstNode):
 		return ParamDef(self.name, self.ops[0].subst(name, value))
 
 	def get_constraints(self):
-		vars = self.constraint_vars
+		if self.constraint_vars is not None:
+			vars = self.constraint_vars
+		else:
+			vars = self.get_default_vars()
 		unique_vars = set(flatten(vars))
 		space = isl.Space.create_from_names(ctx, set=unique_vars)
 		bset = isl.BasicSet.universe(space)
@@ -389,6 +393,11 @@ class ParamDef(AstNode):
 	def create_new_constraint_vars(self):
 		self.constraint_vars = self.ops[0].get_nat_variables()
 		return self.constraint_vars
+
+	def get_default_vars(self):
+		if self.default_vars is None:
+			self.default_vars = self.get_nat_variables()
+		return self.default_vars
 
 
 class Lambda(AstNode):
@@ -425,6 +434,7 @@ class LambdaNominal(Lambda):
 		self.cstr_vars = None
 		self.cstr_accepted = None
 		self.cstr_possible = None
+		self.outer_parameters = None
 
 	def set_body(self, body):
 		self.ops[2] = body
@@ -451,6 +461,18 @@ class LambdaNominal(Lambda):
 		bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=flatten(self.cstr_vars)))
 		self.cstr_accepted = bset
 		self.cstr_possible = bset
+
+	def get_outer_parameters(self):
+		if self.outer_parameters is not None:
+			return self.outer_parameters
+		self.outer_parameters = []
+		def crawl(node):
+			if isinstance(node, AstNode):
+				if isinstance(node, LambdaNominal):
+					self.outer_parameters.extend(node.get_outer_parameters())
+				for op in self.ops:
+					self.outer_parameters.extend(crawl(op))
+		crawl(self.ops[2])
 
 		
 	def __str__(self):
