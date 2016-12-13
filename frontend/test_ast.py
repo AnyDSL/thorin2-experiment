@@ -91,6 +91,9 @@ define if2 = lambda n: Nat. if_gez Nat n (intakeLower10 n, intakeLower10 (opNatP
 
 CODE6 = '''
 define t1 = lambda rec f (x:Nat):Nat. if_gz Nat x (x, f (opNatPlus(x, 5)));
+
+assume intakeLower10: Nat->Nat;
+define t2 = lambda n:Nat. lambda rec (i:Nat):Nat. intakeLower10(n);
 '''
 
 
