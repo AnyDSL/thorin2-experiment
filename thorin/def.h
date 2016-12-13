@@ -157,7 +157,7 @@ protected:
     Def(Def&&) = delete;
     Def& operator=(const Def&) = delete;
 
-    /// Use for nominal @p Def%s.
+    /// A @p nominal @p Def.
     Def(World& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
         : debug_(dbg)
         , world_(&world)
@@ -173,7 +173,7 @@ protected:
         std::fill(ops_, ops_ + num_ops, nullptr);
     }
 
-    /// Use for structural @p Def%s.
+    /// A @p structural @p Def.
     Def(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
         : debug_(dbg)
         , world_(&world)
@@ -200,34 +200,60 @@ protected:
     void resize(size_t num_ops);
 
 public:
-    Sort sort() const;
-    uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
-    Tag tag() const { return Tag(tag_); }
-    World& world() const { return *world_; }
+    //@{
+    /** get operands */
     Defs ops() const { return Defs(ops_, num_ops_); }
     const Def* op(size_t i) const { return ops()[i]; }
     size_t num_ops() const { return num_ops_; }
+    //@}
+
+    //@{
+    /** get @p Uses%s */
     const Uses& uses() const { return uses_; }
     size_t num_uses() const { return uses().size(); }
-    const Def* type() const { return type_; }
+    //@}
+
+    //@{
+    /** get @p Debug information */
     Debug& debug() const { return debug_; }
     Location location() const { return debug_; }
     const std::string& name() const { return debug().name(); }
     std::string unique_name() const;
-    void replace(const Def*) const;
+    //@}
+
+    //@{
+    /** get @p Sort */
+    Sort sort() const;
+    bool is_term() const { return sort() == Sort::Term; }
+    bool is_type() const { return sort() == Sort::Type; }
+    bool is_kind() const { return sort() == Sort::Kind; }
+    bool is_universe() const { return sort() == Sort::Universe; }
+    //@}
+
+    //@{
+    /** misc getters */
+    Tag tag() const { return Tag(tag_); }
+    const Def* type() const { return type_; }
+    uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
+    World& world() const { return *world_; }
     /// A nominal @p Def is always different from each other @p Def.
     bool is_nominal() const { return nominal_; }
-    bool is_universe() const { return sort() == Sort::Universe; }
-    bool is_kind() const { return sort() == Sort::Kind; }
-    bool is_type() const { return sort() == Sort::Type; }
-    bool is_term() const { return sort() == Sort::Term; }
     bool is_closed() const { return closed_; }
+    //@}
 
-    Qualifier qualifier() const { return type() ? type()->qualifier() : Qualifier(qualifier_); }
-    bool is_unrestricted() const { return int(qualifier()) & int(Qualifier::Unrestricted); }
-    bool is_affine() const       { return int(qualifier()) & int(Qualifier::Affine); }
-    bool is_relevant() const     { return int(qualifier()) & int(Qualifier::Relevant); }
-    bool is_linear() const       { return int(qualifier()) & int(Qualifier::Linear); }
+    //@{
+    ///** get @p Qualifier */
+    Qualifier qualifier() const  { return type() ? type()->qualifier() : Qualifier(qualifier_); }
+    bool is_unrestricted() const { return bool(qualifier()) & bool(Qualifier::Unrestricted); }
+    bool is_affine() const       { return bool(qualifier()) & bool(Qualifier::Affine); }
+    bool is_relevant() const     { return bool(qualifier()) & bool(Qualifier::Relevant); }
+    bool is_linear() const       { return bool(qualifier()) & bool(Qualifier::Linear); }
+    //@}
+
+    //@{
+    /** free variables */
+    // TODO return (dynamic) bitset (wrapper)
+    const std::bitset<64>& free_vars() const { return free_vars_; }
 
     bool has_free_var(size_t index) const {
         if (index > 64) {
@@ -236,6 +262,7 @@ public:
         }
         return free_vars_[index];
     }
+
     /// Whether his Def has a free variable with index in [index, index+length).
     bool has_free_var_in(size_t index, size_t length) const {
         if (index+length > 64u)
@@ -246,8 +273,7 @@ public:
             range.set(index + i);
         return (free_vars() & range).any();
     }
-    // TODO return (dynamic) bitset (wrapper)
-    const std::bitset<64>& free_vars() const { return free_vars_; }
+    //@}
 
     size_t gid() const { return gid_; }
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
@@ -493,10 +519,10 @@ private:
 public:
     size_t index() const { return index_; }
     std::ostream& stream(std::ostream&) const override;
-    uint64_t vhash() const override;
-    bool equal(const Def*) const override;
 
 private:
+    uint64_t vhash() const override;
+    bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
     friend class World;
@@ -676,14 +702,14 @@ private:
 
 class Axiom : public Def {
 private:
-    /// @em nominal axiom.
+    /// A @em nominal axiom.
     Axiom(World& world, const Def* type, Debug dbg)
         : Def(world, Tag::Axiom, type, 0, dbg)
     {
         assert(type->free_vars().none());
     }
 
-    /// @em structural axiom.
+    /// A @em structural axiom.
     Axiom(World& world, const Def* type, Box box, Debug dbg)
         : Def(world, Tag::Axiom, type, Defs(), dbg)
     {
