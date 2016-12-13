@@ -1,5 +1,4 @@
 #include "thorin/world.h"
-#include "utils/unicodemanager.h"
 
 using namespace thorin;
 
@@ -10,13 +9,9 @@ void testQualifiers();
 void testNominal();
 
 int main()  {
-	prepareUtf8Console();
-
     testQualifiers();
-
     testNominal();
-
-	testMatrix();
+    testMatrix();
 
     World w;
     auto n16 = w.nat16();
@@ -111,11 +106,11 @@ int main()  {
     auto poly = w.axiom(w.pi(w.star(), w.star()),{"Poly"});
     auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))}, {"sig"});
     auto sigma_val = w.axiom(sigma,{"val"});
-    cout << sigma_val << ": " << sigma << endl;
+    std::cout << sigma_val << ": " << sigma << endl;
     auto fst_sigma = w.extract(sigma_val, 0);
-    cout << fst_sigma << ": " << fst_sigma->type() << endl;
+    std::cout << fst_sigma << ": " << fst_sigma->type() << endl;
     auto snd_sigma = w.extract(sigma_val, 1);
-    cout << snd_sigma << ": " << snd_sigma->type() << endl;
+    std::cout << snd_sigma << ": " << snd_sigma->type() << endl;
 
     // Test variant types and matches
     auto variant = w.variant({w.nat(), w.boolean()});

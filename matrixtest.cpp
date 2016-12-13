@@ -1,13 +1,6 @@
 #include "thorin/world.h"
-#include "utils/unicodemanager.h"
 
 using namespace thorin;
-
-
-#define printValue(x) do{ printUtf8(#x " = "); x->dump(); }while(0)
-#define printType(x) do{ printUtf8(#x ": "); x->type()->dump(); }while(0)
-
-
 
 void testMatrix() {
     World w;
@@ -20,32 +13,31 @@ void testMatrix() {
 
     // Some testing
     auto getSecondValue = w.lambda(w.tuple({ Nat, Nat }), w.extract(w.var({ Nat, Nat }, 0), 1));
-    printValue(getSecondValue);
-    printType(getSecondValue);
-
+    getSecondValue->dump();
+    getSecondValue->type()->dump();
 
     auto ArrTypeFuncT = w.pi(Nat, Star);
-    printValue(ArrTypeFuncT);
+    ArrTypeFuncT->dump();
     // Type constructor for arrays
     // axiom ArrT: (Nat, Nat -> *) -> *;
     auto ArrT = w.axiom(w.pi({Nat, w.pi(Nat, Star)}, Star), {"ArrT"});
-    printType(ArrT);
+    ArrT->type()->dump();
 
     // Array Creator
     // (n: Nat, tf: ArrTypeFuncT) -> (pi i:Nat -> tf i) -> (ArrT (n, tf))
     auto arrtype = w.app(ArrT, w.var({ Nat , ArrTypeFuncT }, 1));
     auto arrcreatorfunctype = w.pi(Nat, w.app(w.extract(w.var({ Nat , ArrTypeFuncT }, 1), 1), w.var(Nat, 0)));
     auto ArrCreate = w.axiom(w.pi({ Nat , ArrTypeFuncT }, w.pi(arrcreatorfunctype, arrtype)), {"ArrCreate"});
-    printValue(ArrCreate);
-    printType(ArrCreate);
+    ArrCreate->dump();
+    ArrCreate->type()->dump();
 
     // Array Getter
     // (n: Nat, tf: ArrTypeFuncT) -> (ArrT (n, tf)) -> (pi i:Nat -> tf i)
     arrtype = w.app(ArrT, w.var({ Nat , ArrTypeFuncT }, 0));
     auto resulttype = w.app(w.extract(w.var({ Nat , ArrTypeFuncT }, 2), 1), w.var(Nat, 0));
     auto ArrGet = w.axiom(w.pi({ Nat , ArrTypeFuncT }, w.pi(arrtype, w.pi(Nat, resulttype))), {"ArrGet"});
-    printValue(ArrGet);
-    printType(ArrGet);
+    ArrGet->dump();
+    ArrGet->type()->dump();
 
     // Matrix Type
     //auto MatrixType = w.lambda()
@@ -61,9 +53,9 @@ void testMatrix() {
                 ))
             )
     ), {"reduce"});
-    printType(reduce);
+    reduce->type()->dump();
     auto sum = w.app(w.app(w.app(reduce, Float), opFloatPlus), cFloatZero, {"sum"});
-    printType(sum);
+    sum->type()->dump();
 
 }
 

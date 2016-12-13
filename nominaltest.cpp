@@ -1,16 +1,16 @@
 #include "thorin/world.h"
-#include "utils/unicodemanager.h"
 
 using namespace thorin;
 
-#define print_value_type(x) do{ cout << (x->name() == "" ? #x : x->name()) << " <" << x->gid() << "> = " << x << ": " << x->type() << endl; }while(0)
+// TODO remove this macro
+#define print_value_type(x) do{ std::cout << (x->name() == "" ? #x : x->name()) << " <" << x->gid() << "> = " << x << ": " << x->type() << endl; }while(0)
 
 void testNominal() {
     World w;
     auto Nat = w.nat();
     auto star = w.star();
 
-    cout << "--- NominalTest begin ---" << endl;
+    std::cout << "--- NominalTest begin ---" << endl;
     auto s1 = w.sigma_type(1, {"N"});
     auto v1 = w.var(star, 0);
     s1->set(0, v1);
@@ -39,7 +39,7 @@ void testNominal() {
     list->set(list_or_nil);
     assert(list->is_closed());
     print_value_type(list);
-    cout << "app list Nat" << endl;
+    std::cout << "app list Nat" << endl;
     auto apped = w.app(list, Nat);
     print_value_type(apped);
     print_value_type(apped->op(0));
@@ -56,5 +56,5 @@ void testNominal() {
     print_value_type(wrap_app->type()->op(0));
     print_value_type(wrap_app->type()->op(1));
     /*auto lam =*/ w.pi_lambda(pi_wrap, w.any(body_type, w.unit()));
-    cout << "--- NominalTest end ---" << endl;
+    std::cout << "--- NominalTest end ---" << endl;
 }
