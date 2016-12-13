@@ -471,7 +471,8 @@ const Def* Def::rebuild_substitute(NominalSubs& nominals, NominalSubsTodo& todo,
         new_ops[op_index] = new_op;
     };
     foreach_op_index(shift, build_new_op);
-    return map[this] = this->rebuild(world(), new_type, new_ops);
+    auto new_def = this->rebuild(world(), new_type, new_ops);
+    return map[this] = new_def;
 }
 
 const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
