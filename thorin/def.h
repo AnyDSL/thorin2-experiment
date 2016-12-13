@@ -191,13 +191,7 @@ protected:
 
     ~Def() override;
 
-    void compute_free_vars() {
-        auto update_free_vars = [&] (size_t, const Def* op, size_t shift) {
-            free_vars_ |= op->free_vars_ >> shift;
-        };
-        foreach_op_index(0, update_free_vars);
-        free_vars_ |= type()->free_vars_;
-    }
+    void compute_free_vars();
     void set(size_t i, const Def*);
     void wire_uses() const;
     void unset(size_t i);

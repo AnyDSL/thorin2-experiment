@@ -43,6 +43,14 @@ Qualifier meet(const Defs& defs) {
 
 //------------------------------------------------------------------------------
 
+void Def::compute_free_vars() {
+    auto update_free_vars = [&] (size_t, const Def* op, size_t shift) {
+        free_vars_ |= op->free_vars_ >> shift;
+    };
+    foreach_op_index(0, update_free_vars);
+    free_vars_ |= type()->free_vars_;
+}
+
 void Def::resize(size_t num_ops) {
     num_ops_ = num_ops;
     if (num_ops_ > ops_capacity_) {
