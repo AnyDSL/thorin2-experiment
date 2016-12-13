@@ -308,7 +308,7 @@ protected:
         mutable const Def* cache_;  ///< Used by @p App.
         size_t index_;              ///< Used by @p Var, @p Extract.
         Box box_;                   ///< Used by @p Axiom.
-        Qualifier qualifier_; ///< Used by @p Universe.
+        Qualifier qualifier_;       ///< Used by @p Universe.
     };
     std::bitset<64> free_vars_;
 
