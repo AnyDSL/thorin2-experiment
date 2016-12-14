@@ -113,6 +113,8 @@ def check_variables_structure_equal(vars1, vars2, translation = None):
 			if not check_variables_structure_equal(v1, v2, translation):
 				return False
 		return True
+	if isinstance(vars2, list):
+		return False
 	if translation is not None:
 		translation[vars1] = vars2
 	return True
@@ -166,23 +168,16 @@ def is_subset(left, right, equal_vars = {}):
 				right = right.add_dims(isl.dim_type.set, 1)
 				right = right.set_dim_name(isl.dim_type.set, dim_right, varname)
 				dim_right += 1
+	# now both sets contain the same variables, modulo equal_vars renaming
 	# re-order (and rename) right
 	assert dim_left == dim_right
-	for i in xrange(dim_left):
-		name_left = left.space.get_dim_name(isl.dim_type.set, i)
+	for i in xrange(dim_right):
 		name_right = right.space.get_dim_name(isl.dim_type.set, i)
-		if name_left == name_right:
-			continue
-		elif name_left in equal_vars and equal_vars[name_left] == name_right:
-			right = right.set_dim_name(isl.dim_type.set, i, name_left)
-		else:
-			right_index = right.find_dim_by_name(name_left)
-			if right_index >= 0:
-				right = right.move_dims(isl.dim_type.set, i, isl.dim_type.set, right_index, 1)
-			else:
-				right_index = right.find_dim_by_name(equal_vars[name_left])
-				right = right.move_dims(isl.dim_type.set, i, isl.dim_type.set, right_index, 1)
-				right = right.set_dim_name(isl.dim_type.set, i, name_left)
+		if not name_right in vars_left and name_right in equal_vars:
+			right = right.set_dim_name(isl.dim_type.set, i, equal_vars[name_right])
+	print 'R1', right
+	right = right.align_params(left.space)
+	print 'R2', right
 	print 'L',left
 	print 'R',right
 	# do the subset check

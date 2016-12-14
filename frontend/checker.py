@@ -11,13 +11,15 @@ import islpy as isl
 """
 
 
-def find_all_nominals(node, nominals=[]):
+def find_all_nominals(node, nominals=None):
 	'''
 	:param node:
 	:param nominals:
 	:rtype: List(ast.LambdaNominal)
 	:return:
 	'''
+	if nominals is None:
+		nominals = []
 	if isinstance(node, ast.AstNode):
 		if isinstance(node, ast.LambdaNominal):
 			if node in nominals:
@@ -51,9 +53,10 @@ def check_nominal(node):
 	print 'Checking', node
 	print 'matching', node.cstr_vars, node.cstr_accepted, node.cstr_possible
 	body_vars, body_accepted, body_possible = node.get_constraints_recursive()
+	print 'against ', body_vars, body_accepted, body_possible
 	# check if body_vars matches node.cstr_vars
 	var_mapping = {}
-	if not ast.check_variables_structure_equal(body_vars, node.cstr_vars):
+	if not ast.check_variables_structure_equal(body_vars, node.cstr_vars, var_mapping):
 		raise Exception('Invalid type (vnames) of '+repr(node))
 	# check if accepted superset of node.cstr_accepted
 	subset, left, right = ast.is_subset(node.cstr_accepted, body_accepted, var_mapping)

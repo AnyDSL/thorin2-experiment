@@ -106,7 +106,7 @@ def type_manually():
 		accepted = isl.BasicSet.universe(space)
 		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(accepted.space, {1: 10, a: -1})) # 0 <= 1*10 + -1*a
 		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(accepted.space, {a: 1})) # 0 <= a
-		return ([a, a], accepted, possible)
+		return ([[a], [a]], accepted, possible)
 
 	ass = ast.get_assumption('intakeLower10')
 	if ass:
