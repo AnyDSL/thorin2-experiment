@@ -237,22 +237,19 @@ public:
     const std::bitset<64>& free_vars() const { return free_vars_; }
 
     bool has_free_var(size_t index) const {
-        if (index > 64) {
-            // TODO check in dynamic bitset
-            assert(false && "TODO index too large");
-        }
         return free_vars_[index];
     }
 
     /// Whether his Def has a free variable with index in [index, index+length).
     bool has_free_var_in(size_t index, size_t length) const {
-        if (index+length > 64u)
-            // TODO check in dynamic bitset
-            assert(false && "TODO indices too large");
         std::bitset<64> range;
         for (size_t i = 0; i != length; ++i)
             range.set(index + i);
         return (free_vars() & range).any();
+    }
+
+    bool has_free_var_ge(size_t index) const {
+        return (free_vars() & (std::bitset<64>().flip() << index)).any();
     }
     //@}
 

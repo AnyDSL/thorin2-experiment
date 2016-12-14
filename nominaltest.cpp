@@ -17,6 +17,7 @@ void testNominal() {
     assert(s1->is_closed());
     assert(s1->has_free_var(0));
     assert(s1->has_free_var_in(0, 1));
+    assert(s1->has_free_var_ge(0));
     print_value_type(s1);
     auto l1 = w.lambda(star, w.sigma({s1, s1}));
     print_value_type(l1);

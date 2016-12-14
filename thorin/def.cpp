@@ -394,7 +394,7 @@ const Def* App::try_reduce() const {
  */
 
 const Def* Def::substitute(Substitutions& map, size_t shift, Defs args) const {
-    if (!has_free_var_in(shift, args.size())) {
+    if (!has_free_var_ge(shift)) {
         map[{this, shift}] = this;
         return this;
     }
@@ -422,24 +422,19 @@ void Def::substitute_nominals(NominalTodos& todo, Substitutions& map, Defs args)
 }
 
 const Def* Def::substitute(NominalTodos& todo, Substitutions& map, size_t shift, Defs args) const {
+    if (auto replacement = find(map, {this, shift}))
+        return replacement == nullptr ? this : replacement;
     if (is_nominal()) {
-        if (auto replacement = find(map, {this, shift})) {
-            return replacement == nullptr ? this : replacement;
-        } else {
-            if (!has_free_var_in(shift, args.size())) {
-                map[{this, shift}] = nullptr;
-                return this;
-            }
-            auto new_type = type()->substitute(todo, map, shift, args);
-            std::stringstream ss;
-            replacement = this->stub(new_type, debug() + ss.str());
-            map[{this, shift}] = replacement;
-            todo.push({this, shift});
-            return replacement;
+        if (!has_free_var_ge(shift)) {
+            map[{this, shift}] = nullptr;
+            return this;
         }
-    } else if (auto result = find(map, {this, shift})) {
-        return result;
-    } else if (!has_free_var_in(shift, args.size())) {
+        auto new_type = type()->substitute(todo, map, shift, args);
+        auto replacement = this->stub(new_type); // TODO better debug info for these
+        map[{this, shift}] = replacement;
+        todo.push({this, shift});
+        return replacement;
+    } else if (!has_free_var_ge(shift)) {
         map[{this, shift}] = this;
         return this;
     }

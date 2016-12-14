@@ -61,11 +61,13 @@ int main()  {
     auto T_2 = w.var(w.star(), 1, {"T"});
     assert(T_2->has_free_var(1));
     assert(T_2->has_free_var_in(1, 1));
+    assert(T_2->has_free_var_ge(1));
     auto x = w.var(T_2, 0, {"x"});
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
     assert(!poly_id->has_free_var(0));
     assert(!poly_id->has_free_var(1));
     assert(!poly_id->has_free_var_in(0, 2));
+    assert(!poly_id->has_free_var_ge(0));
     poly_id->dump();
     poly_id->type()->dump();
 
