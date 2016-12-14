@@ -347,7 +347,6 @@ public:
     static DefIndex sentinel() { return DefIndex(); }
 };
 
-typedef thorin::HashMap<DefIndex, Def*, DefIndexHash> NominalSubs;
 typedef thorin::HashMap<DefIndex, const Def*, DefIndexHash> Substitutions;
 typedef std::stack<DefIndex> NominalTodos;
 
@@ -377,13 +376,12 @@ const Def* App::try_reduce() const {
         auto args = ops().skip_front();
 
         Substitutions map;
-        NominalSubs nominals;
         NominalTodos todo;
 
-        auto reduced = lambda->body()->substitute(nominals, todo, map, 0, args);
+        auto reduced = lambda->body()->substitute(todo, map, 0, args);
         cache_ = reduced; // possibly an unclosed Def
 
-        Def::substitute_nominals(nominals, todo, map, args);
+        Def::substitute_nominals(todo, map, args);
         return reduced;
     }
     return cache_ = this;
@@ -400,44 +398,42 @@ const Def* Def::substitute(Substitutions& map, size_t shift, Defs args) const {
         map[{this, shift}] = this;
         return this;
     }
-    NominalSubs nominals;
     NominalTodos todo;
-    auto result = substitute(nominals, todo, map, shift, args);
+    auto result = substitute(todo, map, shift, args);
 
-    Def::substitute_nominals(nominals, todo, map, args);
+    Def::substitute_nominals(todo, map, args);
     return result;
 }
 
-void Def::substitute_nominals(NominalSubs& nominals, NominalTodos& todo, Substitutions& map, Defs args) {
+void Def::substitute_nominals(NominalTodos& todo, Substitutions& map, Defs args) {
     while (!todo.empty()) {
         const auto& subst = todo.top();
         todo.pop();
-        if (auto replacement = find(nominals, subst)) {
+        if (auto replacement = find(map, subst)) {
             if (replacement == nullptr || replacement->is_closed()) // XXX why is_closed?
                 continue;
             subst.def()->foreach_op_index(subst.index(),
                     [&] (size_t op_index, const Def* op, size_t indexed_index) {
-                auto new_op = op->substitute(nominals, todo, map, indexed_index, args);
-                replacement->set(op_index, new_op);
+                auto new_op = op->substitute(todo, map, indexed_index, args);
+                const_cast<Def*>(replacement)->set(op_index, new_op);
             });
         }
     }
 }
 
-const Def* Def::substitute(NominalSubs& nominals, NominalTodos& todo, Substitutions& map, size_t shift,
-                           Defs args) const {
+const Def* Def::substitute(NominalTodos& todo, Substitutions& map, size_t shift, Defs args) const {
     if (is_nominal()) {
-        if (auto replacement = find(nominals, {this, shift})) {
+        if (auto replacement = find(map, {this, shift})) {
             return replacement == nullptr ? this : replacement;
         } else {
             if (!has_free_var_in(shift, args.size())) {
-                nominals[{this, shift}] = nullptr;
+                map[{this, shift}] = nullptr;
                 return this;
             }
-            auto new_type = type()->substitute(nominals, todo, map, shift, args);
+            auto new_type = type()->substitute(todo, map, shift, args);
             std::stringstream ss;
             replacement = this->stub(new_type, debug() + ss.str());
-            nominals[{this, shift}] = replacement;
+            map[{this, shift}] = replacement;
             todo.push({this, shift});
             return replacement;
         }
@@ -448,12 +444,12 @@ const Def* Def::substitute(NominalSubs& nominals, NominalTodos& todo, Substituti
         return this;
     }
 
-    auto new_type = type()->substitute(nominals, todo, map, shift, args);
+    auto new_type = type()->substitute(todo, map, shift, args);
 
     if (auto var = this->isa<Var>()) {
         return var->substitute(shift, args, new_type);
     }
-    return rebuild_substitute(nominals, todo, map, shift, args, new_type);
+    return rebuild_substitute(todo, map, shift, args, new_type);
 }
 
 const Def* Var::substitute(size_t shift, Defs args, const Def* new_type) const {
@@ -473,11 +469,11 @@ const Def* Var::substitute(size_t shift, Defs args, const Def* new_type) const {
     return world().var(new_type, index(), debug());
 }
 
-const Def* Def::rebuild_substitute(NominalSubs& nominals, NominalTodos& todo, Substitutions& map,
-                                   size_t shift, Defs args, const Def* new_type) const {
+const Def* Def::rebuild_substitute(NominalTodos& todo, Substitutions& map, size_t shift, Defs args,
+                                   const Def* new_type) const {
     Array<const Def*> new_ops(num_ops());
     foreach_op_index(shift, [&] (size_t op_index, const Def* op, size_t shifted_index) {
-        auto new_op = op->substitute(nominals, todo, map, shifted_index, args);
+        auto new_op = op->substitute(todo, map, shifted_index, args);
         new_ops[op_index] = new_op;
     });
 

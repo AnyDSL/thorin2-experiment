@@ -81,7 +81,6 @@ Array<const Def*> unique_gid_sorted(Defs defs);
 
 class DefIndex;
 class DefIndexHash;
-typedef thorin::HashMap<DefIndex, Def*, DefIndexHash> NominalSubs;
 typedef thorin::HashMap<DefIndex, const Def*, DefIndexHash> Substitutions;
 typedef std::stack<DefIndex> NominalTodos;
 
@@ -294,9 +293,9 @@ protected:
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
-    const Def* rebuild_substitute(NominalSubs&, NominalTodos&, Substitutions&, size_t, Defs, const Def*) const;
-    const Def* substitute(NominalSubs&, NominalTodos&, Substitutions&, size_t, Defs) const;
-    static void substitute_nominals(NominalSubs&, NominalTodos&, Substitutions&, Defs);
+    const Def* rebuild_substitute(NominalTodos&, Substitutions&, size_t, Defs, const Def*) const;
+    const Def* substitute(NominalTodos&, Substitutions&, size_t, Defs) const;
+    static void substitute_nominals(NominalTodos&, Substitutions&, Defs);
     bool on_heap() const { return ops_ != vla_ops_; }
     // this must match with the 64bit fields below
 
