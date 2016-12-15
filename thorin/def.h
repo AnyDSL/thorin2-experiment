@@ -253,7 +253,10 @@ public:
     }
     //@}
 
-    const Def* substitute(Substitutions&, size_t, Defs) const;
+    const Def* reduce(Defs args) const { return reduce(0, args); }
+    /// Substitutes variables beginning from the given index with the given Defs and shifts free variables by
+    /// the amount of Defs given. Note that the Defs will be indexed in reverse order.
+    const Def* reduce(size_t, Defs) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const { return stub(type, debug()); }
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
@@ -290,9 +293,9 @@ protected:
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
-    const Def* rebuild_substitute(NominalTodos&, Substitutions&, size_t, Defs, const Def*) const;
-    const Def* substitute(NominalTodos&, Substitutions&, size_t, Defs) const;
-    static void substitute_nominals(NominalTodos&, Substitutions&, Defs);
+    // const Def* rebuild_substitute(NominalTodos&, Substitutions&, size_t, Defs, const Def*) const;
+    // const Def* substitute(NominalTodos&, Substitutions&, size_t, Defs) const;
+    // static void substitute_nominals(NominalTodos&, Substitutions&, Defs);
     bool on_heap() const { return ops_ != vla_ops_; }
     // this must match with the 64bit fields below
 
@@ -317,9 +320,10 @@ private:
     const Def* vla_ops_[0];
 
     friend class App;
-    friend class World;
     friend class Cleaner;
+    friend class Reducer;
     friend class Scope;
+    friend class World;
 };
 
 uint64_t UseHash::hash(Use use) {
@@ -665,7 +669,6 @@ private:
 
 public:
     size_t index() const { return index_; }
-    const Def* substitute(size_t, Defs, const Def*) const;
     std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
     std::ostream& name_stream(std::ostream& os) const override {
