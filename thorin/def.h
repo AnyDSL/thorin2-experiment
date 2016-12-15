@@ -179,29 +179,25 @@ protected:
     void resize(size_t num_ops);
 
 public:
-    //@{
-    /// get operands
+    //@{ get operands
     Defs ops() const { return Defs(ops_, num_ops_); }
     const Def* op(size_t i) const { return ops()[i]; }
     size_t num_ops() const { return num_ops_; }
     //@}
 
-    //@{
-    /// get @p Uses%s
+    //@{ get @p Uses%s
     const Uses& uses() const { return uses_; }
     size_t num_uses() const { return uses().size(); }
     //@}
 
-    //@{
-    /// get @p Debug information
+    //@{ get @p Debug information
     Debug& debug() const { return debug_; }
     Location location() const { return debug_; }
     const std::string& name() const { return debug().name(); }
     std::string unique_name() const;
     //@}
 
-    //@{
-    /// get type and @p Sort
+    //@{ get type and @p Sort
     const Def* type() const { return type_; }
     Sort sort() const;
     bool is_term() const { return sort() == Sort::Term; }
@@ -210,8 +206,7 @@ public:
     bool is_universe() const { return sort() == Sort::Universe; }
     //@}
 
-    //@{
-    /// get @p Qualifier
+    //@{ get @p Qualifier
     Qualifier qualifier() const  { return type() ? type()->qualifier() : Qualifier(qualifier_); }
     bool is_unrestricted() const { return bool(qualifier()) & bool(Qualifier::Unrestricted); }
     bool is_affine() const       { return bool(qualifier()) & bool(Qualifier::Affine); }
@@ -219,8 +214,7 @@ public:
     bool is_linear() const       { return bool(qualifier()) & bool(Qualifier::Linear); }
     //@}
 
-    //@{
-    /// misc getters
+    //@{ misc getters
     uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
     size_t gid() const { return gid_; }
     static size_t gid_counter() { return gid_counter_; }
@@ -231,8 +225,7 @@ public:
     World& world() const { return *world_; }
     //@}
 
-    //@{
-    /// free variables
+    //@{ free variables
     // TODO return (dynamic) bitset (wrapper)
     const std::bitset<64>& free_vars() const { return free_vars_; }
 
