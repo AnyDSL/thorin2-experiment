@@ -76,9 +76,9 @@ class IfFunction(ast.SpecialFunction):
 		branch_false_constraint = ast.constraint_inverse(self.get_condition_constraint(branch_false_accepted.space, cond_var))
 		# accepted &= cond_true / set result
 		branch_true_accepted = branch_true_accepted.add_constraint(branch_true_constraint)
-		branch_true_accepted = ast.constraint_vars_equal(branch_true_accepted, result_vars, branch_true_vars)
+		#branch_true_accepted = ast.constraint_vars_equal(branch_true_accepted, result_vars, branch_true_vars)
 		branch_false_accepted = branch_false_accepted.add_constraint(branch_false_constraint)
-		branch_false_accepted = ast.constraint_vars_equal(branch_false_accepted, result_vars, branch_false_vars)
+		#branch_false_accepted = ast.constraint_vars_equal(branch_false_accepted, result_vars, branch_false_vars)
 		branch_true_possible = branch_true_possible.add_constraint(branch_true_constraint)
 		branch_true_possible = ast.constraint_vars_equal(branch_true_possible, result_vars, branch_true_vars)
 		branch_false_possible = branch_false_possible.add_constraint(branch_false_constraint)
