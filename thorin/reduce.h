@@ -29,7 +29,7 @@ private:
 class DefIndexHash {
 public:
     static uint64_t hash(const DefIndex& s) {
-        return hash_combine(hash_begin(), s.def(), s.index());
+        return hash_combine(hash_begin(), s.def()->gid(), s.index());
     }
     static bool eq(const DefIndex& a, const DefIndex& b) { return a == b; }
     static DefIndex sentinel() { return DefIndex(); }
