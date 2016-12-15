@@ -377,7 +377,7 @@ public:
             const auto& subst = nominals_.top();
             nominals_.pop();
             if (auto replacement = find(map_, subst)) {
-                if (replacement == subst.def() || replacement->is_closed()) // XXX why is_closed?
+                if (replacement == subst.def() || replacement->is_closed())
                     continue;
                 subst.def()->foreach_op_index(
                     subst.index(), [&] (size_t op_index, const Def* op, size_t shifted_index) {
