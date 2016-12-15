@@ -22,9 +22,9 @@ void Reducer::reduce_nominals() {
         const auto& subst = nominals_.top();
         nominals_.pop();
         if (auto replacement = find(map_, subst)) {
-            if (replacement == subst.def() || replacement->is_closed())
+            if (replacement == subst || replacement->is_closed())
                 continue;
-            subst.def()->foreach_op_index(
+            subst->foreach_op_index(
                 subst.index(), [&] (size_t op_index, const Def* op, size_t shifted_index) {
                     auto new_op = reduce(op, shifted_index);
                     const_cast<Def*>(replacement)->set(op_index, new_op);
@@ -44,7 +44,7 @@ const Def* Reducer::reduce(const Def* def, size_t shift) {
         auto new_type = reduce(def->type(), shift);
         auto replacement = def->stub(new_type); // TODO better debug info for these
         map_[{def, shift}] = replacement;
-        nominals_.push({def, shift});
+        nominals_.emplace(def, shift);
         return replacement;
     }
 

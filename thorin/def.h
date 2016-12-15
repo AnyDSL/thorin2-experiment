@@ -25,18 +25,18 @@ class World;
 class Use {
 public:
     Use() {}
-    Use(uint16_t index, const Def* def)
-        : tagged_ptr_(index, def)
+    Use(const Def* def, size_t index)
+        : tagged_ptr_(def, index)
     {}
 
-    size_t index() const { return tagged_ptr_.tag(); }
+    size_t index() const { return tagged_ptr_.index(); }
     const Def* def() const { return tagged_ptr_.ptr(); }
     operator const Def*() const { return tagged_ptr_; }
     const Def* operator->() const { return tagged_ptr_; }
     bool operator==(Use other) const { return this->tagged_ptr_ == other.tagged_ptr_; }
 
 private:
-    TaggedPtr<const Def> tagged_ptr_;
+    TaggedPtr<const Def, size_t> tagged_ptr_;
 };
 
 //------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ private:
 struct UseHash {
     inline static uint64_t hash(Use use);
     static bool eq(Use u1, Use u2) { return u1 == u2; }
-    static Use sentinel() { return Use(uint16_t(-1), (const Def*)(-1)); }
+    static Use sentinel() { return Use((const Def*)(-1), uint16_t(-1)); }
 };
 
 typedef HashSet<Use, UseHash> Uses;
@@ -78,11 +78,6 @@ void gid_sort(Array<const Def*>* defs);
 Array<const Def*> gid_sorted(Defs defs);
 void unique_gid_sort(Array<const Def*>* defs);
 Array<const Def*> unique_gid_sorted(Defs defs);
-
-class DefIndex;
-class DefIndexHash;
-typedef thorin::HashMap<DefIndex, const Def*, DefIndexHash> Substitutions;
-typedef std::stack<DefIndex> NominalTodos;
 
 //------------------------------------------------------------------------------
 

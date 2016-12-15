@@ -84,8 +84,8 @@ size_t Def::gid_counter_ = 1;
 void Def::wire_uses() const {
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         if (auto def = op(i)) {
-            assert(!def->uses_.contains(Use(i, this)));
-            const auto& p = def->uses_.emplace(i, this);
+            assert(!def->uses_.contains(Use(this, i)));
+            const auto& p = def->uses_.emplace(this, i);
             assert_unused(p.second);
         }
     }
@@ -96,10 +96,10 @@ void Def::set(size_t i, const Def* def) {
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
     ops_[i] = def;
-    assert(!def->uses_.contains(Use(i, this)));
+    assert(!def->uses_.contains(Use(this, i)));
     assert((def->sort() != Sort::Term || !def->type()->is_affine() || def->num_uses() == 0)
            && "Affinely typed terms can be used at most once, check before calling this.");
-    const auto& p = def->uses_.emplace(i, this);
+    const auto& p = def->uses_.emplace(this, i);
     assert_unused(p.second);
     if (i == num_ops() - 1) {
         assert(std::all_of(ops().begin(), ops().end(), [](const Def* def) { return static_cast<bool>(def); }));
@@ -115,9 +115,9 @@ void Def::unregister_uses() const {
 
 void Def::unregister_use(size_t i) const {
     auto def = ops_[i];
-    assert(def->uses_.contains(Use(i, this)));
-    def->uses_.erase(Use(i, this));
-    assert(!def->uses_.contains(Use(i, this)));
+    assert(def->uses_.contains(Use(this, i)));
+    def->uses_.erase(Use(this, i));
+    assert(!def->uses_.contains(Use(this, i)));
 }
 
 void Def::unset(size_t i) {

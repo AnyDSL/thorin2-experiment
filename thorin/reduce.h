@@ -5,33 +5,14 @@
 
 namespace thorin {
 
-class DefIndex {
-public:
-    DefIndex()
-        : def_(nullptr)
-        , index_(0)
-    {}
-
-    DefIndex(const Def* def, size_t index)
-        : def_(def)
-        , index_(index)
-    {}
-
-    const Def* def() const { return def_; }
-    size_t index() const { return index_; }
-    bool operator==(const DefIndex& b) const { return def_ == b.def_ && index_ == b.index_; }
-
-private:
-    const Def* def_;
-    size_t index_;
-};
+typedef TaggedPtr<const Def, size_t> DefIndex;
 
 struct DefIndexHash {
-    static uint64_t hash(const DefIndex& s) {
-        return hash_combine(hash_begin(), s.def()->gid(), s.index());
+    static uint64_t hash(DefIndex s) {
+        return hash_combine(hash_begin(), s->gid(), s.index());
     }
-    static bool eq(const DefIndex& a, const DefIndex& b) { return a == b; }
-    static DefIndex sentinel() { return DefIndex(); }
+    static bool eq(DefIndex a, DefIndex b) { return a == b; }
+    static DefIndex sentinel() { return DefIndex(nullptr, 0); }
 };
 
 class Reducer {
