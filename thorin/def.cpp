@@ -360,7 +360,7 @@ public:
     {}
 
     const Def* reduce() {
-        auto result = reduce_without_nominals();
+        auto result = reduce_up_to_nominals();
         reduce_nominals();
         return result;
     }
