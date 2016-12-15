@@ -493,9 +493,11 @@ const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
 
         // This also shifts any Var with index > skipped_shifts by -1
         type = type->substitute(map, skipped_shifts, {prev_extract});
+        map.clear();
     }
     return type;
 }
+
 //------------------------------------------------------------------------------
 
 /*

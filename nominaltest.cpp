@@ -45,19 +45,5 @@ void testNominal() {
     print_value_type(apped);
     print_value_type(apped->op(0));
     print_value_type(apped->op(1));
-
-    auto body_type = w.app(list, w.var(star, 0));
-    auto pi_wrap = w.pi(star, body_type);
-    print_value_type(pi_wrap);
-    print_value_type(pi_wrap->op(1)->op(0));
-    print_value_type(pi_wrap->op(1)->op(1));
-    auto wrap = w.axiom(pi_wrap, {"axiom_wrap"});
-    auto wrap_app = w.app(wrap, Nat);
-    print_value_type(wrap_app);
-    print_value_type(wrap_app->type()->op(0));
-    print_value_type(wrap_app->type()->op(1));
-    auto lam = w.pi_lambda(pi_wrap, w.any(body_type, w.tuple(nil, {})));
-    print_value_type(lam);
-    print_value_type(w.app(lam, Nat));
     std::cout << "--- NominalTest end ---" << endl;
 }
