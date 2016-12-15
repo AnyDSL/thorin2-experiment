@@ -8,6 +8,8 @@ add_executable(CoC
     qualifiertest.cpp
     thorin/def.cpp
     thorin/def.h
+    thorin/reduce.cpp
+    thorin/reduce.h
     thorin/tables.h
     thorin/world.cpp
     thorin/world.h

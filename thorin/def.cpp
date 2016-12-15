@@ -2,6 +2,7 @@
 #include <stack>
 
 #include "thorin/def.h"
+#include "thorin/reduce.h"
 #include "thorin/world.h"
 
 namespace thorin {
@@ -315,146 +316,8 @@ Sigma* Sigma::stub(World& to, const Def* type, Debug dbg) const {
  * reduce
  */
 
-class DefIndex {
-public:
-    DefIndex(const DefIndex&) = default;
-    DefIndex(DefIndex&&) = default;
-    DefIndex& operator=(DefIndex&&) = default;
-
-    DefIndex() : def_(nullptr), index_(0) {}
-    DefIndex(const Def* n, size_t i)
-        : def_(n), index_(i)
-    {}
-
-    bool operator==(const DefIndex& b) const {
-        return def_ == b.def_ && index_ == b.index_;
-    }
-
-    const Def* def() const { return def_; }
-    size_t index() const { return index_; }
-
-private:
-    const Def* def_;
-    size_t index_;
-};
-
-class DefIndexHash {
-public:
-    static uint64_t hash(const DefIndex& s) {
-        return hash_combine(hash_begin(), s.def(), s.index());
-    }
-    static bool eq(const DefIndex& a, const DefIndex& b) { return a == b; }
-    static DefIndex sentinel() { return DefIndex(); }
-};
-
-typedef thorin::HashMap<DefIndex, const Def*, DefIndexHash> Substitutions;
-typedef std::stack<DefIndex> NominalTodos;
-
-class Reducer {
-public:
-    Reducer(const Def* def, size_t index, Defs args)
-        : world_(def->world())
-        , def_(def)
-        , index_(index)
-        , args_(args)
-    {}
-    Reducer(const Def* def, Defs args)
-        : Reducer(def, 0, args)
-    {}
-
-    const Def* reduce() {
-        auto result = reduce_up_to_nominals();
-        reduce_nominals();
-        return result;
-    }
-
-    const Def* reduce_up_to_nominals() {
-        if (!def_->has_free_var_ge(index_)) {
-            return def_;
-        }
-        return reduce(def_, index_);
-    }
-
-    void reduce_nominals() {
-        while (!nominals_.empty()) {
-            const auto& subst = nominals_.top();
-            nominals_.pop();
-            if (auto replacement = find(map_, subst)) {
-                if (replacement == subst.def() || replacement->is_closed())
-                    continue;
-                subst.def()->foreach_op_index(
-                    subst.index(), [&] (size_t op_index, const Def* op, size_t shifted_index) {
-                        auto new_op = reduce(op, shifted_index);
-                        const_cast<Def*>(replacement)->set(op_index, new_op);
-                    });
-            }
-        }
-    }
-
-
-private:
-    const Def* reduce(const Def* def, size_t shift) {
-        if (auto replacement = find(map_, {def, shift}))
-            return replacement;
-        if (!def->has_free_var_ge(shift)) {
-            map_[{def, shift}] = def;
-            return def;
-        } else if (def->is_nominal()) {
-            auto new_type = reduce(def->type(), shift);
-            auto replacement = def->stub(new_type); // TODO better debug info for these
-            map_[{def, shift}] = replacement;
-            nominals_.push({def, shift});
-            return replacement;
-        }
-
-        auto new_type = reduce(def->type(), shift);
-
-        if (auto var = def->isa<Var>()) {
-            return var_reduce(var, shift, new_type);
-        }
-        return rebuild_reduce(def, shift, new_type);
-    }
-
-    const Def* var_reduce(const Var* var, size_t shift, const Def* new_type) {
-        // The shift argument always corresponds to args.back() and thus corresponds to args.size() - 1.
-        // Map index() back into the original argument array.
-        int arg_index = args_.size() - 1 - var->index() + shift;
-        if (arg_index >= 0 && size_t(arg_index) < args_.size()) {
-            if (new_type != args_[arg_index]->type())
-                // Use the expected type, not the one provided by the arg.
-                return world().error(new_type);
-            return args_[arg_index];
-        } else if (arg_index < 0) {
-            // this is a free variable - need to shift by args.size() for the current reduction
-            return world().var(var->type(), var->index() - args_.size(), var->debug());
-        }
-        // this variable is not free - keep index, substitute type
-        return world().var(new_type, var->index(), var->debug());
-    }
-
-    const Def* rebuild_reduce(const Def* def, size_t shift, const Def* new_type) {
-        Array<const Def*> new_ops(def->num_ops());
-        def->foreach_op_index(shift, [&] (size_t op_index, const Def* op, size_t shifted_index) {
-                auto new_op = reduce(op, shifted_index);
-                new_ops[op_index] = new_op;
-            });
-
-        auto new_def = def->rebuild(world(), new_type, new_ops);
-        return map_[{def, shift}] = new_def;
-    }
-
-    World& world() const { return world_; }
-
-    World& world_;
-    const Def* def_;
-    size_t index_;
-    Array<const Def*> args_;
-    Substitutions map_;
-    NominalTodos nominals_;
-};
-
 const Def* Def::reduce(size_t index, Defs args) const {
-    return Reducer(this, index, args).reduce();
+    return thorin::reduce(this, index, args);
 }
 
 const Def* Pi::reduce(Defs args) const {
