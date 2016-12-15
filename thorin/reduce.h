@@ -26,17 +26,13 @@ private:
     size_t index_;
 };
 
-class DefIndexHash {
-public:
+struct DefIndexHash {
     static uint64_t hash(const DefIndex& s) {
         return hash_combine(hash_begin(), s.def()->gid(), s.index());
     }
     static bool eq(const DefIndex& a, const DefIndex& b) { return a == b; }
     static DefIndex sentinel() { return DefIndex(); }
 };
-
-typedef thorin::HashMap<DefIndex, const Def*, DefIndexHash> Substitutions;
-typedef std::stack<DefIndex> NominalTodos;
 
 class Reducer {
 public:
@@ -64,8 +60,8 @@ private:
     const Def* def_;
     size_t index_;
     Array<const Def*> args_;
-    Substitutions map_;
-    NominalTodos nominals_;
+    thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
+    std::stack<DefIndex> nominals_;
 };
 
 inline const Def* reduce(const Def* def, size_t index, Defs args) {
