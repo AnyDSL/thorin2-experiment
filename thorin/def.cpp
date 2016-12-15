@@ -352,11 +352,11 @@ typedef std::stack<DefIndex> NominalTodos;
 
 class Reducer {
 public:
-    Reducer(const Def* def, Defs args)
-        : world_(def->world()), def_(def), index_(0), args_(args)
-    {}
     Reducer(const Def* def, size_t index, Defs args)
         : world_(def->world()), def_(def), index_(index), args_(args)
+    {}
+    Reducer(const Def* def, Defs args)
+        : Reducer(def, 0, args)
     {}
 
     const Def* reduce() {
