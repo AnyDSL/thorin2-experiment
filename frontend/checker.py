@@ -54,7 +54,7 @@ def check_nominal(node):
 	print 'matching tmpl', node.cstr_vars, node.cstr_accepted, node.cstr_possible
 	body_vars, body_accepted, body_possible = node.get_constraints_recursive()
 	print 'against body ', body_vars, body_accepted, body_possible
-	# check if body_vars matches node.cstr_vars
+	# check if body_vars matches node.cstr_vars => fill var_mapping
 	var_mapping = {}
 	if not ast.check_variables_structure_equal(body_vars, node.cstr_vars, var_mapping):
 		raise Exception('Invalid type (vnames) of '+repr(node))
