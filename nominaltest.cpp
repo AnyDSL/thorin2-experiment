@@ -36,8 +36,8 @@ void testNominal() {
     auto nil = w.sigma_type(0, {"nil"});
     assert(nil->is_closed());
     print_value_type(nil);
-    auto list_or_nil = w.variant({cons, nil});
-    list->set(list_or_nil);
+    auto cons_or_nil = w.variant({cons, nil});
+    list->set(cons_or_nil);
     assert(list->is_closed());
     print_value_type(list);
     std::cout << "app list Nat" << endl;

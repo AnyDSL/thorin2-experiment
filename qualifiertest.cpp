@@ -142,11 +142,14 @@ void testQualifiers() {
     std::cout << "--- Affine Fractional Capabilities for Refs ---" << endl;
     {
         auto Ref = w.axiom(w.pi({Star, Star}, Star), {"FRef"});
-        // auto Perm = w.pi_lambda(w.pi(star, star), {"Perm"});
         auto Write = w.sigma_type(0, {"Wr"});
-        auto Read = w.axiom(w.pi(Star, Star), {"Rd"});
+        auto Read = w.sigma_type(1, {"Rd"});
+        auto Perm = w.variant({Write, Read}, {"Perm"});
+        Read->set(0, Perm);
+        print_value_type(Write);
+        print_value_type(Read);
+        print_value_type(Perm);
         auto Cap = w.axiom(w.pi({Star, Star}, w.star(A)), {"FCap"});
-        // Recursive type for
         auto C = [&](int i){ return w.var(Star, i, {"C"}); };
         auto F = [&](int i){ return w.var(Star, i, {"F"}); };
         auto new_ref_ret = w.sigma({Star, w.app(Ref, {T(2), C(0)}), w.app(Cap, {C(1), Write})});
@@ -157,25 +160,30 @@ void testQualifiers() {
                                     w.pi({Star, Star, w.app(Ref, {T(2), C(1)}), w.app(Cap, {C(1), F(0)})},
                                          w.sigma({T(4), w.app(Cap, {C(4), F(3)})}))), {"ReadFRef"});
         print_value_type(ReadRef);
-        // WriteRef : Π(T:*).Π(C:*, F:*, FRef[T, C], ᴬFCap[C, F], T).ᴬACap[C, F]
+        // WriteRef : Π(T:*).Π(C:*, FRef[T, C], ᴬFCap[C, Wr], T).ᴬFCap[C, Wr]
         auto WriteRef = w.axiom(w.pi(Star,
-                                     w.pi({Star, Star, w.app(Ref, {T(2), C(1)}), w.app(Cap, {C(2), F(1)}),
-                                                 T(4)},
-                                         w.app(Cap, {C(4), F(3)})), {"WriteFRef"}));
+                                     w.pi({Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, {C(1), Write}), T(3)},
+                                         w.app(Cap, {C(3), Write})), {"WriteFRef"}));
         print_value_type(WriteRef);
-        // // FreeRef : Π(T:*, C:*, CRef[T, C], ᴬACap[C]).()
-        // auto FreeRef = w.axiom(w.pi({Star, Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))},
-        //                              w.unit()), {"FreeFRef"});
-        // TODO
+        // // FreeRef : Π(T:*).Π(C:*, FRef[T, C], ᴬFCap[C, Wr]).()
+        auto FreeRef = w.axiom(w.pi(Star, w.pi({Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, {C(1), Write})},
+                                               w.unit())), {"FreeFRef"});
+        print_value_type(FreeRef);
+        // TODO split, join
         auto ref42 = w.app(w.app(NewRef, Nat), n42, {"&42"});
         auto phantom = w.extract(ref42, 0);
         print_value_type(ref42);
         auto ref = w.extract(ref42, 1, {"ref"});
         print_value_type(ref);
-        auto cap = w.extract(ref42, 2, {"cap"});
+        auto cap = w.extract(ref42, 2);
         print_value_type(cap);
         auto read42 = w.app(w.app(ReadRef, Nat), {phantom, Write, ref, cap});
         print_value_type(read42);
+        auto read_cap = w.extract(read42, 1);
+        auto write0 = w.app(w.app(WriteRef, Nat), {phantom, ref, read_cap, n0});
+        print_value_type(write0);
+        auto free = w.app(w.app(FreeRef, Nat), {phantom, ref, write0});
+        print_value_type(free);
     }
     std::cout << "--- QualifierTest end ---" << endl;
 }
