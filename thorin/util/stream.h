@@ -1,1 +1,0 @@
-/home/roland/anydsl/thorin/src/thorin/util/stream.h
