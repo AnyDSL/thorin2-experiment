@@ -93,8 +93,8 @@ CODE6 = '''
 define t1 = lambda rec f (x:Nat):Nat. if_gz Nat x (x, f (opNatPlus(x, 5)));
 
 assume intakeLower10: Nat->Nat;
-define t2 = lambda n:Nat. lambda rec (i:Nat):Nat. intakeLower10(i);
-define t3 = lambda n:Nat. lambda rec (i:Nat):Nat. intakeLower10(n);
+define t2 = lambda n:Nat. lambda rec f1(i:Nat):Nat. intakeLower10(i);
+//define t3 = lambda n:Nat. lambda rec f2(i:Nat):Nat. intakeLower10(n);
 '''
 
 
@@ -102,12 +102,14 @@ def type_manually():
 	# manual typing
 	def intakeLower10_constraints(self):
 		a = ast.get_var_name()
-		space = isl.Space.create_from_names(ast.ctx, set=[a])
-		possible = isl.BasicSet.universe(space)
+		b = ast.get_var_name()
+		space = isl.Space.create_from_names(ast.ctx, set=[a, b])
 		accepted = isl.BasicSet.universe(space)
+		possible = isl.BasicSet.universe(space)
 		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(accepted.space, {1: 10, a: -1})) # 0 <= 1*10 + -1*a
 		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(accepted.space, {a: 1})) # 0 <= a
-		return ([[a], [a]], accepted, possible)
+		possible = ast.constraint_equal(possible, a, b)
+		return ([[a], [b]], accepted, possible)
 
 	ass = ast.get_assumption('intakeLower10')
 	if ass:

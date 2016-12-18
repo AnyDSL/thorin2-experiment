@@ -15,7 +15,7 @@ def find_all_nominals(node, nominals=None):
 	"""
 	:param node:
 	:param nominals:
-	:rtype: List(ast.LambdaNominal)
+	:rtype: list[ast.LambdaNominal]
 	:return:
 	"""
 	if nominals is None:
@@ -30,11 +30,20 @@ def find_all_nominals(node, nominals=None):
 	return nominals
 
 
+def manual_typing(node):
+	if node.name == 'f1':
+		node.cstr_vars = [['i'], ['o']]
+		node.cstr_accepted = isl.BasicSet.read_from_str(ast.ctx, '{[i, o] : 0 <= i <= 10}')
+		node.cstr_possible = isl.BasicSet.read_from_str(ast.ctx, '{[i, o] : i = o}')
+
+
 def type_inference(nodes):
 	"""
-	:param list(ast.LambdaNominal) nodes:
+	:param list[ast.LambdaNominal] nodes:
 	:return:
 	"""
+	for node in nodes:
+		manual_typing(node)
 	# filter out functions that are already types
 	nodes = [node for node in nodes if node.cstr_vars is None]
 	#TODO some fancy heuristic
@@ -67,7 +76,7 @@ def check_nominal(node):
 		print 'Invalid if:', ast.simplify_set(error_set)
 		return False
 	# check if (possible intersect node.cstr_accepted) subset of node.cstr_possible
-	_, cstr_accepted, possible_ext = ast.is_subset(node.cstr_accepted, body_possible) # bring body_possible to common form
+	_, cstr_accepted, possible_ext = ast.is_subset(node.cstr_accepted, body_possible, var_mapping) # bring body_possible to common form
 	subset, left, right = ast.is_subset(cstr_accepted.intersect(possible_ext), node.cstr_possible)
 	if not subset:
 		valid_set, error_set = ast.valid_input_constraints(ast.flatten(node.cstr_vars), right, left)

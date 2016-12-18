@@ -121,6 +121,15 @@ def check_variables_structure_equal(vars1, vars2, translation = None):
 
 
 def valid_input_constraints(vars, accepted, possible):
+	"""
+	Create (and debug-print) the set of possible valid / invalid variable configurations.
+	The constraints of these sets show in which cases the constraints are valid / not valid.
+	Result type: (valid configs , invalid configs)
+	:param vars:
+	:param isl.Set accepted:
+	:param isl.Set possible:
+	:return: (isl.Set, isl.Set)
+	"""
 	# find islset(vars) so that (forall other vars: possible subset of accepted)
 	# => make (possible \ accepted) empty
 	# => find islset(vars) so that not (exists other vars: possible \ accepted not empty)
@@ -140,12 +149,38 @@ def valid_input_constraints(vars, accepted, possible):
 	return (error_set.complement().intersect(possible2), error_set)
 
 
+def set_align_params(bset, space):
+	"""
+	Reorders the parameter of a given set, s.t. they match parameter order of space (by name).
+	:param isl.Set bset:
+	:param isl.Space space:
+	:return: isl.Set
+	"""
+	# simple sets - clone and add constraints
+	if isinstance(bset, isl.BasicSet):
+		result = isl.BasicSet.universe(space)
+		for constraint in bset.get_constraints():
+			result = result.add_constraint(clone_constraint(result.space, constraint))
+		return result
+	# union sets - clone and descend
+	if isinstance(bset, isl.Set):
+		bset = simplify_set(bset)
+		basic_sets = bset.get_basic_sets()
+		if len(basic_sets) == 1:
+			return set_align_params(basic_sets[0], space)
+		result = isl.Set.empty(space)
+		for componentset in basic_sets:
+			result = result.union(set_align_params(componentset, space))
+		return result
+	raise Exception(bset.__class__)
+
+
 def is_subset(left, right, equal_vars = {}):
-	'''
+	"""
 	:param islpy.Set left:
 	:param islpy.Set right:
 	:return: (left subset of right, left-repr, right-repr)
-	'''
+	"""
 	for k, v in list(equal_vars.items()):
 		equal_vars[v] = k
 	dim_left = left.space.dim(isl.dim_type.set)
@@ -175,9 +210,8 @@ def is_subset(left, right, equal_vars = {}):
 		name_right = right.space.get_dim_name(isl.dim_type.set, i)
 		if not name_right in vars_left and name_right in equal_vars:
 			right = right.set_dim_name(isl.dim_type.set, i, equal_vars[name_right])
-	print 'R1', right
-	right = right.align_params(left.space)
-	print 'R2', right
+	#right = right.align_params(left.space) # isl seems broken here
+	right = set_align_params(right, left.space)
 	print 'L',left
 	print 'R',right
 	# do the subset check
@@ -426,6 +460,7 @@ class LambdaNominal(Lambda):
 		if len(ops) == 2:
 			ops.append(None)
 		Lambda.__init__(self, ops)
+		self.name = None
 		self.cstr_vars = None
 		self.cstr_accepted = None
 		self.cstr_possible = None

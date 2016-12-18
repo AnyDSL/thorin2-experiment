@@ -81,3 +81,11 @@ print bset.find_dim_by_name(isl.dim_type.set, 'd')
 print bset.find_dim_by_name(isl.dim_type.set, 'a')
 
 
+
+# Test 'project_out' <== ? ==> 'make existential'
+print '\n\n'
+a = isl.BasicSet.read_from_str(ctx, '{[a, b, c] : a = b, b = c}')
+print a
+print a.project_out(isl.dim_type.set, 0, 1)
+print a.project_out(isl.dim_type.set, 1, 1)
+print a.project_out(isl.dim_type.set, 2, 1)
