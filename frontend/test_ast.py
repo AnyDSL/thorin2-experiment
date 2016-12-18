@@ -94,7 +94,7 @@ define t1 = lambda rec f (x:Nat):Nat. if_gz Nat x (x, f (opNatPlus(x, 5)));
 
 assume intakeLower10: Nat->Nat;
 define t2 = lambda n:Nat. lambda rec f1(i:Nat):Nat. intakeLower10(i);
-//define t3 = lambda n:Nat. lambda rec f2(i:Nat):Nat. intakeLower10(n);
+define t3 = lambda n:Nat. lambda rec f2(i:Nat):Nat. intakeLower10(n);
 '''
 
 

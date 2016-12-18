@@ -96,11 +96,23 @@ def simplify_set(s):
 	return s.coalesce().detect_equalities().remove_redundancies()
 
 def clone_variables(vars, translation = None):
+	"""
+	Creates a clone of a variable name representation (nested lists)
+	:param vars:
+	:param dict[str, str] translation: A dictionary mapping old names to the new names in the cloned repr.
+			The dict will be filled with new created variable names (pass in empty dict to get all renamings)
+	:return:
+	"""
 	if isinstance(vars, list):
 		return [clone_variables(x, translation) for x in vars]
-	vname = get_var_name(vars)
 	if translation is not None:
-		translation[vars] = vname
+		if vars in translation:
+			vname = translation[vars]
+		else:
+			vname = get_var_name(vars)
+			translation[vars] = vname
+	else:
+		vname = get_var_name(vars)
 	return vname
 
 def check_variables_structure_equal(vars1, vars2, translation = None):
@@ -279,6 +291,16 @@ class AstNode:
 	def get_special_function_param_count(self):
 		return 0
 
+	def traverse(self, cb):
+		"""
+		:param (AstNode)->None cb:
+		:return:
+		"""
+		if cb(self):
+			for op in self.ops:
+				if isinstance(op, AstNode):
+					op.traverse(cb)
+
 
 
 
@@ -334,6 +356,9 @@ class Assume(AstNode):
 		bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=flatten(vars)))
 		return (vars, bset, bset)
 
+	def traverse(self, cb):
+		cb(self)
+
 
 class SpecialFunction(Assume):
 	# ops = [name, type]
@@ -349,6 +374,9 @@ class SpecialFunction(Assume):
 
 	def get_special_function_param_count(self):
 		return self.param_count
+
+	def traverse(self, cb):
+		cb(self)
 
 
 
@@ -401,6 +429,12 @@ class ParamDef(AstNode):
 	def __eq__(self, other):
 		return other.__class__ == self.__class__ and self.name == other.name and self.ops == other.ops
 
+	def __ne__(self, other):
+		return not self == other
+
+	def __hash__(self):
+		return hash(self.name)
+
 	def subst(self, name, value):
 		if name == self.name:
 			return value
@@ -424,9 +458,26 @@ class ParamDef(AstNode):
 		return self.constraint_vars
 
 	def get_default_vars(self):
+		"""
+		:return: A variable representation (as get_nat_variables), but with deterministic, readable variable names.
+			Default names are ["<name>"] or ["<name>1", "<name>2", ...].
+		"""
 		if self.default_vars is None:
-			self.default_vars = self.get_nat_variables()
+			tmp_vars = self.get_nat_variables()
+			tmp_vars_flat = flatten(tmp_vars)
+			if len(tmp_vars) == 1:
+				# _123 => n
+				translation = {tmp_vars[0]: self.name}
+			else:
+				# _123 => n1, n2, n3, ...
+				translation = {}
+				for i, v in enumerate(tmp_vars_flat):
+					translation[v] = self.name+str(i+1)
+			self.default_vars = clone_variables(tmp_vars, translation)
 		return self.default_vars
+
+	def traverse(self, cb):
+		cb(self)
 
 
 class Lambda(AstNode):
@@ -464,7 +515,7 @@ class LambdaNominal(Lambda):
 		self.cstr_vars = None
 		self.cstr_accepted = None
 		self.cstr_possible = None
-		self.outer_parameters = None
+		self.outer_parameters = None # type: list[ParamDef]
 
 	def set_body(self, body):
 		self.ops[2] = body
@@ -488,23 +539,37 @@ class LambdaNominal(Lambda):
 
 	def set_default_constraints(self):
 		self.cstr_vars = self.get_nat_variables()
-		bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=flatten(self.cstr_vars)))
+		vars = flatten(self.cstr_vars)
+		for outer_param in self.get_outer_parameters():
+			vars += flatten(outer_param.get_default_vars())
+		bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=vars))
 		self.cstr_accepted = bset
 		self.cstr_possible = bset
 
 	def get_outer_parameters(self):
+		"""
+		:rtype: list[ParamDef]
+		:return:
+		"""
 		if self.outer_parameters is not None:
 			return self.outer_parameters
 		self.outer_parameters = []
-		def crawl(node):
-			if isinstance(node, AstNode):
-				if isinstance(node, LambdaNominal):
-					self.outer_parameters.extend(node.get_outer_parameters())
-				for op in self.ops:
-					self.outer_parameters.extend(crawl(op))
-		crawl(self.ops[2])
+		defined_params = set()
+		used_params = set()
+		def find_params(node):
+			if isinstance(node, ParamDef):
+				used_params.add(node)
+			elif isinstance(node, Lambda) or isinstance(node, Pi):
+				defined_params.add(node.ops[0])
+			if isinstance(node, LambdaNominal):
+				used_params.update(node.get_outer_parameters())
+				return False
+			return True
+		self.ops[2].traverse(find_params)
+		self.outer_parameters.extend(used_params.difference(defined_params))
+		print 'OUTER', self.outer_parameters, [p.get_default_vars() for p in self.outer_parameters]
+		return self.outer_parameters
 
-		
 	def __str__(self):
 		return 'λ rec ('+str(self.ops[0].name)+':'+str(self.ops[0].ops[0])+'): '+str(self.ops[1])
 
@@ -526,6 +591,11 @@ class LambdaNominal(Lambda):
 
 	def get_nat_variables(self):
 		return [self.ops[0].get_nat_variables(), self.ops[1].get_nat_variables()]
+
+	def traverse(self, cb):
+		if cb(self):
+			self.ops[0].traverse(cb)
+			self.ops[2].traverse(cb)
 
 	def get_constraints_recursive(self):
 		# copied from Lambda.get_constraints
