@@ -340,7 +340,7 @@ def set_assumption(name, node):
 	global_assumptions[name] = node
 
 def has_predefined_assumption(name):
-	return name in global_assumptions and global_assumptions[name].predefined
+	return name in global_assumptions and global_assumptions[name].predefined or re.match(r'^(cNat)?\d+$', name)
 
 
 
@@ -595,7 +595,7 @@ class LambdaNominal(Lambda):
 		return self.outer_parameters
 
 	def __str__(self):
-		return 'λ rec ('+str(self.ops[0].name)+':'+str(self.ops[0].ops[0])+'): '+str(self.ops[1])
+		return 'λ rec '+(str(self.name) if self.name else '')+'('+str(self.ops[0].name)+':'+str(self.ops[0].ops[0])+'): '+str(self.ops[1])
 
 	def __eq__(self, other):
 		return self is other
