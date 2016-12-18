@@ -573,11 +573,13 @@ class LambdaNominal(Lambda):
 			return True
 		self.ops[2].traverse(find_params)
 		self.outer_parameters.extend(used_params.difference(defined_params))
-		print 'OUTER', self.outer_parameters, [p.get_default_vars() for p in self.outer_parameters]
 		return self.outer_parameters
 
 	def __str__(self):
 		return 'λ rec ('+str(self.ops[0].name)+':'+str(self.ops[0].ops[0])+'): '+str(self.ops[1])
+
+	def __eq__(self, other):
+		return self is other
 
 	def get_type(self):
 		return Pi([self.ops[0], self.ops[1]])

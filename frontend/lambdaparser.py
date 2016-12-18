@@ -50,9 +50,10 @@ in (r1 n, r2 n) end;
 
 
 class Scope:
-	def __init__(self):
+	def __init__(self, parent=None):
 		self.vars = {}
 		self.depth = 0
+		self.parent = parent # type: Scope
 
 	def push_param(self, vname=None, vtype=None):
 		scope = self.push()
@@ -61,8 +62,7 @@ class Scope:
 		return scope
 
 	def push(self):
-		scope = Scope()
-		scope.vars = self.vars.copy()
+		scope = Scope(self)
 		scope.depth = self.depth + 1
 		return scope
 
@@ -70,7 +70,17 @@ class Scope:
 		self.vars[defname] = ('def', deftype, 0)
 
 	def contains(self, name):
-		return name in self.vars
+		return name in self.vars or (self.parent is not None and self.parent.contains(name))
+
+	def __contains__(self, item):
+		return self.contains(item)
+
+	def __getitem__(self, item):
+		if item in self.vars:
+			return self.vars[item]
+		if self.parent is not None:
+			return self.parent[item]
+		raise IndexError(item)
 
 
 class CppCodeGen:
@@ -211,11 +221,11 @@ class Identifier(str, LambdaAST):
 
 	def to_cpp(self, scope, codegen, opts={}):
 		# check if var in scope
-		if self.name not in scope.vars:
+		if self.name not in scope:
 			codegen.unknown_identifier(self.name)
 			return str(self.name)
 		# resolve var
-		kind, vartype, acc = scope.vars[self.name]
+		kind, vartype, acc = scope[self.name]
 		if kind == 'param':
 			return 'w.var(' + vartype.to_cpp(scope, codegen, {'accept_inline_tuple': True}) + ', ' + str(scope.depth - acc) + ', ' + cpp_string(self.name) + ')'
 		return str(self.name)
@@ -224,12 +234,12 @@ class Identifier(str, LambdaAST):
 		return 'Identifier('+repr(self.name)+')'
 
 	def to_ast(self, scope, astcreator):
-		if self.name not in scope.vars:
+		if self.name not in scope:
 			asm = ast.get_assumption(self.name)
 			if asm:
 				return asm
 			raise Exception('Unknown value (TODO): '+repr(self.name))
-		kind, vartype, acc = scope.vars[self.name]
+		kind, vartype, acc = scope[self.name]
 		return vartype
 
 

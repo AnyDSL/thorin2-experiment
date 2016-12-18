@@ -97,6 +97,16 @@ define t2 = lambda n:Nat. lambda rec f1(i:Nat):Nat. intakeLower10(i);
 define t3 = lambda n:Nat. lambda rec f2(i:Nat):Nat. intakeLower10(n);
 '''
 
+CODE7 = '''
+define test = lambda n:Nat. let
+	define f1 = lambda rec f1_inner (xy:sigma(Nat,Nat)): Nat. f2(xy[1], 0);
+	define f2 = lambda rec f2_inner (xy:sigma(Nat,Nat)): Nat. f1(0, xy[0]);
+in f1(15, 3) end;
+'''
+
+with open('lu-decomposition.lbl', 'r') as f:
+	CODEF = f.read().decode('utf-8')
+
 
 def type_manually():
 	# manual typing
@@ -173,7 +183,8 @@ CODE += CODE2
 CODE += CODE3
 #CODE = CODE4
 #CODE = CODE5
-CODE = CODE6
+#CODE = CODE6
+CODE = CODE7
 prog = lambdaparser.parse_lambda_code(CODE)
 print prog
 nodes = prog.to_ast()
