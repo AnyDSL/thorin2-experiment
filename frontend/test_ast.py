@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import ast
 import lambdaparser
 import types
@@ -184,7 +186,8 @@ CODE += CODE3
 #CODE = CODE4
 #CODE = CODE5
 #CODE = CODE6
-CODE = CODE7
+#CODE = CODE7
+CODE = CODEF
 prog = lambdaparser.parse_lambda_code(CODE)
 print prog
 nodes = prog.to_ast()
@@ -192,6 +195,8 @@ nodes = prog.to_ast()
 type_manually()
 
 for name, root in nodes:
+	if isinstance(root, ast.Assume):
+		continue
 	print '- ',name, ':=', root,
 	print ': ',root.get_type()
 	#constraints = root.get_constraints()

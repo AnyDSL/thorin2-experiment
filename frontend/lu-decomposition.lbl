@@ -42,7 +42,7 @@ define LGet = lambda n:Nat. lambda L:LType n. lambda i:Nat. lambda j:Nat.
 
 define LUD = lambda n:Nat. lambda A:MatrixType n n. let
 		define U = ArrCreate (UTypePair n) (lambda i:Nat.
-			ArrCreate (opNatMinus(n,i), lambda _:Nat. Float) (lambda rec (j:Nat): Float.
+			ArrCreate (opNatMinus(n,i), lambda _:Nat. Float) (lambda rec recursiveUDef (j:Nat): Float.
 			    if_gz Float i (
 			        opFloatMinus (
 			            AGet n A i (opNatPlus (i,j)),
@@ -53,7 +53,7 @@ define LUD = lambda n:Nat. lambda A:MatrixType n n. let
 			)
 		);
 		define L = ArrCreate (LTypePair n) (lambda i:Nat.
-			ArrCreate (i, lambda _:Nat. Float) (lambda rec (j:Nat): Float.
+			ArrCreate (i, lambda _:Nat. Float) (lambda rec recursiveLDef (j:Nat): Float.
 				opFloatDiv (if_gz Float j (
 			        opFloatMinus (
 			            AGet n A i j,

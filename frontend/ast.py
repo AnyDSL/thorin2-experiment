@@ -15,6 +15,25 @@ def get_var_name(name =''):
 
 
 def set_join(a, b):
+	if not isinstance(a, isl.BasicSet):
+		bsets = a.coalesce().get_basic_sets()
+		if len(bsets) == 1:
+			return set_join(bsets[0], b)
+		result = set_join(bsets[0], b)
+		for bset in bsets[1:]:
+			result = result.union(set_join(bset, b))
+		return result
+
+	if not isinstance(b, isl.BasicSet):
+		bsets = b.coalesce().get_basic_sets()
+		if len(bsets) == 1:
+			return set_join(bsets[0], b)
+		result = set_join(a, bsets[0])
+		for bset in bsets[1:]:
+			result = result.union(set_join(a, bset))
+		return result
+
+	# join 2 BasicSet
 	dim_a = a.space.dim(isl.dim_type.set)
 	dim_b = b.space.dim(isl.dim_type.set)
 	vars  = [a.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_a)]
