@@ -60,6 +60,17 @@ def check_nominal(node):
 	:return:
 	"""
 	print 'Checking', node
+	# First: all parameter variables have to be present (including unbound ones)
+	required_vars = ast.flatten(node.cstr_vars)
+	for param in node.get_outer_parameters():
+		required_vars += ast.flatten(param.get_default_vars())
+	present_vars_accepted = ast.set_vars(node.cstr_accepted)
+	present_vars_possible = ast.set_vars(node.cstr_possible)
+	assert present_vars_accepted == present_vars_possible
+	for vname in required_vars:
+		if not vname in present_vars_accepted:
+			raise Exception('Invalid constraint template! Variable "{}" missing'.format(vname))
+	# Next, constraints have to match
 	print 'matching tmpl', node.cstr_vars, node.cstr_accepted, node.cstr_possible
 	body_vars, body_accepted, body_possible = node.get_constraints_recursive()
 	print 'against body ', body_vars, body_accepted, body_possible
