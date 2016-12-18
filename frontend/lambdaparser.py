@@ -144,9 +144,11 @@ class AstCreator:
 		self.seen = [] # set does not work, as nodes are unhashable / mutable
 
 	def append(self, node, scope, callback):
-		if node not in self.seen:
-			self.seen.append(node)
-			self.queue.put((node, scope, callback))
+		for n in self.seen:
+			if n is node:
+				return
+		self.seen.append(node)
+		self.queue.put((node, scope, callback))
 
 	def progress_all(self):
 		while not self.queue.empty():
@@ -158,11 +160,11 @@ class AstCreator:
 
 
 class LambdaAST:
-	"""
-	Removes all syntactic sugar from the AST.
-	@:return the new representation of this node
-	"""
 	def normalize(self):
+		"""
+		Removes all syntactic sugar from the AST.
+		@:return the new representation of this node
+		"""
 		if isinstance(self, List):
 			for i in xrange(len(self)):
 				if isinstance(self[i], LambdaAST):
@@ -171,6 +173,23 @@ class LambdaAST:
 			if isinstance(v, LambdaAST):
 				self.__dict__[k] = v.normalize()
 		return self
+
+	def to_cpp(self, scope, codegen, opts={}):
+		"""
+		:param Scope scope:
+		:param CppCodeGen codegen:
+		:param dict opts:
+		:return:
+		"""
+		raise Exception('NI')
+
+	def to_ast(self, scope, astcreator):
+		"""
+		:param Scope scope:
+		:param AstCreator astcreator:
+		:return: ast.AstNode
+		"""
+		raise Exception('NI')
 
 
 def cpp_string(x):

@@ -12,12 +12,12 @@ import islpy as isl
 
 
 def find_all_nominals(node, nominals=None):
-	'''
+	"""
 	:param node:
 	:param nominals:
 	:rtype: List(ast.LambdaNominal)
 	:return:
-	'''
+	"""
 	if nominals is None:
 		nominals = []
 	if isinstance(node, ast.AstNode):
@@ -31,10 +31,10 @@ def find_all_nominals(node, nominals=None):
 
 
 def type_inference(nodes):
-	'''
+	"""
 	:param list(ast.LambdaNominal) nodes:
 	:return:
-	'''
+	"""
 	# filter out functions that are already types
 	nodes = [node for node in nodes if node.cstr_vars is None]
 	#TODO some fancy heuristic
@@ -46,10 +46,10 @@ def type_inference(nodes):
 
 
 def check_nominal(node):
-	'''
+	"""
 	:param ast.LambdaNominal node:
 	:return:
-	'''
+	"""
 	print 'Checking', node
 	print 'matching tmpl', node.cstr_vars, node.cstr_accepted, node.cstr_possible
 	body_vars, body_accepted, body_possible = node.get_constraints_recursive()
@@ -80,10 +80,10 @@ def check_nominal(node):
 
 
 def check_definition(node):
-	'''
+	"""
 	:param ast.AstNode node:
 	:return:
-	'''
+	"""
 	nominals = find_all_nominals(node)
 	print 'Nominal lambdas:', nominals
 	type_inference(nominals)
