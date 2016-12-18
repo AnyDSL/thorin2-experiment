@@ -35,6 +35,10 @@ def manual_typing(node):
 		node.cstr_vars = [['i'], ['o']]
 		node.cstr_accepted = isl.BasicSet.read_from_str(ast.ctx, '{[i, o] : 0 <= i <= 10}')
 		node.cstr_possible = isl.BasicSet.read_from_str(ast.ctx, '{[i, o] : i = o}')
+	if node.name == 'f2':
+		node.cstr_vars = [['i'], ['o']]
+		node.cstr_accepted = isl.BasicSet.read_from_str(ast.ctx, '{[i, o, n] : 0 <= n <= 10}')
+		node.cstr_possible = isl.BasicSet.read_from_str(ast.ctx, '{[i, o, n] : n = o}')
 
 
 def type_inference(nodes):
@@ -99,12 +103,12 @@ def check_nominal(node):
 
 
 
-def check_definition(node):
+def check_definition(root):
 	"""
-	:param ast.AstNode node:
+	:param ast.AstNode root:
 	:return:
 	"""
-	nominals = find_all_nominals(node)
+	nominals = find_all_nominals(root)
 	print 'Nominal lambdas:', nominals
 	type_inference(nominals)
 	# Check all nominal lambda bodies
@@ -114,7 +118,7 @@ def check_definition(node):
 			return False
 		print '[INFO] Recursive function', node, 'has been verified.'
 	# check "real" program - assuming all recursive functions are safe
-	return check_definition_simple(node)
+	return check_definition_simple(root)
 
 
 def check_definition_simple(node):
