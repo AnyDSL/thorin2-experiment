@@ -522,8 +522,13 @@ class LambdaNominal(Lambda):
 
 	def get_constraint_clone(self):
 		translation = {}
-		#TODO add outer params as identity
 		vars = clone_variables(self.cstr_vars, translation)
+		for outer_param in self.get_outer_parameters():
+			unbound_names = outer_param.get_default_vars()
+			real_names, _, _ = outer_param.get_constraints()
+			if not check_variables_structure_equal(unbound_names, real_names, translation):
+				print unbound_names, '!=', real_names
+				raise Exception("?")
 		for i in xrange(self.cstr_accepted.space.dim(isl.dim_type.set)):
 			v = self.cstr_accepted.space.get_dim_name(isl.dim_type.set, i)
 			if not v in translation:
@@ -554,8 +559,9 @@ class LambdaNominal(Lambda):
 		if self.outer_parameters is not None:
 			return self.outer_parameters
 		self.outer_parameters = []
-		defined_params = set()
+		defined_params = set([self.ops[0]])
 		used_params = set()
+
 		def find_params(node):
 			if isinstance(node, ParamDef):
 				used_params.add(node)
