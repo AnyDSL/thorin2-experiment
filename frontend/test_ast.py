@@ -136,8 +136,8 @@ def type_manually():
 		possible = isl.BasicSet.universe(space)
 		accepted = isl.BasicSet.universe(space)
 		# accept only 0 <= i <= (len-1)
-		#accepted = possible.add_constraint(isl.Constraint.ineq_from_names(possible.space, {var_index: 1}))
-		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(possible.space, {var_len: 1, 1: -1, var_index: -1}))
+		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(accepted.space, {var_index: 1}))
+		accepted = accepted.add_constraint(isl.Constraint.ineq_from_names(accepted.space, {var_len: 1, 1: -1, var_index: -1}))
 		possible = possible.add_constraint(isl.Constraint.ineq_from_names(possible.space, {var_type_index: 1}))
 		possible = possible.add_constraint(isl.Constraint.ineq_from_names(possible.space, {var_len: 1, 1: -1, var_type_index: -1}))
 		return (vars, accepted, possible)
@@ -159,6 +159,10 @@ def type_manually():
 	ass = ast.get_assumption('ArrCreate')
 	if ass:
 		ass.get_constraints = types.MethodType(arr_create_constraints, ass)
+
+	ass = ast.get_assumption('ArrT')
+	if ass:
+		ass.create_constraints([[['n'], [['ci'], []]], []], 'n >= 0', '0 <= ci <= n')
 
 	# type unnecessary stuff
 	for x in ['Float', 'cFloatZero']:

@@ -56,6 +56,7 @@ def type_inference(nodes):
 		if func.cstr_vars is None:
 			print '[WARN] No explicit constraints given for '+repr(func)+'. Using permissive default.'
 			func.set_default_constraints()
+			print func.cstr_vars, func.cstr_accepted, func.cstr_possible
 
 
 def check_nominal(node):
@@ -85,7 +86,7 @@ def check_nominal(node):
 	# check if accepted superset of node.cstr_accepted
 	subset, left, right = ast.is_subset(node.cstr_accepted, body_accepted, var_mapping)
 	if not subset:
-		valid_set, error_set = ast.valid_input_constraints(ast.flatten(node.cstr_vars), right, left)
+		valid_set, error_set = ast.valid_input_constraints(ast.flatten(node.cstr_vars) + ast.flatten(node.get_outer_vars()), right, left)
 		print '[ERR]', node, 'violates its given constraints (accepted range)'
 		print 'Valid if:  ', ast.simplify_set(valid_set)
 		print 'Invalid if:', ast.simplify_set(error_set)

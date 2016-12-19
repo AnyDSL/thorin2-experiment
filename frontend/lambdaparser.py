@@ -379,7 +379,7 @@ class Pi(Plain, LambdaAST):
 	def to_ast(self, scope, astcreator):
 		tp = self.type.to_ast(scope, astcreator)
 		param = ast.ParamDef(self.name, tp)
-		return ast.Pi([param, self.body.to_ast(scope.push_param(self.name, ast.ParamDef(self.name, tp)), astcreator)])
+		return ast.Pi([param, self.body.to_ast(scope.push_param(self.name, param), astcreator)])
 
 
 class Extract(List, LambdaAST):

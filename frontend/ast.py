@@ -307,6 +307,12 @@ class AstNode:
 			return vars[0]
 		return vars
 
+	def get_unbound_parameters(self, unbound, bound):
+		for op in self.ops:
+			if isinstance(op, AstNode):
+				op.get_unbound_parameters(unbound, bound)
+		return unbound
+
 	def get_special_function_param_count(self):
 		return 0
 
@@ -362,6 +368,10 @@ class GivenConstraint:
 		print possible
 		self.cstr_accepted = isl.BasicSet.read_from_str(ctx, accepted)
 		self.cstr_possible = isl.BasicSet.read_from_str(ctx, possible)
+		if self.cstr_accepted.is_empty():
+			raise Exception('Accepted set must not be empty!')
+		if self.cstr_possible.is_empty():
+			raise Exception('Possible set must not be empty!')
 
 	def get_outer_vars(self):
 		return []
@@ -426,6 +436,9 @@ class Assume(AstNode, GivenConstraint):
 	def traverse(self, cb):
 		cb(self)
 
+	def get_unbound_parameters(self, unbound, bound):
+		return unbound
+
 
 class SpecialFunction(Assume):
 	# ops = [name, type]
@@ -444,6 +457,9 @@ class SpecialFunction(Assume):
 
 	def traverse(self, cb):
 		cb(self)
+
+	def get_unbound_parameters(self, unbound, bound):
+		return unbound
 
 
 
@@ -494,7 +510,8 @@ class ParamDef(AstNode):
 		return self.ops[0]
 
 	def __eq__(self, other):
-		return other.__class__ == self.__class__ and self.name == other.name and self.ops == other.ops
+		#return other.__class__ == self.__class__ and self.name == other.name and self.ops == other.ops
+		return self is other
 
 	def __ne__(self, other):
 		return not self == other
@@ -546,6 +563,11 @@ class ParamDef(AstNode):
 	def traverse(self, cb):
 		cb(self)
 
+	def get_unbound_parameters(self, unbound, bound):
+		if not self in bound:
+			unbound.add(self)
+		return unbound
+
 
 class Lambda(AstNode):
 	# ops = param, body
@@ -570,6 +592,10 @@ class Lambda(AstNode):
 			body_accepted = set_join(body_accepted, bset)
 			body_possible = set_join(body_possible, bset)
 		return ([param_vars, body_vars], body_accepted, body_possible)
+
+	def get_unbound_parameters(self, unbound, bound):
+		self.ops[1].get_unbound_parameters(unbound, set(list(bound) + [self.ops[0]]))
+		return unbound
 
 
 class LambdaNominal(Lambda, GivenConstraint):
@@ -612,24 +638,17 @@ class LambdaNominal(Lambda, GivenConstraint):
 		if self.outer_parameters is not None:
 			return self.outer_parameters
 		self.outer_parameters = []
-		defined_params = set([self.ops[0]])
-		used_params = set()
-
-		def find_params(node):
-			if isinstance(node, ParamDef):
-				used_params.add(node)
-			elif isinstance(node, Lambda) or isinstance(node, Pi):
-				defined_params.add(node.ops[0])
-			if isinstance(node, LambdaNominal):
-				used_params.update(node.get_outer_parameters())
-				return False
-			return True
-		self.ops[2].traverse(find_params)
-		self.outer_parameters.extend(used_params.difference(defined_params))
+		self.outer_parameters.extend(self.ops[2].get_unbound_parameters(set(), set([self.ops[0]])))
 		return self.outer_parameters
 
+	def get_unbound_parameters(self, unbound, bound):
+		for param in self.get_outer_parameters():
+			if param not in bound:
+				unbound.add(param)
+		return unbound
+
 	def get_outer_vars(self):
-		return [param.get_default_vars() for param in self.outer_parameters]
+		return [param.get_default_vars() for param in self.get_outer_parameters()]
 
 	def __str__(self):
 		return 'λ rec '+(str(self.name) if self.name else '')+'('+str(self.ops[0].name)+':'+str(self.ops[0].ops[0])+'): '+str(self.ops[1])
@@ -685,6 +704,10 @@ class Pi(AstNode):
 
 	def get_type(self):
 		raise Exception('TODO pi type')
+
+	def get_unbound_parameters(self, unbound, bound):
+		self.ops[1].get_unbound_parameters(unbound, set(list(bound) + [self.ops[0]]))
+		return unbound
 
 
 class App(AstNode):
