@@ -39,6 +39,12 @@ def manual_typing(node):
 		node.cstr_vars = [['i'], ['o']]
 		node.cstr_accepted = isl.BasicSet.read_from_str(ast.ctx, '{[i, o, n] : 0 <= n <= 10}')
 		node.cstr_possible = isl.BasicSet.read_from_str(ast.ctx, '{[i, o, n] : n = o}')
+	if node.name == 'recursiveLDef':
+		node.create_constraints([['j'], []] , '0 <= j < i < n', '')
+		print node.name, node.cstr_vars, node.cstr_accepted
+	if node.name == 'recursiveUDef':
+		node.create_constraints([['j'], []] , '0 <= i, 0 <= j < n - i', '')
+		print node.name, node.cstr_vars, node.cstr_accepted
 
 
 def type_inference(nodes):
@@ -64,7 +70,7 @@ def check_nominal(node):
 	:param ast.LambdaNominal node:
 	:return:
 	"""
-	print 'Checking', node
+	print '--- Checking', node, '---'
 	# First: all parameter variables have to be present (including unbound ones)
 	required_vars = ast.flatten(node.cstr_vars)
 	for param in node.get_outer_parameters():
@@ -119,6 +125,8 @@ def check_definition(root):
 			return False
 		print '[INFO] Recursive function', node, 'has been verified.'
 	# check "real" program - assuming all recursive functions are safe
+	if len(nominals) > 0:
+		print '--- checking root ---'
 	return check_definition_simple(root)
 
 
