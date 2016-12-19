@@ -321,6 +321,51 @@ class AstNode:
 					op.traverse(cb)
 
 
+class GivenConstraint:
+	def __init__(self):
+		self.cstr_vars = None
+		self.cstr_accepted = None
+		self.cstr_possible = None
+
+	def has_constraints(self):
+		return self.cstr_vars is not None
+
+	def get_constraint_clone(self, translation=None):
+		if translation is None:
+			translation = {}
+		vars = clone_variables(self.cstr_vars, translation)
+		for i in xrange(self.cstr_accepted.space.dim(isl.dim_type.set)):
+			v = self.cstr_accepted.space.get_dim_name(isl.dim_type.set, i)
+			if not v in translation:
+				translation[v] = get_var_name(v)
+		accepted = self.cstr_accepted.copy()
+		possible = self.cstr_possible.copy()
+		for i in xrange(accepted.space.dim(isl.dim_type.set)):
+			v_old = accepted.space.get_dim_name(isl.dim_type.set, i)
+			if v_old in translation:
+				accepted = accepted.set_dim_name(isl.dim_type.set, i, translation[v_old])
+				possible = possible.set_dim_name(isl.dim_type.set, i, translation[v_old])
+		return (vars, accepted, possible)
+
+	def create_constraints(self, vars, accepted_cond, possible_cond):
+		"""
+		:param list vars:
+		:param str accepted_cond:
+		:param str possible_cond:
+		:return:
+		"""
+		self.cstr_vars = vars
+		vars = flatten(vars) + flatten(self.get_outer_vars())
+		accepted = '{{[{}] : {}}}'.format(', '.join(vars), accepted_cond)
+		possible = '{{[{}] : {}}}'.format(', '.join(vars), possible_cond)
+		print accepted
+		print possible
+		self.cstr_accepted = isl.BasicSet.read_from_str(ctx, accepted)
+		self.cstr_possible = isl.BasicSet.read_from_str(ctx, possible)
+
+	def get_outer_vars(self):
+		return []
+
 
 
 
@@ -344,10 +389,11 @@ def has_predefined_assumption(name):
 
 
 
-class Assume(AstNode):
+class Assume(AstNode, GivenConstraint):
 	# ops = [name, type]
 	def __init__(self, ops):
 		AstNode.__init__(self, ops)
+		GivenConstraint.__init__(self)
 		global_assumptions[ops[0]] = self
 		self.predefined = False
 
@@ -365,6 +411,8 @@ class Assume(AstNode):
 		return self.ops[1].get_nat_variables()
 
 	def get_constraints(self):
+		if self.has_constraints():
+			return self.get_constraint_clone()
 		vars, accepted, possible = self.get_isl_sets()
 		print '[WARN] Untyped assume:', self.ops[0]
 		print 'Typing as', (vars, accepted, possible)
@@ -524,42 +572,28 @@ class Lambda(AstNode):
 		return ([param_vars, body_vars], body_accepted, body_possible)
 
 
-class LambdaNominal(Lambda):
+class LambdaNominal(Lambda, GivenConstraint):
 	# ops = param, returntype, body||None
 	def __init__(self, ops):
 		if len(ops) == 2:
 			ops.append(None)
 		Lambda.__init__(self, ops)
+		GivenConstraint.__init__(self)
 		self.name = None
-		self.cstr_vars = None
-		self.cstr_accepted = None
-		self.cstr_possible = None
 		self.outer_parameters = None # type: list[ParamDef]
-
-	def set_body(self, body):
-		self.ops[2] = body
 
 	def get_constraint_clone(self):
 		translation = {}
-		vars = clone_variables(self.cstr_vars, translation)
 		for outer_param in self.get_outer_parameters():
 			unbound_names = outer_param.get_default_vars()
 			real_names, _, _ = outer_param.get_constraints()
 			if not check_variables_structure_equal(unbound_names, real_names, translation):
 				print unbound_names, '!=', real_names
 				raise Exception("?")
-		for i in xrange(self.cstr_accepted.space.dim(isl.dim_type.set)):
-			v = self.cstr_accepted.space.get_dim_name(isl.dim_type.set, i)
-			if not v in translation:
-				translation[v] = get_var_name(v)
-		accepted = self.cstr_accepted.copy()
-		possible = self.cstr_possible.copy()
-		for i in xrange(accepted.space.dim(isl.dim_type.set)):
-			v_old = accepted.space.get_dim_name(isl.dim_type.set, i)
-			if v_old in translation:
-				accepted = accepted.set_dim_name(isl.dim_type.set, i, translation[v_old])
-				possible = possible.set_dim_name(isl.dim_type.set, i, translation[v_old])
-		return (vars, accepted, possible)
+		return GivenConstraint.get_constraint_clone(self, translation)
+
+	def set_body(self, body):
+		self.ops[2] = body
 
 	def set_default_constraints(self):
 		self.cstr_vars = self.get_nat_variables()
@@ -593,6 +627,9 @@ class LambdaNominal(Lambda):
 		self.ops[2].traverse(find_params)
 		self.outer_parameters.extend(used_params.difference(defined_params))
 		return self.outer_parameters
+
+	def get_outer_vars(self):
+		return [param.get_default_vars() for param in self.outer_parameters]
 
 	def __str__(self):
 		return 'λ rec '+(str(self.name) if self.name else '')+'('+str(self.ops[0].name)+':'+str(self.ops[0].ops[0])+'): '+str(self.ops[1])
