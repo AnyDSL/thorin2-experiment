@@ -43,7 +43,7 @@ def manual_typing(node):
 		node.create_constraints([['j'], []] , '0 <= j < i < n', '')
 		print node.name, node.cstr_vars, node.cstr_accepted
 	if node.name == 'recursiveUDef':
-		node.create_constraints([['j'], []] , '0 <= i, 0 <= j < n - i', '')
+		node.create_constraints([['j'], []] , '0 <= i and 0 <= j and j < n - i', '')
 		print node.name, node.cstr_vars, node.cstr_accepted
 
 
@@ -132,9 +132,10 @@ def check_definition(root):
 
 def check_definition_simple(node):
 	vars, accepted, possible = node.get_constraints()
+	accepted2, possible2 = ast.simplify_equalities(vars, accepted, possible)
 	print 'Vars:    ',vars
-	print 'Accepted:',accepted
-	print 'Possible:',possible
+	print 'Accepted:',accepted2
+	print 'Possible:',possible2
 	# possible subsetof accepted => everything right
 	if possible.is_subset(accepted):
 		print '[VALID]'

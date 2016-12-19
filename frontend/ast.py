@@ -114,6 +114,91 @@ def flatten(x):
 def simplify_set(s):
 	return s.coalesce().detect_equalities().remove_redundancies()
 
+def get_equivalence_classes(bset, classes = {}):
+	"""
+	:param isl.BasicSet bset:
+	:rtype: dict[str, set]
+	:return:
+	"""
+	if not isinstance(bset, isl.BasicSet):
+		classes = {}
+		for inner_set in bset.get_basic_sets():
+			classes = get_equivalence_classes(inner_set, classes)
+		return classes
+
+	var_to_eq = {}
+	vars = set_vars(bset)
+	for v in vars:
+		var_to_eq[v] = set([v])
+
+	for c in bset.get_constraints(): #type: isl.Constraint
+		if not c.is_equality() or c.get_constant_val() != 0:
+			continue
+		v1 = None
+		v2 = None
+		for i in xrange(c.space.dim(isl.dim_type.set)):
+			coeff = c.get_coefficient_val(isl.dim_type.set, i)
+			if coeff == 1 and v1 is None:
+				v1 = vars[i]
+			elif coeff == -1 and v2 is None:
+				v2 = vars[i]
+			elif coeff != 0:
+				continue
+			# v1 == v2
+			if v1 is not None and v2 is not None:
+				# check if allowed to be in the same class
+				if v1 not in classes or v2 not in classes or classes[v1] is classes[v2]:
+					joined = var_to_eq[v1].union(var_to_eq[v2])
+					for v in joined:
+						var_to_eq[v] = joined
+	return var_to_eq
+
+def get_constrainted_variables(bset):
+	"""
+	:param isl.BasicSet bset:
+	:rtype: set[str]
+	:return:
+	"""
+	result = set()
+	if not isinstance(bset, isl.BasicSet):
+		for inner_set in bset.get_basic_sets():
+			result = result.union(get_constrainted_variables(inner_set))
+		return result
+	for c in bset.get_constraints():  # type: isl.Constraint
+		for i in xrange(c.space.dim(isl.dim_type.set)):
+			if c.get_coefficient_val(isl.dim_type.set, i) != 0:
+				result.add(c.space.get_dim_name(isl.dim_type.set, i))
+	return result
+
+def simplify_equalities(vars, *sets):
+	"""
+	Removes equal variables (that are equal in both sets) and variables that are never used in constraints.
+	:param list[str] vars:
+	:param isl.BasicSet sets:
+	:rtype: list[isl.BasicSet]
+	:return:
+	"""
+	vars = flatten(vars)
+	sets = list(sets)
+	keep = set(vars)
+	used_vars = set()
+	for set1 in sets:
+		used_vars = used_vars.union(get_constrainted_variables(set1))
+	for set1 in sets:
+		var_to_eq = get_equivalence_classes(set1)
+		for v, eq in var_to_eq.items():
+			if eq.isdisjoint(keep) and v in used_vars:
+				keep.add(v)
+	old_dims = sets[0].space.dim(isl.dim_type.set)
+	if len(keep) > 0:
+		for i in xrange(old_dims-1, -1, -1):
+			vname = sets[0].space.get_dim_name(isl.dim_type.set, i)
+			if vname not in keep:
+				for si in xrange(len(sets)):
+					sets[si] = sets[si].project_out(isl.dim_type.set, i, 1)
+	print 'Removed', old_dims-sets[0].space.dim(isl.dim_type.set), '/', old_dims, 'dimensions'
+	return sets
+
 def clone_variables(vars, translation = None):
 	"""
 	Creates a clone of a variable name representation (nested lists)
@@ -165,11 +250,13 @@ def valid_input_constraints(vars, accepted, possible):
 	# => make (possible \ accepted) empty
 	# => find islset(vars) so that not (exists other vars: possible \ accepted not empty)
 	error_set = possible.subtract(accepted)
+	simple_error_set,  = simplify_equalities(vars, simplify_set(error_set))
 	possible2 = possible
 	print '   vars', vars
-	print '   accepted', accepted
-	print '   possible', possible
-	print '   error_set', error_set
+	print '   accepted  ', accepted
+	print '   possible  ', possible
+	print '   error_set ', error_set
+	print '   error_set\'', simple_error_set
 	dim_err = error_set.space.dim(isl.dim_type.set)
 	set_vars = [error_set.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_err)]
 	indices = [set_vars.index(v) for v in vars]
@@ -733,7 +820,10 @@ class App(AstNode):
 			#print 'Got:',param
 			print '[WARN] Can\'t verify type integrity for appliation, use C++ CoC instead!'
 		#assert func.ops[0].get_type() == param
-		result = func.ops[1].subst(func.ops[0].name, self.ops[1])
+		if isinstance(func.ops[0], ParamDef):
+			result = func.ops[1].subst(func.ops[0].name, self.ops[1])
+		else:
+			result = func.ops[1]
 		return result
 
 	def get_constraints(self):

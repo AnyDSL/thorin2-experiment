@@ -106,6 +106,28 @@ define test = lambda n:Nat. let
 in f1(15, 3) end;
 '''
 
+CODE8 = '''
+// Natural and floating-point numbers
+assume Float: *;
+assume opFloatPlus:  (Float, Float) -> Float;
+assume opFloatMinus: (Float, Float) -> Float;
+assume opFloatMult:  (Float, Float) -> Float;
+assume opFloatDiv:   (Float, Float) -> Float;
+assume cFloatZero: Float;
+
+assume SimpleArrCreate: Nat -> (Nat -> *) -> *;
+
+define LUD = lambda n:Nat. let
+		define U = SimpleArrCreate n (lambda i:Nat.
+			SimpleArrCreate (opNatMinus(n,i)) (lambda rec recursiveUDef (j:Nat): Float. (i, n, cFloatZero)[2])
+		);
+		define L = SimpleArrCreate n (lambda i:Nat.
+			SimpleArrCreate (i) (lambda rec recursiveLDef (j:Nat): Float. (i, n, cFloatZero)[2])
+		);
+	in (L, U) end;
+
+'''
+
 with open('lu-decomposition.lbl', 'r') as f:
 	CODEF = f.read().decode('utf-8')
 
@@ -160,6 +182,10 @@ def type_manually():
 	if ass:
 		ass.get_constraints = types.MethodType(arr_create_constraints, ass)
 
+	ass = ast.get_assumption('SimpleArrCreate')
+	if ass:
+		ass.create_constraints([['len'], [[['create_in'], []], []]], '', '0 <= create_in < len')
+
 	ass = ast.get_assumption('ArrT')
 	if ass:
 		ass.create_constraints([[['n'], [['ci'], []]], []], 'n >= 0', '0 <= ci <= n')
@@ -191,6 +217,7 @@ CODE += CODE3
 #CODE = CODE5
 #CODE = CODE6
 #CODE = CODE7
+#CODE = CODE8
 CODE = CODEF
 prog = lambdaparser.parse_lambda_code(CODE)
 print prog

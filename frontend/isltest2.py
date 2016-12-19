@@ -89,3 +89,13 @@ print a
 print a.project_out(isl.dim_type.set, 0, 1)
 print a.project_out(isl.dim_type.set, 1, 1)
 print a.project_out(isl.dim_type.set, 2, 1)
+
+
+
+print '\n\n'
+a = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=['j', 'i', 'n'])) # type: isl.BasicSet
+a = a.add_constraint(isl.Constraint.ineq_from_names(a.space, {'i': 1}))
+a = a.add_constraint(isl.Constraint.ineq_from_names(a.space, {'n': 1, 'i': -1, 1: -1}))
+a = a.add_constraint(isl.Constraint.ineq_from_names(a.space, {'j': 1}))
+a = a.add_constraint(isl.Constraint.ineq_from_names(a.space, {'n': 1, 'i': -1, 'j': -1, 1: -1}))
+print a
