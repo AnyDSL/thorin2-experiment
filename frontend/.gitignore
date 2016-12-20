@@ -2,3 +2,4 @@
 *.pyc
 *.lbl.h
 /env/
+/islpy

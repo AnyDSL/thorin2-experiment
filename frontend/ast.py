@@ -27,48 +27,40 @@ def set_join(a, b):
 	if not isinstance(b, isl.BasicSet):
 		bsets = b.coalesce().get_basic_sets()
 		if len(bsets) == 1:
-			return set_join(bsets[0], b)
-		result = set_join(a, bsets[0])
+			return basic_set_join(a, bsets[0])
+		result = basic_set_join(a, bsets[0])
 		for bset in bsets[1:]:
-			result = result.union(set_join(a, bset))
+			result = result.union(basic_set_join(a, bset))
 		return result
+	return basic_set_join(a, b)
 
-	# join 2 BasicSet
+# join 2 BasicSet
+def basic_set_join_python(a, b):
 	dim_a = a.space.dim(isl.dim_type.set)
 	dim_b = b.space.dim(isl.dim_type.set)
 	if dim_a < dim_b:
-		return set_join(b, a)
+		return basic_set_join(b, a)
 	vars_a = a.get_var_names(isl.dim_type.set)
 	vars_b = b.get_var_names(isl.dim_type.set)
 	# add b's variables to a
 	new_vars = list(set(vars_b).difference(set(vars_a)))
 	result = a.add_dims(isl.dim_type.set, len(new_vars)) if len(new_vars) > 0 else a
 	for i in xrange(len(new_vars)):
-		result = result.set_dim_name(isl.dim_type.set, len(vars_a)+i, new_vars[i])
+		result = result.set_dim_name(isl.dim_type.set, dim_a+i, new_vars[i])
 	# add b's constraints to a
 	for constraint in b.get_constraints():
 		result = result.add_constraint(clone_constraint(result.space, constraint))
 	return result
 
-	'''
-	dim_a = a.space.dim(isl.dim_type.set)
-	dim_b = b.space.dim(isl.dim_type.set)
-	vars  = a.get_var_names(isl.dim_type.set)
-	vars2 = b.get_var_names(isl.dim_type.set)
-	vars_set = set(vars)
-	for v in vars2:
-		if v not in vars_set:
-			vars.append(v)
-			vars_set.add(v)
-	if dim_a + dim_b == len(vars):
-		return a.flat_product(b)
-	space = isl.Space.create_from_names(ctx, set=vars)
-	result = isl.BasicSet.universe(space)
-	for constraint in a.get_constraints():
-		result = result.add_constraint(clone_constraint(result.space, constraint))
-	for constraint in b.get_constraints():
-		result = result.add_constraint(clone_constraint(result.space, constraint))
-	return result #'''
+# Check for native support
+basic_set_join = basic_set_join_python
+if hasattr(isl.BasicSet, 'ext_join'):
+	print 'Native extension present'
+	#basic_set_join = basic_set_join_native
+	basic_set_join = isl.BasicSet.ext_join
+else:
+	print 'No native extension present'
+
 
 def clone_constraint(space, constraint):
 	assert not constraint.is_div_constraint()
