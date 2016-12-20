@@ -36,11 +36,30 @@ def set_join(a, b):
 	# join 2 BasicSet
 	dim_a = a.space.dim(isl.dim_type.set)
 	dim_b = b.space.dim(isl.dim_type.set)
-	vars  = [a.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_a)]
-	vars2 = [b.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_b)]
+	if dim_a < dim_b:
+		return set_join(b, a)
+	vars_a = a.get_var_names(isl.dim_type.set)
+	vars_b = b.get_var_names(isl.dim_type.set)
+	# add b's variables to a
+	new_vars = list(set(vars_b).difference(set(vars_a)))
+	result = a.add_dims(isl.dim_type.set, len(new_vars)) if len(new_vars) > 0 else a
+	for i in xrange(len(new_vars)):
+		result = result.set_dim_name(isl.dim_type.set, len(vars_a)+i, new_vars[i])
+	# add b's constraints to a
+	for constraint in b.get_constraints():
+		result = result.add_constraint(clone_constraint(result.space, constraint))
+	return result
+
+	'''
+	dim_a = a.space.dim(isl.dim_type.set)
+	dim_b = b.space.dim(isl.dim_type.set)
+	vars  = a.get_var_names(isl.dim_type.set)
+	vars2 = b.get_var_names(isl.dim_type.set)
+	vars_set = set(vars)
 	for v in vars2:
-		if v not in vars:
+		if v not in vars_set:
 			vars.append(v)
+			vars_set.add(v)
 	if dim_a + dim_b == len(vars):
 		return a.flat_product(b)
 	space = isl.Space.create_from_names(ctx, set=vars)
@@ -49,7 +68,7 @@ def set_join(a, b):
 		result = result.add_constraint(clone_constraint(result.space, constraint))
 	for constraint in b.get_constraints():
 		result = result.add_constraint(clone_constraint(result.space, constraint))
-	return result
+	return result #'''
 
 def clone_constraint(space, constraint):
 	assert not constraint.is_div_constraint()
@@ -74,13 +93,13 @@ def set_vars(bset):
 	return [bset.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim)]
 
 def add_variables(bset, vars):
-	vars2 = []
-	for v in vars:
-		if not var_in_set(v, bset) and not v in vars2:
-			vars2.append(v)
-	if len(vars) == 0:
-		return bset
-	return set_join(bset, isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=vars)))
+	old_vars = set(bset.get_var_names(isl.dim_type.set))
+	vars = set(vars).difference(old_vars)
+	if len(vars) > 0:
+		bset = bset.add_dims(isl.dim_type.set, len(vars))
+		for i, v in enumerate(vars):
+			bset = bset.set_dim_name(isl.dim_type.set, len(old_vars)+i, v)
+	return bset
 
 
 def constraint_equal(bset, v1, *args):
