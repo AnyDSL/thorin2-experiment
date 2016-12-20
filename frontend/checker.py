@@ -1,5 +1,6 @@
 import ast
 import islpy as isl
+import constraint_derivation
 
 
 """
@@ -39,12 +40,12 @@ def manual_typing(node):
 		node.cstr_vars = [['i'], ['o']]
 		node.cstr_accepted = isl.BasicSet.read_from_str(ast.ctx, '{[i, o, n] : 0 <= n <= 10}')
 		node.cstr_possible = isl.BasicSet.read_from_str(ast.ctx, '{[i, o, n] : n = o}')
-	if node.name == 'recursiveLDef':
-		node.create_constraints([['j'], []] , '0 <= j < i < n', '')
-		print node.name, node.cstr_vars, node.cstr_accepted
-	if node.name == 'recursiveUDef':
-		node.create_constraints([['j'], []] , '0 <= i and 0 <= j and j < n - i', '')
-		print node.name, node.cstr_vars, node.cstr_accepted
+	# if node.name == 'recursiveLDef':
+	# 	node.create_constraints([['j'], []] , '0 <= j < i < n', '')
+	# 	print node.name, node.cstr_vars, node.cstr_accepted
+	# if node.name == 'recursiveUDef':
+	# 	node.create_constraints([['j'], []] , '0 <= i and 0 <= j and j < n - i', '')
+	# 	print node.name, node.cstr_vars, node.cstr_accepted
 
 
 def type_inference(nodes):
@@ -57,6 +58,8 @@ def type_inference(nodes):
 	# filter out functions that are already types
 	nodes = [node for node in nodes if node.cstr_vars is None]
 	#TODO some fancy heuristic
+	if len(nodes) > 0:
+		constraint_derivation.derive_constraints_iterative(nodes)
 	# permissive-type those that have not been typed yet
 	for func in nodes:
 		if func.cstr_vars is None:
