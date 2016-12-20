@@ -53,13 +53,17 @@ def set_join(a, b):
 
 def clone_constraint(space, constraint):
 	assert not constraint.is_div_constraint()
-	c = {1: constraint.get_constant_val()}
-	for i in xrange(constraint.space.dim(isl.dim_type.set)):
-		c[constraint.get_dim_name(isl.dim_type.set, i)] = constraint.get_coefficient_val(isl.dim_type.set, i)
 	if constraint.is_equality():
-		return isl.Constraint.eq_from_names(space, c)
+		c = isl.Constraint.alloc_equality(space)
 	else:
-		return isl.Constraint.ineq_from_names(space, c)
+		c = isl.Constraint.alloc_inequality(space)
+	c = c.set_constant_val(constraint.get_constant_val())
+	name_to_index = space.get_var_dict()
+	for i in xrange(0, constraint.space.dim(isl.dim_type.set)):
+		coeff = constraint.get_coefficient_val(isl.dim_type.set, i)
+		if coeff != 0:
+			c = c.set_coefficient_val(isl.dim_type.set, name_to_index[constraint.space.get_dim_name(isl.dim_type.set, i)][1], coeff)
+	return c
 
 def var_in_set(vname, bset):
 	dim = bset.space.dim(isl.dim_type.set)
