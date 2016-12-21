@@ -350,6 +350,13 @@ def is_subset(left, right, equal_vars = {}):
 	# do the subset check
 	return (left.is_subset(right), left, right)
 
+def read_set_from_string(setstring):
+	s = isl.Set.read_from_str(ctx, setstring).coalesce()
+	bsl = s.get_basic_sets()
+	if len(bsl) == 1:
+		return bsl[0]
+	return s
+
 
 class AstNode:
 	def __init__(self, ops):
@@ -473,8 +480,8 @@ class GivenConstraint:
 		possible = '{{[{}] : {}}}'.format(', '.join(vars), possible_cond)
 		print accepted
 		print possible
-		self.cstr_accepted = isl.BasicSet.read_from_str(ctx, accepted)
-		self.cstr_possible = isl.BasicSet.read_from_str(ctx, possible)
+		self.cstr_accepted = read_set_from_string(accepted)
+		self.cstr_possible = read_set_from_string(possible)
 		if self.cstr_accepted.is_empty():
 			raise Exception('Accepted set must not be empty!')
 		if self.cstr_possible.is_empty():

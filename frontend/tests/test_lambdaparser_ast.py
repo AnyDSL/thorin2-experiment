@@ -104,6 +104,41 @@ class TestLambdaParserAstGeneration(unittest.TestCase):
 		self.assertEqual(len(program), 26)
 
 
+	# === Constraint parsing ===
+	def test_constraints_simple(self):
+		node = parse_lambda_code('''
+		@guarantees "v1 + v2 = v3"
+		assume opNatPlus: (Nat,Nat) -> Nat;
+		''').to_ast()[-1][1]
+		self.assertIsInstance(node, ast.Assume)
+		print node.cstr_vars, node.cstr_accepted, node.cstr_possible
+
+		node = parse_lambda_code('''
+		define f =
+		@accepts "x > 0"
+		@guarantees "x = fx1"
+		lambda rec fx(x:Nat):Nat. x;
+		''').to_ast()[-1][1]
+		self.assertIsInstance(node, ast.LambdaNominal)
+		print node.cstr_vars, node.cstr_accepted, node.cstr_possible
+
+		node = parse_lambda_code('''
+		@guarantees "x = fx1"
+		define f = lambda rec fx(x:Nat):Nat. x;
+		''').to_ast()[-1][1]
+		self.assertIsInstance(node, ast.LambdaNominal)
+		print node.cstr_vars, node.cstr_accepted, node.cstr_possible
+
+		node = parse_lambda_code('''
+		define d = lambda n:Nat.
+		 	@accepts "0 <= i < n"
+			lambda rec (i:Nat):*. (i, Nat)[1];
+		''').to_ast()[-1][1]
+		self.assertIsInstance(node, ast.Lambda)
+		print node.ops[1].cstr_vars, node.ops[1].cstr_accepted, node.ops[1].cstr_possible
+
+
+
 
 if __name__ == '__main__':
 	unittest.main()
