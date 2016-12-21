@@ -10,8 +10,8 @@ class TestLambdaParserAstGeneration(unittest.TestCase):
 		"""
 		Parse the expression (as single definition) and convert it to its AST node.
 		The generated AST is converted to string and compared to the input expression.
-		:param str expr:
-		:param str assumes: Additional assumed entities
+		:param unicode|str expr:
+		:param unicode|str assumes: Additional assumed entities
 		:rtype: ast.AstNode
 		:return: the generated ast node
 		"""
@@ -22,9 +22,9 @@ class TestLambdaParserAstGeneration(unittest.TestCase):
 		return program[-1][1]
 
 	def test_empty(self):
-		ast = parse_lambda_code('').to_ast()
-		self.assertIsInstance(ast, list)
-		self.assertEqual(len(ast), 0)
+		astnode = parse_lambda_code('').to_ast()
+		self.assertIsInstance(astnode, list)
+		self.assertEqual(len(astnode), 0)
 
 	def test_parameter_binding(self):
 		node = self.assertExpressionIdentity('lambda x:Nat. x')
@@ -136,6 +136,12 @@ class TestLambdaParserAstGeneration(unittest.TestCase):
 		''').to_ast()[-1][1]
 		self.assertIsInstance(node, ast.Lambda)
 		print node.ops[1].cstr_vars, node.ops[1].cstr_accepted, node.ops[1].cstr_possible
+
+	def test_constraints_invalid(self):
+		self.assertRaises(Exception, lambda: parse_lambda_code('''
+		@abc "v1 + v2 = v3"
+		assume opNatPlus: (Nat,Nat) -> Nat;
+		''').to_ast())
 
 
 

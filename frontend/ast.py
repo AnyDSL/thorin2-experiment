@@ -474,6 +474,9 @@ class GivenConstraint:
 		:param str possible_cond:
 		:return:
 		"""
+		if vars is None:
+			print self.get_nat_variables()
+			assert False
 		self.cstr_vars = vars
 		vars = flatten(vars) + flatten(self.get_outer_vars())
 		accepted = '{{[{}] : {}}}'.format(', '.join(vars), accepted_cond)

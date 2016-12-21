@@ -151,7 +151,7 @@ class CppCodeGen:
 class AstCreator:
 	def __init__(self):
 		self.queue = Queue()
-		self.seen = [] # set does not work, as nodes are unhashable / mutable
+		self.seen = []  # set does not work, as nodes are unhashable / mutable
 
 	def append(self, node, scope, callback):
 		for n in self.seen:
@@ -214,6 +214,45 @@ AtomicExpression = []
 Keyword.regex = re.compile(r'\w+|\*')
 Symbol.regex = re.compile(r'\w+|\*')
 Symbol.check_keywords = True
+
+
+class Annotation(str, ParserAstNode):
+	grammar = '@', name(), blank, attr('content', re.compile(r'"([^"]|(\"))*"'))
+	valid_annotations = set(['guarantees', 'accepts'])
+
+	def compose(self, parser, attr_of):
+		return '@'+self.name+' '+self.content+'\n'
+
+	def get_content(self):
+		return self.content[1:-1].replace(r'\"', '"').replace(r'\\', '\\').replace(r'\n', '\n')
+
+
+class Annotations(List, ParserAstNode):
+	grammar = maybe_some(Annotation),
+
+	def assert_valid(self):
+		invalid = [a.name for a in self if a.name not in Annotation.valid_annotations]
+		if len(invalid) > 0:
+			raise Exception('Invalid assertions: '+', '.join(invalid))
+
+	def get_all(self, name):
+		return [a.get_content() for a in self if a.name == name]
+
+	def __contains__(self, item):
+		for a in self:
+			if a.name == item:
+				return True
+		return False
+
+	def create_constraints(self, astnode):
+		"""
+		:param ast.GivenConstraint astnode:
+		:return:
+		"""
+		accepted = ' and '.join(('('+c+')' for c in self.get_all('accepts')))
+		possible = ' and '.join(('('+c+')' for c in self.get_all('guarantees')))
+		astnode.create_constraints(None, accepted, possible)
+
 
 
 class Identifier(str, ParserAstNode):
@@ -301,7 +340,7 @@ class Lambda(Plain, ParserAstNode):
 
 class LambdaRec(Plain, ParserAstNode):
 	#lambda rec [name](param:type): returntype. expression
-	grammar = ['lambda', '\\', 'λ'], blank, K('rec'), blank, optional(name()), \
+	grammar = attr('annotations', Annotations), ['lambda', '\\', 'λ'], blank, K('rec'), blank, optional(name()), \
 			  '(', attr('param', [name(), '_']), ':', attr('type', Expression), ')', blank, \
 			  ':', blank, attr('returntype', Expression), '.', blank, attr('body', Expression)
 
@@ -343,6 +382,7 @@ class LambdaRec(Plain, ParserAstNode):
 		return result
 
 	def to_ast(self, scope, astcreator):
+		self.annotations.assert_valid()
 		tp = self.type.to_ast(scope, astcreator)
 		param = ast.ParamDef(self.param.thing, tp)
 		pscope = scope.push_param(self.param.thing, param)
@@ -353,6 +393,9 @@ class LambdaRec(Plain, ParserAstNode):
 			result.name = str(self.name)
 		# enqueue body
 		astcreator.append(self.body, pscope, lambda n: result.set_body(n))
+		# add constraints (if any)
+		if 'guarantees' in self.annotations or 'accepts' in self.annotations:
+			self.annotations.create_constraints(result)
 		return result
 
 
@@ -484,7 +527,7 @@ class App(List, ParserAstNode):
 
 
 class InnerDefinition(Plain, ParserAstNode):
-	grammar = K('define'), blank, flag('type', 'type'), name(), blank, '=', blank, attr("body", Expression), ';'
+	grammar = attr('annotations', Annotations), K('define'), blank, flag('type', 'type'), name(), blank, '=', blank, attr("body", Expression), ';'
 
 	def compose(self, parser, attr_of):
 		return self.name+' := '+parser.compose(self.body)
@@ -496,8 +539,11 @@ class InnerDefinition(Plain, ParserAstNode):
 		codegen.add_decl(self.name, 'auto '+self.name+' = '+body+';')
 
 	def to_ast(self, scope, astcreator):
+		self.annotations.assert_valid()
 		body = self.body.to_ast(scope, astcreator)
 		scope.add_definition(self.name, body)
+		if 'guarantees' in self.annotations or 'accepts' in self.annotations:
+			self.annotations.create_constraints(body)
 		return [(str(self.name), body)]
 
 
@@ -512,7 +558,7 @@ class Definition(InnerDefinition):
 
 
 class Assumption(Plain, ParserAstNode):
-	grammar = K('assume'), blank, name(), ':', blank, attr("body", Expression), ';'
+	grammar = attr('annotations', Annotations), K('assume'), blank, name(), ':', blank, attr("body", Expression), ';'
 
 	def to_expr(self):
 		return 'assume '+self.name+': '+self.body.to_expr()
@@ -527,11 +573,14 @@ class Assumption(Plain, ParserAstNode):
 		codegen.add_blank()
 
 	def to_ast(self, scope, astcreator):
+		self.annotations.assert_valid()
 		if ast.has_predefined_assumption(self.name):
 			assumption = ast.get_assumption(self.name)
 			# TODO assert type equality
 		else:
 			assumption = ast.Assume([self.name, self.body.to_ast(scope, astcreator)])
+			if 'guarantees' in self.annotations or 'accepts' in self.annotations:
+				self.annotations.create_constraints(assumption)
 		scope.add_definition(self.name, assumption)
 		return [(str(self.name), assumption)]
 
@@ -603,10 +652,12 @@ class Program(List, ParserAstNode):
 def parse_lambda_code(s):
 	"""
 	Parses given lambda expressions and returns them as AST tree. Root is always a Program instance.
-	:param str s:
+	:param unicode|str s:
 	:rtype: Program
 	:return:
 	"""
+	if isinstance(s, str) and not isinstance(s, unicode):
+		s = s.decode('utf-8')
 	return parse(s, Program).normalize()
 
 
