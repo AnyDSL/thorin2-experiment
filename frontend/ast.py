@@ -55,11 +55,11 @@ def basic_set_join_python(a, b):
 # Check for native support
 basic_set_join = basic_set_join_python
 if hasattr(isl.BasicSet, 'ext_join'):
-	print 'Native extension present'
+	print '[islpy] Native extension present'
 	#basic_set_join = basic_set_join_native
 	basic_set_join = isl.BasicSet.ext_join
 else:
-	print 'No native extension present'
+	print '[islpy] No native extension present'
 
 
 def clone_constraint(space, constraint):

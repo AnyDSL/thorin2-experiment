@@ -169,7 +169,7 @@ class AstCreator:
 
 
 
-class LambdaAST:
+class ParserAstNode:
 	def normalize(self):
 		"""
 		Removes all syntactic sugar from the AST.
@@ -177,10 +177,10 @@ class LambdaAST:
 		"""
 		if isinstance(self, List):
 			for i in xrange(len(self)):
-				if isinstance(self[i], LambdaAST):
+				if isinstance(self[i], ParserAstNode):
 					self[i] = self[i].normalize()
 		for (k, v) in self.__dict__.items():
-			if isinstance(v, LambdaAST):
+			if isinstance(v, ParserAstNode):
 				self.__dict__[k] = v.normalize()
 		return self
 
@@ -216,7 +216,7 @@ Symbol.regex = re.compile(r'\w+|\*')
 Symbol.check_keywords = True
 
 
-class Identifier(str, LambdaAST):
+class Identifier(str, ParserAstNode):
 	grammar = name()
 
 	def to_cpp(self, scope, codegen, opts={}):
@@ -243,7 +243,7 @@ class Identifier(str, LambdaAST):
 		return vartype
 
 
-class Constant(Symbol, LambdaAST):
+class Constant(Symbol, ParserAstNode):
 	grammar = Enum(Symbol('*'), Symbol('Nat'))
 
 	def compose(self, parser, attr_of):
@@ -261,7 +261,7 @@ class Constant(Symbol, LambdaAST):
 		return ast.get_constant(self.name)
 
 
-class Tupel(List, LambdaAST):
+class Tupel(List, ParserAstNode):
 	grammar = '(', csl(Expression), ')'
 
 	def compose(self, parser, attr_of):
@@ -283,7 +283,7 @@ class Tupel(List, LambdaAST):
 			return ast.Tupel([element.to_ast(scope, astcreator) for element in self])
 
 
-class Lambda(Plain, LambdaAST):
+class Lambda(Plain, ParserAstNode):
 	grammar = ['lambda', '\\', 'λ'], blank, [name(), '_'], ':', attr('type', Expression), '.', blank, attr('body', Expression)
 
 	def compose(self, parser, attr_of):
@@ -299,7 +299,7 @@ class Lambda(Plain, LambdaAST):
 		return ast.Lambda([param, self.body.to_ast(scope.push_param(self.name, param), astcreator)])
 
 
-class LambdaRec(Plain, LambdaAST):
+class LambdaRec(Plain, ParserAstNode):
 	#lambda rec [name](param:type): returntype. expression
 	grammar = ['lambda', '\\', 'λ'], blank, K('rec'), blank, optional(name()), \
 			  '(', attr('param', [name(), '_']), ':', attr('type', Expression), ')', blank, \
@@ -355,7 +355,7 @@ class LambdaRec(Plain, LambdaAST):
 		return result
 
 
-class Pi(Plain, LambdaAST):
+class Pi(Plain, ParserAstNode):
 	grammar = ['pi', 'Π'], blank, [name(), '_'], ':', attr('type', Expression), '.', blank, attr('body', Expression)
 
 	@staticmethod
@@ -382,7 +382,7 @@ class Pi(Plain, LambdaAST):
 		return ast.Pi([param, self.body.to_ast(scope.push_param(self.name, param), astcreator)])
 
 
-class Extract(List, LambdaAST):
+class Extract(List, ParserAstNode):
 	grammar = attr('base', AtomicExpression), maybe_some('[', re.compile(r'\d+'), ']')
 
 	"""def normalize(self):
@@ -407,11 +407,11 @@ class Extract(List, LambdaAST):
 		return result
 
 
-class SpecialFunction(Symbol, LambdaAST):
+class SpecialFunction(Symbol, ParserAstNode):
 	grammar = Enum(Symbol('sigma'), Symbol('tuple'))
 
 
-class SpecialApp(Plain, LambdaAST):
+class SpecialApp(Plain, ParserAstNode):
 	grammar = attr('func', SpecialFunction), attr('param', Extract)
 
 	def compose(self, parser, attr_of):
@@ -434,7 +434,7 @@ class SpecialApp(Plain, LambdaAST):
 
 
 
-class App(List, LambdaAST):
+class App(List, ParserAstNode):
 	grammar = attr('func', [SpecialApp, Extract]), maybe_some(Extract), optional('->', attr('arrow', Expression))
 
 	def __init__(self):
@@ -450,7 +450,7 @@ class App(List, LambdaAST):
 		#elif len(self) == 0:
 		#	return self.func.normalize()
 		else:
-			return LambdaAST.normalize(self)
+			return ParserAstNode.normalize(self)
 
 	def to_expr(self):
 		return self.func.to_expr() + ' '.join([x.to_expr() for x in self])
@@ -482,7 +482,7 @@ class App(List, LambdaAST):
 		return result
 
 
-class InnerDefinition(Plain, LambdaAST):
+class InnerDefinition(Plain, ParserAstNode):
 	grammar = K('define'), blank, flag('type', 'type'), name(), blank, '=', blank, attr("body", Expression), ';'
 
 	def compose(self, parser, attr_of):
@@ -510,7 +510,7 @@ class Definition(InnerDefinition):
 		codegen.add_blank()
 
 
-class Assumption(Plain, LambdaAST):
+class Assumption(Plain, ParserAstNode):
 	grammar = K('assume'), blank, name(), ':', blank, attr("body", Expression), ';'
 
 	def to_expr(self):
@@ -535,7 +535,7 @@ class Assumption(Plain, LambdaAST):
 		return [(str(self.name), assumption)]
 
 
-class Comment(str, LambdaAST):
+class Comment(str, ParserAstNode):
 	grammar = [comment_cpp, comment_sh, comment_c]
 
 	def to_cpp(self, scope, codegen, opts={}):
@@ -546,7 +546,7 @@ class Comment(str, LambdaAST):
 
 
 
-class LetIn(List, LambdaAST):
+class LetIn(List, ParserAstNode):
 	grammar = K('let'), blank, maybe_some([InnerDefinition, Comment]), blank, K('in'), blank, attr('expr', Expression), blank, K('end')
 
 	def compose(self, parser, attr_of):
@@ -572,7 +572,7 @@ AtomicExpression.extend([Tupel, Constant, Identifier])
 
 
 
-class Program(List, LambdaAST):
+class Program(List, ParserAstNode):
 	grammar = -1, [Definition, Assumption, Comment]
 
 	def to_cpp(self):
@@ -600,6 +600,12 @@ class Program(List, LambdaAST):
 
 
 def parse_lambda_code(s):
+	"""
+	Parses given lambda expressions and returns them as AST tree. Root is always a Program instance.
+	:param str s:
+	:rtype: Program
+	:return:
+	"""
 	return parse(s, Program).normalize()
 
 
