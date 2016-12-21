@@ -349,7 +349,8 @@ class LambdaRec(Plain, ParserAstNode):
 		result = ast.LambdaNominal([param, self.returntype.to_ast(pscope, astcreator)])
 		scope.add_definition(self.name, result)
 		pscope.add_definition(self.name, result)
-		result.name = str(self.name)
+		if self.name:
+			result.name = str(self.name)
 		# enqueue body
 		astcreator.append(self.body, pscope, lambda n: result.set_body(n))
 		return result

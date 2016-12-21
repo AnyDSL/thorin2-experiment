@@ -358,6 +358,8 @@ class AstNode:
 		return '{'+str(self)+'}'
 	def __str__(self):
 		return 'TODO'
+	def __unicode__(self):
+		return str(self).decode('utf-8')
 	def __eq__(self, other):
 		return self.__class__ == other.__class__ and self.ops == other.ops
 	def __ne__(self, other):
@@ -371,6 +373,9 @@ class AstNode:
 			else:
 				ops.append(op)
 		return self.__class__(ops)
+
+	def get_type(self):
+		raise Exception('TODO type of '+str(self.__class__))
 
 	def get_constraints(self):
 		"""
@@ -753,7 +758,7 @@ class LambdaNominal(Lambda, GivenConstraint):
 		return [param.get_default_vars() for param in self.get_outer_parameters()]
 
 	def __str__(self):
-		return 'λ rec '+(str(self.name) if self.name else '')+'('+str(self.ops[0].name)+':'+str(self.ops[0].ops[0])+'): '+str(self.ops[1])
+		return 'λ rec '+(str(self.name) if self.name else '')+'('+str(self.ops[0].name)+':'+str(self.ops[0].ops[0])+'): '+str(self.ops[1])+'. []'
 
 	def __eq__(self, other):
 		return self is other
