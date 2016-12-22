@@ -84,7 +84,7 @@ void testMatrix() {
 
 
 void testCompiled(World& w) {
-#include "frontend/arrays.lbl.h"
+#include "frontend/programs/matrixmultiplication.lbl.h"
 }
 
 
@@ -108,7 +108,7 @@ void testRecursive(World& w) {
 
 
 static void testLUDecomposition(World& w) {
-#include "frontend/lu-decomposition.lbl.h"
+#include "frontend/programs/lu_decomposition.lbl.h"
 }
 
 

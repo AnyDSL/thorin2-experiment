@@ -20,11 +20,12 @@ add_executable(CoC
     thorin/visitor.h
     utils/unicodemanager.cpp
     utils/unicodemanager.h
-    islplay.cpp)
+    #islplay.cpp
+        )
 set_property(TARGET CoC PROPERTY CXX_STANDARD 14)
 set_property(TARGET CoC PROPERTY CXX_STANDARD_REQUIRED on)
 
-find_package(ISL REQUIRED)
-include_directories(${ISL_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${ISL_LIBRARY})
-target_link_libraries(CoC ${ISL_LIBRARY})
+#find_package(ISL REQUIRED)
+#include_directories(${ISL_INCLUDE_DIRS})
+#set(LIBS ${LIBS} ${ISL_LIBRARY})
+#target_link_libraries(CoC ${ISL_LIBRARY})
