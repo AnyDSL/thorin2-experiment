@@ -94,13 +94,13 @@ class TestLambdaParserAstGeneration(unittest.TestCase):
 		self.assertEqual(unicode(node), '(λ rec (x:Nat): Nat. [], λ rec f2(y:Nat): Nat. [])')
 
 	def test_matrix_multiplication(self):
-		with open('../arrays-simple.lbl', 'rb') as f:
+		with open('../programs/arrays-simple.lbl', 'rb') as f:
 			program = f.read().decode('utf-8')
 		program = parse_lambda_code(program).to_ast()
 		self.assertEqual(len(program), 13)
 
 	def test_lu_decomposition(self):
-		with open('../lu_decomposition-simple.lbl', 'rb') as f:
+		with open('../programs/lu_decomposition-simple.lbl', 'rb') as f:
 			program = f.read().decode('utf-8')
 		program = parse_lambda_code(program).to_ast()
 		self.assertEqual(len(program), 26)

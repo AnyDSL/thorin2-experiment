@@ -35,9 +35,16 @@ class TestAstTyping(unittest.TestCase):
 	def test_nat_variable_names(self):
 		node = ast_from_expr('(x, lambda n:Nat. lambda c:(Nat->Nat). (n,x))', 'assume x: Nat;')
 		ref = [['v1'], [['n'], [[['c1'], ['c2']], [['n'], ['v2']]]]]
+		# new random names (get_nat_variables)
+		result = node.get_nat_variables()
+		self.assertTrue(ast.check_variables_structure_equal(result, ref))
+		self.assertTrue(set(ast.flatten(result)).isdisjoint(set(ast.flatten(ref))))
+		# unique names (get_nat_variables_unique)
 		result = node.get_nat_variables_unique(ast.VarNameGen('v'))
 		self.assertEqual(ast.flatten(result), ast.flatten(ref))
 		self.assertTrue(ast.check_variables_structure_equal(result, ref))
+		result2 = node.get_nat_variables_unique(ast.VarNameGen('v'))
+		self.assertEqual(result, result2)
 
 
 
