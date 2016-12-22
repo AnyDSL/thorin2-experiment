@@ -3,6 +3,7 @@
 import re
 import types
 import islpy as isl
+import sys
 
 ctx = isl.DEFAULT_CONTEXT
 empty_bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=[]))
@@ -351,7 +352,11 @@ def is_subset(left, right, equal_vars = {}):
 	return (left.is_subset(right), left, right)
 
 def read_set_from_string(setstring):
-	s = isl.Set.read_from_str(ctx, setstring).coalesce()
+	try:
+		s = isl.Set.read_from_str(ctx, setstring).coalesce()
+	except Exception, e:
+		print >>sys.stderr, '[ERR] Could not parse set:', setstring
+		raise e
 	bsl = s.get_basic_sets()
 	if len(bsl) == 1:
 		return bsl[0]

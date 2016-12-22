@@ -1,0 +1,23 @@
+#include "stdlib.lbl"
+
+// Arrays are read-only, and always fully initialized at creation time
+
+// Array Type
+@accepts "v1 >= 0"            // length must be >= 0
+@guarantees "0 <= v2 < v1"    // type function is only called with parameter in [0, len[
+assume ArrT: pi_:(Nat, Nat -> *). *;
+
+// Array constructor (from callback lambda)
+@accepts "type1 >= 0"
+@guarantees "0 <= i < type1"
+assume ArrCreate: pi type: (Nat, Nat -> *). (pi i: Nat. type[1] i) -> ArrT type;
+
+// Array getter
+@accepts "0 <= i < type1"
+assume ArrGet: pi type: (Nat, Nat -> *). ArrT type -> pi i:Nat. type[1] i;
+
+// Uniform arrays
+define UArrT = lambda lt: (Nat, *). ArrT (lt[0], lambda _:Nat. lt[1]);
+
+// Float matrices
+define FloatMatrixT = lambda n:Nat. lambda m:Nat. UArrT (n, UArrT (m, Float));

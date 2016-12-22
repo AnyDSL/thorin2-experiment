@@ -1,0 +1,27 @@
+// Integers
+define Nat = Nat; // Shorthand for C++ conversion
+
+@guarantees "v1 + v2 = v3"
+assume opNatPlus:  (Nat, Nat) -> Nat;
+@guarantees "v1 - v2 = v3"
+assume opNatMinus: (Nat, Nat) -> Nat;
+
+// Floating-point numbers
+assume Float: *;
+assume opFloatPlus:  (Float, Float) -> Float;
+assume opFloatMinus: (Float, Float) -> Float;
+assume opFloatMult:  (Float, Float) -> Float;
+assume opFloatDiv:   (Float, Float) -> Float;
+assume cFloatZero: Float; // = 0.0
+
+// Conditions
+// if_xx <result-type> <condition> (<then>, <else>) := (<condition> > 0 ? <then> : <else>): <type>
+// guarantees are provided by "predefined_functions.py"
+assume if_gz:  pi t:*. Nat -> sigma(t, t) ->  t;      // if condition > 0
+assume if_gez: pi t:*. Nat -> sigma(t, t) ->  t;      // if condition >= 0
+assume if_lz:  pi t:*. Nat -> sigma(t, t) ->  t;      // if condition < 0
+assume if_lez: pi t:*. Nat -> sigma(t, t) ->  t;      // if condition <= 0
+
+// Functions
+@guarantees "0 <= values1 < len"
+assume reduce: pi t:*. pi op: ((t, t) -> t). pi startval:t. pi len:Nat. pi values:(Nat -> t). t;

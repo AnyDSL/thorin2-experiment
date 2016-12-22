@@ -128,7 +128,7 @@ define LUD = lambda n:Nat. let
 
 '''
 
-with open('lu-decomposition.lbl', 'r') as f:
+with open('lu_decomposition-simple.lbl', 'r') as f:
 	CODEF = f.read().decode('utf-8')
 
 
@@ -240,7 +240,7 @@ for name, root in nodes:
 
 
 def test_typing():
-	with open('arrays.lbl', 'r') as f:
+	with open('arrays-simple.lbl', 'r') as f:
 		arraycode = f.read()
 	prog = lambdaparser.parse_lambda_code(arraycode)
 	nodes = prog.to_ast()[:-1] # skip matrix dot for now

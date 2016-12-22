@@ -115,7 +115,7 @@ class TestLambdaParser(TestCase):
 		self.assertEqual(len(program), 1)
 
 	def test_lu_decomposition(self):
-		with open('../lu-decomposition.lbl', 'rb') as f:
+		with open('../lu_decomposition-simple.lbl', 'rb') as f:
 			program = f.read().decode('utf-8')
 		program = parse_lambda_code(program)
 		self.assertGreaterEqual(len(program), 26)

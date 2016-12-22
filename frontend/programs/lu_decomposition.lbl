@@ -1,0 +1,97 @@
+#include "stdlib.lbl"
+#include "arrays.lbl"
+
+// pi len:Nat. pi values:(Nat->Float). Float
+define sum = reduce Float opFloatPlus cFloatZero;
+assume cNat0 : Nat; // constraints are applied automatically to "cNat*"
+
+// Matrix Types
+define LType = λn:Nat. ArrT (n, λi:Nat. UArrT (i, Float));
+define UType = λn:Nat. ArrT (n, λi:Nat. UArrT (opNatMinus(n,i), Float));
+define LTypePair = λn:Nat. (n, λi:Nat. UArrT (i, Float));
+define UTypePair = λn:Nat. (n, λi:Nat. UArrT (opNatMinus(n,i), Float));
+
+// Matrix Getters (shorthands)
+define AGet = lambda n:Nat. lambda A:FloatMatrixT n n. lambda i:Nat. lambda j:Nat.
+    ArrGet (n, lambda _:Nat. Float) (ArrGet (n, lambda _:Nat. UArrT (n, Float)) A i) j;
+define UGet = lambda n:Nat. lambda U:UType n. lambda i:Nat. lambda j:Nat.
+    ArrGet (opNatMinus(n,i), lambda _:Nat. Float) (ArrGet (UTypePair n) U i) j;
+define LGet = lambda n:Nat. lambda L:LType n. lambda i:Nat. lambda j:Nat.
+    ArrGet (i, lambda _:Nat. Float) (ArrGet (LTypePair n) L i) j;
+
+
+// V1 - with annotations
+define LUD = lambda n:Nat. lambda A:FloatMatrixT n n. let
+		define U = ArrCreate (UTypePair n) (lambda i:Nat.
+			ArrCreate (opNatMinus(n,i), lambda _:Nat. Float) (
+				@accepts "0 <= j < n-i and 0 <= i < n"
+				lambda rec recursiveUDef (j:Nat): Float.
+					if_gz Float i (
+						opFloatMinus (
+							AGet n A i (opNatPlus (i,j)),
+							sum i (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (opNatPlus(i, j), k))))
+						),
+						AGet n A i j
+					)
+			)
+		);
+		define L = ArrCreate (LTypePair n) (lambda i:Nat.
+			ArrCreate (i, lambda _:Nat. Float) (
+				@accepts "0 <= j < i and 0 <= i < n"
+				lambda rec recursiveLDef (j:Nat): Float.
+					opFloatDiv (if_gz Float j (
+						opFloatMinus (
+							AGet n A i j,
+							sum j (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (j, k))))
+						),
+						AGet n A i j
+					), UGet n U j cNat0)
+			)
+		);
+	in (L, U) end;
+
+
+// V2 - without annotations
+define LUD_without_constraints = lambda n:Nat. lambda A:FloatMatrixT n n. let
+		define U = ArrCreate (UTypePair n) (lambda i:Nat.
+			ArrCreate (opNatMinus(n,i), lambda _:Nat. Float) (lambda rec recursiveUDef (j:Nat): Float.
+			    if_gz Float i (
+			        opFloatMinus (
+			            AGet n A i (opNatPlus (i,j)),
+			            sum i (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (opNatPlus(i, j), k))))
+			        ),
+			        AGet n A i j
+			    )
+			)
+		);
+		define L = ArrCreate (LTypePair n) (lambda i:Nat.
+			ArrCreate (i, lambda _:Nat. Float) (lambda rec recursiveLDef (j:Nat): Float.
+				opFloatDiv (if_gz Float j (
+			        opFloatMinus (
+			            AGet n A i j,
+			            sum j (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (j, k))))
+			        ),
+			        AGet n A i j
+			    ), UGet n U j cNat0)
+			)
+		);
+	in (L, U) end;
+
+
+
+
+/*
+LUD: Πn:Nat. FloatMatrixT n n -> (LType n, UType n)
+LUD = λn:Nat. λA: (FloatMatrixT n n). let
+	U = UType.ArrCreate (λi:Nat. (UArrT (n-i) Float).ArrCreate (λj: Nat.
+		if i == 0 then A[i][j]
+		else A[i][i+j] - sum i (λk:Nat. L[i][k] * U[k][i+j-k])
+	))
+	L = LType.ArrCreate (λi:Nat. (UArrT i Float).ArrCreate (λj: Nat.
+		if j == 0 then A[i][j] / U[j][0]
+		else ( A[i][j] - sum j (λk:Nat. L[i][k] * U[k][j-k]) ) / U[j][0]
+	))
+in
+	(L, U)
+end
+*/

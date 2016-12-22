@@ -5,6 +5,7 @@ import re
 from Queue import Queue
 from pypeg2 import *
 import ast
+import os
 
 """
 REQUIREMENTS:
@@ -657,6 +658,41 @@ class Program(List, ParserAstNode):
 		astcreator.progress_all()
 		return defs
 
+
+
+
+
+# UTIL FUNCTIONS
+def strip_comments(program):
+	program = re.sub(re.compile("/\*.*?\*/", re.DOTALL), '', program)
+	program = re.sub(re.compile("//.*?\n"), '', program)
+	return program
+
+def load_file_with_includes(filename, loaded_files=None):
+	"""
+	Load a code file from disk and progresses all its #include directives, possibly loading additional code files
+	:param str filename: the file to load, relative or absolute path
+	:param None|set loaded_files: a set containing all files that have already been loaded
+	:rtype: unicode
+	:return: the program including its includes
+	"""
+	filename = os.path.abspath(filename)
+	root = os.path.dirname(filename)
+
+	if loaded_files is None:
+		loaded_files = set()
+	loaded_files.add(filename)
+
+	with open(filename, 'rb') as f:
+		program = f.read().decode('utf-8')
+
+	def include(match):
+		included_file = os.path.abspath(os.path.join(root, match.group(1)))
+		if included_file in loaded_files:
+			return ''
+		return load_file_with_includes(included_file, loaded_files)+'\n'
+
+	return re.sub('#include\s+"(.*?)"\n', include, program)
 
 
 
