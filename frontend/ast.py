@@ -212,7 +212,7 @@ def simplify_equalities(vars, *sets):
 			if vname not in keep:
 				for si in xrange(len(sets)):
 					sets[si] = sets[si].project_out(isl.dim_type.set, i, 1)
-	print 'Removed', old_dims-sets[0].space.dim(isl.dim_type.set), '/', old_dims, 'dimensions'
+	# print 'Removed', old_dims-sets[0].space.dim(isl.dim_type.set), '/', old_dims, 'dimensions'
 	return sets
 
 def clone_variables(vars, translation = None):

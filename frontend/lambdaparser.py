@@ -662,6 +662,18 @@ class Program(List, ParserAstNode):
 		astcreator.progress_all()
 		return defs
 
+	def defs_to_ast(self):
+		scope = Scope()
+		astcreator = AstCreator()
+		defs = []
+		for x in self:
+			if isinstance(x, Definition):
+				defs += x.to_ast(scope, astcreator)
+			else:
+				x.to_ast(scope, astcreator)
+		astcreator.progress_all()
+		return defs
+
 
 
 

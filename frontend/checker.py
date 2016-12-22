@@ -1,6 +1,7 @@
 import ast
 import islpy as isl
 import constraint_derivation
+import predefined_functions
 
 
 """
@@ -21,10 +22,12 @@ class ConstraintCheckResult:
 	"partial" (can be valid, depending on the input
 	In case of partial validity, there is a "valid_set" (valid inputs) and an "error_set" (invalid inputs).
 	"""
-	def __init__(self, valid, invalid, result=None, error_set=None, valid_set=None, msg=''):
+	def __init__(self, valid, invalid, vars=None, accepted=None, possible=None, error_set=None, valid_set=None, msg=''):
 		self.valid = valid
 		self.invalid = invalid
-		self.result = result
+		self.vars = vars
+		self.accepted = accepted
+		self.possible = possible
 		self.error_set = error_set
 		self.valid_set = valid_set
 		self.msg = msg
@@ -53,9 +56,17 @@ class ConstraintCheckResult:
 			print '[INVALID]', self.msg
 		else:
 			print '[PARTIAL]', self.msg
-			print 'Variables:  ', self.result[0]
+			print 'Variables:  ', self.vars
 			print 'Valid if:   ', ast.simplify_set(self.valid_set)
 			print 'Invalid if: ', ast.simplify_set(self.error_set)
+
+	def __str__(self):
+		if self.valid:
+			return 'CCR<[VALID]>'
+		elif self.invalid:
+			return 'CCR<[INVALID]>'
+		else:
+			return 'CCR<[PARTIAL] (error '+str(self.error_set)+')>'
 
 
 def find_all_nominals(node, nominals=None):
@@ -146,7 +157,6 @@ def check_definition(root):
 	:return:
 	"""
 	nominals = find_all_nominals(root)
-	print 'Nominal lambdas:', nominals
 	type_inference(nominals)
 	# Check all nominal lambda bodies
 	for node in nominals:
@@ -170,16 +180,16 @@ def check_definition_simple(node):
 	valid_set, error_set = ast.valid_input_constraints(unbound_vars, accepted, possible)
 	if possible.is_subset(accepted):
 		print '[VALID]'
-		return ConstraintCheckResult(True, False, (vars, accepted, possible), error_set, valid_set)
+		return ConstraintCheckResult(True, False, vars, accepted, possible, error_set, valid_set)
 	# possible can't be made accepted by other constraints
 	if possible.is_disjoint(accepted):
 		print '[INVALID]  (disjoint)'
-		return ConstraintCheckResult(False, True, (vars, accepted, possible), error_set, valid_set)
+		return ConstraintCheckResult(False, True, vars, accepted, possible, error_set, valid_set)
 	# any outer influence on the breaking parts?
 	if len(unbound_vars) == 0:
 		print '[INVALID]  (not satisfied, no influence on constraints remaining)'
-		return ConstraintCheckResult(True, False, (vars, accepted, possible), error_set, valid_set,
+		return ConstraintCheckResult(False, True, vars, accepted, possible, error_set, valid_set,
 									 msg='not satisfied, no influence on constraints remaining')
 	# constraints on "valid" inputs
-	return ConstraintCheckResult(False, False, (vars, accepted, possible), error_set, valid_set,
+	return ConstraintCheckResult(False, False, vars, accepted, possible, error_set, valid_set,
 								 msg='valid only for specific input')

@@ -39,9 +39,12 @@ def derive_constraints_iterative(nominals):
 				body_possible = body_possible.set_dim_name(isl.dim_type.set, dims+i, v)
 
 		print 'simply:', body_accepted, body_possible
-		node.cstr_vars = body_vars
-		node.cstr_accepted = body_accepted
-		node.cstr_possible = body_possible
+		if not body_accepted.is_empty() or body_possible.is_empty():
+			node.cstr_vars = body_vars
+			node.cstr_accepted = body_accepted
+			node.cstr_possible = body_possible
+		else:
+			print 'Derived constraints are broken (empty)'
 		t = time.time() - t
 		print 'TIME:', t
 	#sys.exit(0)

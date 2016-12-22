@@ -47,9 +47,8 @@ def check_constraints_on_program(program):
 	:return:
 	"""
 	results = OrderedDict()
-	for name, definition in program.to_ast():
-		if not isinstance(definition, ast.Assume):
-			results[name] = check_constraints_on_def(definition)  # type: checker.ConstraintCheckResult
+	for name, definition in program.defs_to_ast():
+		results[name] = check_constraints_on_def(definition)  # type: checker.ConstraintCheckResult
 	return results
 
 

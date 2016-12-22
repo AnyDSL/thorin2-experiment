@@ -13,12 +13,12 @@ def assert_isl_sets_equal(self, set1, set2, equal_vars=None, allow_set1_addition
 	# check  set1 subset of set2
 	isok, _, newset = ast.is_subset(set1, set2, equal_vars)
 	if not isok:
-		self.fail('set1 is larger than set2:\nset1 = '+str(set1)+'\nset2 = '+str(set2))
+		self.fail('set1 is larger than set2:\nset1 = '+str(set1)+'\nset2 = '+str(set2)+' => '+str(newset))
 
 	# check  set2 subset of set1
 	isok, _, newset = ast.is_subset(set2, set1, equal_vars)
 	if not isok:
-		self.fail('set1 is smaller than set2:\nset1 = '+str(set1)+'\nset2 = '+str(set2))
+		self.fail('set1 is smaller than set2:\nset1 = '+str(set1)+' => '+str(newset)+'\nset2 = '+str(set2))
 
 	# check vars1 subset of vars2
 	vars1 = set([equal_vars[vname] if vname in equal_vars else vname for vname in set1.get_var_names(isl.dim_type.set)])
@@ -26,11 +26,11 @@ def assert_isl_sets_equal(self, set1, set2, equal_vars=None, allow_set1_addition
 	if not allow_set1_additional_vars:
 		diff = vars1.difference(vars2)
 		if len(diff) > 0:
-			self.fail('set1 has ' + str(len(diff)) + ' additional vars: '+', '.join(diff))
+			self.fail('set1 has ' + str(len(diff)) + ' additional vars: '+', '.join(diff)+'\nset1 = '+str(set1)+'\nset2 = '+str(set2))
 
 	# check vars2 subset of vars1
 	if not allow_set2_additional_vars:
 		diff = vars2.difference(vars1)
 		if len(diff) > 0:
-			self.fail('set2 has ' + str(len(diff)) + ' additional vars: ' + ', '.join(diff))
+			self.fail('set2 has ' + str(len(diff)) + ' additional vars: ' + ', '.join(diff)+'\nset1 = '+str(set1)+'\nset2 = '+str(set2))
 
