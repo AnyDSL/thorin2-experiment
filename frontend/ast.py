@@ -322,7 +322,7 @@ def is_subset(left, right, equal_vars = {}):
 	dim_right = right.space.dim(isl.dim_type.set)
 	for i in xrange(dim_right-1, -1, -1):
 		varname = right.space.get_dim_name(isl.dim_type.set, i)
-		if varname not in equal_vars and varname not in vars_left:
+		if (varname not in equal_vars or equal_vars[varname] not in vars_left) and varname not in vars_left:
 			right = right.project_out(isl.dim_type.set, i, 1)
 	# variables in left, but not in right: add to right
 	dim_right = right.space.dim(isl.dim_type.set)
@@ -345,8 +345,8 @@ def is_subset(left, right, equal_vars = {}):
 			right = right.set_dim_name(isl.dim_type.set, i, equal_vars[name_right])
 	#right = right.align_params(left.space) # isl seems broken here
 	right = set_align_params(right, left.space)
-	print 'L',left
-	print 'R',right
+	#print 'L',left
+	#print 'R',right
 	# do the subset check
 	return (left.is_subset(right), left, right)
 

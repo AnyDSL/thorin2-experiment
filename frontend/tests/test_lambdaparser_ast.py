@@ -6,6 +6,8 @@ import ast
 
 
 class TestLambdaParserAstGeneration(unittest.TestCase):
+	from isl_test_utils import assert_isl_sets_equal
+
 	def assertExpressionIdentity(self, expr, assumes=''):
 		"""
 		Parse the expression (as single definition) and convert it to its AST node.
@@ -111,31 +113,44 @@ class TestLambdaParserAstGeneration(unittest.TestCase):
 		assume opNatPlus: (Nat,Nat) -> Nat;
 		''').to_ast()[-1][1]
 		self.assertIsInstance(node, ast.Assume)
-		print node.cstr_vars, node.cstr_accepted, node.cstr_possible
+		self.assertTrue(ast.check_variables_structure_equal(node.cstr_vars, [[['a'], ['b']], ['c']]))
+		self.assert_isl_sets_equal(node.cstr_accepted, '{[v1, v2, v3]: }', allow_set1_additional_vars=True)
+		self.assert_isl_sets_equal(node.cstr_possible, '{[v1, v2, v3]: v1 + v2 = v3}', allow_set1_additional_vars=True)
 
 		node = parse_lambda_code('''
 		define f =
 		@accepts "x > 0"
 		@guarantees "x = fx1"
+		@guarantees "fx1 >= 0"
 		lambda rec fx(x:Nat):Nat. x;
 		''').to_ast()[-1][1]
 		self.assertIsInstance(node, ast.LambdaNominal)
-		print node.cstr_vars, node.cstr_accepted, node.cstr_possible
+		translation = {}
+		self.assertTrue(ast.check_variables_structure_equal(node.cstr_vars, [['a'], ['b']], translation))
+		self.assert_isl_sets_equal(node.cstr_accepted, '{[a, b]: a > 0}', translation, True)
+		self.assert_isl_sets_equal(node.cstr_possible, '{[a, b]: a = b >= 0}', translation, True)
 
 		node = parse_lambda_code('''
 		@guarantees "x = fx1"
 		define f = lambda rec fx(x:Nat):Nat. x;
 		''').to_ast()[-1][1]
 		self.assertIsInstance(node, ast.LambdaNominal)
-		print node.cstr_vars, node.cstr_accepted, node.cstr_possible
+		translation = {}
+		self.assertTrue(ast.check_variables_structure_equal(node.cstr_vars, [['a'], ['b']], translation))
+		self.assert_isl_sets_equal(node.cstr_accepted, '{[a, b]: }', translation, True)
+		self.assert_isl_sets_equal(node.cstr_possible, '{[a, b]: a = b}', translation, True)
 
 		node = parse_lambda_code('''
 		define d = lambda n:Nat.
-		 	@accepts "0 <= i < n"
+			@accepts "0 <= i < n"
 			lambda rec (i:Nat):*. (i, n, Nat)[2];
 		''').to_ast()[-1][1]
 		self.assertIsInstance(node, ast.Lambda)
-		print node.ops[1].cstr_vars, node.ops[1].cstr_accepted, node.ops[1].cstr_possible
+		translation = {}
+		self.assertTrue(ast.check_variables_structure_equal(node.ops[1].cstr_vars, [['a'], []], translation))
+		self.assert_isl_sets_equal(node.ops[1].cstr_accepted, '{[n, a]: 0 <= a < n}', translation, True)
+		self.assert_isl_sets_equal(node.ops[1].cstr_possible, '{[n, a]: }', translation, True)
+
 
 	def test_constraints_invalid(self):
 		self.assertRaises(Exception, lambda: parse_lambda_code('''
