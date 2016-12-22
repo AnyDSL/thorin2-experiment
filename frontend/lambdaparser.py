@@ -217,7 +217,7 @@ Symbol.check_keywords = True
 
 
 class Annotation(str, ParserAstNode):
-	grammar = '@', name(), blank, attr('content', re.compile(r'"([^"]|(\"))*"'))
+	grammar = '@', name(), blank, attr('content', re.compile(r'"([^"]|(\\"))*"'))
 	valid_annotations = set(['guarantees', 'accepts'])
 
 	def compose(self, parser, attr_of):
@@ -225,6 +225,9 @@ class Annotation(str, ParserAstNode):
 
 	def get_content(self):
 		return self.content[1:-1].replace(r'\"', '"').replace(r'\\', '\\').replace(r'\n', '\n')
+
+	def __repr__(self):
+		return compose(self)[:-1].encode('utf-8')
 
 
 class Annotations(List, ParserAstNode):
@@ -252,6 +255,11 @@ class Annotations(List, ParserAstNode):
 		accepted = ' and '.join(('('+c+')' for c in self.get_all('accepts')))
 		possible = ' and '.join(('('+c+')' for c in self.get_all('guarantees')))
 		astnode.create_constraints(None, accepted, possible)
+
+	def __bool__(self):
+		return len(self) > 0
+
+	__nonzero__ = __bool__
 
 
 
@@ -392,10 +400,12 @@ class LambdaRec(Plain, ParserAstNode):
 		if self.name:
 			result.name = str(self.name)
 		# enqueue body
-		astcreator.append(self.body, pscope, lambda n: result.set_body(n))
-		# add constraints (if any)
-		if 'guarantees' in self.annotations or 'accepts' in self.annotations:
-			self.annotations.create_constraints(result)
+		def body_created(body):
+			result.set_body(body)
+			# add constraints (if any), after body creation
+			if 'guarantees' in self.annotations or 'accepts' in self.annotations:
+				self.annotations.create_constraints(result)
+		astcreator.append(self.body, pscope, body_created)
 		return result
 
 
@@ -540,10 +550,12 @@ class InnerDefinition(Plain, ParserAstNode):
 
 	def to_ast(self, scope, astcreator):
 		self.annotations.assert_valid()
+		if self.annotations:
+			if not hasattr(self.body, 'annotations'):
+				raise Exception('Annotations not supported here')
+			self.body.annotations = self.annotations
 		body = self.body.to_ast(scope, astcreator)
 		scope.add_definition(self.name, body)
-		if 'guarantees' in self.annotations or 'accepts' in self.annotations:
-			self.annotations.create_constraints(body)
 		return [(str(self.name), body)]
 
 

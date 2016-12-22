@@ -357,6 +357,16 @@ def read_set_from_string(setstring):
 		return bsl[0]
 	return s
 
+class VarNameGen:
+	def __init__(self, prefix, pattern='{}{}'):
+		self.prefix = prefix
+		self.pattern = pattern
+		self.count = 0
+
+	def __call__(self):
+		self.count += 1
+		return self.pattern.format(self.prefix, self.count)
+
 
 class AstNode:
 	def __init__(self, ops):
@@ -421,6 +431,19 @@ class AstNode:
 			return vars[0]
 		return vars
 
+	def get_nat_variables_unique(self, gen):
+		"""
+		Returns a variable structure with unique, but deterministic and human-readable names.
+		Typically parameter names / numbers.
+		:param VarNameGen gen:
+		:rtype: list
+		:return:
+		"""
+		vars = [op.get_nat_variables_unique(gen) for op in self.ops if isinstance(op, AstNode)]
+		if len(vars) == 1:
+			return vars[0]
+		return vars
+
 	def get_unbound_parameters(self, unbound, bound):
 		for op in self.ops:
 			if isinstance(op, AstNode):
@@ -475,14 +498,13 @@ class GivenConstraint:
 		:return:
 		"""
 		if vars is None:
-			print self.get_nat_variables()
-			assert False
+			vars = self.get_nat_variables_unique(VarNameGen('v', '{}{}'))
+			#print 'Generated vars:', vars
+			#print 'Outer vars:', self.get_outer_vars()
 		self.cstr_vars = vars
 		vars = flatten(vars) + flatten(self.get_outer_vars())
 		accepted = '{{[{}] : {}}}'.format(', '.join(vars), accepted_cond)
 		possible = '{{[{}] : {}}}'.format(', '.join(vars), possible_cond)
-		print accepted
-		print possible
 		self.cstr_accepted = read_set_from_string(accepted)
 		self.cstr_possible = read_set_from_string(possible)
 		if self.cstr_accepted.is_empty():
@@ -536,6 +558,9 @@ class Assume(AstNode, GivenConstraint):
 	def get_nat_variables(self):
 		#print '[WARN] get_nat_variables not implemented for', self.ops[0]
 		return self.ops[1].get_nat_variables()
+
+	def get_nat_variables_unique(self, gen):
+		return self.ops[1].get_nat_variables_unique(gen)
 
 	def get_constraints(self):
 		if self.has_constraints():
@@ -605,6 +630,11 @@ class Constant(AstNode):
 		else:
 			raise Exception('NI')
 
+	def get_nat_variables_unique(self, gen):
+		if self.name == 'Nat':
+			return [gen()]
+		return []
+
 	def get_constraints(self):
 		return ([], empty_bset, empty_bset)
 
@@ -653,6 +683,13 @@ class ParamDef(AstNode):
 
 	def get_nat_variables(self):
 		return self.ops[0].get_nat_variables()
+
+	def get_nat_variables_unique(self, gen):
+		if isinstance(self.ops[0], Constant) and self.ops[0].name == 'Nat':
+			return [self.name]
+		if self.name and self.name != '_':
+			gen = VarNameGen(self.name, gen.pattern)
+		return self.ops[0].get_nat_variables_unique(gen)
 
 	def create_new_constraint_vars(self):
 		self.constraint_vars = self.ops[0].get_nat_variables()
@@ -792,6 +829,9 @@ class LambdaNominal(Lambda, GivenConstraint):
 	def get_nat_variables(self):
 		return [self.ops[0].get_nat_variables(), self.ops[1].get_nat_variables()]
 
+	def get_nat_variables_unique(self, gen):
+		return [self.ops[0].get_nat_variables_unique(gen), self.ops[1].get_nat_variables_unique(VarNameGen(self.name, gen.pattern) if self.name else gen)]
+
 	def traverse(self, cb):
 		if cb(self):
 			self.ops[0].traverse(cb)
@@ -903,6 +943,9 @@ class App(AstNode):
 		#param_vars = self.ops[1].get_nat_variables()
 		return func_vars[1]
 
+	def get_nat_variables_unique(self, gen):
+		return self.ops[0].get_nat_variables_unique(gen)[1]
+
 
 
 class Tupel(AstNode):
@@ -953,6 +996,10 @@ class Extract(AstNode):
 
 	def get_nat_variables(self):
 		vars = self.ops[0].get_nat_variables()
+		return vars[self.ops[1]]
+
+	def get_nat_variables_unique(self, gen):
+		vars = self.ops[0].get_nat_variables_unique(gen)
 		return vars[self.ops[1]]
 
 

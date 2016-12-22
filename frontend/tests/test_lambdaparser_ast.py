@@ -132,7 +132,7 @@ class TestLambdaParserAstGeneration(unittest.TestCase):
 		node = parse_lambda_code('''
 		define d = lambda n:Nat.
 		 	@accepts "0 <= i < n"
-			lambda rec (i:Nat):*. (i, Nat)[1];
+			lambda rec (i:Nat):*. (i, n, Nat)[2];
 		''').to_ast()[-1][1]
 		self.assertIsInstance(node, ast.Lambda)
 		print node.ops[1].cstr_vars, node.ops[1].cstr_accepted, node.ops[1].cstr_possible
