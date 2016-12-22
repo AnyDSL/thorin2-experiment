@@ -12,6 +12,52 @@ import constraint_derivation
 """
 
 
+
+class ConstraintCheckResult:
+	"""
+	The result of a constraint check is always one of:
+	"valid" (in every case)
+	"invalid" (in every case)
+	"partial" (can be valid, depending on the input
+	In case of partial validity, there is a "valid_set" (valid inputs) and an "error_set" (invalid inputs).
+	"""
+	def __init__(self, valid, invalid, result=None, error_set=None, valid_set=None, msg=''):
+		self.valid = valid
+		self.invalid = invalid
+		self.result = result
+		self.error_set = error_set
+		self.valid_set = valid_set
+		self.msg = msg
+
+	def is_valid(self):
+		return self.valid
+
+	def is_invalid(self):
+		return self.invalid
+
+	def is_partially_valid(self):
+		return not self.valid and not self.invalid
+
+	def print_short_report(self):
+		if self.valid:
+			print '[VALID]'
+		elif self.invalid:
+			print '[INVALID]'
+		else:
+			print '[PARTIAL]'
+
+	def print_report(self):
+		if self.valid:
+			print '[VALID]', self.msg
+		elif self.invalid:
+			print '[INVALID]', self.msg
+		else:
+			print '[PARTIAL]', self.msg
+			print 'Variables:  ', self.result[0]
+			print 'Valid if:   ', ast.simplify_set(self.valid_set)
+			print 'Invalid if: ', ast.simplify_set(self.error_set)
+
+
 def find_all_nominals(node, nominals=None):
 	"""
 	:param node:
@@ -31,39 +77,20 @@ def find_all_nominals(node, nominals=None):
 	return nominals
 
 
-def manual_typing(node):
-	if node.name == 'f1':
-		node.cstr_vars = [['i'], ['o']]
-		node.cstr_accepted = isl.BasicSet.read_from_str(ast.ctx, '{[i, o] : 0 <= i <= 10}')
-		node.cstr_possible = isl.BasicSet.read_from_str(ast.ctx, '{[i, o] : i = o}')
-	if node.name == 'f2':
-		node.cstr_vars = [['i'], ['o']]
-		node.cstr_accepted = isl.BasicSet.read_from_str(ast.ctx, '{[i, o, n] : 0 <= n <= 10}')
-		node.cstr_possible = isl.BasicSet.read_from_str(ast.ctx, '{[i, o, n] : n = o}')
-	# if node.name == 'recursiveLDef':
-	# 	node.create_constraints([['j'], []] , '0 <= j < i < n', '')
-	# 	print node.name, node.cstr_vars, node.cstr_accepted
-	# if node.name == 'recursiveUDef':
-	# 	node.create_constraints([['j'], []] , '0 <= i and 0 <= j and j < n - i', '')
-	# 	print node.name, node.cstr_vars, node.cstr_accepted
-
-
 def type_inference(nodes):
 	"""
 	:param list[ast.LambdaNominal] nodes:
 	:return:
 	"""
-	for node in nodes:
-		manual_typing(node)
-	# filter out functions that are already types
+	# filter out functions that are already constrained
 	nodes = [node for node in nodes if node.cstr_vars is None]
-	#TODO some fancy heuristic
+	# some dumb heuristic
 	if len(nodes) > 0:
 		constraint_derivation.derive_constraints_iterative(nodes)
 	# permissive-type those that have not been typed yet
 	for func in nodes:
 		if func.cstr_vars is None:
-			print '[WARN] No explicit constraints given for '+repr(func)+'. Using permissive default.'
+			print '[WARN] No explicit constraints given for '+repr(func)+'. Using (permissive) default:'
 			func.set_default_constraints()
 			print func.cstr_vars, func.cstr_accepted, func.cstr_possible
 
@@ -124,8 +151,7 @@ def check_definition(root):
 	# Check all nominal lambda bodies
 	for node in nominals:
 		if not check_nominal(node):
-			print '[ERR]', node, 'violates its constraints!'
-			return False
+			return ConstraintCheckResult(False, True, msg='Invalid sub-function: '+str(node))
 		print '[INFO] Recursive function', node, 'has been verified.'
 	# check "real" program - assuming all recursive functions are safe
 	if len(nominals) > 0:
@@ -135,25 +161,25 @@ def check_definition(root):
 
 def check_definition_simple(node):
 	vars, accepted, possible = node.get_constraints()
-	accepted2, possible2 = ast.simplify_equalities(vars, accepted, possible)
-	print 'Vars:    ',vars
-	print 'Accepted:',accepted2
-	print 'Possible:',possible2
+	#accepted2, possible2 = ast.simplify_equalities(vars, accepted, possible)
+	#print 'Vars:    ',vars
+	#print 'Accepted:',accepted2
+	#print 'Possible:',possible2
 	# possible subsetof accepted => everything right
+	unbound_vars = ast.flatten(vars)
+	valid_set, error_set = ast.valid_input_constraints(unbound_vars, accepted, possible)
 	if possible.is_subset(accepted):
 		print '[VALID]'
-		return True
+		return ConstraintCheckResult(True, False, (vars, accepted, possible), error_set, valid_set)
 	# possible can't be made accepted by other constraints
 	if possible.is_disjoint(accepted):
 		print '[INVALID]  (disjoint)'
-		return False
-	unbound_vars = ast.flatten(vars)
+		return ConstraintCheckResult(False, True, (vars, accepted, possible), error_set, valid_set)
 	# any outer influence on the breaking parts?
 	if len(unbound_vars) == 0:
 		print '[INVALID]  (not satisfied, no influence on constraints remaining)'
-		return False
+		return ConstraintCheckResult(True, False, (vars, accepted, possible), error_set, valid_set,
+									 msg='not satisfied, no influence on constraints remaining')
 	# constraints on "valid" inputs
-	print '[???]'
-	valid_set, error_set = ast.valid_input_constraints(unbound_vars, accepted, possible)
-	print 'Valid if:  ', ast.simplify_set(valid_set)
-	print 'Invalid if:', ast.simplify_set(error_set)
+	return ConstraintCheckResult(False, False, (vars, accepted, possible), error_set, valid_set,
+								 msg='valid only for specific input')

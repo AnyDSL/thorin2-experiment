@@ -254,7 +254,7 @@ def check_variables_structure_equal(vars1, vars2, translation = None):
 
 def valid_input_constraints(vars, accepted, possible):
 	"""
-	Create (and debug-print) the set of possible valid / invalid variable configurations.
+	Create the set of possible valid / invalid variable configurations.
 	The constraints of these sets show in which cases the constraints are valid / not valid.
 	Result type: (valid configs , invalid configs)
 	:param vars:
@@ -268,11 +268,11 @@ def valid_input_constraints(vars, accepted, possible):
 	error_set = possible.subtract(accepted)
 	simple_error_set,  = simplify_equalities(vars, simplify_set(error_set))
 	possible2 = possible
-	print '   vars', vars
-	print '   accepted  ', accepted
-	print '   possible  ', possible
-	print '   error_set ', error_set
-	print '   error_set\'', simple_error_set
+	# print '   vars', vars
+	# print '   accepted  ', accepted
+	# print '   possible  ', possible
+	# print '   error_set ', error_set
+	# print '   error_set\'', simple_error_set
 	dim_err = error_set.space.dim(isl.dim_type.set)
 	set_vars = [error_set.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim_err)]
 	indices = [set_vars.index(v) for v in vars]
@@ -571,8 +571,8 @@ class Assume(AstNode, GivenConstraint):
 		if self.has_constraints():
 			return self.get_constraint_clone()
 		vars, accepted, possible = self.get_isl_sets()
-		print '[WARN] Untyped assume:', self.ops[0]
-		print 'Typing as', (vars, accepted, possible)
+		# print '[WARN] Untyped assume:', self.ops[0]
+		# print 'Typing as', (vars, accepted, possible)
 		return (vars, accepted, possible)
 
 	def get_isl_sets(self):
@@ -691,7 +691,7 @@ class ParamDef(AstNode):
 
 	def get_nat_variables_unique(self, gen):
 		if isinstance(self.ops[0], Constant) and self.ops[0].name == 'Nat':
-			return [self.name]
+			return [self.name if self.name and self.name != '_' else gen()]
 		if self.name and self.name != '_':
 			gen = VarNameGen(self.name, gen.pattern)
 		return self.ops[0].get_nat_variables_unique(gen)

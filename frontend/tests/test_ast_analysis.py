@@ -32,6 +32,13 @@ class TestAstTyping(unittest.TestCase):
 		node = ast_from_expr('lambda t:*. lambda x1:t. lambda op:(pi _:t. t). op(op(x1))').get_type()
 		self.assertEqual(unicode(node), 'Πt:*. Πx1:t. Πop:Π_:t. t. t')
 
+	def test_nat_variable_names(self):
+		node = ast_from_expr('(x, lambda n:Nat. lambda c:(Nat->Nat). (n,x))', 'assume x: Nat;')
+		ref = [['v1'], [['n'], [[['c1'], ['c2']], [['n'], ['v2']]]]]
+		result = node.get_nat_variables_unique(ast.VarNameGen('v'))
+		self.assertEqual(ast.flatten(result), ast.flatten(ref))
+		self.assertTrue(ast.check_variables_structure_equal(result, ref))
+
 
 
 if __name__ == '__main__':

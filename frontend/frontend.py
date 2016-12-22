@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import lambdaparser
+import checker
+import ast
+from collections import OrderedDict
 
 '''
 This is the main interface to the Lambda CoC frontend.
@@ -35,23 +38,35 @@ def translate_file_to_cpp(filename, output_filename=None):
 
 
 def check_constraints_on_def(definition):
-	#TODO
-	pass
+	return checker.check_definition(definition)
 
 def check_constraints_on_program(program):
-	#TODO
-	pass
+	"""
+	:param lambdaparser.Program program:
+	:rtype: dict[str, checker.ConstraintCheckResult]
+	:return:
+	"""
+	results = OrderedDict()
+	for name, definition in program.to_ast():
+		if not isinstance(definition, ast.Assume):
+			results[name] = check_constraints_on_def(definition)  # type: checker.ConstraintCheckResult
+	return results
 
 
 
 def main():
 	# see this as an API / features demo
 	for filename in ['matrixmultiplication.lbl', 'lu_decomposition.lbl']:
-		program = load_program('programs/'+filename)
-		definitions = program.to_ast()
+		program = load_program('programs/'+filename)  #type: lambdaparser.Program
+		definitions = program.to_ast()  #type: list[(str, ast.AstNode)]
 		print filename, 'includes', len(definitions), 'definitions / assumptions'
-		for name, definition in definitions:
-			check_constraints_on_def(definition)
+
+		# perform constraint checking
+		results = check_constraints_on_program(program)
+		for name, result in results.items():
+			print '---', name, '---'
+			result.print_report()
+
 		# finally transform this program for the C++ CoC
 		translate_file_to_cpp('programs/'+filename)
 

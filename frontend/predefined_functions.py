@@ -4,10 +4,11 @@ import types
 import islpy as isl
 
 ASSUME_CODE = '''
+/*
 assume opNatPlus: (Nat, Nat) -> Nat;
 assume opNatMinus: (Nat, Nat) -> Nat;
 assume reduce: pi t:*. pi op: ((t, t) -> t). pi startval:t. pi len:Nat. pi values:(Nat -> t). t;
-
+*/
 assume if_gez: pi t:*. Nat -> sigma(t, t) ->  t;
 assume if_gz: pi t:*. Nat -> sigma(t, t) ->  t;
 assume if_lez: pi t:*. Nat -> sigma(t, t) ->  t;
@@ -83,16 +84,16 @@ class IfFunction(ast.SpecialFunction):
 		branch_true_possible = ast.constraint_vars_equal(branch_true_possible, result_vars, branch_true_vars)
 		branch_false_possible = branch_false_possible.add_constraint(branch_false_constraint)
 		branch_false_possible = ast.constraint_vars_equal(branch_false_possible, result_vars, branch_false_vars)
-		print 'IF result vars:',result_vars
-		print '[TRUE]', branch_true_vars
-		print '- A', branch_true_accepted
-		print '- P', branch_true_possible
-		print '[FALSE]', branch_false_vars
-		print '- A', branch_false_accepted
-		print '- P', branch_false_possible
+		# print 'IF result vars:',result_vars
+		# print '[TRUE]', branch_true_vars
+		# print '- A', branch_true_accepted
+		# print '- P', branch_true_possible
+		# print '[FALSE]', branch_false_vars
+		# print '- A', branch_false_accepted
+		# print '- P', branch_false_possible
 		accepted = branch_true_accepted.union(branch_false_accepted)
 		possible = branch_true_possible.union(branch_false_possible)
-		print '=>', accepted, possible
+		# print '=>', accepted, possible
 		return (result_vars, accepted, possible)
 
 
@@ -101,9 +102,9 @@ class IfFunction(ast.SpecialFunction):
 
 # ----- create Assume instances, and add types -----
 assumes = dict(lambdaparser.parse_lambda_code(ASSUME_CODE).to_ast())
-assumes['opNatPlus'].get_constraints = types.MethodType(nat_add_constraint, assumes['opNatPlus'])
-assumes['opNatMinus'].get_constraints = types.MethodType(nat_sub_constraint, assumes['opNatMinus'])
-assumes['reduce'].get_constraints = types.MethodType(reduce_constraints, assumes['reduce'])
+# assumes['opNatPlus'].get_constraints = types.MethodType(nat_add_constraint, assumes['opNatPlus'])
+# assumes['opNatMinus'].get_constraints = types.MethodType(nat_sub_constraint, assumes['opNatMinus'])
+# assumes['reduce'].get_constraints = types.MethodType(reduce_constraints, assumes['reduce'])
 assumes['if_gez'] = IfFunction('if_gez', assumes['if_gez'].get_type(), {'var':  1, 1:  0})
 assumes['if_gz']  = IfFunction('if_gz',  assumes['if_gz'].get_type(),  {'var':  1, 1: -1})
 assumes['if_lez'] = IfFunction('if_lez', assumes['if_lez'].get_type(), {'var': -1, 1:  0})

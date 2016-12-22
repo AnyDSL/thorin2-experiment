@@ -153,6 +153,7 @@ class AstCreator:
 	def __init__(self):
 		self.queue = Queue()
 		self.seen = []  # set does not work, as nodes are unhashable / mutable
+		self.after_creation = []
 
 	def append(self, node, scope, callback):
 		for n in self.seen:
@@ -161,11 +162,16 @@ class AstCreator:
 		self.seen.append(node)
 		self.queue.put((node, scope, callback))
 
+	def run_after_creation(self, cb):
+		self.after_creation.append(cb)
+
 	def progress_all(self):
 		while not self.queue.empty():
 			node, scope, callback = self.queue.get()
 			obj = node.to_ast(scope, self)
 			callback(obj)
+		for cb in self.after_creation:
+			cb()
 
 
 
@@ -401,12 +407,10 @@ class LambdaRec(Plain, ParserAstNode):
 		if self.name:
 			result.name = str(self.name)
 		# enqueue body
-		def body_created(body):
-			result.set_body(body)
-			# add constraints (if any), after body creation
-			if 'guarantees' in self.annotations or 'accepts' in self.annotations:
-				self.annotations.create_constraints(result)
-		astcreator.append(self.body, pscope, body_created)
+		astcreator.append(self.body, pscope, lambda body: result.set_body(body))
+		# add constraints (if any), after body creation
+		if 'guarantees' in self.annotations or 'accepts' in self.annotations:
+			astcreator.run_after_creation(lambda: self.annotations.create_constraints(result))
 		return result
 
 
