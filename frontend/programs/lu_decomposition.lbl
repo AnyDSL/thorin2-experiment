@@ -53,29 +53,29 @@ define LUD = lambda n:Nat. lambda A:FloatMatrixT n n. let
 
 // V2 - without annotations
 define LUD_without_constraints = lambda n:Nat. lambda A:FloatMatrixT n n. let
-		define U = ArrCreate (UTypePair n) (lambda i:Nat.
-			ArrCreate (opNatMinus(n,i), lambda _:Nat. Float) (lambda rec recursiveUDef (j:Nat): Float.
+		define U2 = ArrCreate (UTypePair n) (lambda i:Nat.
+			ArrCreate (opNatMinus(n,i), lambda _:Nat. Float) (lambda rec recursiveUDef2 (j:Nat): Float.
 			    if_gz Float i (
 			        opFloatMinus (
 			            AGet n A i (opNatPlus (i,j)),
-			            sum i (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (opNatPlus(i, j), k))))
+			            sum i (lambda k:Nat. opFloatMult (LGet n L2 i k, UGet n U2 k (opNatMinus (opNatPlus(i, j), k))))
 			        ),
 			        AGet n A i j
 			    )
 			)
 		);
-		define L = ArrCreate (LTypePair n) (lambda i:Nat.
-			ArrCreate (i, lambda _:Nat. Float) (lambda rec recursiveLDef (j:Nat): Float.
+		define L2 = ArrCreate (LTypePair n) (lambda i:Nat.
+			ArrCreate (i, lambda _:Nat. Float) (lambda rec recursiveLDef2 (j:Nat): Float.
 				opFloatDiv (if_gz Float j (
 			        opFloatMinus (
 			            AGet n A i j,
-			            sum j (lambda k:Nat. opFloatMult (LGet n L i k, UGet n U k (opNatMinus (j, k))))
+			            sum j (lambda k:Nat. opFloatMult (LGet n L2 i k, UGet n U2 k (opNatMinus (j, k))))
 			        ),
 			        AGet n A i j
-			    ), UGet n U j cNat0)
+			    ), UGet n U2 j cNat0)
 			)
 		);
-	in (L, U) end;
+	in (L2, U2) end;
 
 
 

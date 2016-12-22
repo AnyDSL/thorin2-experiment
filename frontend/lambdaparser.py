@@ -212,6 +212,9 @@ class ParserAstNode:
 def cpp_string(x):
 	return '"'+x.replace('"', r'\"')+'"'
 
+def cpp_comment(x):
+	return '\n'.join(['// '+y for y in x.split('\n')])
+
 
 
 
@@ -224,11 +227,8 @@ Symbol.check_keywords = True
 
 
 class Annotation(str, ParserAstNode):
-	grammar = '@', name(), blank, attr('content', re.compile(r'"([^"]|(\\"))*"'))
+	grammar = '@', name(), blank, attr('content', re.compile(r'"([^"]|(\\"))*"')), endl
 	valid_annotations = set(['guarantees', 'accepts'])
-
-	def compose(self, parser, attr_of):
-		return '@'+self.name+' '+self.content+'\n'
 
 	def get_content(self):
 		return self.content[1:-1].replace(r'\"', '"').replace(r'\\', '\\').replace(r'\n', '\n')
@@ -548,7 +548,7 @@ class InnerDefinition(Plain, ParserAstNode):
 		return self.name+' := '+parser.compose(self.body)
 
 	def to_cpp(self, scope, codegen, opts={}):
-		codegen.add_comment('// '+compose(self, autoblank=True))
+		codegen.add_comment(cpp_comment(compose(self, autoblank=True)))
 		body = self.body.to_cpp(scope, codegen, {'cpp_name': self.name})
 		scope.add_definition(self.name)
 		codegen.add_decl(self.name, 'auto '+self.name+' = '+body+';')
@@ -581,7 +581,7 @@ class Assumption(Plain, ParserAstNode):
 		return 'assume '+self.name+': '+self.body.to_expr()
 
 	def to_cpp(self, scope, codegen, opts={}):
-		codegen.add_comment('// '+compose(self, autoblank=True));
+		codegen.add_comment(cpp_comment(compose(self, autoblank=True)))
 		body = self.body.to_cpp(scope, codegen)
 		scope.add_definition(self.name, self.body)
 		codegen.add_decl(self.name, 'auto '+self.name+' = w.assume('+body+', '+cpp_string(self.name)+');')

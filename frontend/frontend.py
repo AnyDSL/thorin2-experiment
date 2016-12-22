@@ -31,7 +31,7 @@ def translate_file_to_cpp(filename, output_filename=None):
 	cpp_program = program.to_cpp()
 	if output_filename is None:
 		output_filename = filename+'.h'
-	with open(output_filename, 'w') as f:
+	with open(output_filename, 'wb') as f:
 		f.write(cpp_program.encode('utf-8'))
 	print('File "{}" written.'.format(output_filename))
 
