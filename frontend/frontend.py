@@ -4,6 +4,7 @@ import lambdaparser
 import checker
 import ast
 from collections import OrderedDict
+import sys
 
 '''
 This is the main interface to the Lambda CoC frontend.
@@ -53,21 +54,29 @@ def check_constraints_on_program(program):
 
 
 
+
+def main_progress(filename):
+	program = load_program(filename)  # type: lambdaparser.Program
+	definitions = program.to_ast()  # type: list[(str, ast.AstNode)]
+	print filename, 'includes', len(definitions), 'definitions / assumptions'
+
+	# perform constraint checking
+	results = check_constraints_on_program(program)
+	for name, result in results.items():
+		print '---', name, '---'
+		result.print_report()
+
+	# finally transform this program for the C++ CoC
+	translate_file_to_cpp(filename)
+
 def main():
-	# see this as an API / features demo
-	for filename in ['matrixmultiplication.lbl', 'lu_decomposition.lbl']:
-		program = load_program('programs/'+filename)  #type: lambdaparser.Program
-		definitions = program.to_ast()  #type: list[(str, ast.AstNode)]
-		print filename, 'includes', len(definitions), 'definitions / assumptions'
-
-		# perform constraint checking
-		results = check_constraints_on_program(program)
-		for name, result in results.items():
-			print '---', name, '---'
-			result.print_report()
-
-		# finally transform this program for the C++ CoC
-		translate_file_to_cpp('programs/'+filename)
+	if len(sys.argv) <= 1:
+		# see this as an API / features demo
+		for filename in ['programs/matrixmultiplication.lbl', 'programs/lu_decomposition.lbl']:
+			main_progress(filename)
+	else:
+		for filename in sys.argv[1:]:
+			main_progress(filename)
 
 
 if __name__ == '__main__':

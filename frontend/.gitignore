@@ -3,3 +3,4 @@
 *.lbl.h
 /env/
 /islpy
+/*.html
