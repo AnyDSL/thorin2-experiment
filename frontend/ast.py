@@ -10,12 +10,25 @@ empty_bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=[]))
 
 last_var_number = 0
 def get_var_name(name =''):
+	"""
+	:param str name:
+	:rtype: str
+	:return: A new, unique variable name, prefixed with "name"
+	"""
 	global last_var_number
 	last_var_number += 1
 	return str(name)+'_'+str(last_var_number)
 
 
 def set_join(a, b):
+	"""
+	Joins two sets together. The resulting set contains all variables and constraints of the input sets.
+	Set variables with identical names are merged together.
+	:param islpy.Set a:
+	:param islpy.Set b:
+	:rtype: islpy.Set
+	:return:
+	"""
 	if not isinstance(a, isl.BasicSet):
 		bsets = a.coalesce().get_basic_sets()
 		if len(bsets) == 1:
@@ -35,8 +48,16 @@ def set_join(a, b):
 		return result
 	return basic_set_join(a, b)
 
-# join 2 BasicSet
+# join 2 BasicSet in pythen
 def basic_set_join_python(a, b):
+	"""
+	Joins two basic sets together. The resulting basic set contains all variables and constraints of the input sets.
+	Set variables with identical names are merged together.
+	:param islpy.BasicSet a:
+	:param islpy.BasicSet b:
+	:rtype: islpy.BasicSet
+	:return:
+	"""
 	dim_a = a.space.dim(isl.dim_type.set)
 	dim_b = b.space.dim(isl.dim_type.set)
 	if dim_a < dim_b:
@@ -64,6 +85,13 @@ else:
 
 
 def clone_constraint(space, constraint):
+	"""
+	Copies a constraint and moves it to a new space. Dimensions are mapped by variable names.
+	:param isl.Space space:
+	:param isl.Constraint constraint:
+	:rtype: isl.Constraint
+	:return:
+	"""
 	assert not constraint.is_div_constraint()
 	if constraint.is_equality():
 		c = isl.Constraint.alloc_equality(space)
@@ -78,14 +106,32 @@ def clone_constraint(space, constraint):
 	return c
 
 def var_in_set(vname, bset):
+	"""
+	:param str vname:
+	:param isl.Set bset:
+	:rtype: bool
+	:return: True if bset contains a variable named vname
+	"""
 	dim = bset.space.dim(isl.dim_type.set)
 	return vname in (bset.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim))
 
 def set_vars(bset):
+	"""
+	:param isl.Set bset:
+	:rtype: list[str]
+	:return: a list of all variable names from bset (in order)
+	"""
 	dim = bset.space.dim(isl.dim_type.set)
 	return [bset.space.get_dim_name(isl.dim_type.set, i) for i in xrange(dim)]
 
 def add_variables(bset, vars):
+	"""
+	Adds new variable names to a set (if they do not already exist).
+	:param isl.Set bset:
+	:param list[str] vars:
+	:rtype: isl.Set
+	:return: A set containing every variable from vars
+	"""
 	old_vars = set(bset.get_var_names(isl.dim_type.set))
 	vars = set(vars).difference(old_vars)
 	if len(vars) > 0:
@@ -96,12 +142,28 @@ def add_variables(bset, vars):
 
 
 def constraint_equal(bset, v1, *args):
+	"""
+	Adds (v1 = ...) constraints to a set
+	:param isl.Set bset:
+	:param str v1:
+	:param str args:
+	:rtype: isl.Set
+	:return: A set where all variable name arguments are equal
+	"""
 	for v2 in args:
 		if v2 != v1:
 			bset = bset.add_constraint(isl.Constraint.eq_from_names(bset.space, {v1: 1, v2: -1}))
 	return bset
 
 def constraint_vars_equal(bset, vars1, vars2):
+	"""
+	Adds equality constraints for each variable name pair in vars1, vars2
+	:param isl.Set bset:
+	:param list vars1: A (possibly nested) variable structure
+	:param list vars2: A variable structure, structurally equal to vars1
+	:rtype: isl.Set
+	:return:
+	"""
 	if isinstance(vars1, list):
 		assert isinstance(vars2, list)
 		assert len(vars1) == len(vars2)
@@ -111,6 +173,11 @@ def constraint_vars_equal(bset, vars1, vars2):
 	return constraint_equal(bset, vars1, vars2)
 
 def constraint_inverse(constraint):
+	"""
+	Inverts a constraint (a > 0  -->  a <= 0)
+	:param isl.Constraint constraint:
+	:return:
+	"""
 	assert not constraint.is_div_constraint()
 	assert not constraint.is_equality()
 	c = {1: - constraint.get_constant_val()}
@@ -120,6 +187,11 @@ def constraint_inverse(constraint):
 	return isl.Constraint.ineq_from_names(constraint.space, c)
 
 def flatten(x):
+	"""
+	:param list x: A nested variable structure
+	:rtype: list[str]
+	:return: A list with all variable names from a nested variable structure
+	"""
 	if isinstance(x, list):
 		result = []
 		for y in x:
@@ -128,13 +200,18 @@ def flatten(x):
 	return [x]
 
 def simplify_set(s):
+	"""
+	:param isl.Set s:
+	:return: A possibly simplified version of the set (space is unaltered)
+	"""
 	return s.coalesce().detect_equalities().remove_redundancies()
 
 def get_equivalence_classes(bset, classes = {}):
 	"""
 	:param isl.BasicSet bset:
-	:rtype: dict[str, set]
-	:return:
+	:param dict[str, set[str]] classes: A dictionary with pre-calculated eq classes (that might get refined, but not joined)
+	:rtype: dict[str, set[str]]
+	:return: A dict mapping all contained variable names to their equivalence class (set containing equal vars)
 	"""
 	if not isinstance(bset, isl.BasicSet):
 		classes = {}
@@ -173,7 +250,7 @@ def get_constrainted_variables(bset):
 	"""
 	:param isl.BasicSet bset:
 	:rtype: set[str]
-	:return:
+	:return: A list of all variables that appear in at least one set constraint
 	"""
 	result = set()
 	if not isinstance(bset, isl.BasicSet):
@@ -236,6 +313,14 @@ def clone_variables(vars, translation = None):
 	return vname
 
 def check_variables_structure_equal(vars1, vars2, translation = None):
+	"""
+	Checks if two nested variable structures are structurally equal (same nesting, but different names), and creates a
+	dict mapping names from vars1 to vars2
+	:param vars1: a nested variable structure
+	:param vars2: a nested variable structure
+	:param dict[str, str] translation: a dictionary that is filled with vars1-name/vars2-name pairs
+	:return: True if the variables are structurally equal
+	"""
 	if isinstance(vars1, list):
 		if not isinstance(vars2, list):
 			return False
@@ -257,10 +342,11 @@ def valid_input_constraints(vars, accepted, possible):
 	Create the set of possible valid / invalid variable configurations.
 	The constraints of these sets show in which cases the constraints are valid / not valid.
 	Result type: (valid configs , invalid configs)
-	:param vars:
+	:param list vars: The variables of this expression (that are still undefined)
 	:param isl.Set accepted:
 	:param isl.Set possible:
-	:return: (isl.Set, isl.Set)
+	:rtype: (isl.Set, isl.Set)
+	:return: valid_set (possible and valid)  /  error_set (possible, but invalid)
 	"""
 	# find islset(vars) so that (forall other vars: possible subset of accepted)
 	# => make (possible \ accepted) empty
@@ -352,6 +438,12 @@ def is_subset(left, right, equal_vars = {}):
 	return (left.is_subset(right), left, right)
 
 def read_set_from_string(setstring):
+	"""
+	Converts an isl string representation in the matching isl.Set or isl.BasicSet.
+	:param str setstring:
+	:rtype: isl.Set|isl.BasicSet
+	:return:
+	"""
 	try:
 		s = isl.Set.read_from_str(ctx, setstring).coalesce()
 	except Exception, e:

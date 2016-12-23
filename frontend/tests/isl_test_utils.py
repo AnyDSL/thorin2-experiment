@@ -34,3 +34,8 @@ def assert_isl_sets_equal(self, set1, set2, equal_vars=None, allow_set1_addition
 		if len(diff) > 0:
 			self.fail('set2 has ' + str(len(diff)) + ' additional vars: ' + ', '.join(diff)+'\nset1 = '+str(set1)+'\nset2 = '+str(set2))
 
+
+def assert_constraints_equal(self, c1, c2):
+	bset1 = isl.BasicSet.universe(c1.space)
+	bset2 = isl.BasicSet.universe(c2.space)
+	self.assertTrue(bset1 == bset2)
