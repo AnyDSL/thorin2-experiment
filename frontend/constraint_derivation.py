@@ -19,7 +19,8 @@ def derive_constraints_iterative(nominals):
 		t = time.time()
 		body_vars, body_accepted, body_possible = node.get_constraints_recursive()
 		print body_vars, body_accepted
-		#body_accepted, body_possible = ast.simplify_equalities(body_vars + node.get_outer_vars(), body_accepted, body_possible)
+		# Exact simplification gets way too slow - use projection as an approximation for now
+		# body_accepted, body_possible = ast.simplify_equalities(body_vars + node.get_outer_vars(), body_accepted, body_possible)
 
 		preserved_vars = set(ast.flatten(body_vars + node.get_outer_vars()))
 		missing_vars = preserved_vars.difference(set(body_accepted.get_var_names(isl.dim_type.set)))

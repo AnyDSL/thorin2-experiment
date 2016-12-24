@@ -102,6 +102,7 @@ class IfFunction(ast.SpecialFunction):
 
 # ----- create Assume instances, and add types -----
 assumes = dict(lambdaparser.parse_lambda_code(ASSUME_CODE).to_ast())
+# plus / minus / reduce are constrained using annotations
 # assumes['opNatPlus'].get_constraints = types.MethodType(nat_add_constraint, assumes['opNatPlus'])
 # assumes['opNatMinus'].get_constraints = types.MethodType(nat_sub_constraint, assumes['opNatMinus'])
 # assumes['reduce'].get_constraints = types.MethodType(reduce_constraints, assumes['reduce'])

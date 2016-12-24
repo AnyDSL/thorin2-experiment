@@ -506,9 +506,6 @@ class App(List, ParserAstNode):
 			pi = Pi.new('_', self, self.arrow)
 			self.arrow = None
 			return pi.normalize()
-		# remove App without parameters
-		#elif len(self) == 0:
-		#	return self.func.normalize()
 		else:
 			return ParserAstNode.normalize(self)
 

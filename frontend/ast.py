@@ -352,8 +352,8 @@ def valid_input_constraints(vars, accepted, possible):
 	# => make (possible \ accepted) empty
 	# => find islset(vars) so that not (exists other vars: possible \ accepted not empty)
 	error_set = possible.subtract(accepted)
-	simple_error_set,  = simplify_equalities(vars, simplify_set(error_set))
 	possible2 = possible
+	# simple_error_set,  = simplify_equalities(vars, simplify_set(error_set))
 	# print '   vars', vars
 	# print '   accepted  ', accepted
 	# print '   possible  ', possible
@@ -432,8 +432,6 @@ def is_subset(left, right, equal_vars = {}):
 			right = right.set_dim_name(isl.dim_type.set, i, equal_vars[name_right])
 	#right = right.align_params(left.space) # isl seems broken here
 	right = set_align_params(right, left.space)
-	#print 'L',left
-	#print 'R',right
 	# do the subset check
 	return (left.is_subset(right), left, right)
 
@@ -475,7 +473,7 @@ class AstNode:
 	def __repr__(self):
 		return '{'+str(self)+'}'
 	def __str__(self):
-		return 'TODO'
+		return 'Not implemented: '+str(self.__class__)
 	def __unicode__(self):
 		return str(self).decode('utf-8')
 	def __eq__(self, other):
@@ -504,7 +502,7 @@ class AstNode:
 		:rtype: AstNode
 		:return: An AST representing the type of this node
 		"""
-		raise Exception('TODO type of '+str(self.__class__))
+		raise Exception('TODO get_type of '+str(self.__class__))
 
 	def get_constraints(self):
 		"""
@@ -515,7 +513,7 @@ class AstNode:
 		- accepted and possible contain exactly the same variable names, in the same order.
 		:return: (varname-nested-list, accepted, possible)
 		"""
-		raise Exception('TODO '+repr(self.__class__)) # sub-classes overwrite this
+		raise Exception('TODO get_constraints of '+str(self.__class__)) # sub-classes overwrite this
 
 	def check_constraints(self, constraints = None):
 		"""
@@ -980,7 +978,7 @@ class LambdaNominal(Lambda, GivenConstraint):
 		return Pi([self.ops[0], self.ops[1]])
 
 	def subst(self, name, value):
-		raise Exception('TODO')
+		raise Exception('TODO (not needed by now)')
 
 	def get_constraints(self):
 		if self.cstr_vars is not None:
@@ -1086,7 +1084,7 @@ class App(AstNode):
 			accepted = constraint_equal(accepted, vf, vp)
 			possible = constraint_equal(possible, vf, vp)
 
-		# TODO check for definite type error: forall[free vars]. exists[bound vars]. possible not subset of accepted
+		# Possible improvement: check for definite type error: forall[free vars]. exists[bound vars]. possible not subset of accepted
 		# Simple form for now:
 		if not possible.is_subset(accepted) and possible.is_disjoint(accepted):
 			print '[ERR] This must go wrong: ', self
