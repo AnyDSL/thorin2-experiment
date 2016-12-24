@@ -498,6 +498,11 @@ class AstNode:
 		raise Exception('TODO '+repr(self.__class__))
 
 	def check_constraints(self, constraints = None):
+		'''
+		DEPRECATED. Use checker.py instead.
+		:param constraints:
+		:return:
+		'''
 		if constraints:
 			vars, accepted, possible = constraints
 		else:

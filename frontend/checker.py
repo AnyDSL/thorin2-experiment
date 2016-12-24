@@ -151,6 +151,7 @@ def check_nominal(node):
 
 
 
+# That's the method you want to call!    <=====
 def check_definition(root):
 	"""
 	:param ast.AstNode root:
