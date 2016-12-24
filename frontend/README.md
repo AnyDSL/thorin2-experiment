@@ -22,7 +22,7 @@ pip install pypeg2 islpy
 ```
 
 ### (optional) compile islpy
-To speed up constraint checking, you can build our extended version of `islpy`: [TODO](TODO). 
+To speed up constraint checking, you can build my [extended version of `islpy`](https://github.com/MarkusBauer/islpy). 
 You get the best results using Clang+LTO, but GCC will also work. 
 
 - Checkout the extended `islpy`

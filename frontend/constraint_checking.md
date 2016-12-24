@@ -131,9 +131,10 @@ Advantages / Disadvantages
 This approach is quite powerful in tracking variable configurations, but it has one big drawback: dead code / empty set. 
 In some cases (for example constrained callbacks), it can happen that (partially) dead code is analyzed, and generates invalid constraints. 
 ```
-// for (i = 0; i < 0; i++): result += i;
+assume floats : Nat -> Float;
+// for (i = 0; i < 0; i++): result += floats(i);
 // return (result, ...);
-define test = (sum 0 (lambda i: toFloat i) , ...);
+define test = (sum 0 floats , ...);
 ```
 In this case, `sum` generates a constraint in `possible` looking like `0 <= i < n` and `n = 0`, which is unsolvable. 
 It follows that the `possible` set is empty, which makes the condition `possible subset of accepted` always true - no matter what `...` is.   
