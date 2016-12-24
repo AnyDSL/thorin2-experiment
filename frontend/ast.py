@@ -466,6 +466,10 @@ class VarNameGen:
 
 
 class AstNode:
+	"""
+	A CoC-like representation of lambda expressions.
+	self.ops is always the list of child nodes. Their order and type is documented in the subclasses.
+	"""
 	def __init__(self, ops):
 		self.ops = ops
 	def __repr__(self):
@@ -480,6 +484,13 @@ class AstNode:
 		return not self == other
 
 	def subst(self, name, value):
+		"""
+		Creates a copy of this node (and possibly sub-nodes), where the parameter "name" is replaced by "value".
+		:param str name:
+		:param AstNode value:
+		:rtype: AstNode
+		:return:
+		"""
 		ops = []
 		for op in self.ops:
 			if isinstance(op, AstNode):
@@ -489,20 +500,29 @@ class AstNode:
 		return self.__class__(ops)
 
 	def get_type(self):
+		"""
+		:rtype: AstNode
+		:return: An AST representing the type of this node
+		"""
 		raise Exception('TODO type of '+str(self.__class__))
 
 	def get_constraints(self):
 		"""
-		:return: (varname-list, accepted, possible)
+		Derive constraints for this node, as nested variable list, "accepted" set and "possible" set.
+		Please read constraint_checking.md, it explains what they mean.
+		- All variables from the nested list are contained in accepted / possible
+		- accepted / possible can contain more variables than the nested list
+		- accepted and possible contain exactly the same variable names, in the same order.
+		:return: (varname-nested-list, accepted, possible)
 		"""
-		raise Exception('TODO '+repr(self.__class__))
+		raise Exception('TODO '+repr(self.__class__)) # sub-classes overwrite this
 
 	def check_constraints(self, constraints = None):
-		'''
+		"""
 		DEPRECATED. Use checker.py instead.
 		:param constraints:
 		:return:
-		'''
+		"""
 		if constraints:
 			vars, accepted, possible = constraints
 		else:
@@ -528,6 +548,12 @@ class AstNode:
 		return None
 
 	def get_nat_variables(self):
+		"""
+		Creates a nested list containing variables for all Nat sub-expressions.
+		The created variable names are unique.
+		:rtype: list
+		:return:
+		"""
 		vars = [op.get_nat_variables() for op in self.ops if isinstance(op, AstNode)]
 		if len(vars) == 1:
 			return vars[0]
@@ -547,6 +573,13 @@ class AstNode:
 		return vars
 
 	def get_unbound_parameters(self, unbound, bound):
+		"""
+		Get all ParamDef instances that are used without being bound first in this expression.
+		:param set[ParamDef] unbound:
+		:param set[ParamDef] bound:
+		:rtype: set[ParamDef]
+		:return:
+		"""
 		for op in self.ops:
 			if isinstance(op, AstNode):
 				op.get_unbound_parameters(unbound, bound)
@@ -567,6 +600,9 @@ class AstNode:
 
 
 class GivenConstraint:
+	"""
+	A superclass for all AST nodes that accept user-defined constraints (using @accepts and @guarantees).
+	"""
 	def __init__(self):
 		self.cstr_vars = None
 		self.cstr_accepted = None
@@ -576,6 +612,10 @@ class GivenConstraint:
 		return self.cstr_vars is not None
 
 	def get_constraint_clone(self, translation=None):
+		"""
+		:param dict[str, str]|None translation: (Optional) mapping between old and new names. Dict is filled with created mapping.
+		:return: A copy of the given constraints, with fresh, unique variable names
+		"""
 		if translation is None:
 			translation = {}
 		vars = clone_variables(self.cstr_vars, translation)
@@ -594,10 +634,10 @@ class GivenConstraint:
 
 	def create_constraints(self, vars, accepted_cond, possible_cond):
 		"""
-		:param list vars:
-		:param str accepted_cond:
-		:param str possible_cond:
-		:return:
+		Sets constraints by string.
+		:param list vars: (optional) nested variable list describing the used variables
+		:param str accepted_cond: constraints as string, using the variables from vars / the auto-generated ones and all unbound parameters.
+		:param str possible_cond: constraints as string, using the variables from vars / the auto-generated ones and all unbound parameters.
 		"""
 		if vars is None:
 			vars = self.get_nat_variables_unique(VarNameGen('v', '{}{}'))
@@ -615,6 +655,10 @@ class GivenConstraint:
 			raise Exception('Possible set must not be empty!')
 
 	def get_outer_vars(self):
+		"""
+		Subclasses overwrite this, to return a list of all additional variable names (like unbound parameters).
+		:return: list
+		"""
 		return []
 
 
@@ -622,9 +666,16 @@ class GivenConstraint:
 
 
 
-global_assumptions = {}
+### ASSUMPTION HANDLING p1 ###
+global_assumptions = {}  # type: dict[str, Assume]
 
 def get_assumption(name):
+	"""
+	Return (or create) an assumption by name.
+	:param str name:
+	:rtype: Assume|None
+	:return: An existing assumption (if there is one), a created Assumption (if creation is possible), None otherwise
+	"""
 	if name in global_assumptions:
 		return global_assumptions[name]
 	na = create_assumption(name)
@@ -673,6 +724,7 @@ class Assume(AstNode, GivenConstraint):
 		return (vars, accepted, possible)
 
 	def get_isl_sets(self):
+		# default (permissive isl sets)
 		vars = self.ops[1].get_nat_variables()
 		bset = isl.BasicSet.universe(isl.Space.create_from_names(ctx, set=flatten(vars)))
 		return (vars, bset, bset)
@@ -685,6 +737,7 @@ class Assume(AstNode, GivenConstraint):
 
 
 class SpecialFunction(Assume):
+	# A "special function" can only occur inside an application (like conditionals)
 	# ops = [name, type]
 	def __init__(self, name, type, param_count):
 		Assume.__init__(self, [name, type])
@@ -708,6 +761,7 @@ class SpecialFunction(Assume):
 
 
 class Constant(AstNode):
+	# currently: "Nat" and "*"
 	def __init__(self, name):
 		AstNode.__init__(self, [])
 		self.name = name
@@ -742,6 +796,10 @@ class Constant(AstNode):
 
 
 class ParamDef(AstNode):
+	"""
+	Each ParamDef instance belongs to exactly one lambda/pi. In addition, it can occur as parameter usage.
+	As different lambdas can have parameters with the same name, this class needs to be compared by reference.
+	"""
 	#ops = [type]
 	def __init__(self, name, type):
 		if isinstance(type, Tupel):
@@ -759,7 +817,6 @@ class ParamDef(AstNode):
 		return self.ops[0]
 
 	def __eq__(self, other):
-		#return other.__class__ == self.__class__ and self.name == other.name and self.ops == other.ops
 		return self is other
 
 	def __ne__(self, other):
@@ -794,11 +851,18 @@ class ParamDef(AstNode):
 		return self.ops[0].get_nat_variables_unique(gen)
 
 	def create_new_constraint_vars(self):
+		"""
+		Give this parameter new, unique variables. Each subsequent get_constraints() call uses these variables.
+		:return:
+		"""
 		self.constraint_vars = self.ops[0].get_nat_variables()
 		return self.constraint_vars
 
 	def get_default_vars(self):
 		"""
+		Defining example:
+		assume f : (Nat, pi x:Nat. pi z:(Nat->Nat). Nat, Nat)
+		==> [f1, [[x], [[[z1], [z2]], [f2]]], f3]
 		:return: A variable representation (as get_nat_variables), but with deterministic, readable variable names.
 			Default names are ["<name>"] or ["<name>1", "<name>2", ...].
 		"""
@@ -855,7 +919,7 @@ class Lambda(AstNode):
 
 
 class LambdaNominal(Lambda, GivenConstraint):
-	# ops = param, returntype, body||None
+	# ops = param, returntype, body|None
 	def __init__(self, ops):
 		if len(ops) == 2:
 			ops.append(None)
@@ -1022,9 +1086,8 @@ class App(AstNode):
 			accepted = constraint_equal(accepted, vf, vp)
 			possible = constraint_equal(possible, vf, vp)
 
-		# TODO type error: forall[free vars]. exists[bound vars]. possible not subset of accepted
-		#
-		# Simple form for now
+		# TODO check for definite type error: forall[free vars]. exists[bound vars]. possible not subset of accepted
+		# Simple form for now:
 		if not possible.is_subset(accepted) and possible.is_disjoint(accepted):
 			print '[ERR] This must go wrong: ', self
 
@@ -1105,7 +1168,9 @@ class Extract(AstNode):
 		return vars[self.ops[1]]
 
 
+### ASSUMPTION / CONSTANT HANDLING p2 ###
 
+# constraint generation for a constant
 def nat_const_constraints(self):
 	name = self.ops[0]
 	vname = get_var_name('c' + str(name))
@@ -1114,9 +1179,11 @@ def nat_const_constraints(self):
 	possible = accepted.add_constraint(isl.Constraint.eq_from_names(space, {vname: 1, 1: -int(name)}))
 	return ([vname], accepted, possible)
 
+# constraint generation for sth without Nat
 def empty_constraints(self):
 	return ([], empty_bset, empty_bset)
 
+# automatic constraint generation (without actually constraining anything)
 def auto_constraints(self):
 	return self.get_isl_sets()
 

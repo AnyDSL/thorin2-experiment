@@ -17,10 +17,22 @@ Functions:
 
 
 def load_program(fname):
+	"""
+	Load a program from file, and return the parse tree. Includes are resolved.
+	:param str fname:
+	:rtype: lambdaparser.Program
+	:return:
+	"""
 	code = lambdaparser.load_file_with_includes(fname)
 	return lambdaparser.parse_lambda_code(lambdaparser.strip_comments(code))
 
 def load_program_from_string(code):
+	"""
+	Load a program from file, and return the parse tree. Includes are not resolved.
+	:param str|unicode code:
+	:rtype: lambdaparser.Program
+	:return:
+	"""
 	if isinstance(code, str):
 		code = code.decode('utf-8')
 	return lambdaparser.parse_lambda_code(lambdaparser.strip_comments(code))
@@ -28,6 +40,11 @@ def load_program_from_string(code):
 
 
 def translate_file_to_cpp(filename, output_filename=None):
+	"""
+	Converts a program file to a C++ include file (.lbl.h).
+	:param str filename:
+	:param str output_filename: (optional) default is filename+'.h'
+	"""
 	program = load_program(filename)
 	cpp_program = program.to_cpp()
 	if output_filename is None:
@@ -39,10 +56,16 @@ def translate_file_to_cpp(filename, output_filename=None):
 
 
 def check_constraints_on_def(definition):
+	"""
+	Check the constraints of a single definition
+	:param ast.AstNode definition:
+	:return: checker.ConstraintCheckResult
+	"""
 	return checker.check_definition(definition)
 
 def check_constraints_on_program(program):
 	"""
+	Check all definitions from a program (given as parse tree)
 	:param lambdaparser.Program program:
 	:rtype: dict[str, checker.ConstraintCheckResult]
 	:return:
@@ -56,6 +79,10 @@ def check_constraints_on_program(program):
 
 
 def main_progress(filename):
+	"""
+	Load a file, check constraints on all definitions, and convert it to a C++ include file afterwards.
+	:param str filename:
+	"""
 	program = load_program(filename)  # type: lambdaparser.Program
 	definitions = program.to_ast()  # type: list[(str, ast.AstNode)]
 	print filename, 'includes', len(definitions), 'definitions / assumptions'
@@ -69,9 +96,10 @@ def main_progress(filename):
 	# finally transform this program for the C++ CoC
 	translate_file_to_cpp(filename)
 
+
 def main():
+	# see this as an API / features demo
 	if len(sys.argv) <= 1:
-		# see this as an API / features demo
 		for filename in ['programs/matrixmultiplication.lbl', 'programs/lu_decomposition.lbl']:
 			main_progress(filename)
 	else:

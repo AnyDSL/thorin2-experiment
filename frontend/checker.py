@@ -21,6 +21,8 @@ class ConstraintCheckResult:
 	"invalid" (in every case)
 	"partial" (can be valid, depending on the input
 	In case of partial validity, there is a "valid_set" (valid inputs) and an "error_set" (invalid inputs).
+
+	Take a look at ConstraintCheckResult.print_report().
 	"""
 	def __init__(self, valid, invalid, vars=None, accepted=None, possible=None, error_set=None, valid_set=None, msg=''):
 		self.valid = valid
@@ -71,8 +73,8 @@ class ConstraintCheckResult:
 
 def find_all_nominals(node, nominals=None):
 	"""
-	:param node:
-	:param nominals:
+	:param ast.AstNode node:
+	:param list[ast.LambdaNominal]|None nominals:
 	:rtype: list[ast.LambdaNominal]
 	:return:
 	"""
@@ -91,7 +93,6 @@ def find_all_nominals(node, nominals=None):
 def type_inference(nodes):
 	"""
 	:param list[ast.LambdaNominal] nodes:
-	:return:
 	"""
 	# filter out functions that are already constrained
 	nodes = [node for node in nodes if node.cstr_vars is None]
@@ -109,7 +110,8 @@ def type_inference(nodes):
 def check_nominal(node):
 	"""
 	:param ast.LambdaNominal node:
-	:return:
+	:rtype: bool
+	:return: True if the nominal's given constraints are valid
 	"""
 	print '--- Checking', node, '---'
 	# First: all parameter variables have to be present (including unbound ones)
@@ -154,7 +156,9 @@ def check_nominal(node):
 # That's the method you want to call!    <=====
 def check_definition(root):
 	"""
+	Check the constraints of a given definition or assumption, using the multi-step process described in constraint_checking.md.
 	:param ast.AstNode root:
+	:rtype: ConstraintCheckResult
 	:return:
 	"""
 	nominals = find_all_nominals(root)

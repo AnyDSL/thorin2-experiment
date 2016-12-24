@@ -6,6 +6,10 @@ import os
 from lambdaparser import parse_lambda_code
 import frontend
 
+'''
+Converts lambda programs (.lbl files) to C++ include files (.lbl.h).
+'''
+
 
 HELP = 'USAGE: '+__file__+""" [params] [filename...]
 Parameters:

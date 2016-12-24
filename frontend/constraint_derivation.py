@@ -7,7 +7,6 @@ import sys
 def derive_constraints_iterative(nominals):
 	"""
 	:param list[ast.LambdaNominal] nominals:
-	:return:
 	"""
 	print '--- iterative constraint inference ---'
 	# first type "permissive"

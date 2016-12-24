@@ -10,21 +10,25 @@ import os
 """
 REQUIREMENTS:
 pip install pypeg2
+pip install islpy
 """
 
 
 
 GRAMMAR = """
-<definition> := define [type] <name> = <expression>;
-<assumption> := assume <name>: <expression>;
+<definition> := [<annotations>] define [type] <name> = <expression>;
+<assumption> := [<annotations>] assume <name>: <expression>;
 
 <expression> :=   lambda <name>: <expression>. <expression>
 				| pi <name>: <expression>. <expression>
-				| lambda rec <funcname> (<param>:<type-expression>): <returntype-expression>. <expression>
+				| [<annotations>] lambda rec <funcname> (<param>:<type-expression>): <returntype-expression>. <expression>
 				| let <definition>... in <expression> end
 				| <extract-expression> [<extract-expression>]+ [-> <expression>]
 <extract-expression> := <atomic-expression> [ '[' <int> ']' ]+
-<atomic-expression> := Nat | * | Param | Var
+<atomic-expression>  := Nat | '*' | Param | Var
+
+<annotations> := <annotation>*
+<annotation>  := @<name> "<text>"
 """
 
 
@@ -177,10 +181,14 @@ class AstCreator:
 
 
 class ParserAstNode:
+	"""
+	Base class for parsing code. Please refer to the pypeg2 documentation.
+	Each language feature is a subclass.
+	"""
 	def normalize(self):
 		"""
 		Removes all syntactic sugar from the AST.
-		@:return the new representation of this node
+		:return: the new representation of this node
 		"""
 		if isinstance(self, List):
 			for i in xrange(len(self)):
@@ -444,13 +452,6 @@ class Pi(Plain, ParserAstNode):
 class Extract(List, ParserAstNode):
 	grammar = attr('base', AtomicExpression), maybe_some('[', re.compile(r'\d+'), ']')
 
-	"""def normalize(self):
-		# remove Extract without indices
-		if len(self) == 0:
-			return self.base.normalize()
-		else:
-			return LambdaAST.normalize(self)"""
-
 	def to_cpp(self, scope, codegen, opts={}):
 		if len(self) == 0:
 			return self.base.to_cpp(scope, codegen, opts)
@@ -603,6 +604,7 @@ class Assumption(Plain, ParserAstNode):
 
 
 class Comment(str, ParserAstNode):
+	# don't rely on this class! In many cases, comments are removed by regular expressions before they reach the parser.
 	grammar = [comment_cpp, comment_sh, comment_c]
 
 	def to_cpp(self, scope, codegen, opts={}):
@@ -654,6 +656,10 @@ class Program(List, ParserAstNode):
 		return codegen.output()
 
 	def to_ast(self):
+		"""
+		:rtype: list[(str, ast.AstNode)]
+		:return: A list containing (name, astnode) pairs for all assumptions and definitions in this program
+		"""
 		scope = Scope()
 		astcreator = AstCreator()
 		defs = []
@@ -663,6 +669,10 @@ class Program(List, ParserAstNode):
 		return defs
 
 	def defs_to_ast(self):
+		"""
+		:rtype: list[(str, ast.AstNode)]
+		:return: A list containing (name, astnode) pairs for all definitions in this program
+		"""
 		scope = Scope()
 		astcreator = AstCreator()
 		defs = []
@@ -730,4 +740,3 @@ if __name__ == '__main__':
 	print(program)
 	print('\n')
 	print(program.to_cpp())
-	pass
