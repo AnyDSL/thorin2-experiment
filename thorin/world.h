@@ -23,7 +23,7 @@ public:
     World(const World&) = delete;
 
     World();
-    virtual ~World() { for (auto def : defs_) def->~Def(); }
+    ~World();
 
     const Universe* universe(Qualifier q = Qualifier::Unrestricted) const { return universe_[size_t(q)]; }
     const Star* star(Qualifier q = Qualifier::Unrestricted) const { return star_[size_t(q)]; }
