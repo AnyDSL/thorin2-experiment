@@ -7,7 +7,7 @@
 
 #include "thorin/util/array.h"
 #include "thorin/util/bitset.h"
-#include "thorin/util/debug.h"
+#include "thorin/util/location.h"
 #include "thorin/util/cast.h"
 #include "thorin/util/hash.h"
 #include "thorin/util/stream.h"
@@ -25,18 +25,18 @@ class World;
 class Use {
 public:
     Use() {}
-    Use(uint16_t index, const Def* def)
-        : tagged_ptr_(index, def)
+    Use(const Def* def, size_t index)
+        : tagged_ptr_(def, index)
     {}
 
-    size_t index() const { return tagged_ptr_.tag(); }
+    size_t index() const { return tagged_ptr_.index(); }
     const Def* def() const { return tagged_ptr_.ptr(); }
     operator const Def*() const { return tagged_ptr_; }
     const Def* operator->() const { return tagged_ptr_; }
     bool operator==(Use other) const { return this->tagged_ptr_ == other.tagged_ptr_; }
 
 private:
-    TaggedPtr<const Def> tagged_ptr_;
+    TaggedPtr<const Def, size_t> tagged_ptr_;
 };
 
 //------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ private:
 struct UseHash {
     inline static uint64_t hash(Use use);
     static bool eq(Use u1, Use u2) { return u1 == u2; }
-    static Use sentinel() { return Use(uint16_t(-1), (const Def*)(-1)); }
+    static Use sentinel() { return Use((const Def*)(-1), uint16_t(-1)); }
 };
 
 typedef HashSet<Use, UseHash> Uses;
@@ -78,11 +78,6 @@ void gid_sort(Array<const Def*>* defs);
 Array<const Def*> gid_sorted(Defs defs);
 void unique_gid_sort(Array<const Def*>* defs);
 Array<const Def*> unique_gid_sorted(Defs defs);
-
-class DefIndex;
-class DefIndexHash;
-typedef thorin::HashMap<DefIndex, const Def*, DefIndexHash> Substitutions;
-typedef std::stack<DefIndex> NominalTodos;
 
 //------------------------------------------------------------------------------
 
@@ -179,29 +174,25 @@ protected:
     void resize(size_t num_ops);
 
 public:
-    //@{
-    /// get operands
+    //@{ get operands
     Defs ops() const { return Defs(ops_, num_ops_); }
     const Def* op(size_t i) const { return ops()[i]; }
     size_t num_ops() const { return num_ops_; }
     //@}
 
-    //@{
-    /// get @p Uses%s
+    //@{ get @p Uses%s
     const Uses& uses() const { return uses_; }
     size_t num_uses() const { return uses().size(); }
     //@}
 
-    //@{
-    /// get @p Debug information
+    //@{ get @p Debug information
     Debug& debug() const { return debug_; }
     Location location() const { return debug_; }
     const std::string& name() const { return debug().name(); }
     std::string unique_name() const;
     //@}
 
-    //@{
-    /// get type and @p Sort
+    //@{ get type and @p Sort
     const Def* type() const { return type_; }
     Sort sort() const;
     bool is_term() const { return sort() == Sort::Term; }
@@ -210,8 +201,7 @@ public:
     bool is_universe() const { return sort() == Sort::Universe; }
     //@}
 
-    //@{
-    /// get @p Qualifier
+    //@{ get @p Qualifier
     Qualifier qualifier() const  { return type() ? type()->qualifier() : Qualifier(qualifier_); }
     bool is_unrestricted() const { return bool(qualifier()) & bool(Qualifier::Unrestricted); }
     bool is_affine() const       { return bool(qualifier()) & bool(Qualifier::Affine); }
@@ -219,8 +209,7 @@ public:
     bool is_linear() const       { return bool(qualifier()) & bool(Qualifier::Linear); }
     //@}
 
-    //@{
-    /// misc getters
+    //@{ misc getters
     uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
     size_t gid() const { return gid_; }
     static size_t gid_counter() { return gid_counter_; }
@@ -231,8 +220,7 @@ public:
     World& world() const { return *world_; }
     //@}
 
-    //@{
-    /// free variables
+    //@{ free variables
     // TODO return (dynamic) bitset (wrapper)
     const std::bitset<64>& free_vars() const { return free_vars_; }
 
@@ -253,7 +241,10 @@ public:
     }
     //@}
 
-    const Def* substitute(Substitutions&, size_t, Defs) const;
+    const Def* reduce(Defs args) const { return reduce(0, args); }
+    /// Substitutes variables beginning from the given index with the given Defs and shifts free variables by
+    /// the amount of Defs given. Note that the Defs will be indexed in reverse order.
+    const Def* reduce(size_t, Defs) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const { return stub(type, debug()); }
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
@@ -290,9 +281,6 @@ protected:
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
-    const Def* rebuild_substitute(NominalTodos&, Substitutions&, size_t, Defs, const Def*) const;
-    const Def* substitute(NominalTodos&, Substitutions&, size_t, Defs) const;
-    static void substitute_nominals(NominalTodos&, Substitutions&, Defs);
     bool on_heap() const { return ops_ != vla_ops_; }
     // this must match with the 64bit fields below
 
@@ -317,9 +305,10 @@ private:
     const Def* vla_ops_[0];
 
     friend class App;
-    friend class World;
     friend class Cleaner;
+    friend class Reducer;
     friend class Scope;
+    friend class World;
 };
 
 uint64_t UseHash::hash(Use use) {
@@ -665,7 +654,6 @@ private:
 
 public:
     size_t index() const { return index_; }
-    const Def* substitute(size_t, Defs, const Def*) const;
     std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
     std::ostream& name_stream(std::ostream& os) const override {

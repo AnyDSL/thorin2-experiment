@@ -8,14 +8,16 @@ add_executable(CoC
     qualifiertest.cpp
     thorin/def.cpp
     thorin/def.h
+    thorin/reduce.cpp
+    thorin/reduce.h
     thorin/tables.h
     thorin/world.cpp
     thorin/world.h
     thorin/util/array.h
     thorin/util/bitset.h
     thorin/util/cast.h
-    thorin/util/debug.cpp
-    thorin/util/debug.h
+    thorin/util/location.cpp
+    thorin/util/location.h
     thorin/util/hash.h
     thorin/util/stream.cpp
     thorin/util/stream.h
