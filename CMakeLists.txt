@@ -1,11 +1,38 @@
-cmake_minimum_required (VERSION 2.6)
-project (CoC)
+cmake_minimum_required(VERSION 3.0.0)
+
+# download and unpack googletest at configure time
+configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
+
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
+
+if(result)
+    message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+endif()
+
+execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
+
+if(result)
+    message(FATAL_ERROR "Build step for googletest failed: ${result}")
+endif()
+
+# prevent overriding the parent project's compiler/linker settings on Windows
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+# Add googletest directly to our build. 
+# This defines the gtest and gtest_main targets.
+add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
+
 include_directories(.)
-add_executable(CoC 
-    main.cpp
-    matrixtest.cpp
-    nominaltest.cpp
-    qualifiertest.cpp
+
+add_executable(coc 
+    test/main.cpp
+    test/matrix.cpp
+    test/nominal.cpp
+    test/qualifier.cpp
     thorin/def.cpp
     thorin/def.h
     thorin/reduce.cpp
@@ -23,5 +50,9 @@ add_executable(CoC
     thorin/util/stream.h
     thorin/util/utility.h
 )
-set_property(TARGET CoC PROPERTY CXX_STANDARD 14)
-set_property(TARGET CoC PROPERTY CXX_STANDARD_REQUIRED on)
+
+set_property(TARGET coc PROPERTY CXX_STANDARD 14)
+set_property(TARGET coc PROPERTY CXX_STANDARD_REQUIRED on)
+
+target_link_libraries(coc gtest_main)
+add_test(NAME coc_test COMMAND coc)

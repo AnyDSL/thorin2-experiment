@@ -1,27 +1,18 @@
+#include "gtest/gtest.h"
+
 #include "thorin/world.h"
 
 using namespace thorin;
 
-void testMatrix();
-
-void testQualifiers();
-
-void testNominal();
-
-int main()  {
-    std::cout<< sizeof(BitSet) << std::endl;
-    testQualifiers();
-    testNominal();
-    testMatrix();
-
+TEST(Simple, Misc) {
     World w;
     auto n16 = w.nat16();
     n16->dump();
-    assert(n16 == w.nat(16));
+    ASSERT_EQ(n16, w.nat(16));
 
     auto n23 = w.nat(23);
     auto n23x = w.nat(23);
-    assert(n23 == n23x);
+    ASSERT_EQ(n23, n23x);
     auto n42 = w.nat(42);
     /*auto n32 =*/ w.nat(32);
     auto Top = w.boolean_top();
@@ -56,18 +47,18 @@ int main()  {
 
     // λT:*.λx:T.x
     auto T_1 = w.var(w.star(), 0, {"T"});
-    assert(T_1->has_free_var(0));
-    assert(!T_1->has_free_var(1));
+    ASSERT_TRUE(T_1->has_free_var(0));
+    ASSERT_FALSE(T_1->has_free_var(1));
     auto T_2 = w.var(w.star(), 1, {"T"});
-    assert(T_2->has_free_var(1));
-    assert(T_2->has_free_var_in(1, 1));
-    assert(T_2->has_free_var_ge(1));
+    ASSERT_TRUE(T_2->has_free_var(1));
+    ASSERT_TRUE(T_2->has_free_var_in(1, 1));
+    ASSERT_TRUE(T_2->has_free_var_ge(1));
     auto x = w.var(T_2, 0, {"x"});
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
-    assert(!poly_id->has_free_var(0));
-    assert(!poly_id->has_free_var(1));
-    assert(!poly_id->has_free_var_in(0, 2));
-    assert(!poly_id->has_free_var_ge(0));
+    ASSERT_FALSE(poly_id->has_free_var(0));
+    ASSERT_FALSE(poly_id->has_free_var(1));
+    ASSERT_FALSE(poly_id->has_free_var_in(0, 2));
+    ASSERT_FALSE(poly_id->has_free_var_ge(0));
     poly_id->dump();
     poly_id->type()->dump();
 
@@ -134,5 +125,9 @@ int main()  {
     w.match(any_nat, {handle_bool, handle_nat})->dump();
     // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
     w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
+}
 
+int main(int argc, char** argv)  {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

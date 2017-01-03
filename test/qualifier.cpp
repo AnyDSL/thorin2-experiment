@@ -1,3 +1,5 @@
+#include "gtest/gtest.h"
+
 #include "thorin/world.h"
 
 using namespace thorin;
@@ -5,26 +7,26 @@ using namespace thorin;
 // TODO remove this macro
 #define print_value_type(x) do{ std::cout << "<" << x->gid() << "> " << (x->name() == "" ? #x : x->name()) << " = " << x << ": " << x->type() << endl; }while(0)
 
-void testQualifiers() {
+TEST(Qualifiers, Misc) {
     auto U = Qualifier::Unrestricted;
     auto R = Qualifier::Relevant;
     auto A = Qualifier::Affine;
     auto L = Qualifier::Linear;
 
-    assert(A < U);
-    assert(R < U);
-    assert(L < U);
-    assert(L < A);
-    assert(L < R);
+    ASSERT_LT(A, U);
+    ASSERT_LT(R, U);
+    ASSERT_LT(L, U);
+    ASSERT_LT(L, A);
+    ASSERT_LT(L, R);
 
-    assert(meet(U, U) == U);
-    assert(meet(A, U) == A);
-    assert(meet(R, U) == R);
-    assert(meet(L, U) == L);
-    assert(meet(A, A) == A);
-    assert(meet(A, R) == L);
-    assert(meet(L, A) == L);
-    assert(meet(L, R) == L);
+    ASSERT_EQ(meet(U, U), U);
+    ASSERT_EQ(meet(A, U), A);
+    ASSERT_EQ(meet(R, U), R);
+    ASSERT_EQ(meet(L, U), L);
+    ASSERT_EQ(meet(A, A), A);
+    ASSERT_EQ(meet(A, R), L);
+    ASSERT_EQ(meet(L, A), L);
+    ASSERT_EQ(meet(L, R), L);
 
     World w;
     auto Star = w.star();
@@ -37,24 +39,24 @@ void testQualifiers() {
     auto anx = w.var(ANat, 0, {"x"});
     auto anid = w.lambda(ANat, anx, {"anid"});
     /*auto app1 =*/ w.app(anid, an0);
-    assert(is_error(w.app(anid, an0)));
+    ASSERT_TRUE(is_error(w.app(anid, an0)));
 
     auto tuple_type = w.sigma({ANat, RNat});
-    assert(tuple_type->qualifier() == L);
+    ASSERT_EQ(tuple_type->qualifier(), L);
     auto an1 = w.axiom(ANat, {"1"});
     auto rn0 = w.axiom(RNat, {"0"});
     auto tuple = w.tuple({an1, rn0});
-    assert(tuple->type() == tuple_type);
+    ASSERT_EQ(tuple->type(), tuple_type);
     auto tuple_app0 = w.extract(tuple, 0);
-    assert(w.extract(tuple, 0) == tuple_app0);
+    ASSERT_EQ(w.extract(tuple, 0), tuple_app0);
 
     auto a_id_type = w.pi(Nat, Nat, A);
     auto nx = w.var(Nat, 0, {"x"});
     auto a_id = w.lambda(Nat, nx, A, {"a_id"});
-    assert(a_id_type == a_id->type());
+    ASSERT_EQ(a_id_type, a_id->type());
     auto n0 = w.axiom(Nat, {"0"});
     /*auto a_id_app =*/ w.app(a_id, n0);
-    assert(is_error(w.app(a_id, n0)));
+    ASSERT_TRUE(is_error(w.app(a_id, n0)));
 
     // λᴬT:*.λx:ᴬT.x
     auto aT1 = w.var(w.star(A), 0, {"T"});
@@ -87,7 +89,7 @@ void testQualifiers() {
         auto Ref = w.axiom(w.pi(Star, w.star(A)), {"ARef"});
         print_value_type(Ref);
         auto app_Ref_T0 = w.app(Ref, T(0));
-        assert(app_Ref_T0->qualifier() == A);
+        ASSERT_EQ(app_Ref_T0->qualifier(), A);
         auto NewRef = w.axiom(w.pi({Star, T(0)}, w.app(Ref, T(1))), {"NewARef"});
         print_value_type(NewRef);
         // ReadRef : Π(*).Π(ARef[<0:*>]).Σ(<1:*>, ARef[<2:*>])

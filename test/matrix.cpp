@@ -1,8 +1,10 @@
+#include "gtest/gtest.h"
+
 #include "thorin/world.h"
 
 using namespace thorin;
 
-void testMatrix() {
+TEST(Matrix, Misc) {
     World w;
     auto Nat = w.nat();
     auto Star = w.star();
@@ -58,5 +60,3 @@ void testMatrix() {
     sum->type()->dump();
 
 }
-
-
