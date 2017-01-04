@@ -29,6 +29,7 @@ add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googlete
 include_directories(.)
 
 add_executable(coc 
+    test/bitset.cpp
     test/main.cpp
     test/matrix.cpp
     test/nominal.cpp
@@ -43,9 +44,9 @@ add_executable(coc
     thorin/util/array.h
     thorin/util/bitset.h
     thorin/util/cast.h
+    thorin/util/hash.h
     thorin/util/location.cpp
     thorin/util/location.h
-    thorin/util/hash.h
     thorin/util/stream.cpp
     thorin/util/stream.h
     thorin/util/utility.h
