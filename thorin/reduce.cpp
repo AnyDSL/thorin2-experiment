@@ -24,15 +24,15 @@ void Reducer::reduce_nominals() {
         if (auto replacement = find(map_, subst)) {
             if (replacement == subst || replacement->is_closed())
                 continue;
-            subst->foreach_op_index(
-                subst.index(), [&] (size_t op_index, const Def* op, size_t shifted_index) {
+
+            subst->foreach_op_index(subst.index(),
+                [&] (size_t op_index, const Def* op, size_t shifted_index) {
                     auto new_op = reduce(op, shifted_index);
                     const_cast<Def*>(replacement)->set(op_index, new_op);
                 });
         }
     }
 }
-
 
 const Def* Reducer::reduce(const Def* def, size_t shift) {
     if (auto replacement = find(map_, {def, shift}))
