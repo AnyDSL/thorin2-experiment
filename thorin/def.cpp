@@ -304,10 +304,13 @@ Axiom* Axiom::stub(World& to, const Def*, Debug) const {
     return const_cast<Axiom*>(this);
 }
 Lambda* Lambda::stub(World& to, const Def* type, Debug dbg) const {
-   return to.pi_lambda(type->as<Pi>(), dbg);
+    return to.pi_lambda(type->as<Pi>(), dbg);
 }
 Sigma* Sigma::stub(World& to, const Def* type, Debug dbg) const {
-   return to.sigma(num_ops(), type, dbg);
+    return to.sigma(num_ops(), type, dbg);
+}
+Variant* Variant::stub(World& to, const Def* type, Debug dbg) const {
+    return to.variant(num_ops(), type, dbg);
 }
 
 //------------------------------------------------------------------------------

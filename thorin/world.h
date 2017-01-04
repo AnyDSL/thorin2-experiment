@@ -112,6 +112,10 @@ public:
         return variant(defs, meet(defs), dbg);
     }
     const Def* variant(Defs defs, Qualifier q, Debug dbg = {});
+    Variant* variant(size_t num_ops, const Def* type, Debug dbg = {}) {
+        assert(num_ops > 1 && "It should not be necessary to build empty/unary variants.");
+        return insert<Variant>(num_ops, *this, type, num_ops, dbg);
+    }
     const Def* any(const Def* type, const Def* def, Debug dbg = {});
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
 

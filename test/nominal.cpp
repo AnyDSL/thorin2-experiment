@@ -28,6 +28,7 @@ TEST(Nominal, Misc) {
     a1->ops().dump();
     ASSERT_NE(a1->op(0), a1->op(1));
 
+    std::cout << "--- NominalTest Polymorphic List ---" << endl;
     auto list = w.pi_lambda(w.pi(star, star), {"list"});
     auto cons = w.sigma_type(2, {"cons"});
     cons->set(0, w.var(star, 0));
@@ -47,5 +48,15 @@ TEST(Nominal, Misc) {
     print_value_type(apped);
     print_value_type(apped->op(0));
     print_value_type(apped->op(1));
+
+    std::cout << "--- NominalTest Variant ---" << endl;
+
+    auto variant = w.variant(2, star, {"Nat"});
+    variant->set(0, w.sigma_type(0, {"0"}));
+    auto succ = w.sigma_type(1, {"Succ"});
+    succ->set(0, variant);
+    variant->set(1, succ);
+    print_value_type(variant);
+    print_value_type(succ);
     std::cout << "--- NominalTest end ---" << endl;
 }

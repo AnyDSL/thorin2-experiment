@@ -556,12 +556,17 @@ private:
     {
         compute_free_vars();
     }
+    Variant(World& world, const Def* type, size_t num_ops, Debug dbg)
+        : Quantifier(world, Tag::Variant, type, num_ops, dbg)
+    {}
 
 public:
+    void set(size_t i, const Def* def) { Def::set(i, def); };
     std::ostream& stream(std::ostream&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    Variant* stub(World&, const Def*, Debug) const override;
 
     friend class World;
 };
