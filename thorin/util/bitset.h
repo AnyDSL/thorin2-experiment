@@ -51,6 +51,7 @@ public:
     }
 
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
+    bool test(size_t i) { return operator[](i); }
 
     size_t count() const {
         if (on_heap()) {
