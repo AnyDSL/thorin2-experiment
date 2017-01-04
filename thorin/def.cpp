@@ -292,6 +292,7 @@ const Def* Sigma       ::rebuild(World& to, const Def*  , Defs ops) const {
     assert(!is_nominal());
     return to.sigma(ops, qualifier(), debug());
 }
+const Def* Singleton   ::rebuild(World& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
 const Def* Star        ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
 const Def* Tuple       ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
 const Def* Universe    ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
@@ -448,6 +449,10 @@ std::ostream& Pick::stream(std::ostream& os) const {
 
 std::ostream& Sigma::stream(std::ostream& os) const {
     return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
+}
+
+std::ostream& Singleton::stream(std::ostream& os) const {
+    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "S(", ")");
 }
 
 std::ostream& Star::stream(std::ostream& os) const {

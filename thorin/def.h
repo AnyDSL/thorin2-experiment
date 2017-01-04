@@ -114,6 +114,7 @@ public:
         Pi,
         Pick,
         Sigma,
+        Singleton,
         Star,
         Tuple,
         Universe,
@@ -609,6 +610,23 @@ private:
 public:
     Defs handlers() const { return ops().skip_front(); }
 
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+class Singleton : public Def {
+private:
+    Singleton(World& world, const Def* def, Debug dbg)
+        : Def(world, Tag::Singleton, def->type()->type(), {def}, dbg)
+    {
+        assert((def->is_term() || def->is_type()) && "No singleton type universes allowed.");
+    }
+
+public:
     std::ostream& stream(std::ostream&) const override;
 
 private:

@@ -102,6 +102,39 @@ const Def* World::sigma(Defs defs, Qualifier q, Debug dbg) {
     return unify<Sigma>(defs.size(), *this, defs, q, dbg);
 }
 
+const Def* World::singleton(const Def* def, Debug dbg) {
+    // Normalize various cases
+    if (def->type()->isa<Singleton>()) {
+        return def->type();
+    } else if (def->isa<Variant>()) {
+        auto num_ops = def->num_ops();
+        Array<const Def*> ops(num_ops);
+        for (size_t i = 0; i < num_ops; ++i)
+            ops[i] = singleton(def->op(i));
+        return variant(ops, dbg);
+    } else if (def->isa<Intersection>()) {
+        // S(v : t ∩ u) : *
+        // TODO Any normalization of a Singleton Intersection?
+    } else if (auto sig = def->type()->isa<Sigma>()) {
+        // See Harper PFPL 43.13b
+        auto num_ops = sig->num_ops();
+        Array<const Def*> ops(num_ops);
+        for (size_t i = 0; i < num_ops; ++i)
+            ops[i] = singleton(extract(def, i));
+        return sigma(ops, sig->qualifier(), dbg);
+    } else if (auto pi_type = def->type()->isa<Pi>()) {
+        // See Harper PFPL 43.13c
+        auto domains = pi_type->domains();
+        auto num_domains = pi_type->num_domains();
+        Array<const Def*> new_pi_vars(num_domains);
+        for (size_t i = 0; i < num_domains; ++i)
+            new_pi_vars[i] = var(domains[i], num_domains - i - 1);
+        auto applied = app(def, new_pi_vars);
+        return pi(domains, singleton(applied), pi_type->qualifier(), dbg);
+    }
+    return unify<Singleton>(1, *this, def, dbg);
+}
+
 const Def* World::tuple(const Def* type, Defs defs, Debug dbg) {
     if (defs.size() == 1) {
         return defs.front();

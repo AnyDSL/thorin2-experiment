@@ -121,6 +121,8 @@ public:
 
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
 
+    const Def* singleton(const Def* def, Debug dbg = {});
+
     const Axiom* nat(Qualifier q = Qualifier::Unrestricted) { return nat_[size_t(q)]; }
     const Axiom* nat(int64_t val, Qualifier q = Qualifier::Unrestricted) {
         return assume(nat(q), {val}, {std::to_string(val)});

@@ -125,6 +125,12 @@ TEST(Simple, Misc) {
     w.match(any_nat, {handle_bool, handle_nat})->dump();
     // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
     w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
+
+    // Test singleton types and kinds
+    auto single_sigma = w.singleton(sigma_val);
+    std::cout << single_sigma << ": " << single_sigma->type() << std::endl;
+    auto single_pi = w.singleton(w.axiom(w.pi(w.star(), w.star()), {"pival"}));
+    std::cout << single_pi << ": " << single_pi->type() << std::endl;
 }
 
 int main(int argc, char** argv)  {
