@@ -42,33 +42,40 @@ public:
 
     ~BitSet() { dealloc(); }
 
+    /// clears all bits
+    void clear() {
+        dealloc();
+        num_words_ = 1;
+        word_ = 0;
+    }
+
     //@{ get, set, clear, toggle, and test bits
     bool test(size_t i) {
         make_room(i);
-        return *(words() + i/size_t(64)) & (UINT64_C(1) << i%UINT64_C(64));
+        return *(words() + i/size_t(64)) & (uint64_t(1) << i%uint64_t(64));
     }
 
     BitSet& set(size_t i) {
         make_room(i);
-        *(words() + i/size_t(64)) |= (UINT64_C(1) << i%UINT64_C(64));
+        *(words() + i/size_t(64)) |= (uint64_t(1) << i%uint64_t(64));
         return *this;
     }
 
     BitSet& clear(size_t i) {
         make_room(i);
-        *(words() + i/size_t(64)) &= ~(UINT64_C(1) << i%UINT64_C(64));
+        *(words() + i/size_t(64)) &= ~(uint64_t(1) << i%uint64_t(64));
         return *this;
     }
 
     BitSet& toggle(size_t i) {
         make_room(i);
-        *(words() + i/size_t(64)) ^= UINT64_C(1) << i%UINT64_C(64);
+        *(words() + i/size_t(64)) ^= uint64_t(1) << i%uint64_t(64);
         return *this;
     }
 
     reference operator[](size_t i) {
         make_room(i);
-        return reference(words() + i/size_t(64), i%UINT64_C(64));
+        return reference(words() + i/size_t(64), i%uint64_t(64));
     }
 
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
@@ -87,6 +94,14 @@ public:
         auto w = words();
         for (size_t i = 0, e = num_words(); !result && i != e; ++i)
             result |= w[i] & uint64_t(-1);
+        return result;
+    }
+
+    bool none() const {
+        bool result = true;
+        auto w = words();
+        for (size_t i = 0, e = num_words(); result && i != e; ++i)
+            result &= w[i] == uint64_t(0);
         return result;
     }
 
