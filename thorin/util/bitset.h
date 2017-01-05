@@ -60,6 +60,12 @@ public:
         return *this;
     }
 
+    BitSet& toggle(size_t i) {
+        make_room(i);
+        *(words() + i/size_t(64)) ^= UINT64_C(1) << i%UINT64_C(64);
+        return *this;
+    }
+
     reference operator[](size_t i) {
         make_room(i);
         return reference(words() + i/size_t(64), i%UINT64_C(64));
