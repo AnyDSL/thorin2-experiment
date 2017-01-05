@@ -50,10 +50,23 @@ public:
     }
 
     //@{ get, set, clear, toggle, and test bits
-    bool test(size_t i) {
+    bool test(size_t i) const {
         make_room(i);
         return *(words() + i/size_t(64)) & (uint64_t(1) << i%uint64_t(64));
     }
+
+    /// test bit range in @c [begin,end[
+    bool test_range(const size_t begin, const size_t end) const {
+        bool result = true;
+        for (size_t i = begin; result && i != end; ++i)
+            result &= test(i);
+        return result;
+    }
+
+    /// test bit range in @c [begin,begin+num[
+    bool test_length(size_t begin, size_t num) const { return test_range(begin, begin+num); }
+    /// test bit range in @c [begin,infinity[
+    bool test_from(size_t begin) const { return test_range(begin, num_words()*size_t(64)); }
 
     BitSet& set(size_t i) {
         make_room(i);
@@ -106,12 +119,12 @@ public:
     }
 
 private:
-    void dealloc() {
+    void dealloc() const {
         if (num_words_ != 1)
             delete[] words_;
     }
 
-    void make_room(size_t i) {
+    void make_room(size_t i) const {
         size_t num_new_words = (i+size_t(64)) / size_t(64);
         if (num_new_words > num_words_) {
             num_new_words = round_to_power_of_2(num_new_words);
@@ -133,9 +146,9 @@ private:
     uint64_t* words() { return num_words_ == 1 ? &word_ : words_; }
     size_t num_words() const { return num_words_; }
 
-    size_t num_words_;
+    mutable size_t num_words_;
     union {
-        uint64_t* words_;
+        mutable uint64_t* words_;
         uint64_t word_;
     };
 };
