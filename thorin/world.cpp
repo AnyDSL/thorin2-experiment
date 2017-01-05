@@ -106,16 +106,20 @@ const Def* World::singleton(const Def* def, Debug dbg) {
     // Normalize various cases
     if (def->type()->isa<Singleton>()) {
         return def->type();
-    } else if (def->isa<Variant>()) {
-        auto num_ops = def->num_ops();
-        Array<const Def*> ops(num_ops);
-        for (size_t i = 0; i < num_ops; ++i)
-            ops[i] = singleton(def->op(i));
-        return variant(ops, dbg);
-    } else if (def->isa<Intersection>()) {
-        // S(v : t ∩ u) : *
-        // TODO Any normalization of a Singleton Intersection?
-    } else if (auto sig = def->type()->isa<Sigma>()) {
+    }
+    if (!def->is_nominal()) {
+        if (def->isa<Variant>()) {
+            auto num_ops = def->num_ops();
+            Array<const Def*> ops(num_ops);
+            for (size_t i = 0; i < num_ops; ++i)
+                ops[i] = singleton(def->op(i));
+            return variant(ops, dbg);
+        } else if (def->isa<Intersection>()) {
+            // S(v : t ∩ u) : *
+            // TODO Any normalization of a Singleton Intersection?
+        }
+    }
+    if (auto sig = def->type()->isa<Sigma>()) {
         // See Harper PFPL 43.13b
         auto num_ops = sig->num_ops();
         Array<const Def*> ops(num_ops);
