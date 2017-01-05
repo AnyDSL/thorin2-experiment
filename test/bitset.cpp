@@ -46,3 +46,32 @@ TEST(Bitset, Range) {
     b.set(7);
     ASSERT_TRUE(b.any_range(3, 10));
 }
+
+TEST(Bitset, Or) {
+    BitSet b, c;
+    b.set(3).set(100);
+    c.set(7);
+    b |= c;
+    ASSERT_TRUE(b.test(3));
+    ASSERT_TRUE(b.test(7));
+    ASSERT_TRUE(b.test(100));
+    ASSERT_EQ(b.count(), size_t(3));
+}
+
+TEST(Bitset, ShiftWithin64) {
+    BitSet b;
+    b.set(3).set(100);
+    b >>= 30;
+    ASSERT_TRUE(b.test(33));
+    ASSERT_TRUE(b.test(130));
+    ASSERT_EQ(b.count(), size_t(2));
+}
+
+TEST(Bitset, ShiftOutside64) {
+    BitSet b;
+    b.set(3).set(100);
+    b >>= 300;
+    ASSERT_TRUE(b.test(303));
+    ASSERT_TRUE(b.test(403));
+    ASSERT_EQ(b.count(), size_t(2));
+}

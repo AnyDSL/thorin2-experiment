@@ -1,7 +1,6 @@
 #ifndef THORIN_DEF_H
 #define THORIN_DEF_H
 
-#include <bitset>
 #include <numeric>
 #include <stack>
 
@@ -211,6 +210,7 @@ public:
     //@}
 
     //@{ misc getters
+    const BitSet& free_vars() const { return free_vars_; }
     uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
     size_t gid() const { return gid_; }
     static size_t gid_counter() { return gid_counter_; }
@@ -221,26 +221,21 @@ public:
     World& world() const { return *world_; }
     //@}
 
-    //@{ free variables
-    // TODO return (dynamic) bitset (wrapper)
-    const std::bitset<64>& free_vars() const { return free_vars_; }
+    //bool has_free_var(size_t index) const {
+        //return free_vars_[index];
+    //}
 
-    bool has_free_var(size_t index) const {
-        return free_vars_[index];
-    }
+    ///// Whether his Def has a free variable with index in [index, index+length).
+    //bool has_free_var_in(size_t index, size_t length) const {
+        //std::bitset<64> range;
+        //for (size_t i = 0; i != length; ++i)
+            //range.set(index + i);
+        //return (free_vars() & range).any();
+    //}
 
-    /// Whether his Def has a free variable with index in [index, index+length).
-    bool has_free_var_in(size_t index, size_t length) const {
-        std::bitset<64> range;
-        for (size_t i = 0; i != length; ++i)
-            range.set(index + i);
-        return (free_vars() & range).any();
-    }
-
-    bool has_free_var_ge(size_t index) const {
-        return (free_vars() & (std::bitset<64>().flip() << index)).any();
-    }
-    //@}
+    //bool has_free_var_ge(size_t index) const {
+        //return (free_vars() & (std::bitset<64>().flip() << index)).any();
+    //}
 
     const Def* reduce(Defs args) const { return reduce(0, args); }
     /// Substitutes variables beginning from the given index with the given Defs and shifts free variables by
@@ -265,8 +260,7 @@ protected:
             fn(i, op(i), index);
     }
 
-    //@{
-    /// hash and equal
+    //@{ hash and equal
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
     virtual uint64_t vhash() const;
     virtual bool equal(const Def*) const;
@@ -278,7 +272,7 @@ protected:
         Box box_;                   ///< Used by @p Axiom.
         Qualifier qualifier_;       ///< Used by @p Universe.
     };
-    std::bitset<64> free_vars_;
+    BitSet free_vars_;
 
 private:
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;

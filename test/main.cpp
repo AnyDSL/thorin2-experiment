@@ -47,18 +47,18 @@ TEST(Simple, Misc) {
 
     // λT:*.λx:T.x
     auto T_1 = w.var(w.star(), 0, {"T"});
-    ASSERT_TRUE(T_1->has_free_var(0));
-    ASSERT_FALSE(T_1->has_free_var(1));
+    ASSERT_TRUE(T_1->free_vars().test(0));
+    ASSERT_FALSE(T_1->free_vars().test(1));
     auto T_2 = w.var(w.star(), 1, {"T"});
-    ASSERT_TRUE(T_2->has_free_var(1));
-    ASSERT_TRUE(T_2->has_free_var_in(1, 1));
-    ASSERT_TRUE(T_2->has_free_var_ge(1));
+    ASSERT_TRUE(T_2->free_vars().test(1));
+    ASSERT_TRUE(T_2->free_vars().any_length(1, 1));
+    ASSERT_TRUE(T_2->free_vars().any_from(1));
     auto x = w.var(T_2, 0, {"x"});
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
-    ASSERT_FALSE(poly_id->has_free_var(0));
-    ASSERT_FALSE(poly_id->has_free_var(1));
-    ASSERT_FALSE(poly_id->has_free_var_in(0, 2));
-    ASSERT_FALSE(poly_id->has_free_var_ge(0));
+    ASSERT_FALSE(poly_id->free_vars().test(0));
+    ASSERT_FALSE(poly_id->free_vars().test(1));
+    ASSERT_FALSE(poly_id->free_vars().any_length(0, 2));
+    ASSERT_FALSE(poly_id->free_vars().any_from(0));
     poly_id->dump();
     poly_id->type()->dump();
 

@@ -2,6 +2,7 @@
 #define THORIN_UTIL_BITSET_H
 
 #include <algorithm>
+#include <iostream>
 
 #include "thorin/util/utility.h"
 
@@ -39,8 +40,23 @@ public:
         : num_words_(1)
         , word_(0)
     {}
+    BitSet(const BitSet& other)
+        : BitSet()
+    {
+        make_room(other.num_bits()-1);
+        std::copy(other.words(), other.words()+other.num_words(), words());
+    }
+    BitSet(BitSet&& other)
+        : num_words_(std::move(other.num_words_))
+        , words_(std::move(other.words_))
+    {
+        other.words_ = nullptr;
+    }
 
-    ~BitSet() { dealloc(); }
+    ~BitSet() {
+        //std::cout << num_words_ << std::endl;
+        dealloc();
+    }
 
     /// clears all bits
     void clear() {
@@ -111,7 +127,7 @@ public:
     /// Any bit range in @c [0,end[ set?
     bool any_till(const size_t end) const { return any_range(0, end); }
     /// Any bit range in @c [begin,infinity[ set?
-    bool any_from(const size_t begin) const { return any_range(begin, num_words()*size_t(64)); }
+    bool any_from(const size_t begin) const { return any_range(begin, num_bits()); }
 
     bool none() const {
         bool result = true;
@@ -120,6 +136,69 @@ public:
             result &= w[i] == uint64_t(0);
         return result;
     }
+
+    //@{ shift
+    BitSet& operator>>=(uint64_t shift) {
+        uint64_t div = shift/uint64_t(64);
+        uint64_t rem = shift%uint64_t(64);
+        auto w = words();
+
+        for (size_t i = div, e = num_words(); i != e; ++i) {
+            w[i-div] = w[i];
+
+        uint64_t carry = 0;
+        for (size_t i = div, e = num_words(); i != e; ++i) {
+            uint64_t new_carry = w[i] & (uint64_t(-1) << (uint64_t(64)-rem));
+            w[i] = (w[i] >> rem) | carry;
+            carry = new_carry;
+        }
+
+        return *this;
+    }
+
+    BitSet operator>>(uint64_t shift) const { BitSet res(*this); res >>= shift; return res; }
+    //@}
+
+    //@{ boolean operators
+#define THORIN_BITSET_OPS(op)                            \
+    BitSet& operator op ## =(const BitSet& other) {      \
+        if (this->num_words() < other.num_words())       \
+            this->make_room(other.num_bits()-1);         \
+        else if (other.num_words() < this->num_words())  \
+            other.make_room(this->num_bits()-1);         \
+        auto  this_words = this->words();                \
+        auto other_words = other.words();                \
+        for (size_t i = 0, e = num_words(); i != e; ++i) \
+            this_words[i] op ## = other_words[i];        \
+        return *this;                                    \
+    }                                                    \
+    BitSet operator op (BitSet b) const { BitSet res(*this); res op ## = b; return res; }
+
+    BitSet& operator |=(const BitSet& other) {
+        if (this->num_words() < other.num_words())
+            this->make_room(other.num_bits()-1);
+        else if (other.num_words() < this->num_words())
+            other.make_room(this->num_bits()-1);
+        auto  this_words = this->words();
+        auto other_words = other.words();
+        for (size_t i = 0, e = num_words(); i != e; ++i)
+            this_words[i] |= other_words[i];
+        return *this;
+    }
+    BitSet operator|(BitSet b) const { BitSet res(*this); res |= b; return res; }
+
+    //THORIN_BITSET_OPS(|)
+    //THORIN_BITSET_OPS(&)
+    //THORIN_BITSET_OPS(^)
+    //@}
+
+    void friend swap(BitSet& b1, BitSet& b2) {
+        using std::swap;
+        swap(b1.num_words_, b2.num_words_);
+        swap(b1.words_,     b2.words_);
+    }
+
+    BitSet& operator=(BitSet other) { swap(*this, other); return *this; }
 
 private:
     void dealloc() const {
@@ -148,6 +227,7 @@ private:
     const uint64_t* words() const { return num_words_ == 1 ? &word_ : words_; }
     uint64_t* words() { return num_words_ == 1 ? &word_ : words_; }
     size_t num_words() const { return num_words_; }
+    size_t num_bits() const { return num_words_*size_t(64); }
 
     mutable size_t num_words_;
     union {
