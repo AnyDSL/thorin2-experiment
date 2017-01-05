@@ -42,7 +42,7 @@ public:
 
     ~BitSet() { dealloc(); }
 
-    //@{ get, set and test bits
+    //@{ get, set, clear, toggle, and test bits
     bool test(size_t i) {
         make_room(i);
         return *(words() + i/size_t(64)) & (UINT64_C(1) << i%UINT64_C(64));
@@ -85,8 +85,8 @@ public:
     bool any() const {
         bool result = false;
         auto w = words();
-        for (size_t i = 0, e = num_words(); result && i != e; ++i)
-            result |= w[i] == uint64_t(-1); // TODO
+        for (size_t i = 0, e = num_words(); !result && i != e; ++i)
+            result |= w[i] & uint64_t(-1);
         return result;
     }
 

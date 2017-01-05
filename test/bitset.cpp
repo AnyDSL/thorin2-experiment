@@ -21,6 +21,7 @@ TEST(Bitset, IndexOperator) {
     ASSERT_TRUE(b[2342]);
     ASSERT_FALSE(b[8197]);
     ASSERT_EQ(b.count(), size_t(3));
+    ASSERT_TRUE(b.any());
 }
 
 TEST(Bitset, SetClear) {
@@ -33,4 +34,5 @@ TEST(Bitset, SetClear) {
     ASSERT_TRUE(b.test(2342));
     ASSERT_FALSE(b.test(8197));
     ASSERT_EQ(b.count(), size_t(3));
+    ASSERT_TRUE(b.any());
 }
