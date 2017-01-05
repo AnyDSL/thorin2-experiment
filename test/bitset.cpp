@@ -38,3 +38,11 @@ TEST(Bitset, SetClear) {
     ASSERT_TRUE(b.any());
     ASSERT_FALSE(b.none());
 }
+
+TEST(Bitset, Range) {
+    BitSet b;
+    ASSERT_TRUE(b.none());
+    ASSERT_FALSE(b.any());
+    b.set(7);
+    ASSERT_TRUE(b.any_range(3, 10));
+}

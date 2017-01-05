@@ -55,19 +55,6 @@ public:
         return *(words() + i/size_t(64)) & (uint64_t(1) << i%uint64_t(64));
     }
 
-    /// test bit range in @c [begin,end[
-    bool test_range(const size_t begin, const size_t end) const {
-        bool result = true;
-        for (size_t i = begin; result && i != end; ++i)
-            result &= test(i);
-        return result;
-    }
-
-    /// test bit range in @c [begin,begin+num[
-    bool test_length(size_t begin, size_t num) const { return test_range(begin, begin+num); }
-    /// test bit range in @c [begin,infinity[
-    bool test_from(size_t begin) const { return test_range(begin, num_words()*size_t(64)); }
-
     BitSet& set(size_t i) {
         make_room(i);
         *(words() + i/size_t(64)) |= (uint64_t(1) << i%uint64_t(64));
@@ -109,6 +96,22 @@ public:
             result |= w[i] & uint64_t(-1);
         return result;
     }
+
+    /// Any bit range in @c [begin,end[ set?
+    bool any_range(const size_t begin, const size_t end) const {
+        // TODO optimize
+        bool result = false;
+        for (size_t i = begin; !result && i != end; ++i)
+            result |= test(i);
+        return result;
+    }
+
+    /// Any bit range in @c [begin,begin+num[ set?
+    bool any_length(const size_t begin, const size_t num) const { return any_range(begin, begin+num); }
+    /// Any bit range in @c [0,end[ set?
+    bool any_till(const size_t end) const { return any_range(0, end); }
+    /// Any bit range in @c [begin,infinity[ set?
+    bool any_from(const size_t begin) const { return any_range(begin, num_words()*size_t(64)); }
 
     bool none() const {
         bool result = true;
