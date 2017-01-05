@@ -1,7 +1,7 @@
 #ifndef THORIN_UTIL_BITSET_H
 #define THORIN_UTIL_BITSET_H
 
-#include <limits>
+#include <algorithm>
 
 #include "thorin/util/utility.h"
 
@@ -36,71 +36,86 @@ public:
     };
 
     BitSet()
-        : u64_(0)
+        : num_words_(1)
+        , word_(0)
     {}
 
+    ~BitSet() { dealloc(); }
+
+    //@{ get, set and test bits
+    bool test(size_t i) {
+        make_room(i);
+        return *(words() + i/size_t(64)) & (UINT64_C(1) << i%UINT64_C(64));
+    }
+
+    BitSet& set(size_t i) {
+        make_room(i);
+        *(words() + i/size_t(64)) |= (UINT64_C(1) << i%UINT64_C(64));
+        return *this;
+    }
+
+    BitSet& clear(size_t i) {
+        make_room(i);
+        *(words() + i/size_t(64)) &= ~(UINT64_C(1) << i%UINT64_C(64));
+        return *this;
+    }
+
     reference operator[](size_t i) {
-        if (!on_heap()) {
-            if (i <= 63)
-                return reference(stack_word_ptr(), i);
-            else {
-                // TODO
-            }
-        }
-        THORIN_UNREACHABLE;
+        make_room(i);
+        return reference(words() + i/size_t(64), i%UINT64_C(64));
     }
 
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
-    bool test(size_t i) { return operator[](i); }
+    //@}
 
     size_t count() const {
-        if (on_heap()) {
-            auto words = heap_word_ptr();
-            size_t result = 0;
-            for (size_t i = 0, e = num_heap_words(); i != e; ++i)
-                result += bitcount(words[i]);
-            return result;
-        }
-
-        return bitcount(stack_word());
+        size_t result = 0;
+        auto w = words();
+        for (size_t i = 0, e = num_words(); i != e; ++i)
+            result += bitcount(w[i]);
+        return result;
     }
 
-    size_t all() const {
-        if (on_heap()) {
-            auto words = heap_word_ptr();
-            size_t result = true;
-            for (size_t i = 0, e = num_heap_words(); result && i != e; ++i)
-                result &= words[i] == uint64_t(-1);
-            return result;
-        }
-
-        return idata_ == std::numeric_limits<int64_t>::min();
+    bool any() const {
+        bool result = false;
+        auto w = words();
+        for (size_t i = 0, e = num_words(); result && i != e; ++i)
+            result |= w[i] == uint64_t(-1); // TODO
+        return result;
     }
 
 private:
-    //void resize(size_t i) {
-        //size_t num = (i+size_t(63)) / size_t(64);
-    //}
+    void dealloc() {
+        if (num_words_ != 1)
+            delete[] words_;
+    }
 
-    bool on_heap() const { return heap_; }
-    uint64_t stack_word() const { assert(!on_heap()); return u64_; }
-    uint64_t* stack_word_ptr() { assert(!on_heap()); return &u64_; }
-    uint64_t* heap_word_ptr() const { assert(on_heap()); return reinterpret_cast<uint64_t*>(ptr_); }
-    size_t num_heap_words() const { assert(on_heap()); return num_; }
+    void make_room(size_t i) {
+        size_t num_new_words = (i+size_t(64)) / size_t(64);
+        if (num_new_words > num_words_) {
+            num_new_words = round_to_power_of_2(num_new_words);
+            assert(num_new_words >= num_words_ * size_t(2)
+                    && "num_new_words must be a power of two at least twice of num_words_");
+            uint64_t* new_words = new uint64_t[num_new_words];
 
+            // copy over and fill rest with zero
+            std::fill(std::copy(words(), words() + num_words_, new_words), new_words + num_new_words, 0);
+
+            // record new num_words and words_ pointer
+            dealloc();
+            num_words_ = num_new_words;
+            words_ = new_words;
+        }
+    }
+
+    const uint64_t* words() const { return num_words_ == 1 ? &word_ : words_; }
+    uint64_t* words() { return num_words_ == 1 ? &word_ : words_; }
+    size_t num_words() const { return num_words_; }
+
+    size_t num_words_;
     union {
-        struct {
-            unsigned heap_  :  1;
-            unsigned num_   : 15;
-            int64_t  ptr_   : 48; ///< sign-extend to make pointer canonical
-        };
-
-        struct {
-            unsigned dummy_ :  1; ///< same as @p heap_ - just there for layouting
-            int64_t idata_  : 63; ///< for sign extension.
-        };
-
-        uint64_t u64_;            ///< whole 64-bit word.
+        uint64_t* words_;
+        uint64_t word_;
     };
 };
 
