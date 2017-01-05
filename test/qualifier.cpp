@@ -144,14 +144,13 @@ TEST(Qualifiers, Misc) {
     std::cout << "--- Affine Fractional Capabilities for Refs ---" << endl;
     {
         auto Ref = w.axiom(w.pi({Star, Star}, Star), {"FRef"});
+        // TODO Replace Star below by a more precise kind allowing only Wr/Rd
         auto Write = w.sigma_type(0, {"Wr"});
-        auto Read = w.sigma_type(1, {"Rd"});
-        auto Perm = w.variant({Write, Read}, {"Perm"});
-        Read->set(0, Perm);
+        auto Read = w.axiom(w.pi(Star, Star), {"Rd"});
         print_value_type(Write);
         print_value_type(Read);
-        print_value_type(Perm);
         auto Cap = w.axiom(w.pi({Star, Star}, w.star(A)), {"FCap"});
+        print_value_type(Cap);
         auto C = [&](int i){ return w.var(Star, i, {"C"}); };
         auto F = [&](int i){ return w.var(Star, i, {"F"}); };
         auto new_ref_ret = w.sigma({Star, w.app(Ref, {T(2), C(0)}), w.app(Cap, {C(1), Write})});
@@ -159,7 +158,7 @@ TEST(Qualifiers, Misc) {
         print_value_type(NewRef);
         // ReadRef : Π(T:*).Π(C:*, F:*, FRef[T, C], ᴬFCap[C, F]).ᴬΣ(T, ᴬFCap[C, F])
         auto ReadRef = w.axiom(w.pi(Star,
-                                    w.pi({Star, Star, w.app(Ref, {T(2), C(1)}), w.app(Cap, {C(1), F(0)})},
+                                    w.pi({Star, Star, w.app(Ref, {T(2), C(1)}), w.app(Cap, {C(2), F(1)})},
                                          w.sigma({T(4), w.app(Cap, {C(4), F(3)})}))), {"ReadFRef"});
         print_value_type(ReadRef);
         // WriteRef : Π(T:*).Π(C:*, FRef[T, C], ᴬFCap[C, Wr], T).ᴬFCap[C, Wr]
@@ -171,7 +170,16 @@ TEST(Qualifiers, Misc) {
         auto FreeRef = w.axiom(w.pi(Star, w.pi({Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, {C(1), Write})},
                                                w.unit())), {"FreeFRef"});
         print_value_type(FreeRef);
-        // TODO split, join
+        // SplitFCap : Π(C:*, F:*, ᴬFCap[C, F]).Σ(ᴬFCap[C, Rd(F)], ᴬFCap[C, Rd(F)])
+        auto SplitFCap = w.axiom(w.pi({Star, Star, w.app(Cap, {C(1), F(0)})},
+                                      w.sigma({w.app(Cap, {C(2), w.app(Read, F(1))}),
+                                      w.app(Cap, {C(3), w.app(Read, F(2))})})));
+        print_value_type(SplitFCap);
+        // JoinFCap : Π(C:*, F:*, ᴬFCap[C, Rd(F)], ᴬFCap[C, Rd(F)]).ᴬFCap[C, F]
+        auto JoinFCap = w.axiom(w.pi({Star, Star, w.app(Cap, {C(1), w.app(Read, F(0))}),
+                                      w.app(Cap, {C(1), w.app(Read, F(0))})},
+                                     w.app(Cap, {C(3), F(2)})));
+        print_value_type(JoinFCap);
         auto ref42 = w.app(w.app(NewRef, Nat), n42, {"&42"});
         auto phantom = w.extract(ref42, 0);
         print_value_type(ref42);
@@ -184,8 +192,13 @@ TEST(Qualifiers, Misc) {
         auto read_cap = w.extract(read42, 1);
         auto write0 = w.app(w.app(WriteRef, Nat), {phantom, ref, read_cap, n0});
         print_value_type(write0);
-        auto free = w.app(w.app(FreeRef, Nat), {phantom, ref, write0});
+        auto split = w.app(SplitFCap, {phantom, Write, write0});
+        print_value_type(split);
+        auto read0 = w.app(w.app(ReadRef, Nat), {phantom, w.app(Read, Write), ref, w.extract(split, 0)});
+        print_value_type(read0);
+        auto join = w.app(JoinFCap, {phantom, Write, w.extract(split, 1), w.extract(read0, 1)});
+        print_value_type(join);
+        auto free = w.app(w.app(FreeRef, Nat), {phantom, ref, join});
         print_value_type(free);
     }
-    std::cout << "--- QualifierTest end ---" << endl;
 }
