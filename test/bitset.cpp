@@ -37,6 +37,8 @@ TEST(Bitset, SetClear) {
     ASSERT_EQ(b.count(), size_t(3));
     ASSERT_TRUE(b.any());
     ASSERT_FALSE(b.none());
+    ASSERT_TRUE(b.none_range(66,300));
+    ASSERT_FALSE(b.none_range(66,301));
 }
 
 TEST(Bitset, Range) {

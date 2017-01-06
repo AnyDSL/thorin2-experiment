@@ -34,6 +34,14 @@ bool BitSet::none() const {
     return result;
 }
 
+bool BitSet::none_range(const size_t begin, const size_t end) const {
+    // TODO optimize
+    bool result = true;
+    for (size_t i = begin; result && i != end; ++i)
+        result &= ~test(i);
+    return result;
+}
+
 BitSet& BitSet::operator>>=(uint64_t shift) {
     uint64_t div = shift/uint64_t(64);
     uint64_t rem = shift%uint64_t(64);

@@ -112,7 +112,12 @@ public:
 
     //@{ Is any bit (in range) set?
     bool none() const;
-    // TODO range variants
+    /// Is no bit in @c [begin,end[ set?
+    bool none_range(const size_t begin, const size_t end) const;
+    /// Is no bit in @c [0,end[ set?
+    bool none_till(const size_t end) const { return none_range(0, end); }
+    /// Is no bit in @c [begin,infinity[ set?
+    bool none_from(const size_t begin) const { return none_range(begin, num_bits()); }
     //@}
 
     //@{ shift
