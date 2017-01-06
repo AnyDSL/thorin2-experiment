@@ -11,9 +11,8 @@ const Def* Reducer::reduce() {
 }
 
 const Def* Reducer::reduce_up_to_nominals() {
-    if (!def_->free_vars().any_from(index_)) {
+    if (def_->free_vars().none_from(index_))
         return def_;
-    }
     return reduce(def_, index_);
 }
 
@@ -37,7 +36,7 @@ void Reducer::reduce_nominals() {
 const Def* Reducer::reduce(const Def* def, size_t shift) {
     if (auto replacement = find(map_, {def, shift}))
         return replacement;
-    if (!def->free_vars().any_from(shift)) {
+    if (def->free_vars().none_from(shift)) {
         map_[{def, shift}] = def;
         return def;
     } else if (def->is_nominal()) {

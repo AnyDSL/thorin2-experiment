@@ -363,12 +363,12 @@ const Def* App::try_reduce() const {
 const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
     auto sigma = tuple->type()->as<Sigma>();
     auto type = sigma->op(index);
-    if (!type->free_vars().any_till(index))
+    if (type->free_vars().none_till(index))
         return type;
 
     size_t skipped_shifts = 0;
     for (size_t delta = 1; delta <= index; delta++) {
-        if (!type->free_vars().any_from(skipped_shifts)) {
+        if (type->free_vars().none_from(skipped_shifts)) {
             skipped_shifts++;
             continue;
         }
