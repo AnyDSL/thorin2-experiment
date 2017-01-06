@@ -19,7 +19,7 @@ class World;
 
 /**
  * References a user.
- * A @p Def @c u which uses @p Def @c d as @c i^th operand is a @p Use with @p index_ @c i of @p Def @c d.
+ * A Def @c u which uses Def @c d as @c i^th operand is a Use with Use::index_ @c i of Def @c d.
  */
 class Use {
 public:
@@ -97,7 +97,7 @@ Qualifier meet(const Defs& defs);
 
 //------------------------------------------------------------------------------
 
-/// Base class for all @p Def%s.
+/// Base class for all Def%s.
 class Def : public MagicCast<Def>, public Streamable  {
 public:
     enum class Tag {
@@ -131,7 +131,7 @@ protected:
     Def(Def&&) = delete;
     Def& operator=(const Def&) = delete;
 
-    /// A @p nominal @p Def.
+    /// A @em nominal Def.
     Def(World& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
         : debug_(dbg)
         , world_(&world)
@@ -147,7 +147,7 @@ protected:
         std::fill(ops_, ops_ + num_ops, nullptr);
     }
 
-    /// A @p structural @p Def.
+    /// A @em structural Def.
     Def(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
         : debug_(dbg)
         , world_(&world)
@@ -180,19 +180,19 @@ public:
     size_t num_ops() const { return num_ops_; }
     //@}
 
-    //@{ get @p Uses%s
+    //@{ get Uses%s
     const Uses& uses() const { return uses_; }
     size_t num_uses() const { return uses().size(); }
     //@}
 
-    //@{ get @p Debug information
+    //@{ get Debug information
     Debug& debug() const { return debug_; }
     Location location() const { return debug_; }
     const std::string& name() const { return debug().name(); }
     std::string unique_name() const;
     //@}
 
-    //@{ get type and @p Sort
+    //@{ get type and Sort
     const Def* type() const { return type_; }
     Sort sort() const;
     bool is_term() const { return sort() == Sort::Term; }
@@ -201,7 +201,7 @@ public:
     bool is_universe() const { return sort() == Sort::Universe; }
     //@}
 
-    //@{ get @p Qualifier
+    //@{ get Qualifier
     Qualifier qualifier() const  { return type() ? type()->qualifier() : Qualifier(qualifier_); }
     bool is_unrestricted() const { return bool(qualifier()) & bool(Qualifier::Unrestricted); }
     bool is_affine() const       { return bool(qualifier()) & bool(Qualifier::Affine); }
@@ -214,7 +214,7 @@ public:
     uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
     size_t gid() const { return gid_; }
     static size_t gid_counter() { return gid_counter_; }
-    /// A nominal @p Def is always different from each other @p Def.
+    /// A nominal Def is always different from each other Def.
     bool is_nominal() const { return nominal_; }
     bool is_closed() const { return closed_; }
     Tag tag() const { return Tag(tag_); }
@@ -222,8 +222,8 @@ public:
     //@}
 
     /**
-     * Substitutes @p Var%s beginning from @p index with @p args and shifts free @p Var%s by the number of @p args.
-     * Note that @p args will be indexed in reverse order.
+     * Substitutes Var%s beginning from @p index with @p args and shifts free Var%s by the number of @p args.
+     * Note that @p args will be indexed in reverse order due to De Bruijn way of counting.
      */
     const Def* reduce(Defs args, size_t index = 0) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
@@ -238,7 +238,17 @@ public:
     }
 
 protected:
-    virtual size_t shift(size_t) const;
+    /**
+     * The amount to shift De Bruijn indices when descending into this Def's @p i's Def::op.
+     * For example:
+@code{.cpp}
+    for (size_t i = 0, e = def->num_ops(); i != e; ++i) {
+        size_t new_offset = cur_offset + def->shift(i);
+        do_sth(def->op(i), new_offset);
+    }
+@endcode
+    */
+    virtual size_t shift(size_t i) const;
 
     //@{ hash and equal
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
@@ -247,10 +257,10 @@ protected:
     //@}
 
     union {
-        mutable const Def* cache_;  ///< Used by @p App.
-        size_t index_;              ///< Used by @p Var, @p Extract.
-        Box box_;                   ///< Used by @p Axiom.
-        Qualifier qualifier_;       ///< Used by @p Universe.
+        mutable const Def* cache_;  ///< Used by App.
+        size_t index_;              ///< Used by Var, Extract.
+        Box box_;                   ///< Used by Axiom.
+        Qualifier qualifier_;       ///< Used by Universe.
     };
     BitSet free_vars_;
 
