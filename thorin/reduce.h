@@ -29,9 +29,9 @@ public:
     void reduce_nominals();
 
 private:
-    const Def* reduce(const Def* def, size_t shift);
-    const Def* var_reduce(const Var* var, const Def* new_type, size_t shift);
-    const Def* rebuild(const Def* def, const Def* new_type, size_t shift);
+    const Def* reduce(const Def* def, size_t offset);
+    const Def* var_reduce(const Var* var, const Def* new_type, size_t offset);
+    const Def* rebuild(const Def* def, const Def* new_type, size_t offset);
 
     World& world_;
     const Def* def_;

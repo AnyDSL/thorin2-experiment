@@ -32,31 +32,32 @@ void Reducer::reduce_nominals() {
     }
 }
 
-const Def* Reducer::reduce(const Def* def, size_t shift) {
-    if (auto replacement = find(map_, {def, shift}))
+const Def* Reducer::reduce(const Def* def, size_t offset) {
+    if (auto replacement = find(map_, {def, offset}))
         return replacement;
-    if (def->free_vars().none_from(shift)) {
-        map_[{def, shift}] = def;
+
+    if (def->free_vars().none_from(offset)) {
+        map_[{def, offset}] = def;
         return def;
     } else if (def->is_nominal()) {
-        auto new_type = reduce(def->type(), shift);
+        auto new_type = reduce(def->type(), offset);
         auto replacement = def->stub(new_type); // TODO better debug info for these
-        map_[{def, shift}] = replacement;
-        nominals_.emplace(def, shift);
+        map_[{def, offset}] = replacement;
+        nominals_.emplace(def, offset);
         return replacement;
     }
 
-    auto new_type = reduce(def->type(), shift);
+    auto new_type = reduce(def->type(), offset);
 
     if (auto var = def->isa<Var>())
-        return var_reduce(var, new_type, shift);
-    return rebuild(def, new_type, shift);
+        return var_reduce(var, new_type, offset);
+    return rebuild(def, new_type, offset);
 }
 
-const Def* Reducer::var_reduce(const Var* var, const Def* new_type, size_t shift) {
-    // The shift argument always corresponds to args.back() and thus corresponds to args.size() - 1.
+const Def* Reducer::var_reduce(const Var* var, const Def* new_type, size_t offset) {
+    // The offset always corresponds to args_.back() and thus corresponds to args_.size() - 1.
     // Map index() back into the original argument array.
-    int arg_index = args_.size() - 1 - var->index() + shift;
+    int arg_index = args_.size() - 1 - var->index() + offset;
     if (arg_index >= 0 && size_t(arg_index) < args_.size()) {
         if (new_type != args_[arg_index]->type())
             // Use the expected type, not the one provided by the arg.
@@ -70,15 +71,15 @@ const Def* Reducer::var_reduce(const Var* var, const Def* new_type, size_t shift
     return world().var(new_type, var->index(), var->debug());
 }
 
-const Def* Reducer::rebuild(const Def* def, const Def* new_type, size_t shift) {
+const Def* Reducer::rebuild(const Def* def, const Def* new_type, size_t offset) {
     Array<const Def*> new_ops(def->num_ops());
     for (size_t i = 0, e = def->num_ops(); i != e; ++i) {
-        auto new_op = reduce(def->op(i), shift + def->shift(i));
+        auto new_op = reduce(def->op(i), offset + def->shift(i));
         new_ops[i] = new_op;
     }
 
     auto new_def = def->rebuild(world(), new_type, new_ops);
-    return map_[{def, shift}] = new_def;
+    return map_[{def, offset}] = new_def;
 }
 
 }
