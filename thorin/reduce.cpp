@@ -11,7 +11,7 @@ const Def* Reducer::reduce(size_t index) {
 }
 
 const Def* Reducer::reduce_up_to_nominals(size_t index) {
-    if (def_->free_vars().none_from(index))
+    if (def_->free_vars().none_begin(index))
         return def_;
     return reduce(def_, index);
 }
@@ -36,7 +36,7 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
     if (auto new_def = find(map_, {old_def, offset}))
         return new_def;
 
-    if (old_def->free_vars().none_from(offset)) {
+    if (old_def->free_vars().none_begin(offset)) {
         map_[{old_def, offset}] = old_def;
         return old_def;
     }

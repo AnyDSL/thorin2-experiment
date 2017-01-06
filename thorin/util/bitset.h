@@ -100,9 +100,9 @@ public:
     /// Is any bit in @c [begin,end[ set?
     bool any_range(const size_t begin, const size_t end) const;
     /// Is any bit in @c [0,end[ set?
-    bool any_till(const size_t end) const { return any_range(0, end); }
+    bool any_end(const size_t end) const { return any_range(0, end); }
     /// Is any bit in @c [begin,infinity[ set?
-    bool any_from(const size_t begin) const { return any_range(begin, num_bits()); }
+    bool any_begin(const size_t begin) const { return any_range(begin, num_bits()); }
     //@}
 
     //@{ Is any bit (in range) set?
@@ -110,9 +110,9 @@ public:
     /// Is no bit in @c [begin,end[ set?
     bool none_range(const size_t begin, const size_t end) const;
     /// Is no bit in @c [0,end[ set?
-    bool none_till(const size_t end) const { return none_range(0, end); }
+    bool none_end(const size_t end) const { return none_range(0, end); }
     /// Is no bit in @c [begin,infinity[ set?
-    bool none_from(const size_t begin) const { return none_range(begin, num_bits()); }
+    bool none_begin(const size_t begin) const { return none_range(begin, num_bits()); }
     //@}
 
     //@{ shift
