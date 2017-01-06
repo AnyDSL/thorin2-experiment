@@ -221,22 +221,6 @@ public:
     World& world() const { return *world_; }
     //@}
 
-    //bool has_free_var(size_t index) const {
-        //return free_vars_[index];
-    //}
-
-    ///// Whether his Def has a free variable with index in [index, index+length).
-    //bool has_free_var_in(size_t index, size_t length) const {
-        //std::bitset<64> range;
-        //for (size_t i = 0; i != length; ++i)
-            //range.set(index + i);
-        //return (free_vars() & range).any();
-    //}
-
-    //bool has_free_var_ge(size_t index) const {
-        //return (free_vars() & (std::bitset<64>().flip() << index)).any();
-    //}
-
     const Def* reduce(Defs args) const { return reduce(0, args); }
     /// Substitutes variables beginning from the given index with the given Defs and shifts free variables by
     /// the amount of Defs given. Note that the Defs will be indexed in reverse order.
