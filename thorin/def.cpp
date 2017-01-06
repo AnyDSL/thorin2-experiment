@@ -349,18 +349,7 @@ const Def* App::try_reduce() const {
         if  (!lambda->is_closed()) // don't set cache as long lambda is unclosed
             return this;
 
-        // TODO can't reduce if args types don't match the domains
-        auto args = ops().skip_front();
-
-        Reducer reducer(lambda->body(), args);
-        auto reduced = reducer.reduce_up_to_nominals();
-
-        cache_ = reduced; // possibly an unclosed Def
-
-        // This may build new, identical Apps and thus we need the cache in place before calling it.
-        reducer.reduce_nominals();
-
-        return reduced;
+        return thorin::reduce(lambda->body(), ops().skip_front(), [&] (const Def* def) { cache_ = def; });
     }
 
     return cache_ = this;

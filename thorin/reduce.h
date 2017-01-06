@@ -5,43 +5,16 @@
 
 namespace thorin {
 
-typedef TaggedPtr<const Def, size_t> DefIndex;
+/// Reduces @p def with @p args using @p index to indicate the @p Var.
+const Def* reduce(const Def* def, Defs args, size_t index = 0);
 
-struct DefIndexHash {
-    static uint64_t hash(DefIndex s) {
-        return hash_combine(hash_begin(), s->gid(), s.index());
-    }
-    static bool eq(DefIndex a, DefIndex b) { return a == b; }
-    static DefIndex sentinel() { return DefIndex(nullptr, 0); }
-};
-
-class Reducer {
-public:
-    Reducer(const Def* def, Defs args)
-        : world_(def->world())
-        , def_(def)
-        , args_(args)
-    {}
-
-    World& world() const { return world_; }
-    const Def* reduce(size_t index);
-    const Def* reduce_up_to_nominals(size_t index = 0);
-    void reduce_nominals();
-
-private:
-    const Def* reduce(const Def* def, size_t offset);
-    size_t num_args() const { return args_.size(); }
-
-    World& world_;
-    const Def* def_;
-    Array<const Def*> args_;
-    thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
-    std::stack<DefIndex> nominals_;
-};
-
-inline const Def* reduce(const Def* def, Defs args, size_t index = 0) {
-    return Reducer(def, args).reduce(index);
-}
+/**
+ * Reduces @p def with @p args using @p index to indicate the @p Var.
+ * First, all structural stuff in @p def is reduced.
+ * Then, the hook @p f is called with the result of the first reduction run.
+ * Finally, a fixed-pointer iteration is performed to reduce the rest.
+ */
+const Def* reduce(const Def* def, Defs args, std::function<void(const Def*)> f, size_t index = 0);
 
 }
 

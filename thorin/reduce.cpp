@@ -4,17 +4,36 @@
 
 namespace thorin {
 
-const Def* Reducer::reduce(size_t index) {
-    auto result = reduce_up_to_nominals(index);
-    reduce_nominals();
-    return result;
-}
+typedef TaggedPtr<const Def, size_t> DefIndex;
 
-const Def* Reducer::reduce_up_to_nominals(size_t index) {
-    if (def_->free_vars().none_begin(index))
-        return def_;
-    return reduce(def_, index);
-}
+struct DefIndexHash {
+    static uint64_t hash(DefIndex s) {
+        return hash_combine(hash_begin(), s->gid(), s.index());
+    }
+    static bool eq(DefIndex a, DefIndex b) { return a == b; }
+    static DefIndex sentinel() { return DefIndex(nullptr, 0); }
+};
+
+//------------------------------------------------------------------------------
+
+class Reducer {
+public:
+    Reducer(Defs args)
+        : world_(args.front()->world())
+        , args_(args)
+    {}
+
+    size_t num_args() const { return args_.size(); }
+    World& world() const { return world_; }
+    const Def* reduce_structurals(const Def* def, size_t index = 0);
+    void reduce_nominals();
+
+private:
+    World& world_;
+    Array<const Def*> args_;
+    thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
+    std::stack<DefIndex> nominals_;
+};
 
 void Reducer::reduce_nominals() {
     while (!nominals_.empty()) {
@@ -25,23 +44,23 @@ void Reducer::reduce_nominals() {
                 continue;
 
             for (size_t i = 0, e = subst->num_ops(); i != e; ++i) {
-                auto new_op = reduce(subst->op(i), subst.index() + subst->shift(i));
+                auto new_op = reduce_structurals(subst->op(i), subst.index() + subst->shift(i));
                 const_cast<Def*>(new_def)->set(i, new_op);
             }
         }
     }
 }
 
-const Def* Reducer::reduce(const Def* old_def, size_t offset) {
-    if (auto new_def = find(map_, {old_def, offset}))
-        return new_def;
-
+const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
     if (old_def->free_vars().none_begin(offset)) {
         map_[{old_def, offset}] = old_def;
         return old_def;
     }
 
-    auto new_type = reduce(old_def->type(), offset);
+    if (auto new_def = find(map_, {old_def, offset}))
+        return new_def;
+
+    auto new_type = reduce_structurals(old_def->type(), offset);
 
     if (old_def->is_nominal()) {
         auto new_def = old_def->stub(new_type); // TODO better debug info for these
@@ -71,12 +90,26 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
     // rebuild all other defs
     Array<const Def*> new_ops(old_def->num_ops());
     for (size_t i = 0, e = old_def->num_ops(); i != e; ++i) {
-        auto new_op = reduce(old_def->op(i), offset + old_def->shift(i));
+        auto new_op = reduce_structurals(old_def->op(i), offset + old_def->shift(i));
         new_ops[i] = new_op;
     }
 
     auto new_def = old_def->rebuild(world(), new_type, new_ops);
     return map_[{old_def, offset}] = new_def;
+}
+
+//------------------------------------------------------------------------------
+
+const Def* reduce(const Def* def, Defs args, size_t index) {
+    return reduce(def, args, [&] (const Def*) {}, index);
+}
+
+const Def* reduce(const Def* def, Defs args, std::function<void(const Def*)> f, size_t index) {
+    Reducer reducer(args);
+    auto result = reducer.reduce_structurals(def, index);
+    f(result);
+    reducer.reduce_nominals();
+    return result;
 }
 
 }
