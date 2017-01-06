@@ -15,6 +15,10 @@ World::World()
              insert<Star>(0, *this, Qualifier::Affine),
              insert<Star>(0, *this, Qualifier::Relevant),
              insert<Star>(0, *this, Qualifier::Linear)})
+    , space_({insert<Space>(0, *this, Qualifier::Unrestricted),
+              insert<Space>(0, *this, Qualifier::Affine),
+              insert<Space>(0, *this, Qualifier::Relevant),
+              insert<Space>(0, *this, Qualifier::Linear)})
     , nat_({axiom(star(Qualifier::Unrestricted),{"Nat"}),
             axiom(star(Qualifier::Affine),{"Nat"}),
             axiom(star(Qualifier::Relevant),{"Nat"}),

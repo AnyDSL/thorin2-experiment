@@ -33,6 +33,7 @@ add_executable(coc
     test/main.cpp
     test/matrix.cpp
     test/nominal.cpp
+    test/variadic.cpp
     test/qualifier.cpp
     thorin/def.cpp
     thorin/def.h

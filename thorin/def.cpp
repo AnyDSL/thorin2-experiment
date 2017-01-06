@@ -178,6 +178,12 @@ Def::~Def() {
         delete[] ops_;
 }
 
+Arity::Arity(World& world, size_t arity, Qualifier q, Debug dbg)
+    : Def(world, Tag::Arity, world.space(q), Defs(), dbg)
+{
+    arity_ = arity;
+}
+
 Lambda::Lambda(World& world, const Pi* type, const Def* body, Debug dbg)
     : Constructor(world, Tag::Lambda, type, {body}, dbg)
 {
@@ -191,8 +197,18 @@ Pi::Pi(World& world, Defs domains, const Def* body, Qualifier q, Debug dbg)
     compute_free_vars();
 }
 
+Proj::Proj(World& world, const Arity* arity, size_t index, Debug dbg)
+    : Def(world, Tag::Proj, arity, Defs(), dbg)
+{
+    index_ = index;
+}
+
 Sigma::Sigma(World& world, size_t num_ops, Qualifier q, Debug dbg)
     : Sigma(world, world.universe(q), num_ops, dbg)
+{}
+
+Space::Space(World& world, Qualifier q)
+    : Def(world, Tag::Space, world.universe(q), Defs(), {"𝕊"})
 {}
 
 Star::Star(World& world, Qualifier q)
@@ -215,7 +231,7 @@ const Def* Quantifier::max_type(World& world, Defs ops, Qualifier q) {
 //------------------------------------------------------------------------------
 
 /*
- * hash/equal
+ * hash
  */
 
 uint64_t Def::vhash() const {
@@ -241,6 +257,8 @@ bool Def::equal(const Def* other) const {
     return result;
 }
 
+uint64_t Arity::vhash() const { return thorin::hash_combine(Def::vhash(), arity()); }
+
 uint64_t Axiom::vhash() const {
     auto seed = Def::vhash();
     if (is_nominal())
@@ -250,7 +268,18 @@ uint64_t Axiom::vhash() const {
 }
 
 uint64_t Extract::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
+uint64_t Proj::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
+
+//------------------------------------------------------------------------------
+
+/*
+ * equal
+ */
+
+bool Arity::equal(const Def* other) const {
+    return Def::equal(other) && this->arity() == other->as<Arity>()->arity();
+}
 
 bool Axiom::equal(const Def* other) const {
     if (is_nominal())
@@ -263,6 +292,11 @@ bool Axiom::equal(const Def* other) const {
 bool Extract::equal(const Def* other) const {
     return Def::equal(other) && this->index() == other->as<Extract>()->index();
 }
+
+bool Proj::equal(const Def* other) const {
+    return Def::equal(other) && this->index() == other->as<Proj>()->index();
+}
+
 bool Var::equal(const Def* other) const {
     return Def::equal(other) && this->index() == other->as<Var>()->index();
 }
@@ -276,6 +310,7 @@ bool Var::equal(const Def* other) const {
 const Def* All         ::rebuild(World& to, const Def*  , Defs ops) const { return to.all(ops, debug()); }
 const Def* Any         ::rebuild(World& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App         ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
+const Def* Arity       ::rebuild(World& to, const Def*  , Defs    ) const { return to.arity(arity(), qualifier(), debug()); }
 const Def* Extract     ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], index(), debug()); }
 const Def* Axiom       ::rebuild(World& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
@@ -294,11 +329,13 @@ const Def* Pick        ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
+const Def* Proj        ::rebuild(World& to, const Def*  , Defs    ) const { return to.proj(index(), arity(), qualifier(), debug()); }
 const Def* Sigma       ::rebuild(World& to, const Def*  , Defs ops) const {
     assert(!is_nominal());
     return to.sigma(ops, qualifier(), debug());
 }
 const Def* Singleton   ::rebuild(World& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
+const Def* Space       ::rebuild(World& to, const Def*  , Defs    ) const { return to.space(qualifier()); }
 const Def* Star        ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
 const Def* Tuple       ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
 const Def* Universe    ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
@@ -405,6 +442,10 @@ std::ostream& App::stream(std::ostream& os) const {
     return stream_list(os, args(), [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
 
+std::ostream& Arity::stream(std::ostream& os) const {
+    return os << qualifier() << arity() << "ᴰ";
+}
+
 std::ostream& Axiom::stream(std::ostream& os) const { return os << qualifier() << name(); }
 
 std::ostream& Error::stream(std::ostream& os) const { return os << "Error"; }
@@ -442,12 +483,31 @@ std::ostream& Pick::stream(std::ostream& os) const {
     return os << ")";
 }
 
+std::ostream& Proj::stream(std::ostream& os) const {
+    os << qualifier() << index();
+
+    std::vector<std::array<char, 3>> digits;
+    for (size_t a = arity(); a > 0; a /= 10)
+        digits.push_back({char(0xe2), char(0x82), char(char(0x80) + char(a % 10))}); // utf-8 prefix for subscript 0
+
+    for (auto i = digits.rbegin(), e = digits.rend(); i != e; ++i) {
+        const auto& digit = *i;
+        os << digit[0] << digit[1] << digit[2];
+    }
+
+    return os;
+}
+
 std::ostream& Sigma::stream(std::ostream& os) const {
     return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
 }
 
 std::ostream& Singleton::stream(std::ostream& os) const {
     return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "S(", ")");
+}
+
+std::ostream& Space::stream(std::ostream& os) const {
+    return os << qualifier() << name();
 }
 
 std::ostream& Star::stream(std::ostream& os) const {

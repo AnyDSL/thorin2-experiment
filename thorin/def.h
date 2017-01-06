@@ -104,6 +104,7 @@ public:
         All,
         Any,
         App,
+        Arity,
         Axiom,
         Error,
         Extract,
@@ -112,8 +113,10 @@ public:
         Match,
         Pi,
         Pick,
+        Proj,
         Sigma,
         Singleton,
+        Space,
         Star,
         Tuple,
         Universe,
@@ -258,7 +261,8 @@ protected:
 
     union {
         mutable const Def* cache_;  ///< Used by App.
-        size_t index_;              ///< Used by Var, Extract.
+        size_t arity_;              ///< Used by Arity.
+        size_t index_;              ///< Used by Extract, Proj, Var.
         Box box_;                   ///< Used by Axiom.
         Qualifier qualifier_;       ///< Used by Universe.
     };
@@ -605,6 +609,53 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+class Space : public Def {
+private:
+    Space(World& world, Qualifier q);
+
+public:
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+class Arity : public Def {
+private:
+    Arity(World& world, size_t arity, Qualifier q, Debug dbg);
+
+public:
+    size_t arity() const { return arity_; }
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    uint64_t vhash() const override;
+    bool equal(const Def*) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+class Proj : public Def {
+private:
+    Proj(World& world, const Arity* arity, size_t index, Debug dbg);
+
+public:
+    size_t index() const { return index_; }
+    const Arity* type() const { return Def::type()->as<Arity>(); }
+    size_t arity() const { return type()->arity(); }
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    uint64_t vhash() const override;
+    bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
     friend class World;

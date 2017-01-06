@@ -28,6 +28,14 @@ public:
     const Universe* universe(Qualifier q = Qualifier::Unrestricted) const { return universe_[size_t(q)]; }
     const Star* star(Qualifier q = Qualifier::Unrestricted) const { return star_[size_t(q)]; }
 
+    const Space* space(Qualifier q = Qualifier::Unrestricted) const { return space_[size_t(q)]; }
+    const Arity* arity(size_t a, Qualifier q = Qualifier::Unrestricted, Debug dbg = {}) {
+        return unify<Arity>(0, *this, a, q, dbg);
+    }
+    const Proj* proj(size_t index, size_t arity, Qualifier q = Qualifier::Unrestricted, Debug dbg = {}) {
+        return unify<Proj>(0, *this, this->arity(arity, q), index, dbg);
+    }
+
     const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
     const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
         return unify<Axiom>(0, *this, type, box, dbg);
@@ -271,6 +279,7 @@ protected:
     DefSet defs_;
     const std::array<const Universe*, 4> universe_;
     const std::array<const Star*, 4> star_;
+    const std::array<const Space*, 4> space_;
     const std::array<const Axiom*, 4> nat_;
     const std::array<std::array<const Axiom*, 4>, 8> nats_;
     const std::array<const Axiom*, 4> boolean_;

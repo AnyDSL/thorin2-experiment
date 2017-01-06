@@ -5,11 +5,11 @@
 
 namespace thorin {
 
-/// Reduces @p def with @p args using @p index to indicate the @p Var.
+/// Reduces @p def with @p args using @p index to indicate the Var.
 const Def* reduce(const Def* def, Defs args, size_t index = 0);
 
 /**
- * Reduces @p def with @p args using @p index to indicate the @p Var.
+ * Reduces @p def with @p args using @p index to indicate the Var.
  * First, all structural stuff in @p def is reduced.
  * Then, the hook @p f is called with the result of the first reduction run.
  * Finally, a fixed-pointer iteration is performed to reduce the rest.
