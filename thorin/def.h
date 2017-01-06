@@ -230,7 +230,6 @@ public:
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
 
     virtual Def* stub(World&, const Def*, Debug) const { THORIN_UNREACHABLE; }
-    virtual bool maybe_dependent() const { return true; }
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "" || is_nominal())
             return os << qualifier() << name();
@@ -687,7 +686,6 @@ private:
 
 public:
     Box box() const { assert(!is_nominal()); return box_; }
-    bool maybe_dependent() const override { return false; }
     std::ostream& stream(std::ostream&) const override;
     Axiom* stub(World&, const Def*, Debug) const override;
 
