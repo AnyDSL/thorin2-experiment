@@ -337,7 +337,7 @@ const Def* App::try_reduce() const {
         return cache_;
 
     if (auto lambda = callee()->isa<Lambda>()) {
-        if  (!lambda->is_closed()) // do not set cache here as a real reduce attempt might be made later when the lambda is closed
+        if  (!lambda->is_closed()) // don't set cache as long lambda is unclosed
             return this;
 
         // TODO can't reduce if args types don't match the domains

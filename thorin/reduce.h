@@ -35,7 +35,6 @@ private:
 
     World& world_;
     const Def* def_;
-    size_t index_;
     Array<const Def*> args_;
     thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
     std::stack<DefIndex> nominals_;
