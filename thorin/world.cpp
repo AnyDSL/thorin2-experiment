@@ -79,6 +79,13 @@ World::~World() {
         def->~Def();
 }
 
+const Def* World::proj(size_t index, size_t arity, Qualifier q, Debug dbg) {
+    auto a = this->arity(arity, q);
+    if (index < arity)
+        return unify<Proj>(0, *this, a, index, dbg);
+    return error(a);
+}
+
 const Pi* World::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
     if (domains.size() == 1 && domains.front()->type()) {
         if (auto sigma = domains.front()->type()->isa<Sigma>())
