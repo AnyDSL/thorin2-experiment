@@ -2,7 +2,6 @@
 #define THORIN_UTIL_BITSET_H
 
 #include <algorithm>
-#include <iostream>
 
 #include "thorin/util/utility.h"
 
@@ -54,7 +53,6 @@ public:
     }
 
     ~BitSet() {
-        //std::cout << num_words_ << std::endl;
         dealloc();
     }
 
@@ -143,12 +141,13 @@ public:
         uint64_t rem = shift%uint64_t(64);
         auto w = words();
 
-        for (size_t i = div, e = num_words(); i != e; ++i) {
-            w[i-div] = w[i];
+        for (size_t i = 0, e = num_words()-div; i != e; ++i)
+            w[i] = w[i+div];
+        std::fill(w+num_words()-div, w+num_words(), 0);
 
         uint64_t carry = 0;
-        for (size_t i = div, e = num_words(); i != e; ++i) {
-            uint64_t new_carry = w[i] & (uint64_t(-1) << (uint64_t(64)-rem));
+        for (size_t i = num_words()-div; i-- != 0;) {
+            uint64_t new_carry = w[i] << (uint64_t(64)-rem);
             w[i] = (w[i] >> rem) | carry;
             carry = new_carry;
         }

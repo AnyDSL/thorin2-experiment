@@ -60,18 +60,17 @@ TEST(Bitset, Or) {
 
 TEST(Bitset, ShiftWithin64) {
     BitSet b;
-    b.set(3).set(100);
-    b >>= 30;
-    ASSERT_TRUE(b.test(33));
-    ASSERT_TRUE(b.test(130));
+    b.set(23).set(100);
+    b >>= 20;
+    ASSERT_TRUE(b.test(3));
+    ASSERT_TRUE(b.test(80));
     ASSERT_EQ(b.count(), size_t(2));
 }
 
 TEST(Bitset, ShiftOutside64) {
     BitSet b;
-    b.set(3).set(100);
-    b >>= 300;
-    ASSERT_TRUE(b.test(303));
-    ASSERT_TRUE(b.test(403));
-    ASSERT_EQ(b.count(), size_t(2));
+    b.set(23).set(100);
+    b >>= 80;
+    ASSERT_TRUE(b.test(20));
+    ASSERT_EQ(b.count(), size_t(1));
 }
