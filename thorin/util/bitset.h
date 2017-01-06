@@ -34,6 +34,7 @@ public:
         uint64_t index() const { return tagged_ptr_.index(); }
 
         TaggedPtr<uint64_t> tagged_ptr_;
+
         friend class BitSet;
     };
 
@@ -97,8 +98,7 @@ public:
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
     //@}
 
-    size_t count() const;
-
+    //@{ Is any bit (in range) set?
     bool any() const;
     /// Any bit range in @c [begin,end[ set?
     bool any_range(const size_t begin, const size_t end) const;
@@ -108,8 +108,12 @@ public:
     bool any_till(const size_t end) const { return any_range(0, end); }
     /// Any bit range in @c [begin,infinity[ set?
     bool any_from(const size_t begin) const { return any_range(begin, num_bits()); }
+    //@}
 
+    //@{ Is any bit (in range) set?
     bool none() const;
+    // TODO range variants
+    //@}
 
     //@{ shift
     BitSet& operator>>=(uint64_t shift);
@@ -123,6 +127,9 @@ public:
 THORIN_BITSET_OPS(CODE)
 #undef CODE
     //@}
+
+    /// number of bits set
+    size_t count() const;
 
     void friend swap(BitSet& b1, BitSet& b2) {
         using std::swap;
