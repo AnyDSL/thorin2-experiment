@@ -222,9 +222,12 @@ public:
     //@}
 
     const Def* reduce(Defs args) const { return reduce(0, args); }
-    /// Substitutes variables beginning from the given index with the given Defs and shifts free variables by
-    /// the amount of Defs given. Note that the Defs will be indexed in reverse order.
-    const Def* reduce(size_t, Defs) const;
+
+    /**
+     * Substitutes variables beginning from @p index with @p defs and shifts free variables by the number of @p defs.
+     * Note that @p defs will be indexed in reverse order.
+     */
+    const Def* reduce(size_t index, Defs defs) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const { return stub(type, debug()); }
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
