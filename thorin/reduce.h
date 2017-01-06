@@ -30,8 +30,7 @@ public:
 
 private:
     const Def* reduce(const Def* def, size_t offset);
-    const Def* var_reduce(const Var* var, const Def* new_type, size_t offset);
-    const Def* rebuild(const Def* def, const Def* new_type, size_t offset);
+    size_t num_args() const { return args_.size(); }
 
     World& world_;
     const Def* def_;
