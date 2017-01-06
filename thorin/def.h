@@ -240,7 +240,7 @@ public:
 protected:
     // TODO could replace this with something that returns an iterator
     virtual void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const {
-        for (size_t i = 0, e = num_ops(); i < e; ++i)
+        for (size_t i = 0, e = num_ops(); i != e; ++i)
             fn(i, op(i), index);
     }
 
@@ -351,7 +351,7 @@ public:
 
 private:
     void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const override {
-        for (size_t i = 0, e = num_ops(); i < e; ++i)
+        for (size_t i = 0, e = num_ops(); i != e; ++i)
             fn(i, op(i), index++);
     }
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -381,7 +381,7 @@ public:
 
 private:
     void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const override {
-        for (size_t i = 0, e = num_ops(); i < e; ++i)
+        for (size_t i = 0, e = num_ops(); i != e; ++i)
             fn(i, op(i), index + num_domains());
     }
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -428,7 +428,7 @@ public:
 
 private:
     void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const override {
-        for (size_t i = 0, e = num_ops(); i < e; ++i)
+        for (size_t i = 0, e = num_ops(); i != e; ++i)
             fn(i, op(i), index++);
     }
     const Def* rebuild(World&, const Def*, Defs) const override;
