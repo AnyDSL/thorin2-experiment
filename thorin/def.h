@@ -238,11 +238,7 @@ public:
     }
 
 protected:
-    // TODO could replace this with something that returns an iterator
-    virtual void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const {
-        for (size_t i = 0, e = num_ops(); i != e; ++i)
-            fn(i, op(i), index);
-    }
+    virtual size_t shift(size_t) const;
 
     //@{ hash and equal
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
@@ -350,10 +346,7 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const override {
-        for (size_t i = 0, e = num_ops(); i != e; ++i)
-            fn(i, op(i), index++);
-    }
+    size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
     friend class World;
@@ -380,10 +373,7 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const override {
-        for (size_t i = 0, e = num_ops(); i != e; ++i)
-            fn(i, op(i), index + num_domains());
-    }
+    size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
     friend class World;
@@ -427,10 +417,7 @@ public:
     Sigma* stub(World&, const Def*, Debug) const override;
 
 private:
-    void foreach_op_index(size_t index, std::function<void(size_t, const Def*, size_t)> fn) const override {
-        for (size_t i = 0, e = num_ops(); i != e; ++i)
-            fn(i, op(i), index++);
-    }
+    size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
     friend class World;

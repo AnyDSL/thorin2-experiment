@@ -45,11 +45,20 @@ Qualifier meet(const Defs& defs) {
 
 //------------------------------------------------------------------------------
 
-void Def::compute_free_vars() {
-    foreach_op_index(0, [&] (size_t, const Def* op, size_t shift) {
-            free_vars_ |= op->free_vars_ >> shift;
-    });
+/*
+ * shift
+ */
 
+size_t Def::shift(size_t i) const { return i; }
+size_t Pi::shift(size_t index) const { return index; }
+size_t Lambda::shift(size_t) const { return num_domains(); }
+size_t Sigma::shift(size_t index) const { return index; }
+
+//------------------------------------------------------------------------------
+
+void Def::compute_free_vars() {
+    for (size_t i = 0, e = num_ops(); i != e; ++i)
+        free_vars_ |= op(i)->free_vars() >> shift(i);
     free_vars_ |= type()->free_vars_;
 }
 

@@ -24,11 +24,10 @@ void Reducer::reduce_nominals() {
             if (replacement == subst || replacement->is_closed())
                 continue;
 
-            subst->foreach_op_index(subst.index(),
-                [&] (size_t op_index, const Def* op, size_t shifted_index) {
-                    auto new_op = reduce(op, shifted_index);
-                    const_cast<Def*>(replacement)->set(op_index, new_op);
-                });
+            for (size_t i = 0, e = subst->num_ops(); i != e; ++i) {
+                auto new_op = reduce(subst->op(i), subst.index() + subst->shift(i));
+                const_cast<Def*>(replacement)->set(i, new_op);
+            }
         }
     }
 }
@@ -73,10 +72,10 @@ const Def* Reducer::var_reduce(const Var* var, const Def* new_type, size_t shift
 
 const Def* Reducer::rebuild(const Def* def, const Def* new_type, size_t shift) {
     Array<const Def*> new_ops(def->num_ops());
-    def->foreach_op_index(shift, [&] (size_t op_index, const Def* op, size_t shifted_index) {
-            auto new_op = reduce(op, shifted_index);
-            new_ops[op_index] = new_op;
-        });
+    for (size_t i = 0, e = def->num_ops(); i != e; ++i) {
+        auto new_op = reduce(def->op(i), shift + def->shift(i));
+        new_ops[i] = new_op;
+    }
 
     auto new_def = def->rebuild(world(), new_type, new_ops);
     return map_[{def, shift}] = new_def;
