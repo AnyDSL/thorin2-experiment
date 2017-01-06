@@ -42,6 +42,7 @@ add_executable(coc
     thorin/world.cpp
     thorin/world.h
     thorin/util/array.h
+    thorin/util/bitset.cpp
     thorin/util/bitset.h
     thorin/util/cast.h
     thorin/util/hash.h

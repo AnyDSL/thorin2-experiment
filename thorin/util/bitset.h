@@ -5,6 +5,8 @@
 
 #include "thorin/util/utility.h"
 
+#define THORIN_BITSET_OPS(m) m(|) m(&) m(^)
+
 namespace thorin {
 
 class BitSet {
@@ -95,31 +97,11 @@ public:
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
     //@}
 
-    size_t count() const {
-        size_t result = 0;
-        auto w = words();
-        for (size_t i = 0, e = num_words(); i != e; ++i)
-            result += bitcount(w[i]);
-        return result;
-    }
+    size_t count() const;
 
-    bool any() const {
-        bool result = false;
-        auto w = words();
-        for (size_t i = 0, e = num_words(); !result && i != e; ++i)
-            result |= w[i] & uint64_t(-1);
-        return result;
-    }
-
+    bool any() const;
     /// Any bit range in @c [begin,end[ set?
-    bool any_range(const size_t begin, const size_t end) const {
-        // TODO optimize
-        bool result = false;
-        for (size_t i = begin; !result && i != end; ++i)
-            result |= test(i);
-        return result;
-    }
-
+    bool any_range(const size_t begin, const size_t end) const;
     /// Any bit range in @c [begin,begin+num[ set?
     bool any_length(const size_t begin, const size_t num) const { return any_range(begin, begin+num); }
     /// Any bit range in @c [0,end[ set?
@@ -127,68 +109,19 @@ public:
     /// Any bit range in @c [begin,infinity[ set?
     bool any_from(const size_t begin) const { return any_range(begin, num_bits()); }
 
-    bool none() const {
-        bool result = true;
-        auto w = words();
-        for (size_t i = 0, e = num_words(); result && i != e; ++i)
-            result &= w[i] == uint64_t(0);
-        return result;
-    }
+    bool none() const;
 
     //@{ shift
-    BitSet& operator>>=(uint64_t shift) {
-        uint64_t div = shift/uint64_t(64);
-        uint64_t rem = shift%uint64_t(64);
-        auto w = words();
-
-        for (size_t i = 0, e = num_words()-div; i != e; ++i)
-            w[i] = w[i+div];
-        std::fill(w+num_words()-div, w+num_words(), 0);
-
-        uint64_t carry = 0;
-        for (size_t i = num_words()-div; i-- != 0;) {
-            uint64_t new_carry = w[i] << (uint64_t(64)-rem);
-            w[i] = (w[i] >> rem) | carry;
-            carry = new_carry;
-        }
-
-        return *this;
-    }
-
+    BitSet& operator>>=(uint64_t shift);
     BitSet operator>>(uint64_t shift) const { BitSet res(*this); res >>= shift; return res; }
     //@}
 
     //@{ boolean operators
-#define THORIN_BITSET_OPS(op)                            \
-    BitSet& operator op ## =(const BitSet& other) {      \
-        if (this->num_words() < other.num_words())       \
-            this->make_room(other.num_bits()-1);         \
-        else if (other.num_words() < this->num_words())  \
-            other.make_room(this->num_bits()-1);         \
-        auto  this_words = this->words();                \
-        auto other_words = other.words();                \
-        for (size_t i = 0, e = num_words(); i != e; ++i) \
-            this_words[i] op ## = other_words[i];        \
-        return *this;                                    \
-    }                                                    \
+#define CODE(op)                                   \
+    BitSet& operator op ## =(const BitSet& other); \
     BitSet operator op (BitSet b) const { BitSet res(*this); res op ## = b; return res; }
-
-    BitSet& operator |=(const BitSet& other) {
-        if (this->num_words() < other.num_words())
-            this->make_room(other.num_bits()-1);
-        else if (other.num_words() < this->num_words())
-            other.make_room(this->num_bits()-1);
-        auto  this_words = this->words();
-        auto other_words = other.words();
-        for (size_t i = 0, e = num_words(); i != e; ++i)
-            this_words[i] |= other_words[i];
-        return *this;
-    }
-    BitSet operator|(BitSet b) const { BitSet res(*this); res |= b; return res; }
-
-    //THORIN_BITSET_OPS(|)
-    //THORIN_BITSET_OPS(&)
-    //THORIN_BITSET_OPS(^)
+THORIN_BITSET_OPS(CODE)
+#undef CODE
     //@}
 
     void friend swap(BitSet& b1, BitSet& b2) {
