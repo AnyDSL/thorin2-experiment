@@ -90,7 +90,7 @@ void BitSet::enlarge(size_t i) const {
         uint64_t* new_words = new uint64_t[num_new_words];
 
         // copy over and fill rest with zero
-        std::fill(std::copy(words(), words() + num_words_, new_words), new_words + num_new_words, 0);
+        std::fill(std::copy_n(words(), num_words_, new_words), new_words + num_new_words, 0);
 
         // record new num_words and words_ pointer
         dealloc();

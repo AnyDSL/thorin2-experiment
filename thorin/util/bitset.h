@@ -46,7 +46,7 @@ public:
         : BitSet()
     {
         enlarge(other.num_bits()-1);
-        std::copy(other.words(), other.words()+other.num_words(), words());
+        std::copy_n(other.words(), other.num_words(), words());
     }
     BitSet(BitSet&& other)
         : num_words_(std::move(other.num_words_))
