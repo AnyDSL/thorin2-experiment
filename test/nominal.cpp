@@ -18,7 +18,7 @@ TEST(Nominal, Misc) {
     s1->set(0, v1);
     ASSERT_TRUE(s1->is_closed());
     ASSERT_TRUE(s1->free_vars().test(0));
-    ASSERT_TRUE(s1->free_vars().any_length(0, 1));
+    ASSERT_TRUE(s1->free_vars().any_till(1));
     ASSERT_TRUE(s1->free_vars().any_from(0));
     print_value_type(s1);
     auto l1 = w.lambda(star, w.sigma({s1, s1}));
@@ -34,7 +34,7 @@ TEST(Nominal, Misc) {
     cons->set(0, w.var(star, 0));
     cons->set(1, w.app(list, w.var(star, 1)));
     ASSERT_TRUE(cons->is_closed());
-    ASSERT_TRUE(cons->free_vars().any_length(0, 1));
+    ASSERT_TRUE(cons->free_vars().any_till(1));
     print_value_type(cons);
     auto nil = w.sigma_type(0, {"nil"});
     ASSERT_TRUE(nil->is_closed());
