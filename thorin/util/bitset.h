@@ -45,7 +45,7 @@ public:
     BitSet(const BitSet& other)
         : BitSet()
     {
-        make_room(other.num_bits()-1);
+        enlarge(other.num_bits()-1);
         std::copy(other.words(), other.words()+other.num_words(), words());
     }
     BitSet(BitSet&& other)
@@ -65,30 +65,30 @@ public:
 
     //@{ get, set, clear, toggle, and test bits
     bool test(size_t i) const {
-        make_room(i);
+        enlarge(i);
         return *(words() + i/size_t(64)) & (uint64_t(1) << i%uint64_t(64));
     }
 
     BitSet& set(size_t i) {
-        make_room(i);
+        enlarge(i);
         *(words() + i/size_t(64)) |= (uint64_t(1) << i%uint64_t(64));
         return *this;
     }
 
     BitSet& clear(size_t i) {
-        make_room(i);
+        enlarge(i);
         *(words() + i/size_t(64)) &= ~(uint64_t(1) << i%uint64_t(64));
         return *this;
     }
 
     BitSet& toggle(size_t i) {
-        make_room(i);
+        enlarge(i);
         *(words() + i/size_t(64)) ^= uint64_t(1) << i%uint64_t(64);
         return *this;
     }
 
     reference operator[](size_t i) {
-        make_room(i);
+        enlarge(i);
         return reference(words() + i/size_t(64), i%uint64_t(64));
     }
 
@@ -142,7 +142,7 @@ THORIN_BITSET_OPS(CODE)
 
 private:
     void dealloc() const;
-    void make_room(size_t i) const;
+    void enlarge(size_t i) const;
     const uint64_t* words() const { return num_words_ == 1 ? &word_ : words_; }
     uint64_t* words() { return num_words_ == 1 ? &word_ : words_; }
     size_t num_words() const { return num_words_; }

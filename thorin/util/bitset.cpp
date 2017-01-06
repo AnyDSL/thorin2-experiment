@@ -69,9 +69,9 @@ BitSet& BitSet::operator>>=(uint64_t shift) {
 #define CODE(op)                                        \
 BitSet& BitSet::operator op ## =(const BitSet& other) { \
     if (this->num_words() < other.num_words())          \
-        this->make_room(other.num_bits()-1);            \
+        this->enlarge(other.num_bits()-1);              \
     else if (other.num_words() < this->num_words())     \
-        other.make_room(this->num_bits()-1);            \
+        other.enlarge(this->num_bits()-1);              \
     auto  this_words = this->words();                   \
     auto other_words = other.words();                   \
     for (size_t i = 0, e = num_words(); i != e; ++i)    \
@@ -81,7 +81,7 @@ BitSet& BitSet::operator op ## =(const BitSet& other) { \
 THORIN_BITSET_OPS(CODE)
 #undef CODE
 
-void BitSet::make_room(size_t i) const {
+void BitSet::enlarge(size_t i) const {
     size_t num_new_words = (i+size_t(64)) / size_t(64);
     if (num_new_words > num_words_) {
         num_new_words = round_to_power_of_2(num_new_words);
