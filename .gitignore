@@ -4,6 +4,7 @@ build/
 thorin/util/args.h
 thorin/util/array.h
 thorin/util/cast.h
+thorin/util/hash.cpp
 thorin/util/hash.h
 thorin/util/indexmap.h
 thorin/util/indexset.h
