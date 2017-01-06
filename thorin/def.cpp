@@ -170,7 +170,7 @@ const Def* Pi::domain() const { return world().sigma(domains()); }
 //------------------------------------------------------------------------------
 
 /*
- * constructors
+ * constructors/destructor
  */
 
 Def::~Def() {

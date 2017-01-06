@@ -2,6 +2,8 @@
 
 namespace thorin {
 
+bool World::alloc_guard_ = false;
+
 World::World()
     : root_page_(new Page)
     , cur_page_(root_page_.get())
