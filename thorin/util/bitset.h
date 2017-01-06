@@ -5,7 +5,7 @@
 
 #include "thorin/util/utility.h"
 
-#define THORIN_BITSET_OPS(m) m(|) m(&) m(^)
+#define THORIN_BITSET_OPS(f) f(&) f(|) f(^)
 
 namespace thorin {
 
@@ -118,6 +118,7 @@ public:
     //@{ shift
     BitSet& operator>>=(uint64_t shift);
     BitSet operator>>(uint64_t shift) const { BitSet res(*this); res >>= shift; return res; }
+    // TODO add left shift
     //@}
 
     //@{ boolean operators
