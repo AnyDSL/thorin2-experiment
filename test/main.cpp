@@ -66,8 +66,8 @@ TEST(Simple, Misc) {
     int_id->dump();
     int_id->type()->dump();
 
-    auto fst = w.lambda({w.nat(), w.nat()}, w.var(w.nat(), 0));
-    auto snd = w.lambda({w.nat(), w.nat()}, w.var(w.nat(), 1));
+    auto fst = w.lambda({w.nat(), w.nat()}, w.var(w.nat(), 1));
+    auto snd = w.lambda({w.nat(), w.nat()}, w.var(w.nat(), 0));
     w.app(fst, {n23, n42})->dump(); // 23
     w.app(snd, {n23, n42})->dump(); // 42
 
