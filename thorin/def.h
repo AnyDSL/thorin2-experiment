@@ -221,13 +221,12 @@ public:
     World& world() const { return *world_; }
     //@}
 
-    const Def* reduce(Defs args) const { return reduce(0, args); }
-
     /**
-     * Substitutes variables beginning from @p index with @p defs and shifts free variables by the number of @p defs.
-     * Note that @p defs will be indexed in reverse order.
+     * Substitutes @p Var%s beginning from @p index with @p args and shifts free @p Var%s by the number of @p args.
+     * Note that @p args will be indexed in reverse order.
      */
-    const Def* reduce(size_t index, Defs defs) const;
+    const Def* reduce(size_t index, Defs args) const;
+    const Def* reduce(Defs args) const { return reduce(0, args); }
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const { return stub(type, debug()); }
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
