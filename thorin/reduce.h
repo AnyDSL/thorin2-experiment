@@ -17,25 +17,21 @@ struct DefIndexHash {
 
 class Reducer {
 public:
-    Reducer(const Def* def, size_t index, Defs args)
+    Reducer(const Def* def, Defs args)
         : world_(def->world())
         , def_(def)
-        , index_(index)
         , args_(args)
-    {}
-    Reducer(const Def* def, Defs args)
-        : Reducer(def, 0, args)
     {}
 
     World& world() const { return world_; }
-    const Def* reduce();
-    const Def* reduce_up_to_nominals();
+    const Def* reduce(size_t index);
+    const Def* reduce_up_to_nominals(size_t index = 0);
     void reduce_nominals();
 
 private:
     const Def* reduce(const Def* def, size_t shift);
-    const Def* var_reduce(const Var* var, size_t shift, const Def* new_type);
-    const Def* rebuild_reduce(const Def* def, size_t shift, const Def* new_type);
+    const Def* var_reduce(const Var* var, const Def* new_type, size_t shift);
+    const Def* rebuild(const Def* def, const Def* new_type, size_t shift);
 
     World& world_;
     const Def* def_;
@@ -45,12 +41,8 @@ private:
     std::stack<DefIndex> nominals_;
 };
 
-inline const Def* reduce(const Def* def, size_t index, Defs args) {
-    return Reducer(def, index, args).reduce();
-}
-
-inline const Def* reduce(const Def* def, Defs args) {
-    return reduce(def, 0, args);
+inline const Def* reduce(const Def* def, Defs args, size_t index = 0) {
+    return Reducer(def, args).reduce(index);
 }
 
 }

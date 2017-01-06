@@ -317,8 +317,8 @@ Variant* Variant::stub(World& to, const Def* type, Debug dbg) const {
  * reduce
  */
 
-const Def* Def::reduce(size_t index, Defs args) const {
-    return thorin::reduce(this, index, args);
+const Def* Def::reduce(Defs args, size_t index) const {
+    return thorin::reduce(this, args, index);
 }
 
 const Def* Pi::reduce(Defs args) const {
@@ -335,12 +335,11 @@ const Def* Lambda::reduce(Defs args) const {
 const Def* App::try_reduce() const {
     if (cache_)
         return cache_;
-    // Can only really reduce if it's not an Assume of Pi type
+
     if (auto lambda = callee()->isa<Lambda>()) {
-        if  (!lambda->is_closed()) {
-            // do not set cache here as a real reduce attempt might be made later when the lambda is closed
+        if  (!lambda->is_closed()) // do not set cache here as a real reduce attempt might be made later when the lambda is closed
             return this;
-        }
+
         // TODO can't reduce if args types don't match the domains
         auto args = ops().skip_front();
 
@@ -354,6 +353,7 @@ const Def* App::try_reduce() const {
 
         return reduced;
     }
+
     return cache_ = this;
 }
 
@@ -372,7 +372,7 @@ const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
         auto prev_extract = world.extract(tuple, index - delta);
 
         // This also shifts any Var with index > skipped_shifts by -1
-        type = type->reduce(skipped_shifts, {prev_extract});
+        type = type->reduce({prev_extract}, skipped_shifts);
     }
     return type;
 }

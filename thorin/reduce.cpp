@@ -4,16 +4,16 @@
 
 namespace thorin {
 
-const Def* Reducer::reduce() {
-    auto result = reduce_up_to_nominals();
+const Def* Reducer::reduce(size_t index) {
+    auto result = reduce_up_to_nominals(index);
     reduce_nominals();
     return result;
 }
 
-const Def* Reducer::reduce_up_to_nominals() {
-    if (def_->free_vars().none_from(index_))
+const Def* Reducer::reduce_up_to_nominals(size_t index) {
+    if (def_->free_vars().none_from(index))
         return def_;
-    return reduce(def_, index_);
+    return reduce(def_, index);
 }
 
 void Reducer::reduce_nominals() {
@@ -49,13 +49,12 @@ const Def* Reducer::reduce(const Def* def, size_t shift) {
 
     auto new_type = reduce(def->type(), shift);
 
-    if (auto var = def->isa<Var>()) {
-        return var_reduce(var, shift, new_type);
-    }
-    return rebuild_reduce(def, shift, new_type);
+    if (auto var = def->isa<Var>())
+        return var_reduce(var, new_type, shift);
+    return rebuild(def, new_type, shift);
 }
 
-const Def* Reducer::var_reduce(const Var* var, size_t shift, const Def* new_type) {
+const Def* Reducer::var_reduce(const Var* var, const Def* new_type, size_t shift) {
     // The shift argument always corresponds to args.back() and thus corresponds to args.size() - 1.
     // Map index() back into the original argument array.
     int arg_index = args_.size() - 1 - var->index() + shift;
@@ -72,7 +71,7 @@ const Def* Reducer::var_reduce(const Var* var, size_t shift, const Def* new_type
     return world().var(new_type, var->index(), var->debug());
 }
 
-const Def* Reducer::rebuild_reduce(const Def* def, size_t shift, const Def* new_type) {
+const Def* Reducer::rebuild(const Def* def, const Def* new_type, size_t shift) {
     Array<const Def*> new_ops(def->num_ops());
     def->foreach_op_index(shift, [&] (size_t op_index, const Def* op, size_t shifted_index) {
             auto new_op = reduce(op, shifted_index);

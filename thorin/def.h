@@ -225,8 +225,7 @@ public:
      * Substitutes @p Var%s beginning from @p index with @p args and shifts free @p Var%s by the number of @p args.
      * Note that @p args will be indexed in reverse order.
      */
-    const Def* reduce(size_t index, Defs args) const;
-    const Def* reduce(Defs args) const { return reduce(0, args); }
+    const Def* reduce(Defs args, size_t index = 0) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const { return stub(type, debug()); }
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
