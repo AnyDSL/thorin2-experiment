@@ -18,7 +18,7 @@ const Def* Reducer::reduce_up_to_nominals(size_t index) {
 
 void Reducer::reduce_nominals() {
     while (!nominals_.empty()) {
-        const auto& subst = nominals_.top();
+        auto subst = nominals_.top();
         nominals_.pop();
         if (auto replacement = find(map_, subst)) {
             if (replacement == subst || replacement->is_closed())
