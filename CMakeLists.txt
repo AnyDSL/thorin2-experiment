@@ -45,6 +45,7 @@ add_executable(coc
     thorin/util/bitset.cpp
     thorin/util/bitset.h
     thorin/util/cast.h
+    thorin/util/hash.cpp
     thorin/util/hash.h
     thorin/util/location.cpp
     thorin/util/location.h
