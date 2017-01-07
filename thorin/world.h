@@ -33,6 +33,8 @@ public:
         return unify<Arity>(0, *this, a, q, dbg);
     }
     const Def* proj(size_t index, size_t arity, Qualifier q = Qualifier::Unrestricted, Debug dbg = {});
+    const Def* variadic_sigma(const Def* body, Qualifier q = Qualifier::Unrestricted, Debug dbg = {});
+    const Def* variadic_tuple(const Def* body, Debug dbg = {});
 
     const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
     const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {

@@ -121,6 +121,8 @@ public:
         Tuple,
         Universe,
         Var,
+        VariadicTuple,
+        VariadicSigma,
         Variant,
         Num
     };
@@ -656,6 +658,42 @@ public:
 private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+class VariadicSigma : public Quantifier {
+private:
+    VariadicSigma(World& world, const Def* body, Qualifier q, Debug dbg);
+
+public:
+    const Def* body() const { return ops().back(); }
+    //const Arity* type() const { return Constructor::type()->as<Pi>(); }
+    //const Def* reduce(Defs) const;
+
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    size_t shift(size_t) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+class VariadicTuple : public Constructor {
+private:
+    VariadicTuple(World& world, const Def* type, const Def* body, Debug dbg);
+
+public:
+    const Def* body() const { return op(0); }
+    //const Def* reduce(Defs) const;
+    //const Pi* type() const { return Constructor::type()->as<Pi>(); }
+
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
     friend class World;

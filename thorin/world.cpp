@@ -86,6 +86,15 @@ const Def* World::proj(size_t index, size_t arity, Qualifier q, Debug dbg) {
     return error(a);
 }
 
+const Def* World::variadic_sigma(const Def* body, Qualifier q, Debug dbg) {
+    return unify<VariadicSigma>(1, *this, body, q, dbg);
+}
+
+const Def* World::variadic_tuple(const Def* body, Debug dbg) {
+    assert(false && "TODO");
+    //return unify<VariadicTuple>(1, *this, body, dbg);
+}
+
 const Pi* World::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
     if (domains.size() == 1 && domains.front()->type()) {
         if (auto sigma = domains.front()->type()->isa<Sigma>())
