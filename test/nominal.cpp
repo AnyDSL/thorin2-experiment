@@ -12,7 +12,6 @@ TEST(Nominal, Misc) {
     auto Nat = w.nat();
     auto star = w.star();
 
-    std::cout << "--- NominalTest begin ---" << endl;
     auto s1 = w.sigma_type(1, {"N"});
     auto v1 = w.var(star, 0);
     s1->set(0, v1);
@@ -58,5 +57,4 @@ TEST(Nominal, Misc) {
     variant->set(1, succ);
     print_value_type(variant);
     print_value_type(succ);
-    std::cout << "--- NominalTest end ---" << endl;
 }
