@@ -2,6 +2,7 @@
 #define THORIN_DEF_H
 
 #include <numeric>
+#include <set>
 #include <stack>
 
 #include "thorin/util/array.h"
@@ -69,6 +70,7 @@ template<class To>
 using DefMap  = GIDMap<const Def*, To>;
 using DefSet  = GIDSet<const Def*>;
 using Def2Def = DefMap<const Def*>;
+using SortedDefSet = std::set<const Def*, GIDLt<const Def*>>;
 
 typedef ArrayRef<const Def*> Defs;
 
@@ -153,7 +155,9 @@ protected:
     }
 
     /// A @em structural Def.
-    Def(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+    template<class R>
+    Def(World& world, Tag tag, const Def* type, const R& ops, Debug dbg,
+        typename std::enable_if<!std::is_integral<R>::value>::type* dummy = nullptr)
         : debug_(dbg)
         , world_(&world)
         , type_(type)
@@ -167,6 +171,11 @@ protected:
     {
         std::copy(ops.begin(), ops.end(), ops_);
     }
+
+    /// A @em structural Def.
+    Def(World& world, Tag tag, const Def* type, std::initializer_list<const Def*> ops, Debug dbg)
+        : Def(world, tag, type, Defs(ops), dbg)
+    {}
 
     ~Def() override;
 
@@ -479,31 +488,9 @@ private:
     friend class World;
 };
 
-class Intersection : public Quantifier {
+class Intersection : public Def {
 private:
-    Intersection(World& world, Defs ops, Qualifier q, Debug dbg)
-        : Quantifier(world, Tag::Intersection, max_type(world, ops, q), gid_sorted(ops), dbg)
-    {
-        compute_free_vars();
-    }
-
-public:
-    std::ostream& stream(std::ostream&) const override;
-
-private:
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
-    friend class World;
-};
-
-class All : public Constructor {
-private:
-    All(World& world, const Intersection* type, Defs ops, Debug dbg)
-        : Constructor(world, Tag::All, type, ops, dbg)
-    {
-        assert(type->num_ops() == ops.size());
-        compute_free_vars();
-    }
+    Intersection(World& world, Defs ops, Qualifier q, Debug dbg);
 
 public:
     std::ostream& stream(std::ostream&) const override;
@@ -531,15 +518,11 @@ private:
     friend class World;
 };
 
-class Variant : public Quantifier {
+class Variant : public Def {
 private:
-    Variant(World& world, Defs ops, Qualifier q, Debug dbg)
-        : Quantifier(world, Tag::Variant, max_type(world, ops, q), gid_sorted(ops), dbg)
-    {
-        compute_free_vars();
-    }
+    Variant(World& world, Defs ops, Qualifier q, Debug dbg);
     Variant(World& world, const Def* type, size_t num_ops, Debug dbg)
-        : Quantifier(world, Tag::Variant, type, num_ops, dbg)
+        : Def(world, Tag::Variant, type, num_ops, dbg)
     {}
 
 public:
@@ -786,6 +769,7 @@ private:
 
 class Error : public Def {
 private:
+    // TODO additional error message with more precise information
     Error(World& world, const Def* type)
         : Def(world, Tag::Error, type, Defs(), {"<error>"})
     {}

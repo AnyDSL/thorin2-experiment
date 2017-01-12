@@ -125,6 +125,7 @@ const Def* World::sigma(Defs defs, Qualifier q, Debug dbg) {
 }
 
 const Def* World::singleton(const Def* def, Debug dbg) {
+    assert(def->type() && "Can't create singletons of universes.");
     // Normalize various cases
     if (def->type()->isa<Singleton>()) {
         return def->type();
@@ -158,10 +159,18 @@ const Def* World::singleton(const Def* def, Debug dbg) {
         auto applied = app(def, new_pi_vars);
         return pi(domains, singleton(applied), pi_type->qualifier(), dbg);
     }
+    // TODO other normalizations?
     return unify<Singleton>(1, *this, def, dbg);
 }
 
 const Def* World::tuple(const Def* type, Defs defs, Debug dbg) {
+    auto expected_type = sigma(types(defs));
+    const Def* found_structural_type = type;
+    if (type->is_nominal())
+        found_structural_type = sigma(type->ops());
+    // TODO subtyping check instead of equality here
+    // TODO error message with more precise information
+    assert(found_structural_type == expected_type && "Can't give type to tuple.");
     if (defs.size() == 1) {
         return defs.front();
     }
@@ -170,41 +179,36 @@ const Def* World::tuple(const Def* type, Defs defs, Debug dbg) {
 }
 
 const Def* World::extract(const Def* def, size_t index, Debug dbg) {
-    if (!def->type()->isa<Sigma>()) {
+    if (auto tuple_type = def->type()->isa<Sigma>()) {
+        assert(index >= 0 && index < tuple_type->num_ops());
+        if (auto tuple = def->isa<Tuple>()) {
+            return tuple->op(index);
+        }
+
+        auto type = Tuple::extract_type(*this, def, index);
+        return unify<Extract>(1, *this, type, def, index, dbg);
+    } else {
         assert(index == 0);
         return def;
     }
-    if (auto tuple = def->isa<Tuple>()) {
-        return tuple->op(index);
-    }
-
-    auto type = Tuple::extract_type(*this, def, index);
-    return unify<Extract>(1, *this, type, def, index, dbg);
 }
 
 const Def* World::intersection(Defs defs, Qualifier q, Debug dbg) {
     if (defs.size() == 1) { return single_qualified(defs, q); }
 
-    // TODO check disjunct defs during a later type checking step or now?
     return unify<Intersection>(defs.size(), *this, defs, q, dbg);
 }
 
-const Def* World::all(Defs defs, Debug dbg) {
-    if (defs.size() == 1)
-        return defs.front();
-
-    // TODO check disjunct types(defs) during a later type checking step or now?
-    return unify<All>(defs.size(), *this, intersection(types(defs))->as<Intersection>(), defs, dbg);
-}
-
 const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
-    if (!type->isa<Intersection>()) {
+    if (auto def_type = def->type()->isa<Intersection>()) {
+        assert(std::any_of(def_type->ops().begin(), def_type->ops().end(), [&](auto t) { return t == type; })
+               && "Picked type must be a part of the intersection type.");
+
+        return unify<Pick>(1, *this, type, def, dbg);
+    } else {
         assert(type == def->type());
         return def;
     }
-
-    // TODO implement reduction and caching
-    return unify<Pick>(1, *this, type, def, dbg);
 }
 
 const Def* World::variant(Defs defs, Qualifier q, Debug dbg) {

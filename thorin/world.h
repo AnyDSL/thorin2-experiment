@@ -113,7 +113,6 @@ public:
         return intersection(defs, meet(defs), dbg);
     }
     const Def* intersection(Defs defs, Qualifier q, Debug dbg = {});
-    const Def* all(Defs defs, Debug dbg = {});
     const Def* pick(const Def* type, const Def* def, Debug dbg = {});
 
     const Def* variant(Defs defs, Debug dbg = {}) {

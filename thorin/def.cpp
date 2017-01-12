@@ -154,6 +154,56 @@ Array<const Def*> unique_gid_sorted(Defs defs) {
     return result;
 }
 
+template<class T>
+const SortedDefSet set_flatten(Defs defs) {
+    SortedDefSet flat_defs;
+    for (auto def : defs) {
+        if (def->isa<T>())
+            for (auto inner : def->ops())
+                flat_defs.insert(inner);
+        else
+            flat_defs.insert(def);
+    }
+    return flat_defs;
+}
+
+const Def* type_from_sort(World& world, Def::Sort sort, Qualifier q) {
+    assert(sort != Def::Sort::Term  && "A type can never be of sort Term.");
+    switch (sort) {
+    case Def::Sort::Kind: return world.universe(q);
+    case Def::Sort::Type: return world.star(q);
+    default:
+        return nullptr;
+    }
+}
+
+bool check_same_sorted_ops(Def::Sort sort, Defs ops, Qualifier q) {
+    auto qualifier = Qualifier::Unrestricted;
+    for (auto op : ops) {
+        assert(sort == op->sort() && "Operands must be of the same sort.");
+        qualifier = meet(qualifier, op->qualifier());
+    }
+    assert(sort == Def::Sort::Type || sort == Def::Sort::Kind &&
+           "Only sort type or kind allowed.");
+    assert(q <= qualifier &&
+           "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
+    return true;
+}
+
+const Def* Quantifier::max_type(World& world, Defs ops, Qualifier q) {
+    auto qualifier = Qualifier::Unrestricted;
+    Sort max_sort = Sort::Type;
+    for (auto op : ops) {
+        assert(op->sort() >= Sort::Type && "Operands must be at least types.");
+        max_sort = std::max(max_sort, op->sort());
+        assert(max_sort != Sort::Universe && "Type universes shouldn't be operands.");
+        qualifier = meet(qualifier, op->qualifier());
+    }
+    assert(q <= qualifier &&
+           "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
+    return type_from_sort(world, max_sort, q);
+}
+
 const Def* Pi::domain() const { return world().sigma(domains()); }
 
 //------------------------------------------------------------------------------
@@ -171,6 +221,14 @@ Arity::Arity(World& world, size_t arity, Qualifier q, Debug dbg)
     : Def(world, Tag::Arity, world.space(q), Defs(), dbg)
 {
     arity_ = arity;
+}
+
+Intersection::Intersection(World& world, Defs ops, Qualifier q, Debug dbg)
+    : Def(world, Tag::Intersection, type_from_sort(world, ops[0]->sort(), q),
+                 set_flatten<Intersection>(ops), dbg)
+{
+    assert(check_same_sorted_ops(sort(), ops, q));
+    compute_free_vars();
 }
 
 Lambda::Lambda(World& world, const Pi* type, const Def* body, Debug dbg)
@@ -212,17 +270,12 @@ VariadicTuple::VariadicTuple(World& world, const Def* type, const Def* body, Deb
     : Constructor(world, Tag::VariadicTuple, type, {body}, dbg)
 {}
 
-const Def* Quantifier::max_type(World& world, Defs ops, Qualifier q) {
-    auto qualifier = Qualifier::Unrestricted;
-    auto is_kind = false;
-    for (auto op : ops) {
-        assert(op->type() && "Type universes shouldn't be operands");
-        qualifier = meet(qualifier, op->type()->qualifier());
-        is_kind |= op->is_kind();
-    }
-    assert(q <= qualifier &&
-           "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
-    return is_kind ? (const Def*) world.universe(q) : world.star(q);
+Variant::Variant(World& world, Defs ops, Qualifier q, Debug dbg)
+    : Def(world, Tag::Variant, type_from_sort(world, ops[0]->sort(), q), set_flatten<Variant>(ops),
+                 dbg)
+{
+    assert(check_same_sorted_ops(sort(), ops, q));
+    compute_free_vars();
 }
 
 //------------------------------------------------------------------------------
@@ -317,7 +370,6 @@ bool Var::equal(const Def* other) const {
  * rebuild
  */
 
-const Def* All          ::rebuild(World& to, const Def*  , Defs ops) const { return to.all(ops, debug()); }
 const Def* Any          ::rebuild(World& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App          ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
 const Def* Arity        ::rebuild(World& to, const Def*  , Defs    ) const { return to.arity(arity(), qualifier(), debug()); }
@@ -327,7 +379,7 @@ const Def* Axiom        ::rebuild(World& to, const Def* t, Defs    ) const {
     return to.assume(t, box(), debug());
 }
 const Def* Error        ::rebuild(World& to, const Def* t, Defs    ) const { return to.error(t); }
-const Def* Intersection::rebuild(World& to, const Def*  , Defs ops) const { return to.intersection(ops, debug()); }
+const Def* Intersection ::rebuild(World& to, const Def*  , Defs ops) const { return to.intersection(ops, debug()); }
 const Def* Match        ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* Lambda       ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
@@ -406,6 +458,7 @@ const Def* App::try_reduce() const {
 
 const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
     auto sigma = tuple->type()->as<Sigma>();
+    assert(sigma->num_ops() > index && index >= 0);
     auto type = sigma->op(index);
     if (type->free_vars().none_end(index))
         return type;
@@ -429,10 +482,6 @@ const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
 /*
  * stream
  */
-
-std::ostream& All::stream(std::ostream& os) const {
-    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")", " ∧ ");
-}
 
 std::ostream& Any::stream(std::ostream& os) const {
     os << "∨:";
