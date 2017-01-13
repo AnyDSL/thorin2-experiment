@@ -224,10 +224,10 @@ const Def* World::any(const Def* type, const Def* def, Debug dbg) {
     }
 
     auto variants = type->ops();
-    if (std::none_of(variants.begin(), variants.end(), [&](auto t){ return t == def->type(); }))
-        return error(type);
+    assert(std::any_of(variants.begin(), variants.end(), [&](auto t){ return t == def->type(); })
+           && "Type must be a part of the variant type.");
 
-    return unify<Any>(1, *this, type, def, dbg);
+    return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
 }
 
 const Def* build_match_type(World& w, const Def* /*def*/, const Variant* /*type*/, Defs handlers) {

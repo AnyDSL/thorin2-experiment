@@ -536,9 +536,10 @@ private:
     friend class World;
 };
 
+/// Cast a Def to a Variant type.
 class Any : public Constructor {
 private:
-    Any(World& world, const Def* type, const Def* def, Debug dbg)
+    Any(World& world, const Variant* type, const Def* def, Debug dbg)
         : Constructor(world, Tag::Any, type, {def}, dbg)
     {
         compute_free_vars();
