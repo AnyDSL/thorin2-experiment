@@ -258,8 +258,8 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
 #ifndef NDEBUG
     for (size_t i = 0; i < sorted_handlers.size(); ++i) {
         auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
-        assertmsg(domain == matched_type->op(i), "Handler % with domain % does not match type %", i, domain,
-                  matched_type->op(i));
+        assertf(domain == matched_type->op(i), "Handler % with domain % does not match type %", i, domain,
+                matched_type->op(i));
     }
 #endif
     if (auto any = def->isa<Any>()) {
