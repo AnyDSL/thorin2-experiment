@@ -120,8 +120,6 @@ TEST(Simple, Misc) {
     auto match = w.match(assumed_var, handlers);
     match->dump(); // match someval with ...
     match->type()->dump();
-    // TODO this should not reduce
-    w.match(any_nat, {handle_bool, handle_nat})->dump();
     // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
     w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 

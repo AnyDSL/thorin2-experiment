@@ -248,7 +248,13 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
         return app(handlers.front(), def, dbg);
     }
     auto matched_type = def->type()->as<Variant>();
-    assert(def_type->num_ops() == handlers.size());
+    assert(def_type->num_ops() == handlers.size() && "Not all Variant cases handled.");
+#ifndef NDEBUG
+    for (size_t i = 0; i < handlers.size(); ++i)
+        assertmsg(handlers[i]->type()->as<Pi>()->domain() == matched_type->op(i),
+                  "Handler % with type % does not match type %", i, handlers[i]->type(),
+                  matched_type->op(i));
+#endif
     if (auto any = def->isa<Any>()) {
         auto any_def = any->def();
         return app(handlers[any->index()], any_def, dbg);
