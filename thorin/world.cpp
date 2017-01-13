@@ -231,7 +231,6 @@ const Def* World::any(const Def* type, const Def* def, Debug dbg) {
 }
 
 const Def* build_match_type(World& w, const Def* /*def*/, const Variant* /*type*/, Defs handlers) {
-    // TODO check handler types in a later type checking step?
     Array<const Def*> types(handlers.size());
     for (size_t i = 0; i < handlers.size(); ++i) {
         types[i] = handlers[i]->type()->as<Pi>()->body();
@@ -248,19 +247,27 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
         return app(handlers.front(), def, dbg);
     }
     auto matched_type = def->type()->as<Variant>();
-    assert(def_type->num_ops() == handlers.size() && "Not all Variant cases handled.");
+    assert(def_type->num_ops() == handlers.size() && "Number of handlers does not match number of cases.");
+
+    Array<const Def*> sorted_handlers(handlers);
+    std::sort(sorted_handlers.begin(), sorted_handlers.end(),
+              [](const Def* a, const Def* b) {
+                  auto a_dom = a->type()->as<Pi>()->domain();
+                  auto b_dom = b->type()->as<Pi>()->domain();
+                  return a_dom->gid() < b_dom->gid(); });
 #ifndef NDEBUG
-    for (size_t i = 0; i < handlers.size(); ++i)
-        assertmsg(handlers[i]->type()->as<Pi>()->domain() == matched_type->op(i),
-                  "Handler % with type % does not match type %", i, handlers[i]->type(),
+    for (size_t i = 0; i < sorted_handlers.size(); ++i) {
+        auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
+        assertmsg(domain == matched_type->op(i), "Handler % with domain % does not match type %", i, domain,
                   matched_type->op(i));
+    }
 #endif
     if (auto any = def->isa<Any>()) {
         auto any_def = any->def();
-        return app(handlers[any->index()], any_def, dbg);
+        return app(sorted_handlers[any->index()], any_def, dbg);
     }
-    auto type = build_match_type(*this, def, matched_type, handlers);
-    return unify<Match>(1, *this, type, def, handlers, dbg);
+    auto type = build_match_type(*this, def, matched_type, sorted_handlers);
+    return unify<Match>(1, *this, type, def, sorted_handlers, dbg);
 }
 
 const Def* World::app(const Def* callee, Defs args, Debug dbg) {
