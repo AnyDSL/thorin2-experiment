@@ -460,7 +460,6 @@ const Def* App::try_reduce() const {
 
 const Def* Tuple::extract_type(WorldBase& world, const Def* tuple, size_t index) {
     auto sigma = tuple->type()->as<Sigma>();
-    assert(sigma->num_ops() > index && index >= 0);
     auto type = sigma->op(index);
     if (type->free_vars().none_end(index))
         return type;
