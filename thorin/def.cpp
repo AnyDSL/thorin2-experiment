@@ -22,10 +22,10 @@ std::ostream& operator<<(std::ostream& ostream, const Qualifier s) {
     switch (s) {
     case Qualifier::Unrestricted:
         return ostream << ""; //ᵁ
-    case Qualifier::Affine:
-        return ostream << "ᴬ";
     case Qualifier::Relevant:
         return ostream << "ᴿ";
+    case Qualifier::Affine:
+        return ostream << "ᴬ";
     case Qualifier::Linear:
         return ostream << "ᴸ";
     default:
@@ -92,8 +92,6 @@ void Def::set(size_t i, const Def* def) {
     assert(def && "setting null pointer");
     ops_[i] = def;
     assert(!def->uses_.contains(Use(this, i)));
-    assert((def->sort() != Sort::Term || !def->type()->is_affine() || def->num_uses() == 0)
-           && "Affinely typed terms can be used at most once, check before calling this.");
     const auto& p = def->uses_.emplace(this, i);
     assert_unused(p.second);
     if (i == num_ops() - 1) {
@@ -298,7 +296,7 @@ size_t VariadicTuple::shift(size_t i) const { assert_unused(i == 1); return 1; }
  */
 
 uint64_t Def::vhash() const {
-    if (is_nominal())
+    if (is_nominal() || (sort() == Sort::Term && is_le_affine()))
         return gid();
 
     uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type() ? type()->gid() : 0);
@@ -308,7 +306,7 @@ uint64_t Def::vhash() const {
 }
 
 bool Def::equal(const Def* other) const {
-    if (is_nominal())
+    if (is_nominal() || (sort() == Sort::Term && is_le_affine()))
         return this == other;
 
     bool result = this->fields() == other->fields() && this->type() == other->type();
@@ -446,11 +444,15 @@ const Def* App::try_reduce() const {
     if (cache_)
         return cache_;
 
-    if (auto lambda = callee()->isa<Lambda>()) {
-        if  (!lambda->is_closed()) // don't set cache as long lambda is unclosed
-            return this;
+    auto pi_type = callee()->type()->as<Pi>();
+    // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
+    if (!pi_type->is_le_affine() && !pi_type->body()->is_le_affine()) {
+        if (auto lambda = callee()->isa<Lambda>()) {
+            if  (!lambda->is_closed()) // don't set cache as long lambda is unclosed
+                return this;
 
-        return thorin::reduce(lambda->body(), ops().skip_front(), [&] (const Def* def) { cache_ = def; });
+            return thorin::reduce(lambda->body(), ops().skip_front(), [&] (const Def* def) { cache_ = def; });
+        }
     }
 
     return cache_ = this;

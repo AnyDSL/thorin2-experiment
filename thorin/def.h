@@ -84,8 +84,8 @@ Array<const Def*> unique_gid_sorted(Defs defs);
 
 enum class Qualifier {
     Unrestricted,
-    Affine   = 1 << 0,
-    Relevant = 1 << 1,
+    Relevant = 1 << 0,
+    Affine   = 1 << 1,
     Linear = Affine | Relevant,
 };
 
@@ -96,6 +96,12 @@ std::ostream& operator<<(std::ostream& ostream, const Qualifier q);
 
 Qualifier meet(Qualifier lhs, Qualifier rhs);
 Qualifier meet(const Defs& defs);
+
+template<class T>
+std::array<const T*, 4> array_for_qualifiers(std::function<const T*(Qualifier)> fn) {
+    return {fn(Qualifier::Unrestricted), fn(Qualifier::Relevant), fn(Qualifier::Affine),
+            fn(Qualifier::Linear)};
+}
 
 //------------------------------------------------------------------------------
 
@@ -219,7 +225,9 @@ public:
     Qualifier qualifier() const  { return type() ? type()->qualifier() : Qualifier(qualifier_); }
     bool is_unrestricted() const { return bool(qualifier()) & bool(Qualifier::Unrestricted); }
     bool is_affine() const       { return bool(qualifier()) & bool(Qualifier::Affine); }
+    bool is_le_affine() const    { return bool(qualifier() <= Qualifier::Affine); }
     bool is_relevant() const     { return bool(qualifier()) & bool(Qualifier::Relevant); }
+    bool is_le_relevant() const  { return bool(qualifier() <= Qualifier::Affine); }
     bool is_linear() const       { return bool(qualifier()) & bool(Qualifier::Linear); }
     //@}
 

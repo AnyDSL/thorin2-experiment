@@ -34,12 +34,18 @@ TEST(Qualifiers, Misc) {
     auto Nat = w.nat();
     auto n42 = w.axiom(Nat, {"42"});
     auto ANat = w.nat(A);
+    ASSERT_EQ(ANat, w.nat(A));
+    auto LNat = w.nat(L);
+    ASSERT_EQ(LNat, w.nat(L));
     auto RNat = w.nat(R);
-    /*auto LNat =*/ w.nat(L);
-    auto an0 = w.axiom(ANat, {"0"});
+    auto an0 = w.nat(0, A);
+    ASSERT_NE(an0, w.nat(0, A));
+    auto l_a0 = w.lambda(Unit, w.nat(0, A), {"l_a0"});
+    auto l_a0_app = w.app(l_a0);
+    ASSERT_NE(l_a0_app, w.app(l_a0));
     auto anx = w.var(ANat, 0, {"x"});
     auto anid = w.lambda(ANat, anx, {"anid"});
-    /*auto app1 =*/ w.app(anid, an0);
+    auto anid_app = w.app(anid, an0);
     ASSERT_TRUE(is_error(w.app(anid, an0)));
 
     auto tuple_type = w.sigma({ANat, RNat});
