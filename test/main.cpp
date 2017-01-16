@@ -121,23 +121,6 @@ TEST(Simple, Misc) {
     auto snd_sigma = w.extract(sigma_val, 1);
     std::cout << snd_sigma << ": " << snd_sigma->type() << endl;
 
-    // Test variant types and matches
-    auto variant = w.variant({w.nat(), w.boolean()});
-    auto any_nat = w.any(variant, n23);
-    auto any_bool = w.any(variant, w.axiom(w.boolean(),{"false"}));
-    auto assumed_var = w.axiom(variant,{"someval"});
-    auto handle_nat = w.lambda(w.nat(), w.var(w.nat(), 0));
-    auto handle_bool = w.lambda(w.boolean(), w.axiom(w.nat(),{"0"}));
-    Defs handlers{handle_nat, handle_bool};
-    auto match_nat = w.match(any_nat, handlers);
-    match_nat->dump(); // 23
-    auto match_bool = w.match(any_bool, handlers);
-    match_bool->dump(); // 0
-    auto match = w.match(assumed_var, handlers);
-    match->dump(); // match someval with ...
-    match->type()->dump();
-    // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
-    w.intersection({w.pi(w.nat(), w.nat()), w.pi(w.boolean(), w.boolean())})->dump();
 
     // Test singleton types and kinds
     auto single_sigma = w.singleton(sigma_val);
