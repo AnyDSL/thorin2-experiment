@@ -1,3 +1,5 @@
+#include <functional>
+
 #include "thorin/world.h"
 
 namespace thorin {
@@ -8,12 +10,13 @@ namespace thorin {
 
 bool WorldBase::alloc_guard_ = false;
 
+
 WorldBase::WorldBase()
     : root_page_(new Page)
     , cur_page_(root_page_.get())
-    , universe_(array_for_qualifiers<Universe>([&](auto q){ return insert<Universe>(0, *this, q); }))
-    , star_(array_for_qualifiers<Star>([&](auto q){ return insert<Star>(0, *this, q); }))
-    , space_(array_for_qualifiers<Space>([&](auto q){ return insert<Space>(0, *this, q); }))
+    , universe_(build_array_nullary<Universe>())
+    , star_(build_array_nullary<Star>())
+    , space_(build_array_nullary<Space>())
 {}
 
 WorldBase::~WorldBase() {
@@ -244,18 +247,23 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
  * World
  */
 
+std::array<const Axiom*, 4> build_axiom(std::function<const Axiom*(Qualifier q)> fn) {
+    return array_for_qualifiers<Axiom>(fn);
+}
+
 std::array<const Axiom*, 4> build_nat(World& w, size_t width) {
     return array_for_qualifiers<Axiom>([&](auto q){ return w.nat(width, q); });
 }
 
 World::World()
-    : nat_(array_for_qualifiers<Axiom>([&](auto q){ return axiom(star(q),{"Nat"}); }))
+    : nat_(build_axiom([&](auto q) { return this->axiom(this->star(q),{"Nat"}); }))
     , nats_({build_nat(*this, 0), build_nat(*this, 1), build_nat(*this, 2), build_nat(*this, 4),
              build_nat(*this, 8), build_nat(*this, 16), build_nat(*this, 32), build_nat(*this, 64)})
-    , boolean_(array_for_qualifiers<Axiom>([&](auto q){ return axiom(star(q),{"Boolean"}); }))
-    , booleans_({array_for_qualifiers<Axiom>([&](auto q){ return boolean(false, q); }),
-                 array_for_qualifiers<Axiom>([&](auto q){ return boolean(true, q); })})
-    , integer_(array_for_qualifiers<Axiom>([&](auto q){ return axiom(pi({nat(), nat()}, star(q)), {"int"}); }))
+    , boolean_(build_axiom([&](auto q) { return this->axiom(this->star(q),{"Boolean"}); }))
+    , booleans_({build_axiom([&](auto q){ return this->boolean(false, q); }),
+                build_axiom([&](auto q){ return this->boolean(true, q); })})
+    , integer_(build_axiom([&](auto q){
+                  return this->axiom(this->pi({this->nat(), this->nat()}, this->star(q)), {"int"}); }))
     , real_(axiom(pi({nat(), boolean()}, star()),{"real"}))
     , mem_(axiom(star(Qualifier::Linear),{"M"}))
     , frame_(axiom(star(Qualifier::Linear),{"F"}))

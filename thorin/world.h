@@ -221,6 +221,13 @@ protected:
         assert(buffer_index_ % alignof(T) == 0);
     }
 
+    template<class T>
+    std::array<const T*, 4> build_array_nullary() {
+        std::function<const T*(Qualifier)> fn = [&](Qualifier q) -> const T* {
+            return insert<T>(0, *this, q); };
+        return array_for_qualifiers<T>(fn);
+    }
+
     std::unique_ptr<Page> root_page_;
     Page* cur_page_;
     size_t buffer_index_ = 0;
