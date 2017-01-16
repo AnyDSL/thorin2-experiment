@@ -18,8 +18,8 @@ struct DefIndexHash {
 
 class Reducer {
 public:
-    Reducer(Defs args)
-        : world_(args.front()->world())
+    Reducer(World& world, Defs args)
+        : world_(world)
         , args_(args)
     {}
 
@@ -105,7 +105,7 @@ const Def* reduce(const Def* def, Defs args, size_t index) {
 }
 
 const Def* reduce(const Def* def, Defs args, std::function<void(const Def*)> f, size_t index) {
-    Reducer reducer(args);
+    Reducer reducer(def->world(), args);
     auto result = reducer.reduce_structurals(def, index);
     f(result);
     reducer.reduce_nominals();

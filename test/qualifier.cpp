@@ -30,6 +30,7 @@ TEST(Qualifiers, Misc) {
 
     World w;
     auto Star = w.star();
+    auto Unit = w.unit();
     auto Nat = w.nat();
     auto n42 = w.axiom(Nat, {"42"});
     auto ANat = w.nat(A);
@@ -79,9 +80,9 @@ TEST(Qualifiers, Misc) {
         print_value_type(NewRef);
         auto ReadRef = w.axiom(w.pi({Star, w.app(Ref, T(0))}, T(1)), {"ReadRef"});
         print_value_type(ReadRef);
-        auto WriteRef = w.axiom(w.pi({Star, app_Ref_T0, T(0)}, w.unit()), {"WriteRef"});
+        auto WriteRef = w.axiom(w.pi({Star, app_Ref_T0, T(0)}, Unit), {"WriteRef"});
         print_value_type(WriteRef);
-        auto FreeRef = w.axiom(w.pi({Star, app_Ref_T0}, w.unit()), {"FreeRef"});
+        auto FreeRef = w.axiom(w.pi({Star, app_Ref_T0}, Unit), {"FreeRef"});
         print_value_type(FreeRef);
     }
     std::cout << "--- Affine Refs ---" << endl;
@@ -96,9 +97,9 @@ TEST(Qualifiers, Misc) {
         auto ReadRef = w.axiom(w.pi({Star, app_Ref_T0}, w.sigma({T(1), w.app(Ref, T(2))})),
                 {"ReadARef"});
         print_value_type(ReadRef);
-        auto WriteRef = w.axiom(w.pi({Star, app_Ref_T0, T(0)}, w.unit()), {"WriteARef"});
+        auto WriteRef = w.axiom(w.pi({Star, app_Ref_T0, T(0)}, Unit), {"WriteARef"});
         print_value_type(WriteRef);
-        auto FreeRef = w.axiom(w.pi({Star, app_Ref_T0}, w.unit()), {"FreeARef"});
+        auto FreeRef = w.axiom(w.pi({Star, app_Ref_T0}, Unit), {"FreeARef"});
         print_value_type(FreeRef);
     }
     std::cout << "--- Affine Capabilities for Refs ---" << endl;
@@ -129,7 +130,7 @@ TEST(Qualifiers, Misc) {
         print_value_type(WriteRef);
         // FreeRef : Π(T:*, C:*, CRef[T, C], ᴬACap[C]).()
         auto FreeRef = w.axiom(w.pi({Star, Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))},
-                                     w.unit()), {"FreeCRef"});
+                                     Unit), {"FreeCRef"});
         print_value_type(FreeRef);
         auto ref42 = w.app(w.app(NewRef, Nat), n42, {"&42"});
         auto phantom = w.extract(ref42, 0);
@@ -168,7 +169,7 @@ TEST(Qualifiers, Misc) {
         print_value_type(WriteRef);
         // // FreeRef : Π(T:*).Π(C:*, FRef[T, C], ᴬFCap[C, Wr]).()
         auto FreeRef = w.axiom(w.pi(Star, w.pi({Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, {C(1), Write})},
-                                               w.unit())), {"FreeFRef"});
+                                               Unit)), {"FreeFRef"});
         print_value_type(FreeRef);
         // SplitFCap : Π(C:*, F:*, ᴬFCap[C, F]).Σ(ᴬFCap[C, Rd(F)], ᴬFCap[C, Rd(F)])
         auto SplitFCap = w.axiom(w.pi({Star, Star, w.app(Cap, {C(1), F(0)})},

@@ -4,6 +4,22 @@
 
 using namespace thorin;
 
+TEST(Simple, unit) {
+    World w;
+    auto unitt = w.unit();
+    auto unitv = w.unit_val();
+    ASSERT_EQ(unitv->type(), unitt);
+
+    auto lam = w.lambda(unitt, unitv);
+    ASSERT_EQ(lam->domain(), unitt);
+    ASSERT_TRUE(lam->domains().size() == 0);
+    ASSERT_EQ(lam->type()->body(), unitt);
+    auto pi = w.pi(Defs({}), unitt);
+    ASSERT_EQ(pi, lam->type());
+    auto apped = w.app(lam, unitv);
+    ASSERT_EQ(unitv, apped);
+}
+
 TEST(Simple, Misc) {
     World w;
     auto n16 = w.nat16();

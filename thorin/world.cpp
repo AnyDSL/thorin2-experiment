@@ -96,8 +96,8 @@ const Def* World::variadic_tuple(const Def* body, Debug dbg) {
 }
 
 const Pi* World::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
-    if (domains.size() == 1 && domains.front()->type()) {
-        if (auto sigma = domains.front()->type()->isa<Sigma>())
+    if (domains.size() == 1) {
+        if (auto sigma = domains.front()->isa<Sigma>())
             return pi(sigma->ops(), body, q, dbg);
     }
 

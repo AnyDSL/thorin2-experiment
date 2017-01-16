@@ -80,6 +80,9 @@ public:
     const Def* app(const Def* callee, const Def* arg, Debug dbg = {}) {
         return app(callee, Defs({arg}), dbg);
     }
+    const Def* app(const Def* callee, Debug dbg = {}) {
+        return app(callee, unit_val(), dbg);
+    }
 
     const Def* sigma(Defs defs, Debug dbg = {}) {
         return sigma(defs, meet(defs), dbg);
@@ -127,6 +130,7 @@ public:
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
 
     const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
+    const Tuple* unit_val() { return tuple(Defs())->as<Tuple>(); }
 
     const Def* singleton(const Def* def, Debug dbg = {});
 
