@@ -35,7 +35,7 @@ TEST(Simple, Misc) {
     Top->dump();
 
     {
-        auto s32w = w.integer(32, ITypeFlags::sw);
+        auto s32w = w.type_int(32, ITypeFlags::sw);
         auto a = w.axiom(s32w, {"a"});
         auto b = w.axiom(s32w, {"b"});
         a->dump();
@@ -46,13 +46,13 @@ TEST(Simple, Misc) {
         //add->type()->dump();
         //mul->dump();
         //mul->type()->dump();
-        w.mem()->dump();
+        w.type_mem()->dump();
 
-        auto load = w.axiom(w.pi(w.star(), w.pi({w.mem(), w.ptr(w.var(w.star(), 1))}, w.sigma({w.mem(), w.var(w.star(), 3)}))), {"load"});
+        auto load = w.axiom(w.pi(w.star(), w.pi({w.type_mem(), w.type_ptr(w.var(w.star(), 1))}, w.sigma({w.type_mem(), w.var(w.star(), 3)}))), {"load"});
         load->type()->dump();
-        auto x = w.axiom(w.ptr(w.nat()), {"x"});
-        auto m = w.axiom(w.mem(), {"m"});
-        auto nat_load = w.app(load, w.nat());
+        auto x = w.axiom(w.type_ptr(w.type_nat()), {"x"});
+        auto m = w.axiom(w.type_mem(), {"m"});
+        auto nat_load = w.app(load, w.type_nat());
         nat_load->dump();
         nat_load->type()->dump();
         auto p = w.app(nat_load, {m, x});
@@ -77,13 +77,13 @@ TEST(Simple, Misc) {
     poly_id->dump();
     poly_id->type()->dump();
 
-    // λx:w.nat().x
-    auto int_id = w.app(poly_id, w.nat());
+    // λx:w.type_nat().x
+    auto int_id = w.app(poly_id, w.type_nat());
     int_id->dump();
     int_id->type()->dump();
 
-    auto fst = w.lambda({w.nat(), w.nat()}, w.var(w.nat(), 1));
-    auto snd = w.lambda({w.nat(), w.nat()}, w.var(w.nat(), 0));
+    auto fst = w.lambda({w.type_nat(), w.type_nat()}, w.var(w.type_nat(), 1));
+    auto snd = w.lambda({w.type_nat(), w.type_nat()}, w.var(w.type_nat(), 0));
     w.app(fst, {n23, n42})->dump(); // 23
     w.app(snd, {n23, n42})->dump(); // 42
 
@@ -95,20 +95,20 @@ TEST(Simple, Misc) {
     //w.extract(w.tuple({n1, n2, n3}), 2)->dump();
     ////w.extract(n3, 0)->dump();
 
-    //auto make_pair = w.axiom(w.pi(w.unit(), w.sigma({w.nat(), w.nat()})), {"make_pair"});
+    //auto make_pair = w.axiom(w.pi(w.unit(), w.sigma({w.type_nat(), w.type_nat()})), {"make_pair"});
     //make_pair->dump();
     //w.app(make_pair, n1)->dump();
 
-    //auto plus = w.axiom(w.pi({w.nat(), w.nat()}, w.nat()), {"+"});
+    //auto plus = w.axiom(w.pi({w.type_nat(), w.type_nat()}, w.type_nat()), {"+"});
     //plus->type()->dump();
     //w.app(int_id, w.app(plus, {w.app(plus, {n1, n2}), n3}))->dump();
 
-    auto Arr = w.axiom(w.pi({w.nat(), w.pi(w.nat(), w.star())}, w.star()),{"Arr"});
-    Defs dom{w.nat(), w.star()};
-    auto _Arr = w.lambda(dom, w.app(Arr, {w.var(w.nat(), 1), w.lambda(w.nat(), w.var(w.star(), 1))}));
+    auto Arr = w.axiom(w.pi({w.type_nat(), w.pi(w.type_nat(), w.star())}, w.star()),{"Arr"});
+    Defs dom{w.type_nat(), w.star()};
+    auto _Arr = w.lambda(dom, w.app(Arr, {w.var(w.type_nat(), 1), w.lambda(w.type_nat(), w.var(w.star(), 1))}));
     _Arr->dump();
 
-    auto arr = w.app(_Arr, {n23, w.nat()});
+    auto arr = w.app(_Arr, {n23, w.type_nat()});
     arr->dump();
 
     // Test projections from dependent sigmas

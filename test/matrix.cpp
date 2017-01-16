@@ -6,7 +6,7 @@ using namespace thorin;
 
 TEST(Matrix, Misc) {
     World w;
-    auto Nat = w.nat();
+    auto Nat = w.type_nat();
     auto Star = w.star();
     auto Float = w.axiom(Star, {"Float"});
     auto opFloatPlus = w.axiom(w.pi(w.sigma({ Float, Float }), Float), {"+"});

@@ -241,9 +241,32 @@ class World : public WorldBase {
 public:
     World();
 
-    const Axiom* nat(Qualifier q = Qualifier::Unrestricted) { return nat_[size_t(q)]; }
+    //@{ types
+    const Axiom* type_nat(Qualifier q = Qualifier::Unrestricted) { return nat_[size_t(q)]; }
+    const Axiom* type_bool(Qualifier q = Qualifier::Unrestricted) { return boolean_[size_t(q)]; }
+    const Axiom* type_int(Qualifier q = Qualifier::Unrestricted) { return integer_[size_t(q)]; }
+    const Def* type_int(const Def* width, const Def* flags, Qualifier q = Qualifier::Unrestricted) {
+        return app(type_int(q), {width, flags});
+    }
+    const Def* type_int(int64_t width, ITypeFlags flags, Qualifier q = Qualifier::Unrestricted) {
+        auto f = nat(int64_t(flags));
+        return app(type_int(q), {nat(width), f});
+    }
+
+    const Axiom* type_real() { return real_; }
+    const Def* type_real(const Def* width, const Def* fast) { return app(type_real(), {width, fast}); }
+
+    const Axiom* type_mem() const { return mem_; }
+
+    const Def* type_ptr(const Def* pointee, const Def* addr_space) {
+        return app(ptr_, {pointee, addr_space});
+    }
+    const Def* type_ptr(const Def* pointee) { return type_ptr(pointee, nat0()); }
+    //@}
+
+    //@{ values
     const Axiom* nat(int64_t val, Qualifier q = Qualifier::Unrestricted) {
-        return assume(nat(q), {val}, {std::to_string(val)});
+        return assume(type_nat(q), {val}, {std::to_string(val)});
     }
     const Axiom*  nat0(Qualifier q = Qualifier::Unrestricted) { return nats_[0][size_t(q)]; }
     const Axiom*  nat1(Qualifier q = Qualifier::Unrestricted) { return nats_[1][size_t(q)]; }
@@ -254,31 +277,11 @@ public:
     const Axiom* nat32(Qualifier q = Qualifier::Unrestricted) { return nats_[6][size_t(q)]; }
     const Axiom* nat64(Qualifier q = Qualifier::Unrestricted) { return nats_[7][size_t(q)]; }
 
-    const Axiom* boolean(Qualifier q = Qualifier::Unrestricted) { return boolean_[size_t(q)]; }
     const Axiom* boolean(bool val, Qualifier q = Qualifier::Unrestricted) {
-        return assume(boolean(q), {val}, {val ? "⊤" : "⊥"});
+        return assume(type_bool(q), {val}, {val ? "⊤" : "⊥"});
     }
     const Axiom* boolean_bot(Qualifier q = Qualifier::Unrestricted) { return booleans_[0][size_t(q)]; }
     const Axiom* boolean_top(Qualifier q = Qualifier::Unrestricted) { return booleans_[1][size_t(q)]; }
-
-    const Axiom* integer(Qualifier q = Qualifier::Unrestricted) { return integer_[size_t(q)]; }
-    const Def* integer(const Def* width, const Def* flags, Qualifier q = Qualifier::Unrestricted) {
-        return app(integer(q), {width, flags});
-    }
-    const Def* integer(int64_t width, ITypeFlags flags, Qualifier q = Qualifier::Unrestricted) {
-        auto f = nat(int64_t(flags));
-        return app(integer(q), {nat(width), f});
-    }
-
-    const Axiom* real() { return real_; }
-    const Def* real(const Def* width, const Def* fast) { return app(real(), {width, fast}); }
-
-    const Axiom* mem() const { return mem_; }
-
-    const Def* ptr(const Def* pointee, const Def* addr_space) {
-        return app(ptr_, {pointee, addr_space});
-    }
-    const Def* ptr(const Def* pointee) { return ptr(pointee, nat0()); }
 
 #define CODE(x, y) \
     const App* type_ ## x(Qualifier q = Qualifier::Unrestricted) { return type_ ## x ## _[size_t(q)]; } \
@@ -295,6 +298,7 @@ public:
     THORIN_I_ARITHOP(CODE)
     //THORIN_R_ARITHOP(CODE)
 #undef CODE
+    //@}
 
 private:
     const std::array<const Axiom*, 4> nat_;

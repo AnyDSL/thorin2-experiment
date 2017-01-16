@@ -15,5 +15,5 @@ TEST(Variadic, Misc) {
     ASSERT_EQ(p2_4, p2_4b);
     p2_4->dump();
     w.proj(2, 1234567890)->dump();
-    w.variadic_sigma(w.nat())->dump();
+    w.variadic_sigma(w.type_nat())->dump();
 }

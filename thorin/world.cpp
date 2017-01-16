@@ -124,16 +124,16 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
 }
 
 const Def* WorldBase::extract(const Def* def, size_t index, Debug dbg) {
-    if (auto tuple_type = def->type()->isa<Sigma>()) {
+    if (def->type()->isa<Sigma>()) {
         if (auto tuple = def->isa<Tuple>())
             return tuple->op(index);
 
         auto type = Tuple::extract_type(*this, def, index);
         return unify<Extract>(1, *this, type, def, index, dbg);
-    } else {
-        assert(index == 0);
-        return def;
     }
+
+    assert(index == 0);
+    return def;
 }
 
 const Def* WorldBase::intersection(Defs defs, Qualifier q, Debug dbg) {
@@ -261,26 +261,26 @@ World::World()
     , booleans_({build_axiom([&](auto q){ return this->boolean(false, q); }),
                 build_axiom([&](auto q){ return this->boolean(true, q); })})
     , integer_(build_axiom([&](auto q){
-                  return this->axiom(this->pi({this->nat(), this->nat()}, this->star(q)), {"int"}); }))
-    , real_(axiom(pi({nat(), boolean()}, star()),{"real"}))
+                  return this->axiom(this->pi({this->type_nat(), this->type_nat()}, this->star(q)), {"int"}); }))
+    , real_(axiom(pi({type_nat(), type_bool()}, star()),{"real"}))
     , mem_(axiom(star(Qualifier::Linear),{"M"}))
     , frame_(axiom(star(Qualifier::Linear),{"F"}))
-    , ptr_(axiom(pi({star(), nat()}, star(),{"ptr"})))
-    , iarithop_type_(pi({nat(), nat()}, pi({
-            integer(var(nat(), 1), var(nat(), 0)),
-            integer(var(nat(), 2), var(nat(), 1))},
-            integer(var(nat(), 3), var(nat(), 2)))))
-    , rarithop_type_(pi({nat(), boolean()}, pi({
-            real(var(nat(), 1), var(nat(), 0)),
-            real(var(nat(), 2), var(nat(), 1))},
-            real(var(nat(), 3), var(nat(), 2)))))
+    , ptr_(axiom(pi({star(), type_bool()}, star(),{"ptr"})))
+    , iarithop_type_(pi({type_nat(), type_nat()}, pi({
+            type_int(var(type_nat(), 1), var(type_nat(), 0)),
+            type_int(var(type_nat(), 2), var(type_nat(), 1))},
+            type_int(var(type_nat(), 3), var(type_nat(), 2)))))
+    , rarithop_type_(pi({type_nat(), type_bool()}, pi({
+            type_real(var(type_nat(), 1), var(type_nat(), 0)),
+            type_real(var(type_nat(), 2), var(type_nat(), 1))},
+            type_real(var(type_nat(), 3), var(type_nat(), 2)))))
     //, icmpop_type_(pi({nat(), boolean(), boolean()}, pi(nat(), pi({
-            //integer(var(nat(), 3), var(boolean(), 2), var(boolean(), 1)),
-            //integer(var(nat(), 4), var(boolean(), 3), var(boolean(), 2))},
-            //integer(var(nat(), 5), var(boolean(), 4), var(boolean(), 3))))))
+            //type_int(var(nat(), 3), var(boolean(), 2), var(boolean(), 1)),
+            //type_int(var(nat(), 4), var(boolean(), 3), var(boolean(), 2))},
+            //type_int(var(nat(), 5), var(boolean(), 4), var(boolean(), 3))))))
     //, rcmpop_type_(pi({nat(), boolean()}, pi(nat(), pi({
-            //real(var(nat(), 2), var(boolean(), 1)),
-            //real(var(nat(), 3), var(boolean(), 2))}, type_uo1()))))
+            //type_real(var(nat(), 2), var(boolean(), 1)),
+            //type_real(var(nat(), 3), var(boolean(), 2))}, type_uo1()))))
 #if 0
 #define CODE(x) \
     , x ## _(axiom(iarithop_type_, {# x}))

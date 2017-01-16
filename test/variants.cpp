@@ -6,8 +6,8 @@ using namespace thorin;
 
 TEST(Variants, negative_test) {
     World w;
-    auto boolean = w.boolean();
-    auto nat = w.nat();
+    auto boolean = w.type_bool();
+    auto nat = w.type_nat();
     auto variant = w.variant({nat, boolean});
     auto any_nat23 = w.any(variant, w.nat(23));
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
@@ -18,8 +18,8 @@ TEST(Variants, negative_test) {
 
 TEST(Variants, positive_tests) {
     World w;
-    auto boolean = w.boolean();
-    auto nat = w.nat();
+    auto boolean = w.type_bool();
+    auto nat = w.type_nat();
     // Test variant types and matches
     auto variant = w.variant({nat, boolean});
     auto any_nat23 = w.any(variant, w.nat(23));

@@ -9,7 +9,7 @@ using namespace thorin;
 
 TEST(Nominal, Misc) {
     World w;
-    auto Nat = w.nat();
+    auto Nat = w.type_nat();
     auto star = w.star();
 
     auto s1 = w.sigma_type(1, {"N"});
