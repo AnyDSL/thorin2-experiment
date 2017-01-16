@@ -10,7 +10,6 @@ namespace thorin {
 
 bool WorldBase::alloc_guard_ = false;
 
-
 WorldBase::WorldBase()
     : root_page_(new Page)
     , cur_page_(root_page_.get())
@@ -258,7 +257,7 @@ World::World()
     , val_nat_({build_nat(*this, 0), build_nat(*this, 1), build_nat(*this, 2), build_nat(*this, 4),
              build_nat(*this, 8), build_nat(*this, 16), build_nat(*this, 32), build_nat(*this, 64)})
     , type_bool_(build_axiom([&](auto q) { return this->axiom(this->star(q),{"Boolean"}); }))
-    , val_bool_({build_axiom([&](auto q){ return this->val_bool(false, q); }),
+    , val_bool_({build_axiom([&](auto q) { return this->val_bool(false, q); }),
                 build_axiom([&](auto q){ return this->val_bool(true, q); })})
     , type_int_(build_axiom([&](auto q){
                   return this->axiom(this->pi({this->type_nat(), this->type_nat()}, this->star(q)), {"int"}); }))
