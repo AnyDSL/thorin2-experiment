@@ -254,23 +254,23 @@ std::array<const Axiom*, 4> build_nat(World& w, size_t width) {
 }
 
 World::World()
-    : nat_(build_axiom([&](auto q) { return this->axiom(this->star(q),{"Nat"}); }))
-    , nats_({build_nat(*this, 0), build_nat(*this, 1), build_nat(*this, 2), build_nat(*this, 4),
+    : type_nat_(build_axiom([&](auto q) { return this->axiom(this->star(q),{"Nat"}); }))
+    , val_nat_({build_nat(*this, 0), build_nat(*this, 1), build_nat(*this, 2), build_nat(*this, 4),
              build_nat(*this, 8), build_nat(*this, 16), build_nat(*this, 32), build_nat(*this, 64)})
-    , boolean_(build_axiom([&](auto q) { return this->axiom(this->star(q),{"Boolean"}); }))
-    , booleans_({build_axiom([&](auto q){ return this->val_bool(false, q); }),
+    , type_bool_(build_axiom([&](auto q) { return this->axiom(this->star(q),{"Boolean"}); }))
+    , val_bool_({build_axiom([&](auto q){ return this->val_bool(false, q); }),
                 build_axiom([&](auto q){ return this->val_bool(true, q); })})
-    , integer_(build_axiom([&](auto q){
+    , type_int_(build_axiom([&](auto q){
                   return this->axiom(this->pi({this->type_nat(), this->type_nat()}, this->star(q)), {"int"}); }))
-    , real_(axiom(pi({type_nat(), type_bool()}, star()),{"real"}))
-    , mem_(axiom(star(Qualifier::Linear),{"M"}))
-    , frame_(axiom(star(Qualifier::Linear),{"F"}))
-    , ptr_(axiom(pi({star(), type_bool()}, star(),{"ptr"})))
-    , iarithop_type_(pi({type_nat(), type_nat()}, pi({
+    , type_real_(axiom(pi({type_nat(), type_bool()}, star()),{"real"}))
+    , type_mem_(axiom(star(Qualifier::Linear),{"M"}))
+    , type_frame_(axiom(star(Qualifier::Linear),{"F"}))
+    , type_ptr_(axiom(pi({star(), type_bool()}, star(),{"ptr"})))
+    , type_iarithop_(pi({type_nat(), type_nat()}, pi({
             type_int(var(type_nat(), 1), var(type_nat(), 0)),
             type_int(var(type_nat(), 2), var(type_nat(), 1))},
             type_int(var(type_nat(), 3), var(type_nat(), 2)))))
-    , rarithop_type_(pi({type_nat(), type_bool()}, pi({
+    , type_rarithop_(pi({type_nat(), type_bool()}, pi({
             type_real(var(type_nat(), 1), var(type_nat(), 0)),
             type_real(var(type_nat(), 2), var(type_nat(), 1))},
             type_real(var(type_nat(), 3), var(type_nat(), 2)))))

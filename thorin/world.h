@@ -241,10 +241,10 @@ class World : public WorldBase {
 public:
     World();
 
-    //@{ types
-    const Axiom* type_nat(Qualifier q = Qualifier::Unrestricted) { return nat_[size_t(q)]; }
-    const Axiom* type_bool(Qualifier q = Qualifier::Unrestricted) { return boolean_[size_t(q)]; }
-    const Axiom* type_int(Qualifier q = Qualifier::Unrestricted) { return integer_[size_t(q)]; }
+    //@{ types and type constructors
+    const Axiom* type_bool(Qualifier q = Qualifier::Unrestricted) { return type_bool_[size_t(q)]; }
+    const Axiom* type_nat(Qualifier q = Qualifier::Unrestricted) { return type_nat_[size_t(q)]; }
+    const Axiom* type_int(Qualifier q = Qualifier::Unrestricted) { return type_int_[size_t(q)]; }
     const Def* type_int(const Def* width, const Def* flags, Qualifier q = Qualifier::Unrestricted) {
         return app(type_int(q), {width, flags});
     }
@@ -253,13 +253,13 @@ public:
         return app(type_int(q), {val_nat(width), f});
     }
 
-    const Axiom* type_real() { return real_; }
+    const Axiom* type_real() { return type_real_; }
     const Def* type_real(const Def* width, const Def* fast) { return app(type_real(), {width, fast}); }
 
-    const Axiom* type_mem() const { return mem_; }
+    const Axiom* type_mem() const { return type_mem_; }
 
     const Def* type_ptr(const Def* pointee, const Def* addr_space) {
-        return app(ptr_, {pointee, addr_space});
+        return app(type_ptr_, {pointee, addr_space});
     }
     const Def* type_ptr(const Def* pointee) { return type_ptr(pointee, val_nat0()); }
 
@@ -274,20 +274,22 @@ public:
     const Axiom* val_nat(int64_t val, Qualifier q = Qualifier::Unrestricted) {
         return assume(type_nat(q), {val}, {std::to_string(val)});
     }
-    const Axiom* val_nat0(Qualifier q = Qualifier::Unrestricted) { return nats_[0][size_t(q)]; }
-    const Axiom* val_nat1(Qualifier q = Qualifier::Unrestricted) { return nats_[1][size_t(q)]; }
-    const Axiom* val_nat2(Qualifier q = Qualifier::Unrestricted) { return nats_[2][size_t(q)]; }
-    const Axiom* val_nat4(Qualifier q = Qualifier::Unrestricted) { return nats_[3][size_t(q)]; }
-    const Axiom* val_nat8(Qualifier q = Qualifier::Unrestricted) { return nats_[4][size_t(q)]; }
-    const Axiom* val_nat16(Qualifier q = Qualifier::Unrestricted) { return nats_[5][size_t(q)]; }
-    const Axiom* val_nat32(Qualifier q = Qualifier::Unrestricted) { return nats_[6][size_t(q)]; }
-    const Axiom* val_nat64(Qualifier q = Qualifier::Unrestricted) { return nats_[7][size_t(q)]; }
+    const Axiom* val_nat0(Qualifier q = Qualifier::Unrestricted) { return val_nat_[0][size_t(q)]; }
+    const Axiom* val_nat1(Qualifier q = Qualifier::Unrestricted) { return val_nat_[1][size_t(q)]; }
+    const Axiom* val_nat2(Qualifier q = Qualifier::Unrestricted) { return val_nat_[2][size_t(q)]; }
+    const Axiom* val_nat4(Qualifier q = Qualifier::Unrestricted) { return val_nat_[3][size_t(q)]; }
+    const Axiom* val_nat8(Qualifier q = Qualifier::Unrestricted) { return val_nat_[4][size_t(q)]; }
+    const Axiom* val_nat16(Qualifier q = Qualifier::Unrestricted) { return val_nat_[5][size_t(q)]; }
+    const Axiom* val_nat32(Qualifier q = Qualifier::Unrestricted) { return val_nat_[6][size_t(q)]; }
+    const Axiom* val_nat64(Qualifier q = Qualifier::Unrestricted) { return val_nat_[7][size_t(q)]; }
 
     const Axiom* val_bool(bool val, Qualifier q = Qualifier::Unrestricted) {
+        // TODO use this
+        //return val_bool_[size_t(val)][size_t(q)];
         return assume(type_bool(q), {val}, {val ? "⊤" : "⊥"});
     }
-    const Axiom* val_top(Qualifier q = Qualifier::Unrestricted) { return booleans_[0][size_t(q)]; }
-    const Axiom* val_bot(Qualifier q = Qualifier::Unrestricted) { return booleans_[1][size_t(q)]; }
+    const Axiom* val_top(Qualifier q = Qualifier::Unrestricted) { return val_bool_[0][size_t(q)]; }
+    const Axiom* val_bot(Qualifier q = Qualifier::Unrestricted) { return val_bool_[1][size_t(q)]; }
 
 #define CODE(x, y) \
     const Axiom* val_ ## x(y val, Qualifier q = Qualifier::Unrestricted) { \
@@ -300,37 +302,37 @@ public:
 
     //@{ operations
 #define CODE(x) \
-    const Axiom* x() { return x ## _; } \
-    const App* x(const Def*, const Def*) { return nullptr; }
+    const Axiom* op_ ## x() { return op_ ## x ## _; } \
+    const App* op_ ## x(const Def*, const Def*) { return nullptr; }
     THORIN_I_ARITHOP(CODE)
     //THORIN_R_ARITHOP(CODE)
 #undef CODE
     //@}
 
 private:
-    const std::array<const Axiom*, 4> nat_;
-    const std::array<std::array<const Axiom*, 4>, 8> nats_;
-    const std::array<const Axiom*, 4> boolean_;
-    const std::array<std::array<const Axiom*, 4>, 2> booleans_;
-    const std::array<const Axiom*, 4> integer_;
-    const Axiom* real_;
-    const Axiom* mem_;
-    const Axiom* frame_;
-    const Axiom* ptr_;
-    const Pi* iarithop_type_;
-    const Pi* rarithop_type_;
-    const Pi* icmpop_type_;
-    const Pi* rcmpop_type_;
+    const std::array<const Axiom*, 4> type_nat_;
+    const std::array<std::array<const Axiom*, 4>, 8> val_nat_;
+    const std::array<const Axiom*, 4> type_bool_;
+    const std::array<std::array<const Axiom*, 4>, 2> val_bool_;
+    const std::array<const Axiom*, 4> type_int_;
+    const Axiom* type_real_;
+    const Axiom* type_mem_;
+    const Axiom* type_frame_;
+    const Axiom* type_ptr_;
+    const Pi* type_icmpop_;
+    const Pi* type_rcmpop_;
+    const Pi* type_iarithop_;
+    const Pi* type_rarithop_;
 
 #define CODE(x) \
-    const Axiom* x ## _; \
-    const App* x ## s_[size_t(IType::Num)];
+    const Axiom* op_ ## x ## _; \
+    const App* op_ ## x ## s_[size_t(IType::Num)];
     THORIN_I_ARITHOP(CODE)
 #undef CODE
 
 #define CODE(x) \
-    const Axiom* x ## _; \
-    const App* x ## s_[size_t(IType::Num)];
+    const Axiom* op_ ## x ## _; \
+    const App* op_ ## x ## s_[size_t(IType::Num)];
     THORIN_R_ARITHOP(CODE)
 #undef CODE
 
@@ -341,7 +343,7 @@ private:
             THORIN_I_TYPE(CODE)
 #undef CODE
         };
-        const std::array<const std::array<const App*,  size_t(IType::Num)>, 4> integers_;
+        const std::array<const std::array<const App*,  size_t(IType::Num)>, 4> type_ints_;
     };
 
     union {
@@ -351,29 +353,29 @@ private:
             THORIN_R_TYPE(CODE)
 #undef CODE
         };
-        const App* reals_[size_t(RType::Num)];
+        const App* type_reals_[size_t(RType::Num)];
     };
 
-    const Axiom* icmp_;
+    const Axiom* op_icmp_;
     union {
         struct {
 #define CODE(x) \
-            const App* icmp_ ## x ## _;
+            const App* op_ ## icmp_ ## x ## _;
             THORIN_I_REL(CODE)
 #undef CODE
         };
-        const App* icmps_[size_t(IRel::Num)];
+        const App* op_icmps_[size_t(IRel::Num)];
     };
 
-    const Axiom* rcmp_;
+    const Axiom* op_rcmp_;
     union {
         struct {
 #define CODE(x) \
-            const App* rcmp_ ## x ## _;
+            const App* op_ ## rcmp_ ## x ## _;
             THORIN_I_REL(CODE)
 #undef CODE
         };
-        const App* rcmps_[size_t(IRel::Num)];
+        const App* op_rcmps_[size_t(IRel::Num)];
     };
 };
 
