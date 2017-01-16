@@ -167,7 +167,7 @@ const SortedDefSet set_flatten(Defs defs) {
     return flat_defs;
 }
 
-const Def* type_from_sort(World& world, Def::Sort sort, Qualifier q) {
+const Def* type_from_sort(WorldBase& world, Def::Sort sort, Qualifier q) {
     assert(sort != Def::Sort::Term  && "A type can never be of sort Term.");
     switch (sort) {
     case Def::Sort::Kind: return world.universe(q);
@@ -190,7 +190,7 @@ bool check_same_sorted_ops(Def::Sort sort, Defs ops, Qualifier q) {
     return true;
 }
 
-const Def* Quantifier::max_type(World& world, Defs ops, Qualifier q) {
+const Def* Quantifier::max_type(WorldBase& world, Defs ops, Qualifier q) {
     auto qualifier = Qualifier::Unrestricted;
     Sort max_sort = Sort::Type;
     for (auto op : ops) {
@@ -217,13 +217,13 @@ Def::~Def() {
         delete[] ops_;
 }
 
-Arity::Arity(World& world, size_t arity, Qualifier q, Debug dbg)
+Arity::Arity(WorldBase& world, size_t arity, Qualifier q, Debug dbg)
     : Def(world, Tag::Arity, world.space(q), Defs(), dbg)
 {
     arity_ = arity;
 }
 
-Intersection::Intersection(World& world, Defs ops, Qualifier q, Debug dbg)
+Intersection::Intersection(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
     : Def(world, Tag::Intersection, type_from_sort(world, ops[0]->sort(), q),
                  set_flatten<Intersection>(ops), dbg)
 {
@@ -231,46 +231,46 @@ Intersection::Intersection(World& world, Defs ops, Qualifier q, Debug dbg)
     compute_free_vars();
 }
 
-Lambda::Lambda(World& world, const Pi* type, const Def* body, Debug dbg)
+Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
     : Constructor(world, Tag::Lambda, type, {body}, dbg)
 {
     compute_free_vars();
 }
 
-Pi::Pi(World& world, Defs domains, const Def* body, Qualifier q, Debug dbg)
+Pi::Pi(WorldBase& world, Defs domains, const Def* body, Qualifier q, Debug dbg)
     : Quantifier(world, Tag::Pi, body->type()->is_universe() ? (const Def*) world.universe(q) : world.star(q),
                  concat(domains, body), dbg)
 {
     compute_free_vars();
 }
 
-Proj::Proj(World& world, const Arity* arity, size_t index, Debug dbg)
+Proj::Proj(WorldBase& world, const Arity* arity, size_t index, Debug dbg)
     : Def(world, Tag::Proj, arity, Defs(), dbg)
 {
     index_ = index;
 }
 
-Sigma::Sigma(World& world, size_t num_ops, Qualifier q, Debug dbg)
+Sigma::Sigma(WorldBase& world, size_t num_ops, Qualifier q, Debug dbg)
     : Sigma(world, world.universe(q), num_ops, dbg)
 {}
 
-Space::Space(World& world, Qualifier q)
+Space::Space(WorldBase& world, Qualifier q)
     : Def(world, Tag::Space, world.universe(q), Defs(), {"𝕊"})
 {}
 
-Star::Star(World& world, Qualifier q)
+Star::Star(WorldBase& world, Qualifier q)
     : Def(world, Tag::Star, world.universe(q), Defs(), {"*"})
 {}
 
-VariadicSigma::VariadicSigma(World& world, const Def* body, Qualifier q, Debug dbg)
+VariadicSigma::VariadicSigma(WorldBase& world, const Def* body, Qualifier q, Debug dbg)
     : Quantifier(world, Tag::VariadicSigma, world.universe(q), {body}, dbg)
 {}
 
-VariadicTuple::VariadicTuple(World& world, const Def* type, const Def* body, Debug dbg)
+VariadicTuple::VariadicTuple(WorldBase& world, const Def* type, const Def* body, Debug dbg)
     : Constructor(world, Tag::VariadicTuple, type, {body}, dbg)
 {}
 
-Variant::Variant(World& world, Defs ops, Qualifier q, Debug dbg)
+Variant::Variant(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
     : Def(world, Tag::Variant, type_from_sort(world, ops[0]->sort(), q), set_flatten<Variant>(ops),
                  dbg)
 {
@@ -370,54 +370,54 @@ bool Var::equal(const Def* other) const {
  * rebuild
  */
 
-const Def* Any          ::rebuild(World& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
-const Def* App          ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
-const Def* Arity        ::rebuild(World& to, const Def*  , Defs    ) const { return to.arity(arity(), qualifier(), debug()); }
-const Def* Extract      ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], index(), debug()); }
-const Def* Axiom        ::rebuild(World& to, const Def* t, Defs    ) const {
+const Def* Any          ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
+const Def* App          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
+const Def* Arity        ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity(arity(), qualifier(), debug()); }
+const Def* Extract      ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], index(), debug()); }
+const Def* Axiom        ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
     return to.assume(t, box(), debug());
 }
-const Def* Error        ::rebuild(World& to, const Def* t, Defs    ) const { return to.error(t); }
-const Def* Intersection ::rebuild(World& to, const Def*  , Defs ops) const { return to.intersection(ops, debug()); }
-const Def* Match        ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
-const Def* Lambda       ::rebuild(World& to, const Def* t, Defs ops) const {
+const Def* Error        ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.error(t); }
+const Def* Intersection ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.intersection(ops, debug()); }
+const Def* Match        ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
+const Def* Lambda       ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     assert(!is_nominal());
     return to.pi_lambda(t->as<Pi>(), ops.front(), debug());
 }
-const Def* Pi           ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), debug()); }
-const Def* Pick         ::rebuild(World& to, const Def* t, Defs ops) const {
+const Def* Pi           ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), debug()); }
+const Def* Pick         ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* Proj         ::rebuild(World& to, const Def*  , Defs    ) const { return to.proj(index(), arity(), qualifier(), debug()); }
-const Def* Sigma        ::rebuild(World& to, const Def*  , Defs ops) const {
+const Def* Proj         ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.proj(index(), arity(), qualifier(), debug()); }
+const Def* Sigma        ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
     assert(!is_nominal());
     return to.sigma(ops, qualifier(), debug());
 }
-const Def* Singleton    ::rebuild(World& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
-const Def* Space        ::rebuild(World& to, const Def*  , Defs    ) const { return to.space(qualifier()); }
-const Def* Star         ::rebuild(World& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
-const Def* Tuple        ::rebuild(World& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
-const Def* Universe     ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
-const Def* Var          ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
-const Def* Variant      ::rebuild(World& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
-const Def* VariadicSigma::rebuild(World& to, const Def*  , Defs ops) const { return to.variadic_sigma(ops[0], qualifier(), debug()); }
-const Def* VariadicTuple::rebuild(World& to, const Def*  , Defs ops) const { return to.variadic_tuple(ops[0], debug()); }
+const Def* Singleton    ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
+const Def* Space        ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.space(qualifier()); }
+const Def* Star         ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
+const Def* Tuple        ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
+const Def* Universe     ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
+const Def* Var          ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
+const Def* Variant      ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
+const Def* VariadicSigma::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic_sigma(ops[0], qualifier(), debug()); }
+const Def* VariadicTuple::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic_tuple(ops[0], debug()); }
 
-Axiom* Axiom::stub(World& to, const Def*, Debug) const {
+Axiom* Axiom::stub(WorldBase& to, const Def*, Debug) const {
     assert(&world() != &to);
     assert(is_nominal());
     return const_cast<Axiom*>(this);
 }
-Lambda* Lambda::stub(World& to, const Def* type, Debug dbg) const {
+Lambda* Lambda::stub(WorldBase& to, const Def* type, Debug dbg) const {
     return to.pi_lambda(type->as<Pi>(), dbg);
 }
-Sigma* Sigma::stub(World& to, const Def* type, Debug dbg) const {
+Sigma* Sigma::stub(WorldBase& to, const Def* type, Debug dbg) const {
     return to.sigma(num_ops(), type, dbg);
 }
-Variant* Variant::stub(World& to, const Def* type, Debug dbg) const {
+Variant* Variant::stub(WorldBase& to, const Def* type, Debug dbg) const {
     return to.variant(num_ops(), type, dbg);
 }
 
@@ -456,7 +456,7 @@ const Def* App::try_reduce() const {
     return cache_ = this;
 }
 
-const Def* Tuple::extract_type(World& world, const Def* tuple, size_t index) {
+const Def* Tuple::extract_type(WorldBase& world, const Def* tuple, size_t index) {
     auto sigma = tuple->type()->as<Sigma>();
     assert(sigma->num_ops() > index && index >= 0);
     auto type = sigma->op(index);

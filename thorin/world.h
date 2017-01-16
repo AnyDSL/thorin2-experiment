@@ -9,7 +9,7 @@
 
 namespace thorin {
 
-class World {
+class WorldBase {
 public:
     struct DefHash {
         static uint64_t hash(const Def* def) { return def->hash(); }
@@ -19,11 +19,11 @@ public:
 
     typedef HashSet<const Def*, DefHash> DefSet;
 
-    World& operator=(const World&) = delete;
-    World(const World&) = delete;
+    WorldBase& operator=(const WorldBase&) = delete;
+    WorldBase(const WorldBase&) = delete;
 
-    World();
-    ~World();
+    WorldBase();
+    ~WorldBase();
 
     const Universe* universe(Qualifier q = Qualifier::Unrestricted) const { return universe_[size_t(q)]; }
     const Star* star(Qualifier q = Qualifier::Unrestricted) const { return star_[size_t(q)]; }
@@ -134,64 +134,9 @@ public:
 
     const Def* singleton(const Def* def, Debug dbg = {});
 
-    const Axiom* nat(Qualifier q = Qualifier::Unrestricted) { return nat_[size_t(q)]; }
-    const Axiom* nat(int64_t val, Qualifier q = Qualifier::Unrestricted) {
-        return assume(nat(q), {val}, {std::to_string(val)});
-    }
-    const Axiom*  nat0(Qualifier q = Qualifier::Unrestricted) { return nats_[0][size_t(q)]; }
-    const Axiom*  nat1(Qualifier q = Qualifier::Unrestricted) { return nats_[1][size_t(q)]; }
-    const Axiom*  nat2(Qualifier q = Qualifier::Unrestricted) { return nats_[2][size_t(q)]; }
-    const Axiom*  nat4(Qualifier q = Qualifier::Unrestricted) { return nats_[3][size_t(q)]; }
-    const Axiom*  nat8(Qualifier q = Qualifier::Unrestricted) { return nats_[4][size_t(q)]; }
-    const Axiom* nat16(Qualifier q = Qualifier::Unrestricted) { return nats_[5][size_t(q)]; }
-    const Axiom* nat32(Qualifier q = Qualifier::Unrestricted) { return nats_[6][size_t(q)]; }
-    const Axiom* nat64(Qualifier q = Qualifier::Unrestricted) { return nats_[7][size_t(q)]; }
-
-    const Axiom* boolean(Qualifier q = Qualifier::Unrestricted) { return boolean_[size_t(q)]; }
-    const Axiom* boolean(bool val, Qualifier q = Qualifier::Unrestricted) {
-        return assume(boolean(q), {val}, {val ? "⊤" : "⊥"});
-    }
-    const Axiom* boolean_bot(Qualifier q = Qualifier::Unrestricted) { return booleans_[0][size_t(q)]; }
-    const Axiom* boolean_top(Qualifier q = Qualifier::Unrestricted) { return booleans_[1][size_t(q)]; }
-
-    const Axiom* integer(Qualifier q = Qualifier::Unrestricted) { return integer_[size_t(q)]; }
-    const Def* integer(const Def* width, const Def* flags, Qualifier q = Qualifier::Unrestricted) {
-        return app(integer(q), {width, flags});
-    }
-    const Def* integer(int64_t width, ITypeFlags flags, Qualifier q = Qualifier::Unrestricted) {
-        auto f = nat(int64_t(flags));
-        return app(integer(q), {nat(width), f});
-    }
-
-    const Axiom* real() { return real_; }
-    const Def* real(const Def* width, const Def* fast) { return app(real(), {width, fast}); }
-
-    const Axiom* mem() const { return mem_; }
-
-    const Def* ptr(const Def* pointee, const Def* addr_space) {
-        return app(ptr_, {pointee, addr_space});
-    }
-    const Def* ptr(const Def* pointee) { return ptr(pointee, nat0()); }
-
-#define CODE(x, y) \
-    const App* type_ ## x(Qualifier q = Qualifier::Unrestricted) { return type_ ## x ## _[size_t(q)]; } \
-    const Axiom* literal_ ## x(y val, Qualifier q = Qualifier::Unrestricted) { \
-        return assume(type_ ## x(q), {val}, {std::to_string(val)}); \
-    }
-    THORIN_I_TYPE(CODE)
-    //THORIN_R_TYPE(CODE)
-#undef CODE
-
-#define CODE(x) \
-    const Axiom* x() { return x ## _; } \
-    const App* x(const Def*, const Def*) { return nullptr; }
-    THORIN_I_ARITHOP(CODE)
-    //THORIN_R_ARITHOP(CODE)
-#undef CODE
-
     const DefSet& defs() const { return defs_; }
 
-    friend void swap(World& w1, World& w2) {
+    friend void swap(WorldBase& w1, WorldBase& w2) {
         using std::swap;
         swap(w1.defs_, w2.defs_);
         w1.fix();
@@ -283,6 +228,68 @@ protected:
     const std::array<const Universe*, 4> universe_;
     const std::array<const Star*, 4> star_;
     const std::array<const Space*, 4> space_;
+};
+
+class World : public WorldBase {
+public:
+    World();
+
+    const Axiom* nat(Qualifier q = Qualifier::Unrestricted) { return nat_[size_t(q)]; }
+    const Axiom* nat(int64_t val, Qualifier q = Qualifier::Unrestricted) {
+        return assume(nat(q), {val}, {std::to_string(val)});
+    }
+    const Axiom*  nat0(Qualifier q = Qualifier::Unrestricted) { return nats_[0][size_t(q)]; }
+    const Axiom*  nat1(Qualifier q = Qualifier::Unrestricted) { return nats_[1][size_t(q)]; }
+    const Axiom*  nat2(Qualifier q = Qualifier::Unrestricted) { return nats_[2][size_t(q)]; }
+    const Axiom*  nat4(Qualifier q = Qualifier::Unrestricted) { return nats_[3][size_t(q)]; }
+    const Axiom*  nat8(Qualifier q = Qualifier::Unrestricted) { return nats_[4][size_t(q)]; }
+    const Axiom* nat16(Qualifier q = Qualifier::Unrestricted) { return nats_[5][size_t(q)]; }
+    const Axiom* nat32(Qualifier q = Qualifier::Unrestricted) { return nats_[6][size_t(q)]; }
+    const Axiom* nat64(Qualifier q = Qualifier::Unrestricted) { return nats_[7][size_t(q)]; }
+
+    const Axiom* boolean(Qualifier q = Qualifier::Unrestricted) { return boolean_[size_t(q)]; }
+    const Axiom* boolean(bool val, Qualifier q = Qualifier::Unrestricted) {
+        return assume(boolean(q), {val}, {val ? "⊤" : "⊥"});
+    }
+    const Axiom* boolean_bot(Qualifier q = Qualifier::Unrestricted) { return booleans_[0][size_t(q)]; }
+    const Axiom* boolean_top(Qualifier q = Qualifier::Unrestricted) { return booleans_[1][size_t(q)]; }
+
+    const Axiom* integer(Qualifier q = Qualifier::Unrestricted) { return integer_[size_t(q)]; }
+    const Def* integer(const Def* width, const Def* flags, Qualifier q = Qualifier::Unrestricted) {
+        return app(integer(q), {width, flags});
+    }
+    const Def* integer(int64_t width, ITypeFlags flags, Qualifier q = Qualifier::Unrestricted) {
+        auto f = nat(int64_t(flags));
+        return app(integer(q), {nat(width), f});
+    }
+
+    const Axiom* real() { return real_; }
+    const Def* real(const Def* width, const Def* fast) { return app(real(), {width, fast}); }
+
+    const Axiom* mem() const { return mem_; }
+
+    const Def* ptr(const Def* pointee, const Def* addr_space) {
+        return app(ptr_, {pointee, addr_space});
+    }
+    const Def* ptr(const Def* pointee) { return ptr(pointee, nat0()); }
+
+#define CODE(x, y) \
+    const App* type_ ## x(Qualifier q = Qualifier::Unrestricted) { return type_ ## x ## _[size_t(q)]; } \
+    const Axiom* literal_ ## x(y val, Qualifier q = Qualifier::Unrestricted) { \
+        return assume(type_ ## x(q), {val}, {std::to_string(val)}); \
+    }
+    THORIN_I_TYPE(CODE)
+    //THORIN_R_TYPE(CODE)
+#undef CODE
+
+#define CODE(x) \
+    const Axiom* x() { return x ## _; } \
+    const App* x(const Def*, const Def*) { return nullptr; }
+    THORIN_I_ARITHOP(CODE)
+    //THORIN_R_ARITHOP(CODE)
+#undef CODE
+
+private:
     const std::array<const Axiom*, 4> nat_;
     const std::array<std::array<const Axiom*, 4>, 8> nats_;
     const std::array<const Axiom*, 4> boolean_;
@@ -355,3 +362,4 @@ protected:
 }
 
 #endif
+

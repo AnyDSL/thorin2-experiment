@@ -18,18 +18,18 @@ struct DefIndexHash {
 
 class Reducer {
 public:
-    Reducer(World& world, Defs args)
+    Reducer(WorldBase& world, Defs args)
         : world_(world)
         , args_(args)
     {}
 
     size_t num_args() const { return args_.size(); }
-    World& world() const { return world_; }
+    WorldBase& world() const { return world_; }
     const Def* reduce_structurals(const Def* def, size_t index = 0);
     void reduce_nominals();
 
 private:
-    World& world_;
+    WorldBase& world_;
     Array<const Def*> args_;
     thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
     std::stack<DefIndex> nominals_;
