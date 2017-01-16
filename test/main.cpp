@@ -22,16 +22,16 @@ TEST(Simple, unit) {
 
 TEST(Simple, Misc) {
     World w;
-    auto n16 = w.nat16();
+    auto n16 = w.val_nat16();
     n16->dump();
-    ASSERT_EQ(n16, w.nat(16));
+    ASSERT_EQ(n16, w.val_nat(16));
 
-    auto n23 = w.nat(23);
-    auto n23x = w.nat(23);
+    auto n23 = w.val_nat(23);
+    auto n23x = w.val_nat(23);
     ASSERT_EQ(n23, n23x);
-    auto n42 = w.nat(42);
-    /*auto n32 =*/ w.nat(32);
-    auto Top = w.boolean_top();
+    auto n42 = w.val_nat(42);
+    /*auto n32 =*/ w.val_nat(32);
+    auto Top = w.val_top();
     Top->dump();
 
     {

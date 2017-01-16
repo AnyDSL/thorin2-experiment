@@ -38,9 +38,9 @@ TEST(Qualifiers, Misc) {
     auto LNat = w.type_nat(L);
     ASSERT_EQ(LNat, w.type_nat(L));
     auto RNat = w.type_nat(R);
-    auto an0 = w.nat(0, A);
-    ASSERT_NE(an0, w.nat(0, A));
-    auto l_a0 = w.lambda(Unit, w.nat(0, A), {"l_a0"});
+    auto an0 = w.val_nat(0, A);
+    ASSERT_NE(an0, w.val_nat(0, A));
+    auto l_a0 = w.lambda(Unit, w.val_nat(0, A), {"l_a0"});
     auto l_a0_app = w.app(l_a0);
     ASSERT_NE(l_a0_app, w.app(l_a0));
     auto anx = w.var(ANat, 0, {"x"});

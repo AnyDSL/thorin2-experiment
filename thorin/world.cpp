@@ -250,7 +250,7 @@ std::array<const Axiom*, 4> build_axiom(std::function<const Axiom*(Qualifier q)>
 }
 
 std::array<const Axiom*, 4> build_nat(World& w, size_t width) {
-    return array_for_qualifiers<Axiom>([&](auto q){ return w.nat(width, q); });
+    return array_for_qualifiers<Axiom>([&](auto q){ return w.val_nat(width, q); });
 }
 
 World::World()
@@ -258,8 +258,8 @@ World::World()
     , nats_({build_nat(*this, 0), build_nat(*this, 1), build_nat(*this, 2), build_nat(*this, 4),
              build_nat(*this, 8), build_nat(*this, 16), build_nat(*this, 32), build_nat(*this, 64)})
     , boolean_(build_axiom([&](auto q) { return this->axiom(this->star(q),{"Boolean"}); }))
-    , booleans_({build_axiom([&](auto q){ return this->boolean(false, q); }),
-                build_axiom([&](auto q){ return this->boolean(true, q); })})
+    , booleans_({build_axiom([&](auto q){ return this->val_bool(false, q); }),
+                build_axiom([&](auto q){ return this->val_bool(true, q); })})
     , integer_(build_axiom([&](auto q){
                   return this->axiom(this->pi({this->type_nat(), this->type_nat()}, this->star(q)), {"int"}); }))
     , real_(axiom(pi({type_nat(), type_bool()}, star()),{"real"}))

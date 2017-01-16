@@ -9,10 +9,10 @@ TEST(Variants, negative_test) {
     auto boolean = w.type_bool();
     auto nat = w.type_nat();
     auto variant = w.variant({nat, boolean});
-    auto any_nat23 = w.any(variant, w.nat(23));
+    auto any_nat23 = w.any(variant, w.val_nat(23));
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
-    w.lambda(boolean, w.nat(0));
-    auto handle_bool_bool = w.lambda({boolean, boolean}, w.nat(0));
+    w.lambda(boolean, w.val_nat(0));
+    auto handle_bool_bool = w.lambda({boolean, boolean}, w.val_nat(0));
     ASSERT_DEATH(w.match(any_nat23, {handle_bool_bool, handle_nat}), ".*");
 }
 
@@ -22,7 +22,7 @@ TEST(Variants, positive_tests) {
     auto nat = w.type_nat();
     // Test variant types and matches
     auto variant = w.variant({nat, boolean});
-    auto any_nat23 = w.any(variant, w.nat(23));
+    auto any_nat23 = w.any(variant, w.val_nat(23));
     auto any_bool = w.any(variant, w.axiom(boolean,{"false"}));
     auto assumed_var = w.axiom(variant,{"someval"});
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
