@@ -35,7 +35,7 @@ const Def* WorldBase::variadic_sigma(const Def* body, Qualifier q, Debug dbg) {
     return unify<VariadicSigma>(1, *this, body, q, dbg);
 }
 
-const Def* WorldBase::variadic_tuple(const Def* body, Debug dbg) {
+const Def* WorldBase::variadic_tuple(const Def* /*body*/, Debug /*dbg*/) {
     assert(false && "TODO");
     //return unify<VariadicTuple>(1, *this, body, dbg);
 }
@@ -125,10 +125,8 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
 
 const Def* WorldBase::extract(const Def* def, size_t index, Debug dbg) {
     if (auto tuple_type = def->type()->isa<Sigma>()) {
-        assert(index >= 0 && index < tuple_type->num_ops());
-        if (auto tuple = def->isa<Tuple>()) {
+        if (auto tuple = def->isa<Tuple>())
             return tuple->op(index);
-        }
 
         auto type = Tuple::extract_type(*this, def, index);
         return unify<Extract>(1, *this, type, def, index, dbg);

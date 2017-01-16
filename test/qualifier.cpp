@@ -45,7 +45,7 @@ TEST(Qualifiers, Misc) {
     ASSERT_NE(l_a0_app, w.app(l_a0));
     auto anx = w.var(ANat, 0, {"x"});
     auto anid = w.lambda(ANat, anx, {"anid"});
-    auto anid_app = w.app(anid, an0);
+    w.app(anid, an0);
     ASSERT_TRUE(is_error(w.app(anid, an0)));
 
     auto tuple_type = w.sigma({ANat, RNat});

@@ -176,6 +176,7 @@ protected:
         , ops_(&vla_ops_[0])
     {
         std::copy(ops.begin(), ops.end(), ops_);
+        assert_unused(dummy == nullptr);
     }
 
     /// A @em structural Def.

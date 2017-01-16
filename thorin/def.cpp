@@ -181,8 +181,8 @@ bool check_same_sorted_ops(Def::Sort sort, Defs ops, Qualifier q) {
         assert(sort == op->sort() && "Operands must be of the same sort.");
         qualifier = meet(qualifier, op->qualifier());
     }
-    assert(sort == Def::Sort::Type || sort == Def::Sort::Kind &&
-           "Only sort type or kind allowed.");
+    assertf(sort == Def::Sort::Type || sort == Def::Sort::Kind,
+            "Only sort type or kind allowed.");
     assert(q <= qualifier &&
            "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
     return true;
