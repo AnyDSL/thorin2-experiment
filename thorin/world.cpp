@@ -70,39 +70,38 @@ const Def* WorldBase::sigma(Defs defs, Qualifier q, Debug dbg) {
 
 const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     assert(def->type() && "Can't create singletons of universes.");
-    // Normalize various cases
-    if (def->type()->isa<Singleton>()) {
+
+    if (def->type()->isa<Singleton>())
         return def->type();
-    }
+
     if (!def->is_nominal()) {
         if (def->isa<Variant>()) {
-            auto num_ops = def->num_ops();
-            Array<const Def*> ops(num_ops);
-            for (size_t i = 0; i < num_ops; ++i)
-                ops[i] = singleton(def->op(i));
+            auto ops = Array<const Def*>(def->num_ops(), [&](auto i) { return this->singleton(def->op(i)); });
             return variant(ops, dbg);
-        } else if (def->isa<Intersection>()) {
+        }
+
+        if (def->isa<Intersection>()) {
             // S(v : t ∩ u) : *
             // TODO Any normalization of a Singleton Intersection?
         }
     }
+
     if (auto sig = def->type()->isa<Sigma>()) {
         // See Harper PFPL 43.13b
-        auto num_ops = sig->num_ops();
-        Array<const Def*> ops(num_ops);
-        for (size_t i = 0; i < num_ops; ++i)
-            ops[i] = singleton(extract(def, i));
+        auto ops = Array<const Def*>(sig->num_ops(), [&](auto i) { return this->singleton(this->extract(def, i)); });
         return sigma(ops, sig->qualifier(), dbg);
-    } else if (auto pi_type = def->type()->isa<Pi>()) {
+    }
+
+    if (auto pi_type = def->type()->isa<Pi>()) {
         // See Harper PFPL 43.13c
         auto domains = pi_type->domains();
         auto num_domains = pi_type->num_domains();
-        Array<const Def*> new_pi_vars(num_domains);
-        for (size_t i = 0; i < num_domains; ++i)
-            new_pi_vars[i] = var(domains[i], num_domains - i - 1);
+        auto new_pi_vars = Array<const Def*>(num_domains,
+                [&](auto i) { return this->var(domains[i], num_domains - i - 1); });
         auto applied = app(def, new_pi_vars);
         return pi(domains, singleton(applied), pi_type->qualifier(), dbg);
     }
+
     // TODO other normalizations?
     return unify<Singleton>(1, *this, def, dbg);
 }
@@ -173,10 +172,8 @@ const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
 }
 
 const Def* build_match_type(WorldBase& w, const Def* /*def*/, const Variant* /*type*/, Defs handlers) {
-    Array<const Def*> types(handlers.size());
-    for (size_t i = 0; i < handlers.size(); ++i) {
-        types[i] = handlers[i]->type()->as<Pi>()->body();
-    }
+    auto types = Array<const Def*>(handlers.size(),
+            [&](auto i) { return handlers[i]->type()->template as<Pi>()->body(); });
     // We're not actually building a sum type here, we need uniqueness
     unique_gid_sort(&types);
     return w.variant(types);
@@ -217,11 +214,9 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
         auto single = args.front();
         if (auto tuple = single->isa<Tuple>())
             return app(callee, tuple->ops(), dbg);
-        else if (auto sigma_type = single->type()->isa<Sigma>()) {
-            Array<const Def*> extracts(sigma_type->num_ops());
-            for (size_t i = 0; i < sigma_type->num_ops(); ++i) {
-                extracts[i] = extract(single, i);
-            }
+
+        if (auto sigma_type = single->type()->isa<Sigma>()) {
+            auto extracts = Array<const Def*>(sigma_type->num_ops(), [&](auto i) { return this->extract(single, i); });
             return app(callee, extracts, dbg);
         }
     }
