@@ -23,10 +23,10 @@ WorldBase::~WorldBase() {
         def->~Def();
 }
 
-const Def* WorldBase::proj(size_t index, size_t arity, Qualifier q, Debug dbg) {
+const Def* WorldBase::index(size_t i, size_t arity, Qualifier q, Debug dbg) {
     auto a = this->arity(arity, q);
-    if (index < arity)
-        return unify<Proj>(0, *this, a, index, dbg);
+    if (i < arity)
+        return unify<Index>(0, *this, a, i, dbg);
     return error(a);
 }
 

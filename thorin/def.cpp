@@ -242,8 +242,8 @@ Pi::Pi(WorldBase& world, Defs domains, const Def* body, Qualifier q, Debug dbg)
     compute_free_vars();
 }
 
-Proj::Proj(WorldBase& world, const Arity* arity, size_t index, Debug dbg)
-    : Def(world, Tag::Proj, arity, Defs(), dbg)
+Index::Index(WorldBase& world, const Arity* arity, size_t index, Debug dbg)
+    : Def(world, Tag::Index, arity, Defs(), dbg)
 {
     index_ = index;
 }
@@ -329,7 +329,7 @@ uint64_t Axiom::vhash() const {
 }
 
 uint64_t Extract::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
-uint64_t Proj::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
+uint64_t Index::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 
 //------------------------------------------------------------------------------
@@ -354,8 +354,8 @@ bool Extract::equal(const Def* other) const {
     return Def::equal(other) && this->index() == other->as<Extract>()->index();
 }
 
-bool Proj::equal(const Def* other) const {
-    return Def::equal(other) && this->index() == other->as<Proj>()->index();
+bool Index::equal(const Def* other) const {
+    return Def::equal(other) && this->index() == other->as<Index>()->index();
 }
 
 bool Var::equal(const Def* other) const {
@@ -389,7 +389,7 @@ const Def* Pick         ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* Proj         ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.proj(index(), arity(), qualifier(), debug()); }
+const Def* Index        ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.index(index(), arity(), qualifier(), debug()); }
 const Def* Sigma        ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
     assert(!is_nominal());
     return to.sigma(ops, qualifier(), debug());
@@ -545,7 +545,7 @@ std::ostream& Pick::stream(std::ostream& os) const {
     return os << ")";
 }
 
-std::ostream& Proj::stream(std::ostream& os) const {
+std::ostream& Index::stream(std::ostream& os) const {
     os << qualifier() << index();
 
     std::vector<std::array<char, 3>> digits;

@@ -32,7 +32,7 @@ public:
     const Arity* arity(size_t a, Qualifier q = Qualifier::Unrestricted, Debug dbg = {}) {
         return unify<Arity>(0, *this, a, q, dbg);
     }
-    const Def* proj(size_t index, size_t arity, Qualifier q = Qualifier::Unrestricted, Debug dbg = {});
+    const Def* index(size_t index, size_t arity, Qualifier q = Qualifier::Unrestricted, Debug dbg = {});
     const Def* variadic_sigma(const Def* body, Qualifier q = Qualifier::Unrestricted, Debug dbg = {});
     const Def* variadic_tuple(const Def* body, Debug dbg = {});
 
@@ -261,7 +261,7 @@ public:
     const Def* type_ptr(const Def* pointee, const Def* addr_space) {
         return app(type_ptr_, {pointee, addr_space});
     }
-    const Def* type_ptr(const Def* pointee) { return type_ptr(pointee, val_nat0()); }
+    const Def* type_ptr(const Def* pointee) { return type_ptr(pointee, val_nat_0()); }
 
 #define CODE(x, y) \
     const App* type_ ## x(Qualifier q = Qualifier::Unrestricted) { return type_ ## x ## _[size_t(q)]; }
@@ -274,22 +274,22 @@ public:
     const Axiom* val_nat(int64_t val, Qualifier q = Qualifier::Unrestricted) {
         return assume(type_nat(q), {val}, {std::to_string(val)});
     }
-    const Axiom* val_nat0(Qualifier q = Qualifier::Unrestricted) { return val_nat_[0][size_t(q)]; }
-    const Axiom* val_nat1(Qualifier q = Qualifier::Unrestricted) { return val_nat_[1][size_t(q)]; }
-    const Axiom* val_nat2(Qualifier q = Qualifier::Unrestricted) { return val_nat_[2][size_t(q)]; }
-    const Axiom* val_nat4(Qualifier q = Qualifier::Unrestricted) { return val_nat_[3][size_t(q)]; }
-    const Axiom* val_nat8(Qualifier q = Qualifier::Unrestricted) { return val_nat_[4][size_t(q)]; }
-    const Axiom* val_nat16(Qualifier q = Qualifier::Unrestricted) { return val_nat_[5][size_t(q)]; }
-    const Axiom* val_nat32(Qualifier q = Qualifier::Unrestricted) { return val_nat_[6][size_t(q)]; }
-    const Axiom* val_nat64(Qualifier q = Qualifier::Unrestricted) { return val_nat_[7][size_t(q)]; }
+    const Axiom* val_nat_0(Qualifier q = Qualifier::Unrestricted) { return val_nat_[0][size_t(q)]; }
+    const Axiom* val_nat_1(Qualifier q = Qualifier::Unrestricted) { return val_nat_[1][size_t(q)]; }
+    const Axiom* val_nat_2(Qualifier q = Qualifier::Unrestricted) { return val_nat_[2][size_t(q)]; }
+    const Axiom* val_nat_4(Qualifier q = Qualifier::Unrestricted) { return val_nat_[3][size_t(q)]; }
+    const Axiom* val_nat_8(Qualifier q = Qualifier::Unrestricted) { return val_nat_[4][size_t(q)]; }
+    const Axiom* val_nat_16(Qualifier q = Qualifier::Unrestricted) { return val_nat_[5][size_t(q)]; }
+    const Axiom* val_nat_32(Qualifier q = Qualifier::Unrestricted) { return val_nat_[6][size_t(q)]; }
+    const Axiom* val_nat_64(Qualifier q = Qualifier::Unrestricted) { return val_nat_[7][size_t(q)]; }
 
     const Axiom* val_bool(bool val, Qualifier q = Qualifier::Unrestricted) {
         // TODO use this
         //return val_bool_[size_t(val)][size_t(q)];
         return assume(type_bool(q), {val}, {val ? "⊤" : "⊥"});
     }
-    const Axiom* val_top(Qualifier q = Qualifier::Unrestricted) { return val_bool_[0][size_t(q)]; }
-    const Axiom* val_bot(Qualifier q = Qualifier::Unrestricted) { return val_bool_[1][size_t(q)]; }
+    const Axiom* val_bool_bot(Qualifier q = Qualifier::Unrestricted) { return val_bool_[0][size_t(q)]; }
+    const Axiom* val_bool_top(Qualifier q = Qualifier::Unrestricted) { return val_bool_[1][size_t(q)]; }
 
 #define CODE(x, y) \
     const Axiom* val_ ## x(y val, Qualifier q = Qualifier::Unrestricted) { \

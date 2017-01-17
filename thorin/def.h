@@ -116,12 +116,12 @@ public:
         Axiom,
         Error,
         Extract,
+        Index,
         Intersection,
         Lambda,
         Match,
         Pi,
         Pick,
-        Proj,
         Sigma,
         Singleton,
         Space,
@@ -282,7 +282,7 @@ protected:
     union {
         mutable const Def* cache_;  ///< Used by App.
         size_t arity_;              ///< Used by Arity.
-        size_t index_;              ///< Used by Extract, Proj, Var.
+        size_t index_;              ///< Used by Extract, Index, Var.
         Box box_;                   ///< Used by Axiom.
         Qualifier qualifier_;       ///< Used by Universe.
     };
@@ -638,9 +638,9 @@ private:
     friend class WorldBase;
 };
 
-class Proj : public Def {
+class Index : public Def {
 private:
-    Proj(WorldBase& world, const Arity* arity, size_t index, Debug dbg);
+    Index(WorldBase& world, const Arity* arity, size_t index, Debug dbg);
 
 public:
     size_t index() const { return index_; }

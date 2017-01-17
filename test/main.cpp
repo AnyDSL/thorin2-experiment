@@ -22,7 +22,7 @@ TEST(Simple, unit) {
 
 TEST(Simple, Misc) {
     World w;
-    auto n16 = w.val_nat16();
+    auto n16 = w.val_nat_16();
     n16->dump();
     ASSERT_EQ(n16, w.val_nat(16));
 
@@ -31,7 +31,7 @@ TEST(Simple, Misc) {
     ASSERT_EQ(n23, n23x);
     auto n42 = w.val_nat(42);
     /*auto n32 =*/ w.val_nat(32);
-    auto Top = w.val_top();
+    auto Top = w.val_bool_top();
     Top->dump();
 
     {
