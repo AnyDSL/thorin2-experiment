@@ -221,10 +221,6 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
         }
     }
 
-    // TODO do this checking later during a separate type checking phase
-    if (too_many_affine_uses({callee}) || too_many_affine_uses(args))
-        return error(callee->type()->as<Pi>()->body());
-
     // TODO what if args types don't match the domains? error?
     auto type = callee->type()->as<Pi>()->reduce(args);
     auto app = unify<App>(args.size() + 1, *this, type, callee, args, dbg);

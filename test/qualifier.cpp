@@ -46,7 +46,8 @@ TEST(Qualifiers, Misc) {
     auto anx = w.var(ANat, 0, {"x"});
     auto anid = w.lambda(ANat, anx, {"anid"});
     w.app(anid, an0);
-    ASSERT_TRUE(is_error(w.app(anid, an0)));
+    // We need to check substructural types later, so building a second app is possible:
+    ASSERT_FALSE(is_error(w.app(anid, an0)));
 
     auto tuple_type = w.sigma({ANat, RNat});
     ASSERT_EQ(tuple_type->qualifier(), L);
@@ -63,7 +64,7 @@ TEST(Qualifiers, Misc) {
     ASSERT_EQ(a_id_type, a_id->type());
     auto n0 = w.axiom(Nat, {"0"});
     /*auto a_id_app =*/ w.app(a_id, n0);
-    ASSERT_TRUE(is_error(w.app(a_id, n0)));
+    ASSERT_FALSE(is_error(w.app(a_id, n0)));
 
     // λᴬT:*.λx:ᴬT.x
     auto aT1 = w.var(w.star(A), 0, {"T"});
