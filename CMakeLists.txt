@@ -33,6 +33,7 @@ add_executable(coc
     test/main.cpp
     test/matrix.cpp
     test/nominal.cpp
+    test/singleton.cpp
     test/variadic.cpp
     test/variants.cpp
     test/qualifier.cpp

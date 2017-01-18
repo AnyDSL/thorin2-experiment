@@ -598,6 +598,7 @@ private:
         : Def(world, Tag::Singleton, def->type()->type(), {def}, dbg)
     {
         assert((def->is_term() || def->is_type()) && "No singleton type universes allowed.");
+        compute_free_vars();
     }
 
 public:
