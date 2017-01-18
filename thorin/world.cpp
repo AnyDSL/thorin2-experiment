@@ -107,9 +107,11 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
 }
 
 const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
+    // will return the single type in case of a single def
     auto expected_type = sigma(types(defs));
     const Def* found_structural_type = type;
-    if (type->is_nominal())
+    // if defs is just one, we may not have a sigma to unpack
+    if (type->is_nominal() && type->isa<Sigma>())
         found_structural_type = sigma(type->ops());
     // TODO subtyping check instead of equality here
     // TODO error message with more precise information
