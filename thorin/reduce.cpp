@@ -63,7 +63,7 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
     auto new_type = reduce_structurals(old_def->type(), offset);
 
     if (old_def->is_nominal()) {
-        auto new_def = old_def->stub(new_type); // TODO better debug info for these
+        auto new_def = old_def->stub(new_type); // TODO better location debug info for these
         map_[{old_def, offset}] = new_def;
         nominals_.emplace(old_def, offset);
         return new_def;

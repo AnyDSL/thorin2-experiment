@@ -250,7 +250,14 @@ public:
      */
     const Def* reduce(Defs args, size_t index = 0) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
-    Def* stub(const Def* type) const { return stub(type, debug()); }
+    Def* stub(const Def* type) const {
+        if (!name().empty()) {
+            Debug new_dbg(debug());
+            new_dbg.set(name() + std::to_string(Def::gid_counter()));
+            return stub(type, new_dbg);
+        }
+        return stub(type, debug());
+    }
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
 
     virtual Def* stub(WorldBase&, const Def*, Debug) const { THORIN_UNREACHABLE; }
