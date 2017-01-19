@@ -62,9 +62,7 @@ TEST(Nominal, reduce_to_unique_nominals) {
     sig->set(0, v0);
 
     auto lam = w.lambda(star, w.tuple({sig, sig}));
-    print_value_type(lam);
     auto red = w.app(lam, nat);
-    print_value_type(red);
     ASSERT_EQ(red->op(0), red->op(1));
 }
 
@@ -73,7 +71,6 @@ TEST(Nominal, polymorphic_list) {
     auto nat = w.type_nat();
     auto star = w.star();
 
-    std::cout << "--- NominalTest Polymorphic List ---" << endl;
     auto list = w.pi_lambda(w.pi(star, star), {"list"});
     auto cons = w.sigma_type(2, {"cons"});
     cons->set(0, w.var(star, 0));
