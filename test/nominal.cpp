@@ -7,7 +7,7 @@ using namespace thorin;
 // TODO remove this macro
 #define print_value_type(x) do{ std::cout << (x->name() == "" ? #x : x->name()) << " <" << x->gid() << "> = " << x << ": " << x->type() << endl; }while(0)
 
-TEST(Nominal, sigma) {
+TEST(Nominal, Sigma) {
     World w;
     auto nat = w.type_nat();
     auto nat2 = w.sigma_type(2, {"Nat x Nat"});
@@ -20,7 +20,7 @@ TEST(Nominal, sigma) {
     ASSERT_DEATH(w.tuple(nat2, {n42}), ".*");
 }
 
-TEST(Nominal, sigma_free_vars) {
+TEST(Nominal, SigmaFreeVars) {
     World w;
     auto star = w.star();
 
@@ -39,7 +39,7 @@ TEST(Nominal, sigma_free_vars) {
     ASSERT_TRUE(sig->free_vars().none_begin(3));
 }
 
-TEST(Nominal, lambda_free_vars) {
+TEST(Nominal, LambdaFreeVars) {
     World w;
     auto nat = w.type_nat();
     auto star = w.star();
@@ -52,7 +52,7 @@ TEST(Nominal, lambda_free_vars) {
     ASSERT_FALSE(lam->free_vars().any_begin(1));
 }
 
-TEST(Nominal, reduce_to_unique_nominals) {
+TEST(Nominal, ReduceToUniqueNominals) {
     World w;
     auto nat = w.type_nat();
     auto star = w.star();
@@ -66,7 +66,7 @@ TEST(Nominal, reduce_to_unique_nominals) {
     ASSERT_EQ(red->op(0), red->op(1));
 }
 
-TEST(Nominal, polymorphic_list) {
+TEST(Nominal, PolymorphicList) {
     World w;
     auto nat = w.type_nat();
     auto star = w.star();
@@ -92,7 +92,7 @@ TEST(Nominal, polymorphic_list) {
     // TODO asserts
 }
 
-TEST(Nominal, nat) {
+TEST(Nominal, Nat) {
     World w;
     auto star = w.star();
 
