@@ -65,8 +65,7 @@ TEST(Nominal, reduce_to_unique_nominals) {
     print_value_type(lam);
     auto red = w.app(lam, nat);
     print_value_type(red);
-    // TODO do we need/want the following behaviour?
-    // ASSERT_NE(red->op(0), red->op(1));
+    ASSERT_EQ(red->op(0), red->op(1));
 }
 
 TEST(Nominal, polymorphic_list) {
