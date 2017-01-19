@@ -116,7 +116,7 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
     // TODO subtyping check instead of equality here
     // TODO error message with more precise information
     assert(found_structural_type == expected_type && "Can't give type to tuple.");
-    if (defs.size() == 1) {
+    if (!type->is_nominal() && defs.size() == 1) {
         return defs.front();
     }
 

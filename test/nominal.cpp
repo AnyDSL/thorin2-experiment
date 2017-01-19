@@ -13,11 +13,26 @@ TEST(Nominal, Sigma) {
     auto nat2 = w.sigma_type(2, {"Nat x Nat"});
     nat2->set(0, nat);
     nat2->set(1, nat);
-    ASSERT_TRUE(nat->is_closed());
-    ASSERT_TRUE(nat->free_vars().none());
+    ASSERT_TRUE(nat2->is_closed());
+    ASSERT_TRUE(nat2->free_vars().none());
 
     auto n42 = w.val_nat(42);
     ASSERT_DEATH(w.tuple(nat2, {n42}), ".*");
+}
+
+TEST(Nominal, SingleElementSigma) {
+    World w;
+    auto nat = w.type_nat();
+    auto nat_constr = w.sigma_type(1, {"NatConstr"});
+    nat_constr->set(0, nat);
+    ASSERT_TRUE(nat_constr->is_closed());
+    ASSERT_TRUE(nat_constr->free_vars().none());
+    ASSERT_TRUE(nat_constr->isa<Sigma>());
+    ASSERT_EQ(nat_constr->op(0), nat);
+    auto n42 = w.val_nat(42);
+    auto val = w.tuple(nat_constr, {n42});
+    ASSERT_NE(val, n42);
+    ASSERT_EQ(val->type(), nat_constr);
 }
 
 TEST(Nominal, SigmaFreeVars) {
