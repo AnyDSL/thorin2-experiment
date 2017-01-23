@@ -199,7 +199,7 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
 #ifndef NDEBUG
     for (size_t i = 0; i < sorted_handlers.size(); ++i) {
         auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
-        assertf(domain == matched_type->op(i), "Handler % with domain % does not match type %", i, domain,
+        assertf(domain == matched_type->op(i), "Handler {} with domain {} does not match type {}", i, domain,
                 matched_type->op(i));
     }
 #endif
