@@ -88,7 +88,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
 
     if (auto sig = def->type()->isa<Sigma>()) {
         // See Harper PFPL 43.13b
-        auto ops = Array<const Def*>(sig->num_ops(), [&](auto i) { return this->singleton(this->extract(def, i)); });
+        auto ops = Array<const Def*>(sig->num_ops(), [&](auto i) { return this->singleton(this->extracti(def, i)); });
         return sigma(ops, sig->qualifier(), dbg);
     }
 
@@ -123,21 +123,47 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
     return unify<Tuple>(defs.size(), *this, type->as<Sigma>(), defs, dbg);
 }
 
-const Def* WorldBase::extract(const Def* def, size_t index, Debug dbg) {
-    if (def->type()->isa<Sigma>()) {
-        if (auto tuple = def->isa<Tuple>())
-            return tuple->op(index);
+const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
+    if (auto index = i->isa<Index>())
+        return extracti(def, index->index(), dbg);
+    return unify<Extract>(2, *this, extract(def, i, dbg), def, i, dbg);
+}
 
-        auto type = Tuple::extract_type(*this, def, index);
-        return unify<Extract>(1, *this, type, def, index, dbg);
+const Def* WorldBase::extracti(const Def* def, size_t i, Debug dbg) {
+    if (auto sigma = def->type()->isa<Sigma>()) {
+        if (auto tuple = def->isa<Tuple>())
+            return tuple->op(i);
+
+        auto extract_type = [&]() {
+            auto type = sigma->op(i);
+            if (type->free_vars().none_end(i))
+                return type;
+
+            size_t skipped_shifts = 0;
+            for (size_t delta = 1; delta <= i; delta++) {
+                if (type->free_vars().none_begin(skipped_shifts)) {
+                    skipped_shifts++;
+                    continue;
+                }
+                auto prev_extract = extracti(def, i - delta);
+
+                // This also shifts any Var with i > skipped_shifts by -1
+                type = type->reduce({prev_extract}, skipped_shifts);
+            }
+            return type;
+        };
+
+        auto type = extract_type();
+        return unify<Extract>(2, *this, type, def, index(i, sigma->num_ops(), type->qualifier(), dbg), dbg);
     }
 
-    assert(index == 0);
+    assert(i == 0);
     return def;
 }
 
 const Def* WorldBase::intersection(Defs defs, Qualifier q, Debug dbg) {
-    if (defs.size() == 1) { return single_qualified(defs, q); }
+    if (defs.size() == 1)
+        return single_qualified(defs, q);
 
     return unify<Intersection>(defs.size(), *this, defs, q, dbg);
 }
@@ -148,10 +174,10 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
                && "Picked type must be a part of the intersection type.");
 
         return unify<Pick>(1, *this, type, def, dbg);
-    } else {
-        assert(type == def->type());
-        return def;
     }
+
+    assert(type == def->type());
+    return def;
 }
 
 const Def* WorldBase::variant(Defs defs, Qualifier q, Debug dbg) {
@@ -218,7 +244,7 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
             return app(callee, tuple->ops(), dbg);
 
         if (auto sigma_type = single->type()->isa<Sigma>()) {
-            auto extracts = Array<const Def*>(sigma_type->num_ops(), [&](auto i) { return this->extract(single, i); });
+            auto extracts = Array<const Def*>(sigma_type->num_ops(), [&](auto i) { return this->extracti(single, i); });
             return app(callee, extracts, dbg);
         }
     }

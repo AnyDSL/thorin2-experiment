@@ -289,7 +289,7 @@ protected:
     union {
         mutable const Def* cache_;  ///< Used by App.
         size_t arity_;              ///< Used by Arity.
-        size_t index_;              ///< Used by Extract, Index, Var.
+        size_t index_;              ///< Used by Index, Var.
         Box box_;                   ///< Used by Axiom.
         Qualifier qualifier_;       ///< Used by Universe.
     };
@@ -439,7 +439,6 @@ private:
 
 public:
     std::ostream& stream(std::ostream&) const override;
-    static const Def* extract_type(WorldBase&, const Def* tuple, size_t index);
 
 private:
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
@@ -449,21 +448,18 @@ private:
 
 class Extract : public Def {
 private:
-    Extract(WorldBase& world, const Def* type, const Def* tuple, size_t index, Debug dbg)
-        : Def(world, Tag::Extract, type, {tuple}, dbg)
+    Extract(WorldBase& world, const Def* type, const Def* tuple, const Def* index, Debug dbg)
+        : Def(world, Tag::Extract, type, {tuple, index}, dbg)
     {
-        index_ = index;
         compute_free_vars();
     }
 
 public:
     const Def* tuple() const { return op(0); }
-    size_t index() const { return index_; }
+    const Def* index() const { return op(1); }
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    uint64_t vhash() const override;
-    bool equal(const Def*) const override;
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
 
     friend class WorldBase;

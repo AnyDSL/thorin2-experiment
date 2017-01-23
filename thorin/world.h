@@ -110,7 +110,8 @@ public:
         return tuple(sigma(types(defs), type_q, dbg), defs, dbg);
     }
     const Def* tuple(const Def* type, Defs defs, Debug dbg = {});
-    const Def* extract(const Def* def, size_t index, Debug dbg = {});
+    const Def* extract(const Def* def, const Def* index, Debug dbg = {});
+    const Def* extracti(const Def* def, size_t index, Debug dbg = {});
 
     const Def* intersection(Defs defs, Debug dbg = {}) {
         return intersection(defs, meet(defs), dbg);

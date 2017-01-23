@@ -328,7 +328,6 @@ uint64_t Axiom::vhash() const {
     return thorin::hash_combine(seed, box_.get_u64());
 }
 
-uint64_t Extract::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 uint64_t Index::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 
@@ -350,10 +349,6 @@ bool Axiom::equal(const Def* other) const {
         && this->box_.get_u64() == other->as<Axiom>()->box().get_u64();
 }
 
-bool Extract::equal(const Def* other) const {
-    return Def::equal(other) && this->index() == other->as<Extract>()->index();
-}
-
 bool Index::equal(const Def* other) const {
     return Def::equal(other) && this->index() == other->as<Index>()->index();
 }
@@ -371,7 +366,7 @@ bool Var::equal(const Def* other) const {
 const Def* Any          ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
 const Def* Arity        ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity(arity(), qualifier(), debug()); }
-const Def* Extract      ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], index(), debug()); }
+const Def* Extract      ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Axiom        ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
     return to.assume(t, box(), debug());
@@ -456,26 +451,6 @@ const Def* App::try_reduce() const {
     }
 
     return cache_ = this;
-}
-
-const Def* Tuple::extract_type(WorldBase& world, const Def* tuple, size_t index) {
-    auto sigma = tuple->type()->as<Sigma>();
-    auto type = sigma->op(index);
-    if (type->free_vars().none_end(index))
-        return type;
-
-    size_t skipped_shifts = 0;
-    for (size_t delta = 1; delta <= index; delta++) {
-        if (type->free_vars().none_begin(skipped_shifts)) {
-            skipped_shifts++;
-            continue;
-        }
-        auto prev_extract = world.extract(tuple, index - delta);
-
-        // This also shifts any Var with index > skipped_shifts by -1
-        type = type->reduce({prev_extract}, skipped_shifts);
-    }
-    return type;
 }
 
 //------------------------------------------------------------------------------
