@@ -57,7 +57,6 @@ TEST(Nominal, SigmaFreeVars) {
 TEST(Nominal, LambdaFreeVars) {
     World w;
     auto nat = w.type_nat();
-    auto star = w.star();
 
     auto lam = w.pi_lambda(w.pi(nat, nat), {"lam"});
     auto v0 = w.var(nat, 0);
