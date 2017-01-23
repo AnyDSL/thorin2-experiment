@@ -66,6 +66,9 @@ BitSet& BitSet::operator>>=(uint64_t shift) {
     return *this;
 }
 
+// TODO optimize this and remove macro
+
+#define THORIN_BITSET_OPS(f) f(&) f(|) f(^)
 #define CODE(op)                                        \
 BitSet& BitSet::operator op ## =(const BitSet& other) { \
     if (this->num_words() < other.num_words())          \

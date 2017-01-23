@@ -5,8 +5,6 @@
 
 #include "thorin/util/utility.h"
 
-#define THORIN_BITSET_OPS(f) f(&) f(|) f(^)
-
 namespace thorin {
 
 class BitSet {
@@ -95,7 +93,7 @@ public:
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
     //@}
 
-    //@{ Is any bit (in range) set?
+    //@{ Is any bit range set?
     bool any() const;
     /// Is any bit in @c [begin,end[ set?
     bool any_range(const size_t begin, const size_t end) const;
@@ -105,7 +103,7 @@ public:
     bool any_begin(const size_t begin) const { return any_range(begin, num_bits()); }
     //@}
 
-    //@{ Is any bit (in range) set?
+    //@{ Is no bit in range set?
     bool none() const;
     /// Is no bit in @c [begin,end[ set?
     bool none_range(const size_t begin, const size_t end) const;
@@ -118,15 +116,16 @@ public:
     //@{ shift
     BitSet& operator>>=(uint64_t shift);
     BitSet operator>>(uint64_t shift) const { BitSet res(*this); res >>= shift; return res; }
-    // TODO add left shift
+    // TODO left shift
     //@}
 
     //@{ boolean operators
-#define CODE(op)                                   \
-    BitSet& operator op ## =(const BitSet& other); \
-    BitSet operator op (BitSet b) const { BitSet res(*this); res op ## = b; return res; }
-THORIN_BITSET_OPS(CODE)
-#undef CODE
+    BitSet& operator&=(const BitSet& other);
+    BitSet& operator|=(const BitSet& other);
+    BitSet& operator^=(const BitSet& other);
+    BitSet operator&(BitSet b) const { BitSet res(*this); res &= b; return res; }
+    BitSet operator|(BitSet b) const { BitSet res(*this); res |= b; return res; }
+    BitSet operator^(BitSet b) const { BitSet res(*this); res ^= b; return res; }
     //@}
 
     /// number of bits set
