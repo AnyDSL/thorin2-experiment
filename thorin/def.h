@@ -331,49 +331,7 @@ uint64_t UseHash::hash(Use use) {
     return uint64_t(use.index() & 0x3) | uint64_t(use->gid()) << 2ull;
 }
 
-class Quantifier : public Def {
-protected:
-    Quantifier(WorldBase& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
-        : Def(world, tag, type, num_ops, dbg)
-    {}
-    Quantifier(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(world, tag, type, ops, dbg)
-    {}
-
-    static const Def* max_type(WorldBase&, Defs, Qualifier = Qualifier::Unrestricted);
-};
-
-class Constructor : public Def {
-protected:
-    Constructor(WorldBase& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
-        : Def(world, tag, type, num_ops, dbg)
-    {}
-    Constructor(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(world, tag, type, ops, dbg)
-    {}
-
-};
-
-class Destructor : public Def {
-protected:
-    Destructor(WorldBase& world, Tag tag, const Def* type, const Def* op, Debug dbg)
-        : Destructor(world, tag, type, Defs({op}), dbg)
-    {}
-    Destructor(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(world, tag, type, ops, dbg)
-    {
-        cache_ = nullptr;
-    }
-
-public:
-    const Def* destructee() const { return ops().front(); }
-    const Quantifier* quantifier() const { return destructee()->type()->as<Quantifier>(); }
-    Defs args() const { return ops().skip_front(); }
-    size_t num_args() const { return args().size(); }
-    const Def* arg(size_t i = 0) const { return args()[i]; }
-};
-
-class Pi : public Quantifier {
+class Pi : public Def {
 private:
     Pi(WorldBase& world, Defs domains, const Def* body, Qualifier q, Debug dbg);
 
@@ -393,11 +351,11 @@ private:
     friend class WorldBase;
 };
 
-class Lambda : public Constructor {
+class Lambda : public Def {
 private:
-    /// Nominal/recursive Lambda
+    /// @em Nominal/recursive Lambda
     Lambda(WorldBase& world, const Pi* type, Debug dbg)
-        : Constructor(world, Tag::Lambda, type, 1, dbg)
+        : Def(world, Tag::Lambda, type, 1, dbg)
     {}
     Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg);
 
@@ -408,7 +366,7 @@ public:
     const Def* body() const { return op(0); }
     const Def* reduce(Defs) const;
     void set(const Def* def) { Def::set(0, def); };
-    const Pi* type() const { return Constructor::type()->as<Pi>(); }
+    const Pi* type() const { return Def::type()->as<Pi>(); }
     Lambda* stub(WorldBase&, const Def*, Debug) const override;
 
     std::ostream& stream(std::ostream&) const override;
@@ -420,16 +378,21 @@ private:
     friend class WorldBase;
 };
 
-class App : public Destructor {
+class App : public Def {
 private:
     App(WorldBase& world, const Def* type, const Def* callee, Defs args, Debug dbg)
-        : Destructor(world, Tag::App, type, concat(callee, args), dbg)
+        : Def(world, Tag::App, type, concat(callee, args), dbg)
     {
+        cache_ = nullptr;
         compute_free_vars();
     }
 
 public:
-    const Def* callee() const { return destructee(); }
+    const Def* callee() const { return op(0); }
+    Defs args() const { return ops().skip_front(); }
+    size_t num_args() const { return args().size(); }
+    const Def* arg(size_t i) const { return args()[i]; }
+
     std::ostream& stream(std::ostream&) const override;
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
     const Def* try_reduce() const;
@@ -437,16 +400,16 @@ public:
     friend class WorldBase;
 };
 
-class Sigma : public Quantifier {
+class Sigma : public Def {
 private:
     /// Nominal Sigma kind
     Sigma(WorldBase& world, size_t num_ops, Qualifier q, Debug dbg);
     /// Nominal Sigma type, \a type is some Star/Universe
     Sigma(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
-        : Quantifier(world, Tag::Sigma, type, num_ops, dbg)
+        : Def(world, Tag::Sigma, type, num_ops, dbg)
     {}
     Sigma(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
-        : Quantifier(world, Tag::Sigma, max_type(world, ops, q), ops, dbg)
+        : Def(world, Tag::Sigma, max_type(world, ops, q), ops, dbg)
     {
         compute_free_vars();
     }
@@ -458,16 +421,17 @@ public:
     Sigma* stub(WorldBase&, const Def*, Debug) const override;
 
 private:
+    static const Def* max_type(WorldBase& world, Defs ops, Qualifier q);
     size_t shift(size_t) const override;
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
 
     friend class WorldBase;
 };
 
-class Tuple : public Constructor {
+class Tuple : public Def {
 private:
     Tuple(WorldBase& world, const Sigma* type, Defs ops, Debug dbg)
-        : Constructor(world, Tag::Tuple, type, ops, dbg)
+        : Def(world, Tag::Tuple, type, ops, dbg)
     {
         assert(type->num_ops() == ops.size());
         compute_free_vars();
@@ -483,16 +447,17 @@ private:
     friend class WorldBase;
 };
 
-class Extract : public Destructor {
+class Extract : public Def {
 private:
     Extract(WorldBase& world, const Def* type, const Def* tuple, size_t index, Debug dbg)
-        : Destructor(world, Tag::Extract, type, tuple, dbg)
+        : Def(world, Tag::Extract, type, {tuple}, dbg)
     {
         index_ = index;
         compute_free_vars();
     }
 
 public:
+    const Def* tuple() const { return op(0); }
     size_t index() const { return index_; }
     std::ostream& stream(std::ostream&) const override;
 
@@ -517,15 +482,16 @@ private:
     friend class WorldBase;
 };
 
-class Pick : public Destructor {
+class Pick : public Def {
 private:
     Pick(WorldBase& world, const Def* type, const Def* def, Debug dbg)
-        : Destructor(world, Tag::Pick, type, def, dbg)
+        : Def(world, Tag::Pick, type, {def}, dbg)
     {
         compute_free_vars();
     }
 
 public:
+    const Def* destructee() const { return op(0); }
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -553,10 +519,10 @@ private:
 };
 
 /// Cast a Def to a Variant type.
-class Any : public Constructor {
+class Any : public Def {
 private:
     Any(WorldBase& world, const Variant* type, const Def* def, Debug dbg)
-        : Constructor(world, Tag::Any, type, {def}, dbg)
+        : Def(world, Tag::Any, type, {def}, dbg)
     {
         compute_free_vars();
     }
@@ -580,16 +546,19 @@ private:
     friend class WorldBase;
 };
 
-class Match : public Destructor {
+class Match : public Def {
 private:
     Match(WorldBase& world, const Def* type, const Def* def, const Defs handlers, Debug dbg)
-        : Destructor(world, Tag::Match, type, concat(def, handlers), dbg)
+        : Def(world, Tag::Match, type, concat(def, handlers), dbg)
     {
         compute_free_vars();
     }
 
 public:
+    const Def* destructee() const { return op(0); }
     Defs handlers() const { return ops().skip_front(); }
+    const Def* handler(size_t i) const { return handlers()[i]; }
+    size_t num_handlers() const { return handlers().size(); }
 
     std::ostream& stream(std::ostream&) const override;
 
@@ -664,13 +633,13 @@ private:
     friend class WorldBase;
 };
 
-class VariadicSigma : public Quantifier {
+class VariadicSigma : public Def {
 private:
     VariadicSigma(WorldBase& world, const Def* body, Qualifier q, Debug dbg);
 
 public:
     const Def* body() const { return ops().back(); }
-    //const Arity* type() const { return Constructor::type()->as<Pi>(); }
+    //const Arity* type() const { return Def::type()->as<Pi>(); }
     //const Def* reduce(Defs) const;
 
     std::ostream& stream(std::ostream&) const override;
@@ -682,14 +651,14 @@ private:
     friend class WorldBase;
 };
 
-class VariadicTuple : public Constructor {
+class VariadicTuple : public Def {
 private:
     VariadicTuple(WorldBase& world, const Def* type, const Def* body, Debug dbg);
 
 public:
     const Def* body() const { return op(0); }
     //const Def* reduce(Defs) const;
-    //const Pi* type() const { return Constructor::type()->as<Pi>(); }
+    //const Pi* type() const { return Def::type()->as<Pi>(); }
 
     std::ostream& stream(std::ostream&) const override;
 
