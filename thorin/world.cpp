@@ -226,7 +226,7 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
     // TODO what if args types don't match the domains? error?
     auto type = callee->type()->as<Pi>()->reduce(args);
     auto app = unify<App>(args.size() + 1, *this, type, callee, args, dbg);
-    assert(app->destructee() == callee);
+    assert(app->callee() == callee);
 
     return app->try_reduce();
 }

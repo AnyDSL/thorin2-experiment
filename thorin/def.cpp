@@ -188,7 +188,7 @@ bool check_same_sorted_ops(Def::Sort sort, Defs ops, Qualifier q) {
     return true;
 }
 
-const Def* Quantifier::max_type(WorldBase& world, Defs ops, Qualifier q) {
+const Def* Sigma::max_type(WorldBase& world, Defs ops, Qualifier q) {
     auto qualifier = Qualifier::Unrestricted;
     Sort max_sort = Sort::Type;
     for (auto op : ops) {
@@ -230,13 +230,13 @@ Intersection::Intersection(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
 }
 
 Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
-    : Constructor(world, Tag::Lambda, type, {body}, dbg)
+    : Def(world, Tag::Lambda, type, {body}, dbg)
 {
     compute_free_vars();
 }
 
 Pi::Pi(WorldBase& world, Defs domains, const Def* body, Qualifier q, Debug dbg)
-    : Quantifier(world, Tag::Pi, body->type()->is_universe() ? (const Def*) world.universe(q) : world.star(q),
+    : Def(world, Tag::Pi, body->type()->is_universe() ? (const Def*) world.universe(q) : world.star(q),
                  concat(domains, body), dbg)
 {
     compute_free_vars();
@@ -261,11 +261,11 @@ Star::Star(WorldBase& world, Qualifier q)
 {}
 
 VariadicSigma::VariadicSigma(WorldBase& world, const Def* body, Qualifier q, Debug dbg)
-    : Quantifier(world, Tag::VariadicSigma, world.universe(q), {body}, dbg)
+    : Def(world, Tag::VariadicSigma, world.universe(q), {body}, dbg)
 {}
 
 VariadicTuple::VariadicTuple(WorldBase& world, const Def* type, const Def* body, Debug dbg)
-    : Constructor(world, Tag::VariadicTuple, type, {body}, dbg)
+    : Def(world, Tag::VariadicTuple, type, {body}, dbg)
 {}
 
 Variant::Variant(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
@@ -494,13 +494,13 @@ std::ostream& Any::stream(std::ostream& os) const {
 std::ostream& App::stream(std::ostream& os) const {
     auto begin = "(";
     auto end = ")";
-    auto domains = destructee()->type()->as<Pi>()->domains();
+    auto domains = callee()->type()->as<Pi>()->domains();
     if (std::any_of(domains.begin(), domains.end(), [](auto t) { return t->is_kind(); })) {
         os << qualifier();
         begin = "[";
         end = "]";
     }
-    destructee()->name_stream(os);
+    callee()->name_stream(os);
     return stream_list(os, args(), [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
 
@@ -513,7 +513,7 @@ std::ostream& Axiom::stream(std::ostream& os) const { return os << qualifier() <
 std::ostream& Error::stream(std::ostream& os) const { return os << "Error"; }
 
 std::ostream& Extract::stream(std::ostream& os) const {
-    return destructee()->name_stream(os) << "." << index();
+    return tuple()->name_stream(os) << "." << index();
 }
 
 std::ostream& Intersection::stream(std::ostream& os) const {
