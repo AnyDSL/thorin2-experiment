@@ -16,4 +16,7 @@ TEST(Variadic, Misc) {
     p2_4->dump();
     w.index(2, 1234567890)->dump();
     w.variadic_sigma(w.arity(5), w.type_nat())->dump();
+    auto t = w.variadic_tuple(w.arity(23), w.val_nat_16());
+    t->dump();
+    t->type()->dump();
 }

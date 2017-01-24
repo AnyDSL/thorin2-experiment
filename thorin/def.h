@@ -636,13 +636,9 @@ private:
 public:
     const Def* dimension() const { return op(0); }
     const Def* body() const { return op(1); }
-    //const Arity* type() const { return Def::type()->as<Pi>(); }
-    //const Def* reduce(Defs) const;
-
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    size_t shift(size_t) const override;
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
 
     friend class WorldBase;

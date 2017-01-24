@@ -30,8 +30,8 @@ const Def* WorldBase::index(size_t i, size_t arity, Qualifier q, Debug dbg) {
     return error(a);
 }
 
-const Def* WorldBase::variadic_tuple(const Def* body, Debug dbg) {
-    return nullptr;
+const Def* WorldBase::variadic_tuple(const Def* dimension, const Def* body, Debug dbg) {
+    return type_variadic_tuple(variadic_sigma(dimension, body->type(), dbg), body, dbg);
 }
 
 const Pi* WorldBase::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
