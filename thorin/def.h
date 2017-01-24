@@ -129,8 +129,8 @@ public:
         Tuple,
         Universe,
         Var,
-        VariadicTuple,
         VariadicSigma,
+        VariadicTuple,
         Variant,
         Num
     };

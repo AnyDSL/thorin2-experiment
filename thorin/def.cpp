@@ -290,7 +290,7 @@ size_t Def::shift(size_t) const { return 0; }
 size_t Pi::shift(size_t i) const { return i; }
 size_t Lambda::shift(size_t) const { return num_domains(); }
 size_t Sigma::shift(size_t i) const { return i; }
-size_t VariadicTuple::shift(size_t i) const { return i; }
+size_t VariadicTuple::shift(size_t i) const { assert_unused(i == 0); return 1; }
 
 //------------------------------------------------------------------------------
 

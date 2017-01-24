@@ -25,14 +25,12 @@ TEST(Variadic, Misc) {
 #if 0
     auto list = w.axiom(w.pi(w.star(), w.star()), {"list"});
     auto zip = w.axiom(
-            w.pi({w.space(), w.variadic_sigma(w.var(w.space(), 0), w.star())},
-                w.pi({w.variadic_sigma(w.var(w.space(), 1), w.variadic_tuple(w.var(w.space(), 2), w.app(list, w.var(w.variadic_sigma(w.var(w.space(), 2), w.star()), 3))))},
-                    w.app(list, w.var(w.variadic_sigma(w.var(w.space(), 3), w.star()), 4)))),
-                    //w.app(list, w.var(w.variadic_sigma(w.var(w.space(), 2), w.star()), 3)))),
-                    //w.unit())),
+            w.pi({w.space(),
+                  w.variadic_sigma(w.var(w.space(), 0), w.star())},
+            w.pi( w.variadic_sigma(w.var(w.space(), 1), w.variadic_tuple(w.var(w.space(), 1), w.app(list, w.var(w.variadic_sigma(w.var(w.space(), 1), w.star()), 0)))),
+                  w.app(list, w.var(w.variadic_sigma(w.var(w.space(), 2), w.star()), 1)))),
             {"zip"});
     zip->dump();
+    w.app(zip, {w.dimension(2), w.tuple(w.variadic_sigma(w.dimension(2), w.star()), {w.type_nat(), w.type_bool()})})->dump();
 #endif
-    //w.app(zip, {w.dimension(2), w.sigma({w.type_nat(), w.type_bool()})})->dump();
-    //zip->
 }

@@ -60,6 +60,10 @@ TEST(Simple, Misc) {
         p->type()->dump();
     }
 
+    auto bb = w.var(w.type_nat(), 0);
+    ASSERT_TRUE(bb->free_vars().test(0));
+    ASSERT_TRUE(w.lambda(w.type_nat(), bb)->free_vars().none());
+    ASSERT_TRUE(w.pi({w.star(), w.var(w.star(), 0)}, w.var(w.star(), 1))->free_vars().none());
 
     // λT:*.λx:T.x
     auto T_1 = w.var(w.star(), 0, {"T"});
