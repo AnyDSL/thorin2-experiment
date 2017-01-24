@@ -400,52 +400,6 @@ public:
     friend class WorldBase;
 };
 
-class Sigma : public Def {
-private:
-    /// Nominal Sigma kind
-    Sigma(WorldBase& world, size_t num_ops, Qualifier q, Debug dbg);
-    /// Nominal Sigma type, \a type is some Star/Universe
-    Sigma(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
-        : Def(world, Tag::Sigma, type, num_ops, dbg)
-    {}
-    Sigma(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
-        : Def(world, Tag::Sigma, max_type(world, ops, q), ops, dbg)
-    {
-        compute_free_vars();
-    }
-
-public:
-    bool is_unit() const { return ops().empty(); }
-    void set(size_t i, const Def* def) { Def::set(i, def); };
-    std::ostream& stream(std::ostream&) const override;
-    Sigma* stub(WorldBase&, const Def*, Debug) const override;
-
-private:
-    static const Def* max_type(WorldBase& world, Defs ops, Qualifier q);
-    size_t shift(size_t) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-
-    friend class WorldBase;
-};
-
-class Tuple : public Def {
-private:
-    Tuple(WorldBase& world, const Sigma* type, Defs ops, Debug dbg)
-        : Def(world, Tag::Tuple, type, ops, dbg)
-    {
-        assert(type->num_ops() == ops.size());
-        compute_free_vars();
-    }
-
-public:
-    std::ostream& stream(std::ostream&) const override;
-
-private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-
-    friend class WorldBase;
-};
-
 class Extract : public Def {
 private:
     Extract(WorldBase& world, const Def* type, const Def* tuple, const Def* index, Debug dbg)
@@ -629,6 +583,34 @@ private:
     friend class WorldBase;
 };
 
+class Sigma : public Def {
+private:
+    /// Nominal Sigma kind
+    Sigma(WorldBase& world, size_t num_ops, Qualifier q, Debug dbg);
+    /// Nominal Sigma type, \a type is some Star/Universe
+    Sigma(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
+        : Def(world, Tag::Sigma, type, num_ops, dbg)
+    {}
+    Sigma(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
+        : Def(world, Tag::Sigma, max_type(world, ops, q), ops, dbg)
+    {
+        compute_free_vars();
+    }
+
+public:
+    bool is_unit() const { return ops().empty(); }
+    void set(size_t i, const Def* def) { Def::set(i, def); };
+    std::ostream& stream(std::ostream&) const override;
+    Sigma* stub(WorldBase&, const Def*, Debug) const override;
+
+private:
+    static const Def* max_type(WorldBase& world, Defs ops, Qualifier q);
+    size_t shift(size_t) const override;
+    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+
+    friend class WorldBase;
+};
+
 class VariadicSigma : public Def {
 private:
     VariadicSigma(WorldBase& world, const Def* dimension, const Def* body, Debug dbg);
@@ -644,9 +626,31 @@ private:
     friend class WorldBase;
 };
 
+class Tuple : public Def {
+private:
+    Tuple(WorldBase& world, const Sigma* type, Defs ops, Debug dbg)
+        : Def(world, Tag::Tuple, type, ops, dbg)
+    {
+        assert(type->num_ops() == ops.size());
+        compute_free_vars();
+    }
+
+public:
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+
+    friend class WorldBase;
+};
+
 class VariadicTuple : public Def {
 private:
-    VariadicTuple(WorldBase& world, const Def* type, const Def* body, Debug dbg);
+    VariadicTuple(WorldBase& world, const Def* type, const Def* body, Debug dbg)
+        : Def(world, Tag::VariadicTuple, type, {body}, dbg)
+    {
+        compute_free_vars();
+    }
 
 public:
     const Def* body() const { return op(0); }

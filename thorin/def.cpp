@@ -266,12 +266,6 @@ VariadicSigma::VariadicSigma(WorldBase& world, const Def* dimension, const Def* 
     compute_free_vars();
 }
 
-VariadicTuple::VariadicTuple(WorldBase& world, const Def* type, const Def* body, Debug dbg)
-    : Def(world, Tag::VariadicTuple, type, {body}, dbg)
-{
-    compute_free_vars();
-}
-
 Variant::Variant(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
     : Def(world, Tag::Variant, type_from_sort(world, ops[0]->sort(), q), set_flatten<Variant>(ops),
                  dbg)
