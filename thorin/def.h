@@ -112,8 +112,8 @@ public:
         All,
         Any,
         App,
-        Arity,
         Axiom,
+        Dimension,
         Error,
         Extract,
         Index,
@@ -288,7 +288,7 @@ protected:
 
     union {
         mutable const Def* cache_;  ///< Used by App.
-        size_t arity_;              ///< Used by Arity.
+        size_t dimension_;          ///< Used by Dimension.
         size_t index_;              ///< Used by Index, Var.
         Box box_;                   ///< Used by Axiom.
         Qualifier qualifier_;       ///< Used by Universe.
@@ -595,12 +595,12 @@ private:
     friend class WorldBase;
 };
 
-class Arity : public Def {
+class Dimension : public Def {
 private:
-    Arity(WorldBase& world, size_t arity, Qualifier q, Debug dbg);
+    Dimension(WorldBase& world, size_t dimension, Qualifier q, Debug dbg);
 
 public:
-    size_t arity() const { return arity_; }
+    size_t dimension() const { return dimension_; }
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -613,12 +613,12 @@ private:
 
 class Index : public Def {
 private:
-    Index(WorldBase& world, const Arity* arity, size_t index, Debug dbg);
+    Index(WorldBase& world, const Dimension* dimension, size_t index, Debug dbg);
 
 public:
     size_t index() const { return index_; }
-    const Arity* type() const { return Def::type()->as<Arity>(); }
-    size_t arity() const { return type()->arity(); }
+    const Dimension* type() const { return Def::type()->as<Dimension>(); }
+    size_t dimension() const { return type()->dimension(); }
     std::ostream& stream(std::ostream&) const override;
 
 private:

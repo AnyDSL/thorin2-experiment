@@ -29,10 +29,10 @@ public:
     const Star* star(Qualifier q = Qualifier::Unrestricted) const { return star_[size_t(q)]; }
 
     const Space* space(Qualifier q = Qualifier::Unrestricted) const { return space_[size_t(q)]; }
-    const Arity* arity(size_t a, Qualifier q = Qualifier::Unrestricted, Debug dbg = {}) {
-        return unify<Arity>(0, *this, a, q, dbg);
+    const Dimension* dimension(size_t d, Qualifier q = Qualifier::Unrestricted, Debug dbg = {}) {
+        return unify<Dimension>(0, *this, d, q, dbg);
     }
-    const Def* index(size_t index, size_t arity, Qualifier q = Qualifier::Unrestricted, Debug dbg = {});
+    const Def* index(size_t index, size_t dimension, Qualifier q = Qualifier::Unrestricted, Debug dbg = {});
     const VariadicSigma* variadic_sigma(const Def* dimension, const Def* body, Debug dbg = {}) {
         return unify<VariadicSigma>(2, *this, dimension, body, dbg);
     }
