@@ -45,6 +45,8 @@ Qualifier meet(const Defs& defs) {
 
 //------------------------------------------------------------------------------
 
+size_t Def::gid_counter_ = 1;
+
 void Def::compute_free_vars() {
     for (size_t i = 0, e = num_ops(); i != e; ++i)
         free_vars_ |= op(i)->free_vars() >> shift(i);
@@ -73,8 +75,6 @@ Def::Sort Def::sort() const {
         return Sort::Term;
     }
 }
-
-size_t Def::gid_counter_ = 1;
 
 void Def::wire_uses() const {
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
@@ -262,11 +262,15 @@ Star::Star(WorldBase& world, Qualifier q)
 
 VariadicSigma::VariadicSigma(WorldBase& world, const Def* dimension, const Def* body, Debug dbg)
     : Def(world, Tag::VariadicSigma, world.universe(body->qualifier()), {dimension, body}, dbg)
-{}
+{
+    compute_free_vars();
+}
 
 VariadicTuple::VariadicTuple(WorldBase& world, const Def* type, const Def* body, Debug dbg)
     : Def(world, Tag::VariadicTuple, type, {body}, dbg)
-{}
+{
+    compute_free_vars();
+}
 
 Variant::Variant(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
     : Def(world, Tag::Variant, type_from_sort(world, ops[0]->sort(), q), set_flatten<Variant>(ops),
@@ -286,7 +290,7 @@ size_t Def::shift(size_t) const { return 0; }
 size_t Pi::shift(size_t i) const { return i; }
 size_t Lambda::shift(size_t) const { return num_domains(); }
 size_t Sigma::shift(size_t i) const { return i; }
-size_t VariadicTuple::shift(size_t i) const { assert_unused(i == 1); return 1; }
+size_t VariadicTuple::shift(size_t i) const { return i; }
 
 //------------------------------------------------------------------------------
 
