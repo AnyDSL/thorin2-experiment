@@ -40,7 +40,9 @@ public:
         return unify<VariadicTuple>(1, *this, variadic_sigma, body, dbg);
     }
     const Def* variadic_tuple(const Def* dimension, const Def* body, Debug dbg = {});
+    /// @em nominal Axiom
     const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
+    /// @em structural Axiom
     const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
         return unify<Axiom>(0, *this, type, box, dbg);
     }
