@@ -261,7 +261,7 @@ Star::Star(WorldBase& world, Qualifier q)
 {}
 
 VariadicSigma::VariadicSigma(WorldBase& world, const Def* dimension, const Def* body, Debug dbg)
-    : Def(world, Tag::VariadicSigma, world.universe(body->qualifier()), {dimension, body}, dbg)
+    : SigmaBase(world, Tag::VariadicSigma, world.universe(body->qualifier()), {dimension, body}, dbg)
 {
     compute_free_vars();
 }

@@ -583,16 +583,26 @@ private:
     friend class WorldBase;
 };
 
-class Sigma : public Def {
+class SigmaBase : public Def {
+protected:
+    SigmaBase(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+        : Def(world, tag, type, ops, dbg)
+    {}
+    SigmaBase(WorldBase& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
+        : Def(world, tag, type, num_ops, dbg)
+    {}
+};
+
+class Sigma : public SigmaBase {
 private:
     /// Nominal Sigma kind
     Sigma(WorldBase& world, size_t num_ops, Qualifier q, Debug dbg);
     /// Nominal Sigma type, \a type is some Star/Universe
     Sigma(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
-        : Def(world, Tag::Sigma, type, num_ops, dbg)
+        : SigmaBase(world, Tag::Sigma, type, num_ops, dbg)
     {}
     Sigma(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
-        : Def(world, Tag::Sigma, max_type(world, ops, q), ops, dbg)
+        : SigmaBase(world, Tag::Sigma, max_type(world, ops, q), ops, dbg)
     {
         compute_free_vars();
     }
@@ -611,7 +621,7 @@ private:
     friend class WorldBase;
 };
 
-class VariadicSigma : public Def {
+class VariadicSigma : public SigmaBase {
 private:
     VariadicSigma(WorldBase& world, const Def* dimension, const Def* body, Debug dbg);
 
@@ -628,7 +638,7 @@ private:
 
 class TupleBase : public Def {
 protected:
-    TupleBase(WorldBase& world, Tag tag, const Def* /*SigmaBase TODO*/ type, Defs ops, Debug dbg)
+    TupleBase(WorldBase& world, Tag tag, const SigmaBase* type, Defs ops, Debug dbg)
         : Def(world, tag, type, ops, dbg)
     {
         compute_free_vars();
@@ -652,7 +662,7 @@ private:
 
 class VariadicTuple : public TupleBase {
 private:
-    VariadicTuple(WorldBase& world, const Def* type, const Def* body, Debug dbg)
+    VariadicTuple(WorldBase& world, const SigmaBase* type, const Def* body, Debug dbg)
         : TupleBase(world, Tag::VariadicTuple, type, {body}, dbg)
     {}
 

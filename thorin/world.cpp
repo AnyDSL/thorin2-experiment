@@ -58,7 +58,8 @@ const Def* single_qualified(Defs defs, Qualifier q) {
 
 const Def* WorldBase::sigma(Defs defs, Qualifier q, Debug dbg) {
     // TODO doing the following always loses Debug information
-    if (defs.size() == 1) { return single_qualified(defs, q); }
+    if (defs.size() == 1)
+        return single_qualified(defs, q);
 
     return unify<Sigma>(defs.size(), *this, defs, q, dbg);
 }
