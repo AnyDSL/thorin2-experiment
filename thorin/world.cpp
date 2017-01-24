@@ -23,11 +23,11 @@ WorldBase::~WorldBase() {
         def->~Def();
 }
 
-const Def* WorldBase::index(size_t i, size_t dimension, Qualifier q, Debug dbg) {
-    auto a = this->dimension(dimension, q);
-    if (i < dimension)
-        return unify<Index>(0, *this, a, i, dbg);
-    return error(a);
+const Def* WorldBase::index(size_t i, size_t d, Qualifier q, Debug dbg) {
+    auto dim = dimension(d, q);
+    if (i < d)
+        return unify<Index>(0, *this, dim, i, dbg);
+    return error(dim);
 }
 
 const Def* WorldBase::variadic_tuple(const Def* dimension, const Def* body, Debug dbg) {
