@@ -626,14 +626,20 @@ private:
     friend class WorldBase;
 };
 
-class Tuple : public Def {
-private:
-    Tuple(WorldBase& world, const Sigma* type, Defs ops, Debug dbg)
-        : Def(world, Tag::Tuple, type, ops, dbg)
+class TupleBase : public Def {
+protected:
+    TupleBase(WorldBase& world, Tag tag, const Def* /*SigmaBase TODO*/ type, Defs ops, Debug dbg)
+        : Def(world, tag, type, ops, dbg)
     {
-        assert(type->num_ops() == ops.size());
         compute_free_vars();
     }
+};
+
+class Tuple : public TupleBase {
+private:
+    Tuple(WorldBase& world, const Sigma* type, Defs ops, Debug dbg)
+        : TupleBase(world, Tag::Tuple, type, ops, dbg)
+    {}
 
 public:
     std::ostream& stream(std::ostream&) const override;
@@ -644,13 +650,11 @@ private:
     friend class WorldBase;
 };
 
-class VariadicTuple : public Def {
+class VariadicTuple : public TupleBase {
 private:
     VariadicTuple(WorldBase& world, const Def* type, const Def* body, Debug dbg)
-        : Def(world, Tag::VariadicTuple, type, {body}, dbg)
-    {
-        compute_free_vars();
-    }
+        : TupleBase(world, Tag::VariadicTuple, type, {body}, dbg)
+    {}
 
 public:
     const Def* body() const { return op(0); }
