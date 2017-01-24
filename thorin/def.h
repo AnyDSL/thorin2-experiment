@@ -631,10 +631,11 @@ private:
 
 class VariadicSigma : public Def {
 private:
-    VariadicSigma(WorldBase& world, const Def* body, Qualifier q, Debug dbg);
+    VariadicSigma(WorldBase& world, const Def* dimension, const Def* body, Debug dbg);
 
 public:
-    const Def* body() const { return ops().back(); }
+    const Def* dimension() const { return op(0); }
+    const Def* body() const { return op(1); }
     //const Arity* type() const { return Def::type()->as<Pi>(); }
     //const Def* reduce(Defs) const;
 
@@ -654,7 +655,7 @@ private:
 public:
     const Def* body() const { return op(0); }
     //const Def* reduce(Defs) const;
-    //const Pi* type() const { return Def::type()->as<Pi>(); }
+    const VariadicSigma* type() const { return Def::type()->as<VariadicSigma>(); }
 
     std::ostream& stream(std::ostream&) const override;
 

@@ -30,13 +30,8 @@ const Def* WorldBase::index(size_t i, size_t arity, Qualifier q, Debug dbg) {
     return error(a);
 }
 
-const Def* WorldBase::variadic_sigma(const Def* body, Qualifier q, Debug dbg) {
-    return unify<VariadicSigma>(1, *this, body, q, dbg);
-}
-
-const Def* WorldBase::variadic_tuple(const Def* /*body*/, Debug /*dbg*/) {
-    assert(false && "TODO");
-    //return unify<VariadicTuple>(1, *this, body, dbg);
+const Def* WorldBase::variadic_tuple(const Def* body, Debug dbg) {
+    return nullptr;
 }
 
 const Pi* WorldBase::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {

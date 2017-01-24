@@ -260,8 +260,8 @@ Star::Star(WorldBase& world, Qualifier q)
     : Def(world, Tag::Star, world.universe(q), Defs(), {"*"})
 {}
 
-VariadicSigma::VariadicSigma(WorldBase& world, const Def* body, Qualifier q, Debug dbg)
-    : Def(world, Tag::VariadicSigma, world.universe(q), {body}, dbg)
+VariadicSigma::VariadicSigma(WorldBase& world, const Def* dimension, const Def* body, Debug dbg)
+    : Def(world, Tag::VariadicSigma, world.universe(body->qualifier()), {dimension, body}, dbg)
 {}
 
 VariadicTuple::VariadicTuple(WorldBase& world, const Def* type, const Def* body, Debug dbg)
@@ -396,8 +396,14 @@ const Def* Tuple        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
 const Def* Universe     ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
 const Def* Var          ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
 const Def* Variant      ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
-const Def* VariadicSigma::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic_sigma(ops[0], qualifier(), debug()); }
+const Def* VariadicSigma::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic_sigma(ops[0], ops[1], debug()); }
 const Def* VariadicTuple::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic_tuple(ops[0], debug()); }
+
+//------------------------------------------------------------------------------
+
+/*
+ * stub
+ */
 
 Axiom* Axiom::stub(WorldBase& to, const Def*, Debug) const {
     assert(&world() != &to);
@@ -565,7 +571,7 @@ std::ostream& Var::stream(std::ostream& os) const {
 }
 
 std::ostream& VariadicSigma::stream(std::ostream& os) const {
-    return streamf(os, "x{}", body());
+    return streamf(os, "x{}:{}", dimension(), body());
 }
 
 std::ostream& VariadicTuple::stream(std::ostream& os) const {
