@@ -8,23 +8,23 @@ TEST(Variadic, Misc) {
     World w;
     w.space()->dump();
     w.space(Qualifier::Affine)->dump();
-    w.dimension(3)->dump();
-    w.dimension(7, Qualifier::Affine)->dump();
+    w.arity(3)->dump();
+    w.arity(7, Qualifier::Affine)->dump();
     auto p2_4 = w.index(2, 4);
     auto p2_4b = w.index(2, 4);
     ASSERT_EQ(p2_4, p2_4b);
     p2_4->dump();
     w.index(2, 1234567890)->dump();
-    w.variadic_sigma(w.dimension(5), w.type_nat())->dump();
-    auto t = w.variadic_tuple(w.dimension(23), w.val_nat_16());
-    t->dump();
-    t->type()->dump();
+    w.variadic(w.arity(5), w.type_nat())->dump();
+
+    auto t = w.tuple({w.val_nat_2(), w.val_nat_4()});
+    ASSERT_TRUE(t->type()->as<Variadic>()->is_array());
 
     //auto lea = w.axiom(w.pi(
 
     auto list = w.axiom(w.pi(w.star(), w.star()), {"list"});
     list->type()->dump();
-#if 1
+#if 0
     auto zip = w.axiom(
             w.pi({w.space(),
                   w.variadic_sigma(w.var(w.space(), 0), w.star())},
@@ -32,6 +32,6 @@ TEST(Variadic, Misc) {
                   w.app(list, w.var(w.variadic_sigma(w.var(w.space(), 2), w.star()), 1)))),
             {"zip"});
     zip->type()->dump();
-    //w.app(zip, {w.dimension(2), w.tuple(w.variadic_sigma(w.dimension(2), w.star()), {w.type_nat(), w.type_bool()})})->dump();
+    //w.app(zip, {w.arity(2), w.tuple(w.variadic_sigma(w.arity(2), w.star()), {w.type_nat(), w.type_bool()})})->dump();
 #endif
 }

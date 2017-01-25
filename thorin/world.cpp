@@ -29,15 +29,10 @@ WorldBase::~WorldBase() {
         def->~Def();
 }
 
-const Def* WorldBase::index(size_t i, size_t d, Qualifier q, Debug dbg) {
-    auto dim = dimension(d, q);
-    if (i < d)
-        return unify<Index>(0, *this, dim, i, dbg);
-    return error(dim);
-}
-
-const Def* WorldBase::variadic_tuple(const Def* dimension, const Def* body, Debug dbg) {
-    return type_variadic_tuple(variadic_sigma(dimension, body->type(), dbg), body, dbg);
+const Def* WorldBase::index(size_t i, size_t a, Qualifier q, Debug dbg) {
+    if (i < a)
+        return unify<Index>(0, *this, arity(a, q), i, dbg);
+    return error(arity(a, q));
 }
 
 const Pi* WorldBase::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
@@ -69,7 +64,7 @@ const Def* WorldBase::sigma(Defs defs, Qualifier q, Debug dbg) {
             return single_qualified(defs, q);
         default:
             if (std::equal(defs.begin() + 1, defs.end(), &defs.front()))
-                return variadic_sigma(dimension(defs.size(), Qualifier::Unrestricted, dbg), defs.front(), dbg);
+                return variadic(arity(defs.size(), Qualifier::Unrestricted, dbg), defs.front(), dbg);
     }
 
     return unify<Sigma>(defs.size(), *this, defs, q, dbg);
@@ -138,9 +133,6 @@ const Def* WorldBase::extracti(const Def* def, size_t i, Debug dbg) {
     if (auto tuple = def->isa<Tuple>())
         return tuple->op(i);
 
-    if (auto variadic_tuple = def->isa<VariadicTuple>())
-        return variadic_tuple->body();
-
     if (auto sigma = def->type()->isa<Sigma>()) {
         auto extract_type = [&]() {
             auto type = sigma->op(i);
@@ -165,9 +157,9 @@ const Def* WorldBase::extracti(const Def* def, size_t i, Debug dbg) {
         return unify<Extract>(2, *this, type, def, index(i, sigma->num_ops(), type->qualifier(), dbg), dbg);
     }
 
-    if (auto variadic_sigma = def->type()->isa<VariadicSigma>()) {
-        auto idx = index(i, /*TODO*/variadic_sigma->dimension()->as<Dimension>()->dimension(), Qualifier::Unrestricted, dbg);
-        return unify<Extract>(2, *this, variadic_sigma->body(), def, idx, dbg);
+    if (auto variadic = def->type()->isa<Variadic>()) {
+        auto idx = index(i, /*TODO*/variadic->arity()->as<Arity>()->arity(), Qualifier::Unrestricted, dbg);
+        return unify<Extract>(2, *this, variadic->body(), def, idx, dbg);
     }
 
     assert(i == 0);

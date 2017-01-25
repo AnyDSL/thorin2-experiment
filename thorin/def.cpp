@@ -215,10 +215,10 @@ Def::~Def() {
         delete[] ops_;
 }
 
-Dimension::Dimension(WorldBase& world, size_t dimension, Qualifier q, Debug dbg)
-    : Def(world, Tag::Dimension, world.space(q), Defs(), dbg)
+Arity::Arity(WorldBase& world, size_t arity, Qualifier q, Debug dbg)
+    : Def(world, Tag::Arity, world.space(q), Defs(), dbg)
 {
-    dimension_ = dimension;
+    arity_ = arity;
 }
 
 Intersection::Intersection(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
@@ -242,8 +242,8 @@ Pi::Pi(WorldBase& world, Defs domains, const Def* body, Qualifier q, Debug dbg)
     compute_free_vars();
 }
 
-Index::Index(WorldBase& world, const Dimension* dimension, size_t index, Debug dbg)
-    : Def(world, Tag::Index, dimension, Defs(), dbg)
+Index::Index(WorldBase& world, const Arity* arity, size_t index, Debug dbg)
+    : Def(world, Tag::Index, arity, Defs(), dbg)
 {
     index_ = index;
 }
@@ -260,8 +260,8 @@ Star::Star(WorldBase& world, Qualifier q)
     : Def(world, Tag::Star, world.universe(q), Defs(), {"*"})
 {}
 
-VariadicSigma::VariadicSigma(WorldBase& world, const Def* dimension, const Def* body, Debug dbg)
-    : SigmaBase(world, Tag::VariadicSigma, world.universe(body->qualifier()), {dimension, body}, dbg)
+Variadic::Variadic(WorldBase& world, const Def* arity, const Def* body, Debug dbg)
+    : SigmaBase(world, Tag::Variadic, world.universe(body->qualifier()), {arity, body}, dbg)
 {
     compute_free_vars();
 }
@@ -284,7 +284,7 @@ size_t Def::shift(size_t) const { return 0; }
 size_t Pi::shift(size_t i) const { return i; }
 size_t Lambda::shift(size_t) const { return num_domains(); }
 size_t Sigma::shift(size_t i) const { return i; }
-size_t VariadicTuple::shift(size_t i) const { assert_unused(i == 0); return 1; }
+size_t Variadic::shift(size_t i) const { return i; }
 
 //------------------------------------------------------------------------------
 
@@ -315,7 +315,7 @@ bool Def::equal(const Def* other) const {
     return result;
 }
 
-uint64_t Dimension::vhash() const { return thorin::hash_combine(Def::vhash(), dimension()); }
+uint64_t Arity::vhash() const { return thorin::hash_combine(Def::vhash(), arity()); }
 
 uint64_t Axiom::vhash() const {
     auto seed = Def::vhash();
@@ -334,8 +334,8 @@ uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index())
  * equal
  */
 
-bool Dimension::equal(const Def* other) const {
-    return Def::equal(other) && this->dimension() == other->as<Dimension>()->dimension();
+bool Arity::equal(const Def* other) const {
+    return Def::equal(other) && this->arity() == other->as<Arity>()->arity();
 }
 
 bool Axiom::equal(const Def* other) const {
@@ -360,43 +360,40 @@ bool Var::equal(const Def* other) const {
  * rebuild
  */
 
-const Def* Any          ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
-const Def* App          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
-const Def* Dimension    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.dimension(dimension(), qualifier(), debug()); }
-const Def* Extract      ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
-const Def* Axiom        ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
+const Def* Any         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
+const Def* App         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
+const Def* Arity       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity(arity(), qualifier(), debug()); }
+const Def* Extract     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
+const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
     return to.assume(t, box(), debug());
 }
-const Def* Error        ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.error(t); }
-const Def* Intersection ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.intersection(ops, debug()); }
-const Def* Match        ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
-const Def* Lambda       ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
+const Def* Error       ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.error(t); }
+const Def* Intersection::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.intersection(ops, debug()); }
+const Def* Match       ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
+const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     assert(!is_nominal());
     return to.pi_lambda(t->as<Pi>(), ops.front(), debug());
 }
-const Def* Pi           ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), debug()); }
-const Def* Pick         ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
+const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), debug()); }
+const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* Index        ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.index(index(), dimension(), qualifier(), debug()); }
-const Def* Sigma        ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
+const Def* Index       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.index(index(), arity(), qualifier(), debug()); }
+const Def* Sigma       ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
     assert(!is_nominal());
     return to.sigma(ops, qualifier(), debug());
 }
-const Def* Singleton    ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
-const Def* Space        ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.space(qualifier()); }
-const Def* Star         ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
-const Def* Tuple        ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
-const Def* Universe     ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
-const Def* Var          ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
-const Def* Variant      ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
-const Def* VariadicSigma::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic_sigma(ops[0], ops[1], debug()); }
-const Def* VariadicTuple::rebuild(WorldBase& to, const Def* t, Defs ops) const {
-    return to.type_variadic_tuple(t->type()->as<VariadicSigma>(), ops[0], debug());
-}
+const Def* Singleton   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
+const Def* Space       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.space(qualifier()); }
+const Def* Star        ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
+const Def* Tuple       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
+const Def* Universe    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
+const Def* Var         ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
+const Def* Variant     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
+const Def* Variadic    ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic(ops[0], ops[1], debug()); }
 
 //------------------------------------------------------------------------------
 
@@ -484,8 +481,8 @@ std::ostream& App::stream(std::ostream& os) const {
     return stream_list(os, args(), [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
 
-std::ostream& Dimension::stream(std::ostream& os) const {
-    return os << qualifier() << dimension() << "ᴰ";
+std::ostream& Arity::stream(std::ostream& os) const {
+    return os << qualifier() << arity() << "ᴰ";
 }
 
 std::ostream& Axiom::stream(std::ostream& os) const { return os << qualifier() << name(); }
@@ -529,8 +526,8 @@ std::ostream& Index::stream(std::ostream& os) const {
     os << qualifier() << index();
 
     std::vector<std::array<char, 3>> digits;
-    for (size_t d = dimension(); d > 0; d /= 10)
-        digits.push_back({char(0xe2), char(0x82), char(char(0x80) + char(d % 10))}); // utf-8 prefix for subscript 0
+    for (size_t a = arity(); a > 0; a /= 10)
+        digits.push_back({char(0xe2), char(0x82), char(char(0x80) + char(a % 10))}); // utf-8 prefix for subscript 0
 
     for (auto i = digits.rbegin(), e = digits.rend(); i != e; ++i) {
         const auto& digit = *i;
@@ -569,12 +566,8 @@ std::ostream& Var::stream(std::ostream& os) const {
     return type()->name_stream(os) << ">";
 }
 
-std::ostream& VariadicSigma::stream(std::ostream& os) const {
-    return streamf(os, "x{}({})", dimension(), body());
-}
-
-std::ostream& VariadicTuple::stream(std::ostream& os) const {
-    return streamf(os, "<{}>", body());
+std::ostream& Variadic::stream(std::ostream& os) const {
+    return streamf(os, "x{}({})", arity(), body());
 }
 
 std::ostream& Variant::stream(std::ostream& os) const {

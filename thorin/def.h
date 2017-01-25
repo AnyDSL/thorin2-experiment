@@ -107,7 +107,7 @@ public:
         Any,
         App,
         Axiom,
-        Dimension,
+        Arity,
         Error,
         Extract,
         Index,
@@ -123,7 +123,7 @@ public:
         Tuple,
         Universe,
         Var,
-        VariadicSigma,
+        Variadic,
         VariadicTuple,
         Variant,
         Num
@@ -282,7 +282,7 @@ protected:
 
     union {
         mutable const Def* cache_;  ///< Used by App.
-        size_t dimension_;          ///< Used by Dimension.
+        size_t arity_;              ///< Used by Arity.
         size_t index_;              ///< Used by Index, Var.
         Box box_;                   ///< Used by Axiom.
         Qualifier qualifier_;       ///< Used by Universe.
@@ -543,12 +543,12 @@ private:
     friend class WorldBase;
 };
 
-class Dimension : public Def {
+class Arity : public Def {
 private:
-    Dimension(WorldBase& world, size_t dimension, Qualifier q, Debug dbg);
+    Arity(WorldBase& world, size_t arity, Qualifier q, Debug dbg);
 
 public:
-    size_t dimension() const { return dimension_; }
+    size_t arity() const { return arity_; }
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -561,12 +561,12 @@ private:
 
 class Index : public Def {
 private:
-    Index(WorldBase& world, const Dimension* dimension, size_t index, Debug dbg);
+    Index(WorldBase& world, const Arity* arity, size_t index, Debug dbg);
 
 public:
     size_t index() const { return index_; }
-    const Dimension* type() const { return Def::type()->as<Dimension>(); }
-    size_t dimension() const { return type()->dimension(); }
+    const Arity* type() const { return Def::type()->as<Arity>(); }
+    size_t arity() const { return type()->arity(); }
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -615,60 +615,33 @@ private:
     friend class WorldBase;
 };
 
-class VariadicSigma : public SigmaBase {
+class Variadic : public SigmaBase {
 private:
-    VariadicSigma(WorldBase& world, const Def* dimension, const Def* body, Debug dbg);
+    Variadic(WorldBase& world, const Def* arity, const Def* body, Debug dbg);
 
 public:
-    const Def* dimension() const { return op(0); }
+    const Def* arity() const { return op(0); }
     const Def* body() const { return op(1); }
-    std::ostream& stream(std::ostream&) const override;
-
-private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-
-    friend class WorldBase;
-};
-
-class TupleBase : public Def {
-protected:
-    TupleBase(WorldBase& world, Tag tag, const SigmaBase* type, Defs ops, Debug dbg)
-        : Def(world, tag, type, ops, dbg)
-    {
-        compute_free_vars();
-    }
-};
-
-class Tuple : public TupleBase {
-private:
-    Tuple(WorldBase& world, const SigmaBase* type, Defs ops, Debug dbg)
-        : TupleBase(world, Tag::Tuple, type, ops, dbg)
-    {}
-
-public:
-    std::ostream& stream(std::ostream&) const override;
-
-private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-
-    friend class WorldBase;
-};
-
-class VariadicTuple : public TupleBase {
-private:
-    VariadicTuple(WorldBase& world, const SigmaBase* type, const Def* body, Debug dbg)
-        : TupleBase(world, Tag::VariadicTuple, type, {body}, dbg)
-    {}
-
-public:
-    const Def* body() const { return op(0); }
-    //const Def* reduce(Defs) const;
-    const VariadicSigma* type() const { return Def::type()->as<VariadicSigma>(); }
-
+    bool is_array() const { return !free_vars().test(0); }
     std::ostream& stream(std::ostream&) const override;
 
 private:
     size_t shift(size_t) const override;
+    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+
+    friend class WorldBase;
+};
+
+class Tuple : public Def {
+private:
+    Tuple(WorldBase& world, const SigmaBase* type, Defs ops, Debug dbg)
+        : Def(world, Tag::Tuple, type, ops, dbg)
+    {}
+
+public:
+    std::ostream& stream(std::ostream&) const override;
+
+private:
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
 
     friend class WorldBase;
