@@ -301,10 +301,17 @@ World::World() {
 
     type_iarithop_ = pi({type_nat(), type_nat ()}, pi({type_int (vn1, vn0), type_int (vn2, vn1)}, type_int (vn3, vn2)));
     type_rarithop_ = pi({type_nat(), type_bool()}, pi({type_real(vn1, vn0), type_real(vn2, vn1)}, type_real(vn3, vn2)));
+
+    op_lea_ = axiom(pi({star(), type_nat()},
+                pi({type_ptr(var(star(), 1), var(type_nat(), 0)), dimension(var(star(), 2))},
+                type_ptr(extract(var(star(), 3), var(dimension(var(star(), 3)), 0)), var(type_nat(), 2)))), {"lea"});
 }
 
-const Def* World::lea(const Def* ptr, const Def* index) {
-    //return app(op_lea_, (ptr->type()
+const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
+    auto ptr_type = ptr->type()->as<App>();
+    auto pointee = ptr_type->arg(0);
+    auto addr_space = ptr_type->arg(1);
+    return app(app(op_lea_, {pointee, addr_space}), {ptr, index}, dbg);
 }
 
 }

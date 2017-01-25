@@ -299,7 +299,7 @@ public:
     THORIN_I_ARITHOP(CODE)
     //THORIN_R_ARITHOP(CODE)
 #undef CODE
-    const Def* lea(const Def* ptr, const Def* index);
+    const Def* op_lea(const Def* ptr, const Def* index, Debug dbg = {});
     //@}
 
 private:
