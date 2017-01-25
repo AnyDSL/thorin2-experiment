@@ -286,8 +286,9 @@ World::World() {
 
         val_bool_[0][i] = val_bool(false, q);
         val_bool_[1][i] = val_bool( true, q);
-        for (size_t j = 0; j != 8; ++j)
-            val_nat_[j][i] = val_nat(j == 0 ? 0 : (1 << int64_t(j-1)), q);
+        val_nat_0_  [i] = val_nat(0, q);
+        for (size_t j = 0; j != val_nat_.size(); ++j)
+            val_nat_[j][i] = val_nat(1 << int64_t(j), q);
     }
 
     type_real_  = axiom(pi({type_nat(), type_bool()}, star()),{"real"});

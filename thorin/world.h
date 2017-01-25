@@ -275,14 +275,14 @@ public:
     const Axiom* val_nat(int64_t val, Qualifier q = Qualifier::Unrestricted) {
         return assume(type_nat(q), {val}, {std::to_string(val)});
     }
-    const Axiom* val_nat_0(Qualifier q = Qualifier::Unrestricted) { return val_nat_[0][size_t(q)]; }
-    const Axiom* val_nat_1(Qualifier q = Qualifier::Unrestricted) { return val_nat_[1][size_t(q)]; }
-    const Axiom* val_nat_2(Qualifier q = Qualifier::Unrestricted) { return val_nat_[2][size_t(q)]; }
-    const Axiom* val_nat_4(Qualifier q = Qualifier::Unrestricted) { return val_nat_[3][size_t(q)]; }
-    const Axiom* val_nat_8(Qualifier q = Qualifier::Unrestricted) { return val_nat_[4][size_t(q)]; }
-    const Axiom* val_nat_16(Qualifier q = Qualifier::Unrestricted) { return val_nat_[5][size_t(q)]; }
-    const Axiom* val_nat_32(Qualifier q = Qualifier::Unrestricted) { return val_nat_[6][size_t(q)]; }
-    const Axiom* val_nat_64(Qualifier q = Qualifier::Unrestricted) { return val_nat_[7][size_t(q)]; }
+    const Axiom* val_nat_0(Qualifier q = Qualifier::Unrestricted) { return val_nat_0_[size_t(q)]; }
+    const Axiom* val_nat_1(Qualifier q = Qualifier::Unrestricted) { return val_nat_[0][size_t(q)]; }
+    const Axiom* val_nat_2(Qualifier q = Qualifier::Unrestricted) { return val_nat_[1][size_t(q)]; }
+    const Axiom* val_nat_4(Qualifier q = Qualifier::Unrestricted) { return val_nat_[2][size_t(q)]; }
+    const Axiom* val_nat_8(Qualifier q = Qualifier::Unrestricted) { return val_nat_[3][size_t(q)]; }
+    const Axiom* val_nat_16(Qualifier q = Qualifier::Unrestricted) { return val_nat_[4][size_t(q)]; }
+    const Axiom* val_nat_32(Qualifier q = Qualifier::Unrestricted) { return val_nat_[5][size_t(q)]; }
+    const Axiom* val_nat_64(Qualifier q = Qualifier::Unrestricted) { return val_nat_[6][size_t(q)]; }
 
     const Axiom* val_bool(bool val, Qualifier q = Qualifier::Unrestricted) {
         // TODO use this
@@ -312,7 +312,8 @@ public:
 
 private:
     std::array<const Axiom*, 4> type_nat_;
-    std::array<std::array<const Axiom*, 4>, 8> val_nat_;
+    std::array<const Axiom*, 4> val_nat_0_;
+    std::array<std::array<const Axiom*, 4>, 7> val_nat_;
     std::array<const Axiom*, 4> type_bool_;
     std::array<std::array<const Axiom*, 4>, 2> val_bool_;
     std::array<const Axiom*, 4> type_int_;
