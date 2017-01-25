@@ -106,8 +106,9 @@ public:
         All,
         Any,
         App,
-        Axiom,
         Arity,
+        ArityKind,
+        Axiom,
         Error,
         Extract,
         Index,
@@ -118,7 +119,6 @@ public:
         Pick,
         Sigma,
         Singleton,
-        Space,
         Star,
         Tuple,
         Universe,
@@ -530,9 +530,9 @@ private:
     friend class WorldBase;
 };
 
-class Space : public Def {
+class ArityKind : public Def {
 private:
-    Space(WorldBase& world, Qualifier q);
+    ArityKind(WorldBase& world, Qualifier q);
 
 public:
     std::ostream& stream(std::ostream&) const override;

@@ -16,11 +16,11 @@ WorldBase::WorldBase()
 {
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
-        universe_[i] = insert<Universe>(0, *this, q);
-        star_    [i] = insert<Star    >(0, *this, q);
-        space_   [i] = insert<Space   >(0, *this, q);
-        unit_    [i] = insert<Sigma   >(0, *this, Defs(), q, Debug("Σ()"));
-        tuple0_  [i] = insert<Tuple   >(0, *this, unit_[i], Defs(), Debug("()"));
+        universe_  [i] = insert<Universe >(0, *this, q);
+        star_      [i] = insert<Star     >(0, *this, q);
+        arity_kind_[i] = insert<ArityKind>(0, *this, q);
+        unit_      [i] = insert<Sigma    >(0, *this, Defs(), q, Debug("Σ()"));
+        tuple0_    [i] = insert<Tuple    >(0, *this, unit_[i], Defs(), Debug("()"));
     }
 }
 

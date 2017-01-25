@@ -216,7 +216,7 @@ Def::~Def() {
 }
 
 Arity::Arity(WorldBase& world, size_t arity, Qualifier q, Debug dbg)
-    : Def(world, Tag::Arity, world.space(q), Defs(), dbg)
+    : Def(world, Tag::Arity, world.arity_kind(q), Defs(), dbg)
 {
     arity_ = arity;
 }
@@ -252,8 +252,8 @@ Sigma::Sigma(WorldBase& world, size_t num_ops, Qualifier q, Debug dbg)
     : Sigma(world, world.universe(q), num_ops, dbg)
 {}
 
-Space::Space(WorldBase& world, Qualifier q)
-    : Def(world, Tag::Space, world.universe(q), Defs(), {"𝕊"})
+ArityKind::ArityKind(WorldBase& world, Qualifier q)
+    : Def(world, Tag::ArityKind, world.universe(q), Defs(), {"𝕊"})
 {}
 
 Star::Star(WorldBase& world, Qualifier q)
@@ -363,6 +363,7 @@ bool Var::equal(const Def* other) const {
 const Def* Any         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
 const Def* Arity       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity(arity(), qualifier(), debug()); }
+const Def* ArityKind   ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity_kind(qualifier()); }
 const Def* Extract     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
@@ -387,7 +388,6 @@ const Def* Sigma       ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
     return to.sigma(ops, qualifier(), debug());
 }
 const Def* Singleton   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
-const Def* Space       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.space(qualifier()); }
 const Def* Star        ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
 const Def* Tuple       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
 const Def* Universe    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
@@ -545,7 +545,7 @@ std::ostream& Singleton::stream(std::ostream& os) const {
     return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "S(", ")");
 }
 
-std::ostream& Space::stream(std::ostream& os) const {
+std::ostream& ArityKind::stream(std::ostream& os) const {
     return os << qualifier() << name();
 }
 

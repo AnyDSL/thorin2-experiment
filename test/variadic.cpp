@@ -6,8 +6,8 @@ using namespace thorin;
 
 TEST(Variadic, Misc) {
     World w;
-    w.space()->dump();
-    w.space(Qualifier::Affine)->dump();
+    w.arity_kind()->dump();
+    w.arity_kind(Qualifier::Affine)->dump();
     w.arity(3)->dump();
     w.arity(7, Qualifier::Affine)->dump();
     auto p2_4 = w.index(2, 4);
@@ -26,10 +26,10 @@ TEST(Variadic, Misc) {
     list->type()->dump();
 #if 0
     auto zip = w.axiom(
-            w.pi({w.space(),
-                  w.variadic_sigma(w.var(w.space(), 0), w.star())},
-            w.pi( w.variadic_sigma(w.var(w.space(), 1), w.variadic_tuple(w.var(w.space(), 1), w.app(list, w.var(w.variadic_sigma(w.var(w.space(), 1), w.star()), 0)))),
-                  w.app(list, w.var(w.variadic_sigma(w.var(w.space(), 2), w.star()), 1)))),
+            w.pi({w.arity_kind(),
+                  w.variadic_sigma(w.var(w.arity_kind(), 0), w.star())},
+            w.pi( w.variadic_sigma(w.var(w.arity_kind(), 1), w.variadic_tuple(w.var(w.arity_kind(), 1), w.app(list, w.var(w.variadic_sigma(w.var(w.arity_kind(), 1), w.star()), 0)))),
+                  w.app(list, w.var(w.variadic_sigma(w.var(w.arity_kind(), 2), w.star()), 1)))),
             {"zip"});
     zip->type()->dump();
     //w.app(zip, {w.arity(2), w.tuple(w.variadic_sigma(w.arity(2), w.star()), {w.type_nat(), w.type_bool()})})->dump();
