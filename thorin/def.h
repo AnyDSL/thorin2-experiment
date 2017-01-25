@@ -647,7 +647,7 @@ protected:
 
 class Tuple : public TupleBase {
 private:
-    Tuple(WorldBase& world, const Sigma* type, Defs ops, Debug dbg)
+    Tuple(WorldBase& world, const SigmaBase* type, Defs ops, Debug dbg)
         : TupleBase(world, Tag::Tuple, type, ops, dbg)
     {}
 

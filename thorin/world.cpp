@@ -61,6 +61,15 @@ const Def* WorldBase::sigma(Defs defs, Qualifier q, Debug dbg) {
     if (defs.size() == 1)
         return single_qualified(defs, q);
 
+    // TODO use STL
+    if (defs.size() >= 2) {
+        bool result = true;
+        for (size_t i = 1, e = defs.size(); result && i != e; ++i)
+            result &= defs[i-1] == defs[i];
+        if (result)
+            return variadic_sigma(dimension(defs.size(), Qualifier::Unrestricted, dbg), defs.front(), dbg);
+    }
+
     return unify<Sigma>(defs.size(), *this, defs, q, dbg);
 }
 
@@ -116,7 +125,7 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
         return defs.front();
     }
 
-    return unify<Tuple>(defs.size(), *this, type->as<Sigma>(), defs, dbg);
+    return unify<Tuple>(defs.size(), *this, type->as<SigmaBase>(), defs, dbg);
 }
 
 const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
@@ -126,10 +135,13 @@ const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
 }
 
 const Def* WorldBase::extracti(const Def* def, size_t i, Debug dbg) {
-    if (auto sigma = def->type()->isa<Sigma>()) {
-        if (auto tuple = def->isa<Tuple>())
-            return tuple->op(i);
+    if (auto tuple = def->isa<Tuple>())
+        return tuple->op(i);
 
+    if (auto variadic_tuple = def->isa<VariadicTuple>())
+        return variadic_tuple->body();
+
+    if (auto sigma = def->type()->isa<Sigma>()) {
         auto extract_type = [&]() {
             auto type = sigma->op(i);
             if (type->free_vars().none_end(i))
@@ -151,6 +163,11 @@ const Def* WorldBase::extracti(const Def* def, size_t i, Debug dbg) {
 
         auto type = extract_type();
         return unify<Extract>(2, *this, type, def, index(i, sigma->num_ops(), type->qualifier(), dbg), dbg);
+    }
+
+    if (auto variadic_sigma = def->type()->isa<VariadicSigma>()) {
+        auto idx = index(i, /*TODO*/variadic_sigma->dimension()->as<Dimension>()->dimension(), Qualifier::Unrestricted, dbg);
+        return unify<Extract>(2, *this, variadic_sigma->body(), def, idx, dbg);
     }
 
     assert(i == 0);
