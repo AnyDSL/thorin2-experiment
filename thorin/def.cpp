@@ -570,7 +570,7 @@ std::ostream& Var::stream(std::ostream& os) const {
 }
 
 std::ostream& VariadicSigma::stream(std::ostream& os) const {
-    return streamf(os, "x{}:{}", dimension(), body());
+    return streamf(os, "x{}({})", dimension(), body());
 }
 
 std::ostream& VariadicTuple::stream(std::ostream& os) const {
