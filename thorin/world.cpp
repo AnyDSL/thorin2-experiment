@@ -281,7 +281,7 @@ World::World() {
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
         type_bool_[i] = axiom(star(q), {"bool"});
-        type_nat_ [i] = axiom(star(q),{"nat"});
+        type_nat_ [i] = axiom(star(q), {"nat"});
         type_int_ [i] = axiom(pi({type_nat(), type_nat()}, star(q)), {"int"});
 
         val_bool_[0][i] = val_bool(false, q);
@@ -295,15 +295,13 @@ World::World() {
     type_frame_ = axiom(star(Qualifier::Linear),{"F"});
     type_ptr_   = axiom(pi({star(), type_bool()}, star(),{"ptr"}));
 
-    auto var_nat_0 = var(type_nat(), 0);
-    auto var_nat_1 = var(type_nat(), 1);
-    auto var_nat_2 = var(type_nat(), 2);
-    auto var_nat_3 = var(type_nat(), 3);
+    auto vn0 = var(type_nat(), 0);
+    auto vn1 = var(type_nat(), 1);
+    auto vn2 = var(type_nat(), 2);
+    auto vn3 = var(type_nat(), 3);
 
-    type_iarithop_ = pi({type_nat(), type_nat()},
-            pi({type_int(var_nat_1, var_nat_0), type_int(var_nat_2, var_nat_1)}, type_int(var_nat_3, var_nat_2)));
-    type_rarithop_ = pi({type_nat(), type_bool()},
-            pi({type_real(var_nat_1, var_nat_0), type_real(var_nat_2, var_nat_1)}, type_real(var_nat_3, var_nat_2)));
+    type_iarithop_ = pi({type_nat(), type_nat ()}, pi({type_int (vn1, vn0), type_int (vn2, vn1)}, type_int (vn3, vn2)));
+    type_rarithop_ = pi({type_nat(), type_bool()}, pi({type_real(vn1, vn0), type_real(vn2, vn1)}, type_real(vn3, vn2)));
 }
 
 }
