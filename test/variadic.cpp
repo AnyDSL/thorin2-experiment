@@ -17,19 +17,19 @@ TEST(Variadic, Misc) {
     ASSERT_TRUE(w.dimension(v) == w.arity(5));
 
     auto t = w.tuple({w.val_nat_2(), w.val_nat_4()});
-    ASSERT_TRUE(t->type()->as<Variadic>()->is_array());
+    ASSERT_TRUE(t->type()->isa<Variadic>());
 
-    // ΠT:*.Π(ptr[T], i:dim(T)).ptr[T.i]
-    auto lea = w.axiom(w.pi(w.star(), w.pi({w.type_ptr(w.var(w.star(), 0)), w.dimension(w.var(w.star(), 1))},
-                    w.type_ptr(w.extract(w.var(w.star(), 2), w.var(w.dimension(w.var(w.star(), 2)), 0))))), {"lea"});
+    // ΠT:*,a:N.Π(ptr[T,a], i:dim(T)).ptr[T.i,a]
+    auto lea = w.axiom(w.pi({w.star(), w.type_nat()}, w.pi({w.type_ptr(w.var(w.star(), 1), w.var(w.type_nat(), 0)), w.dimension(w.var(w.star(), 2))},
+                    w.type_ptr(w.extract(w.var(w.star(), 3), w.var(w.dimension(w.var(w.star(), 3)), 0)), w.var(w.type_nat(), 2)))), {"lea"});
 
     auto s2 = w.sigma({w.type_bool(), w.type_nat()});
     auto n2 = w.sigma_type(2)->set(0, w.type_bool())->set(1, w.type_nat());
-    auto ps2 = w.axiom(w.type_ptr(s2), {"ptr_s2"});
-    auto pn2 = w.axiom(w.type_ptr(n2), {"ptr_n2"});
+    auto ps2 = w.axiom(w.type_ptr(s2, w.val_nat_2()), {"ptr_s2"});
+    auto pn2 = w.axiom(w.type_ptr(n2, w.val_nat_4()), {"ptr_n2"});
 
-    ASSERT_EQ(w.app(w.app(lea, s2), {ps2, w.index(1, 2)})->type(), w.type_ptr(w.type_nat()));
-    ASSERT_EQ(w.app(w.app(lea, n2), {pn2, w.index(1, 2)})->type(), w.type_ptr(w.type_nat()));
+    ASSERT_EQ(w.app(w.app(lea, {s2, w.val_nat_2()}), {ps2, w.index(1, 2)})->type(), w.type_ptr(w.type_nat(), w.val_nat_2()));
+    ASSERT_EQ(w.app(w.app(lea, {n2, w.val_nat_4()}), {pn2, w.index(1, 2)})->type(), w.type_ptr(w.type_nat(), w.val_nat_4()));
 
     auto list = w.axiom(w.pi(w.star(), w.star()), {"list"});
     list->type()->dump();

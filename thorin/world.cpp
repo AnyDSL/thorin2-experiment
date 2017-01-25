@@ -303,4 +303,8 @@ World::World() {
     type_rarithop_ = pi({type_nat(), type_bool()}, pi({type_real(vn1, vn0), type_real(vn2, vn1)}, type_real(vn3, vn2)));
 }
 
+const Def* World::lea(const Def* ptr, const Def* index) {
+    //return app(op_lea_, (ptr->type()
+}
+
 }

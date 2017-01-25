@@ -637,7 +637,6 @@ private:
 public:
     const Def* arity() const { return op(0); }
     const Def* body() const { return op(1); }
-    bool is_array() const { return !free_vars().test(0); }
     std::ostream& stream(std::ostream&) const override;
 
 private:

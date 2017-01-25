@@ -299,6 +299,7 @@ public:
     THORIN_I_ARITHOP(CODE)
     //THORIN_R_ARITHOP(CODE)
 #undef CODE
+    const Def* lea(const Def* ptr, const Def* index);
     //@}
 
 private:
@@ -316,6 +317,7 @@ private:
     const Pi* type_rcmpop_;
     const Pi* type_iarithop_;
     const Pi* type_rarithop_;
+    const Axiom* op_lea_;
 
 #define CODE(x) \
     const Axiom* op_ ## x ## _; \
