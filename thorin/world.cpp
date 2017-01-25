@@ -35,6 +35,16 @@ const Def* WorldBase::index(size_t i, size_t a, Debug dbg) {
     return error(arity(a));
 }
 
+const Def* WorldBase::dimension(const Def* def, Debug dbg) {
+    if (auto tuple = def->isa<Tuple>())
+        return arity(tuple->num_ops(), dbg);
+    if (auto sigma = def->isa<Sigma>())
+        return arity(sigma->num_ops(), dbg);
+    if (auto variadic = def->isa<Variadic>())
+        return variadic->arity();
+    return unify<Dimension>(1, *this, def, dbg);
+}
+
 const Pi* WorldBase::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
     if (domains.size() == 1) {
         if (auto sigma = domains.front()->isa<Sigma>())

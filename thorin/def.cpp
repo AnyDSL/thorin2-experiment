@@ -225,6 +225,10 @@ ArityKind::ArityKind(WorldBase& world)
     : Def(world, Tag::ArityKind, world.universe(), Defs(), {"𝕊"})
 {}
 
+Dimension::Dimension(WorldBase& world, const Def* def, Debug dbg)
+    : Def(world, Tag::Dimension, world.arity_kind(), {def}, dbg)
+{}
+
 Intersection::Intersection(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
     : Def(world, Tag::Intersection, type_from_sort(world, ops[0]->sort(), q),
                  set_flatten<Intersection>(ops), dbg)
@@ -364,6 +368,7 @@ const Def* Any         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { 
 const Def* App         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
 const Def* Arity       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity(arity(), debug()); }
 const Def* ArityKind   ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity_kind(); }
+const Def* Dimension   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.dimension(ops[0], debug()); }
 const Def* Extract     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
@@ -486,6 +491,7 @@ std::ostream& Arity::stream(std::ostream& os) const {
 }
 
 std::ostream& Axiom::stream(std::ostream& os) const { return os << qualifier() << name(); }
+std::ostream& Dimension::stream(std::ostream& os) const { return streamf(os, "dim({})", of()); }
 
 std::ostream& Error::stream(std::ostream& os) const { return os << "Error"; }
 

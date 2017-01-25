@@ -109,6 +109,7 @@ public:
         Arity,
         ArityKind,
         Axiom,
+        Dimension,
         Error,
         Extract,
         Index,
@@ -559,10 +560,19 @@ private:
     friend class WorldBase;
 };
 
-//class Dimension : public Def {
-//private:
-    //Dimension(WorldBase& world,
-//};
+class Dimension : public Def {
+private:
+    Dimension(WorldBase& world, const Def* def, Debug dbg);
+
+public:
+    const Def* of() const { return op(0); }
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+
+    friend class WorldBase;
+};
 
 class Index : public Def {
 private:
