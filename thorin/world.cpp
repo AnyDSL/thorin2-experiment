@@ -142,33 +142,24 @@ const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
 }
 
 const Def* WorldBase::extracti(const Def* def, size_t i, Debug dbg) {
-    if (auto tuple = def->isa<Tuple>())
-        return tuple->op(i);
-
-    if (auto sigma = def->isa<Sigma>())
-        return sigma->op(i);
+    if (def->isa<Tuple>() || def->isa<Sigma>())
+        return def->op(i);
 
     if (auto sigma = def->type()->isa<Sigma>()) {
-        auto extract_type = [&]() {
-            auto type = sigma->op(i);
-            if (type->free_vars().none_end(i))
-                return type;
-
+        auto type = sigma->op(i);
+        if (type->free_vars().any_end(i)) {
             size_t skipped_shifts = 0;
-            for (size_t delta = 1; delta <= i; delta++) {
+            for (size_t delta = 1; delta <= i; ++delta) {
                 if (type->free_vars().none_begin(skipped_shifts)) {
-                    skipped_shifts++;
+                    ++skipped_shifts;
                     continue;
                 }
-                auto prev_extract = extracti(def, i - delta);
 
-                // This also shifts any Var with i > skipped_shifts by -1
-                type = type->reduce({prev_extract}, skipped_shifts);
+                // this also shifts any Var with i > skipped_shifts by -1
+                type = type->reduce({extracti(def, i - delta)}, skipped_shifts);
             }
-            return type;
-        };
+        }
 
-        auto type = extract_type();
         return unify<Extract>(2, *this, type, def, index(i, sigma->num_ops(), dbg), dbg);
     }
 

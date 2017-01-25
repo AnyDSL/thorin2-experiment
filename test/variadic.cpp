@@ -22,20 +22,14 @@ TEST(Variadic, Misc) {
     // ΠT:*.Π(ptr[T], i:dim(T)).ptr[T.i]
     auto lea = w.axiom(w.pi(w.star(), w.pi({w.type_ptr(w.var(w.star(), 0)), w.dimension(w.var(w.star(), 1))},
                     w.type_ptr(w.extract(w.var(w.star(), 2), w.var(w.dimension(w.var(w.star(), 2)), 0))))), {"lea"});
-    lea->type()->dump();
-    auto s2 = w.sigma({w.type_bool(), w.type_nat()});
-    auto n2 = w.sigma_type(3)->set(0, w.type_bool())->set(1, w.type_nat());
 
+    auto s2 = w.sigma({w.type_bool(), w.type_nat()});
+    auto n2 = w.sigma_type(2)->set(0, w.type_bool())->set(1, w.type_nat());
     auto ps2 = w.axiom(w.type_ptr(s2), {"ptr_s2"});
     auto pn2 = w.axiom(w.type_ptr(n2), {"ptr_n2"});
 
-    auto xx = w.app(lea, s2);
-    xx->dump();
-    xx->type()->dump();
-    //auto as2 = w.app(w.app(lea, s2), {ps2, w.index(1, 2)});
-    auto as2 = w.app(xx, {ps2, w.index(1, 2)});
-    xx->dump();
-    as2->type()->dump();
+    ASSERT_EQ(w.app(w.app(lea, s2), {ps2, w.index(1, 2)})->type(), w.type_ptr(w.type_nat()));
+    ASSERT_EQ(w.app(w.app(lea, n2), {pn2, w.index(1, 2)})->type(), w.type_ptr(w.type_nat()));
 
     auto list = w.axiom(w.pi(w.star(), w.star()), {"list"});
     list->type()->dump();
