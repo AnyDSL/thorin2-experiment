@@ -250,10 +250,10 @@ public:
 
     const Axiom* type_mem() const { return type_mem_; }
 
-    const Def* type_ptr(const Def* pointee, const Def* addr_space) {
-        return app(type_ptr_, {pointee, addr_space});
+    const Def* type_ptr(const Def* pointee, const Def* addr_space, Debug dbg = {}) {
+        return app(type_ptr_, {pointee, addr_space}, dbg);
     }
-    const Def* type_ptr(const Def* pointee) { return type_ptr(pointee, val_nat_0()); }
+    const Def* type_ptr(const Def* pointee, Debug dbg = {}) { return type_ptr(pointee, val_nat_0(), dbg); }
 
 #define CODE(x, y) \
     const App* type_ ## x(Qualifier q = Qualifier::Unrestricted) { return type_ ## x ## _[size_t(q)]; }

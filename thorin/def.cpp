@@ -227,7 +227,9 @@ ArityKind::ArityKind(WorldBase& world)
 
 Dimension::Dimension(WorldBase& world, const Def* def, Debug dbg)
     : Def(world, Tag::Dimension, world.arity_kind(), {def}, dbg)
-{}
+{
+    compute_free_vars();
+}
 
 Intersection::Intersection(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
     : Def(world, Tag::Intersection, type_from_sort(world, ops[0]->sort(), q),

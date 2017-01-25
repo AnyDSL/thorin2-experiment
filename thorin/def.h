@@ -618,7 +618,7 @@ private:
 
 public:
     bool is_unit() const { return ops().empty(); }
-    void set(size_t i, const Def* def) { Def::set(i, def); };
+    Sigma* set(size_t i, const Def* def) { Def::set(i, def); return this; };
     std::ostream& stream(std::ostream&) const override;
     Sigma* stub(WorldBase&, const Def*, Debug) const override;
 
@@ -706,9 +706,7 @@ public:
     size_t index() const { return index_; }
     std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
-    std::ostream& name_stream(std::ostream& os) const override {
-        return stream(os);
-    }
+    std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
 
 private:
     uint64_t vhash() const override;

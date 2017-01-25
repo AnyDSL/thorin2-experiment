@@ -13,12 +13,29 @@ TEST(Variadic, Misc) {
     ASSERT_EQ(p2_4, p2_4b);
     p2_4->dump();
     w.index(2, 1234567890)->dump();
-    w.variadic(w.arity(5), w.type_nat())->dump();
+    auto v = w.variadic(w.arity(5), w.type_nat());
+    ASSERT_TRUE(w.dimension(v) == w.arity(5));
 
     auto t = w.tuple({w.val_nat_2(), w.val_nat_4()});
     ASSERT_TRUE(t->type()->as<Variadic>()->is_array());
 
-    //auto lea = w.axiom(w.pi(
+    // ΠT:*.Π(ptr[T], i:dim(T)).ptr[T.i]
+    auto lea = w.axiom(w.pi(w.star(), w.pi({w.type_ptr(w.var(w.star(), 0)), w.dimension(w.var(w.star(), 1))},
+                    w.type_ptr(w.extract(w.var(w.star(), 2), w.var(w.dimension(w.var(w.star(), 2)), 0))))), {"lea"});
+    lea->type()->dump();
+    auto s2 = w.sigma({w.type_bool(), w.type_nat()});
+    auto n2 = w.sigma_type(3)->set(0, w.type_bool())->set(1, w.type_nat());
+
+    auto ps2 = w.axiom(w.type_ptr(s2), {"ptr_s2"});
+    auto pn2 = w.axiom(w.type_ptr(n2), {"ptr_n2"});
+
+    auto xx = w.app(lea, s2);
+    xx->dump();
+    xx->type()->dump();
+    //auto as2 = w.app(w.app(lea, s2), {ps2, w.index(1, 2)});
+    auto as2 = w.app(xx, {ps2, w.index(1, 2)});
+    xx->dump();
+    as2->type()->dump();
 
     auto list = w.axiom(w.pi(w.star(), w.star()), {"list"});
     list->type()->dump();

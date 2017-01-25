@@ -42,7 +42,9 @@ const Def* WorldBase::dimension(const Def* def, Debug dbg) {
         return arity(sigma->num_ops(), dbg);
     if (auto variadic = def->isa<Variadic>())
         return variadic->arity();
-    return unify<Dimension>(1, *this, def, dbg);
+    if (def->isa<Var>())
+        return unify<Dimension>(1, *this, def, dbg);
+    return arity(1, dbg);
 }
 
 const Pi* WorldBase::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
@@ -136,12 +138,15 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
 const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
     if (auto index = i->isa<Index>())
         return extracti(def, index->index(), dbg);
-    return unify<Extract>(2, *this, extract(def, i, dbg), def, i, dbg);
+    return unify<Extract>(2, *this, i->type(), def, i, dbg);
 }
 
 const Def* WorldBase::extracti(const Def* def, size_t i, Debug dbg) {
     if (auto tuple = def->isa<Tuple>())
         return tuple->op(i);
+
+    if (auto sigma = def->isa<Sigma>())
+        return sigma->op(i);
 
     if (auto sigma = def->type()->isa<Sigma>()) {
         auto extract_type = [&]() {
@@ -293,10 +298,10 @@ World::World() {
             val_nat_[j][i] = val_nat(1 << int64_t(j), q);
     }
 
-    type_real_  = axiom(pi({type_nat(), type_bool()}, star()),{"real"});
-    type_mem_   = axiom(star(Qualifier::Linear),{"M"});
-    type_frame_ = axiom(star(Qualifier::Linear),{"F"});
-    type_ptr_   = axiom(pi({star(), type_bool()}, star(),{"ptr"}));
+    type_real_  = axiom(pi({type_nat(), type_bool()}, star()), {"real"});
+    type_mem_   = axiom(star(Qualifier::Linear), {"M"});
+    type_frame_ = axiom(star(Qualifier::Linear), {"F"});
+    type_ptr_   = axiom(pi({star(), type_nat()}, star()), {"ptr"});
 
     auto vn0 = var(type_nat(), 0);
     auto vn1 = var(type_nat(), 1);
