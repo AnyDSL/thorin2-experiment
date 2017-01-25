@@ -51,13 +51,11 @@ const Lambda* WorldBase::pi_lambda(const Pi* pi, const Def* body, Debug dbg) {
 const Def* single_qualified(Defs defs, Qualifier q) {
     assert(defs.size() == 1);
     auto single = defs.front();
-    // TODO if we use automatic qualifier coercion/subtyping, need to allow it here as well
     assert(!single || single->qualifier() == q);
     return single;
 }
 
 const Def* WorldBase::sigma(Defs defs, Qualifier q, Debug dbg) {
-    // TODO doing the following always loses Debug information
     if (defs.size() == 1)
         return single_qualified(defs, q);
 
@@ -107,7 +105,6 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
         return pi(domains, singleton(applied), pi_type->qualifier(), dbg);
     }
 
-    // TODO other normalizations?
     return unify<Singleton>(1, *this, def, dbg);
 }
 
@@ -118,7 +115,6 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
     // if defs is just one, we may not have a sigma to unpack
     if (type->is_nominal() && type->isa<Sigma>())
         found_structural_type = sigma(type->ops());
-    // TODO subtyping check instead of equality here
     // TODO error message with more precise information
     assert(found_structural_type == expected_type && "can't give type to tuple");
 
