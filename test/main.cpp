@@ -6,18 +6,18 @@ using namespace thorin;
 
 TEST(Simple, unit) {
     World w;
-    auto unitt = w.unit();
-    auto unitv = w.unit_val();
-    ASSERT_EQ(unitv->type(), unitt);
+    auto unit = w.unit();
+    auto tuple0 = w.tuple0();
+    ASSERT_EQ(tuple0->type(), unit);
 
-    auto lam = w.lambda(unitt, unitv);
-    ASSERT_EQ(lam->domain(), unitt);
+    auto lam = w.lambda(unit, tuple0);
+    ASSERT_EQ(lam->domain(), unit);
     ASSERT_TRUE(lam->domains().size() == 0);
-    ASSERT_EQ(lam->type()->body(), unitt);
-    auto pi = w.pi(Defs({}), unitt);
+    ASSERT_EQ(lam->type()->body(), unit);
+    auto pi = w.pi(Defs({}), unit);
     ASSERT_EQ(pi, lam->type());
-    auto apped = w.app(lam, unitv);
-    ASSERT_EQ(unitv, apped);
+    auto apped = w.app(lam, tuple0);
+    ASSERT_EQ(tuple0, apped);
 }
 
 TEST(Simple, Misc) {

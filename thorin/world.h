@@ -87,9 +87,10 @@ public:
         return app(callee, Defs({arg}), dbg);
     }
     const Def* app(const Def* callee, Debug dbg = {}) {
-        return app(callee, unit_val(), dbg);
+        return app(callee, tuple0(), dbg);
     }
 
+    const Sigma* unit(Qualifier q = Qualifier::Unrestricted) { return unit_[size_t(q)]; }
     const Def* sigma(Defs defs, Debug dbg = {}) {
         return sigma(defs, meet(defs), dbg);
     }
@@ -109,6 +110,7 @@ public:
     Sigma* sigma_kind(size_t num_ops, Qualifier q, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, num_ops, q, dbg);
     }
+    const Tuple* tuple0(Qualifier q = Qualifier::Unrestricted) { return tuple0_[size_t(q)]; }
     const Def* tuple(Defs defs, Debug dbg = {}) {
         return tuple(sigma(types(defs), dbg), defs, dbg);
     }
@@ -135,9 +137,6 @@ public:
     }
     const Def* any(const Def* type, const Def* def, Debug dbg = {});
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
-
-    const Sigma* unit() { return sigma(Defs())->as<Sigma>(); }
-    const Tuple* unit_val() { return tuple(Defs())->as<Tuple>(); }
 
     const Def* singleton(const Def* def, Debug dbg = {});
 
@@ -228,20 +227,15 @@ protected:
         assert(buffer_index_ % alignof(T) == 0);
     }
 
-    template<class T>
-    std::array<const T*, 4> build_array_nullary() {
-        std::function<const T*(Qualifier)> fn = [&](Qualifier q) -> const T* {
-            return insert<T>(0, *this, q); };
-        return array_for_qualifiers<T>(fn);
-    }
-
     std::unique_ptr<Page> root_page_;
     Page* cur_page_;
     size_t buffer_index_ = 0;
     DefSet defs_;
-    const std::array<const Universe*, 4> universe_;
-    const std::array<const Star*, 4> star_;
-    const std::array<const Space*, 4> space_;
+    std::array<const Universe*, 4> universe_;
+    std::array<const Star*, 4> star_;
+    std::array<const Space*, 4> space_;
+    std::array<const Sigma*, 4> unit_;
+    std::array<const Tuple*, 4> tuple0_;
 };
 
 class World : public WorldBase {
@@ -317,11 +311,11 @@ public:
     //@}
 
 private:
-    const std::array<const Axiom*, 4> type_nat_;
-    const std::array<std::array<const Axiom*, 4>, 8> val_nat_;
-    const std::array<const Axiom*, 4> type_bool_;
-    const std::array<std::array<const Axiom*, 4>, 2> val_bool_;
-    const std::array<const Axiom*, 4> type_int_;
+    std::array<const Axiom*, 4> type_nat_;
+    std::array<std::array<const Axiom*, 4>, 8> val_nat_;
+    std::array<const Axiom*, 4> type_bool_;
+    std::array<std::array<const Axiom*, 4>, 2> val_bool_;
+    std::array<const Axiom*, 4> type_int_;
     const Axiom* type_real_;
     const Axiom* type_mem_;
     const Axiom* type_frame_;
@@ -350,7 +344,7 @@ private:
             THORIN_I_TYPE(CODE)
 #undef CODE
         };
-        const std::array<const std::array<const App*,  size_t(IType::Num)>, 4> type_ints_;
+        std::array<const std::array<const App*,  size_t(IType::Num)>, 4> type_ints_;
     };
 
     union {

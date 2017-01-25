@@ -97,12 +97,6 @@ std::ostream& operator<<(std::ostream& ostream, const Qualifier q);
 Qualifier meet(Qualifier lhs, Qualifier rhs);
 Qualifier meet(const Defs& defs);
 
-template<class T>
-std::array<const T*, 4> array_for_qualifiers(std::function<const T*(Qualifier)> fn) {
-    return {fn(Qualifier::Unrestricted), fn(Qualifier::Relevant), fn(Qualifier::Affine),
-            fn(Qualifier::Linear)};
-}
-
 //------------------------------------------------------------------------------
 
 /// Base class for all Def%s.

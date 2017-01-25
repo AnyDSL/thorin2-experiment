@@ -13,10 +13,16 @@ bool WorldBase::alloc_guard_ = false;
 WorldBase::WorldBase()
     : root_page_(new Page)
     , cur_page_(root_page_.get())
-    , universe_(build_array_nullary<Universe>())
-    , star_(build_array_nullary<Star>())
-    , space_(build_array_nullary<Space>())
-{}
+{
+    for (size_t i = 0; i != 4; ++i) {
+        auto q = Qualifier(i);
+        universe_[i] = insert<Universe>(0, *this, q);
+        star_    [i] = insert<Star    >(0, *this, q);
+        space_   [i] = insert<Space   >(0, *this, q);
+        unit_    [i] = insert<Sigma   >(0, *this, Defs(), q, Debug("Σ()"));
+        tuple0_  [i] = insert<Tuple   >(0, *this, unit_[i], Defs(), Debug("()"));
+    }
+}
 
 WorldBase::~WorldBase() {
     for (auto def : defs_)
@@ -56,16 +62,14 @@ const Def* single_qualified(Defs defs, Qualifier q) {
 }
 
 const Def* WorldBase::sigma(Defs defs, Qualifier q, Debug dbg) {
-    if (defs.size() == 1)
-        return single_qualified(defs, q);
-
-    // TODO use STL
-    if (defs.size() >= 2) {
-        bool result = true;
-        for (size_t i = 1, e = defs.size(); result && i != e; ++i)
-            result &= defs[i-1] == defs[i];
-        if (result)
-            return variadic_sigma(dimension(defs.size(), Qualifier::Unrestricted, dbg), defs.front(), dbg);
+    switch (defs.size()) {
+        case 0:
+            return unit();
+        case 1:
+            return single_qualified(defs, q);
+        default:
+            if (std::equal(defs.begin() + 1, defs.end(), &defs.front()))
+                return variadic_sigma(dimension(defs.size(), Qualifier::Unrestricted, dbg), defs.front(), dbg);
     }
 
     return unify<Sigma>(defs.size(), *this, defs, q, dbg);
@@ -273,52 +277,33 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
  * World
  */
 
-std::array<const Axiom*, 4> build_axiom(std::function<const Axiom*(Qualifier q)> fn) {
-    return array_for_qualifiers<Axiom>(fn);
-}
+World::World() {
+    for (size_t i = 0; i != 4; ++i) {
+        auto q = Qualifier(i);
+        type_bool_[i] = axiom(star(q), {"bool"});
+        type_nat_ [i] = axiom(star(q),{"nat"});
+        type_int_ [i] = axiom(pi({type_nat(), type_nat()}, star(q)), {"int"});
 
-std::array<const Axiom*, 4> build_nat(World& w, size_t width) {
-    return array_for_qualifiers<Axiom>([&](auto q){ return w.val_nat(width, q); });
-}
+        val_bool_[0][i] = val_bool(false, q);
+        val_bool_[1][i] = val_bool( true, q);
+        for (size_t j = 0; j != 8; ++j)
+            val_nat_[j][i] = val_nat(j == 0 ? 0 : (1 << int64_t(j-1)), q);
+    }
 
-World::World()
-    : type_nat_(build_axiom([&](auto q) { return this->axiom(this->star(q),{"Nat"}); }))
-    , val_nat_({build_nat(*this, 0), build_nat(*this, 1), build_nat(*this, 2), build_nat(*this, 4),
-             build_nat(*this, 8), build_nat(*this, 16), build_nat(*this, 32), build_nat(*this, 64)})
-    , type_bool_(build_axiom([&](auto q) { return this->axiom(this->star(q),{"Boolean"}); }))
-    , val_bool_({build_axiom([&](auto q) { return this->val_bool(false, q); }),
-                build_axiom([&](auto q){ return this->val_bool(true, q); })})
-    , type_int_(build_axiom([&](auto q){
-                  return this->axiom(this->pi({this->type_nat(), this->type_nat()}, this->star(q)), {"int"}); }))
-    , type_real_(axiom(pi({type_nat(), type_bool()}, star()),{"real"}))
-    , type_mem_(axiom(star(Qualifier::Linear),{"M"}))
-    , type_frame_(axiom(star(Qualifier::Linear),{"F"}))
-    , type_ptr_(axiom(pi({star(), type_bool()}, star(),{"ptr"})))
-    , type_iarithop_(pi({type_nat(), type_nat()}, pi({
-            type_int(var(type_nat(), 1), var(type_nat(), 0)),
-            type_int(var(type_nat(), 2), var(type_nat(), 1))},
-            type_int(var(type_nat(), 3), var(type_nat(), 2)))))
-    , type_rarithop_(pi({type_nat(), type_bool()}, pi({
-            type_real(var(type_nat(), 1), var(type_nat(), 0)),
-            type_real(var(type_nat(), 2), var(type_nat(), 1))},
-            type_real(var(type_nat(), 3), var(type_nat(), 2)))))
-    //, icmpop_type_(pi({nat(), boolean(), boolean()}, pi(nat(), pi({
-            //type_int(var(nat(), 3), var(boolean(), 2), var(boolean(), 1)),
-            //type_int(var(nat(), 4), var(boolean(), 3), var(boolean(), 2))},
-            //type_int(var(nat(), 5), var(boolean(), 4), var(boolean(), 3))))))
-    //, rcmpop_type_(pi({nat(), boolean()}, pi(nat(), pi({
-            //type_real(var(nat(), 2), var(boolean(), 1)),
-            //type_real(var(nat(), 3), var(boolean(), 2))}, type_uo1()))))
-#if 0
-#define CODE(x) \
-    , x ## _(axiom(iarithop_type_, {# x}))
-    THORIN_I_ARITHOP(CODE)
-#undef CODE
-#define CODE(x) \
-    , x ## _(axiom(rarithop_type_, {# x}))
-    THORIN_R_ARITHOP(CODE)
-#undef CODE
-#endif
-{}
+    type_real_  = axiom(pi({type_nat(), type_bool()}, star()),{"real"});
+    type_mem_   = axiom(star(Qualifier::Linear),{"M"});
+    type_frame_ = axiom(star(Qualifier::Linear),{"F"});
+    type_ptr_   = axiom(pi({star(), type_bool()}, star(),{"ptr"}));
+
+    auto var_nat_0 = var(type_nat(), 0);
+    auto var_nat_1 = var(type_nat(), 1);
+    auto var_nat_2 = var(type_nat(), 2);
+    auto var_nat_3 = var(type_nat(), 3);
+
+    type_iarithop_ = pi({type_nat(), type_nat()},
+            pi({type_int(var_nat_1, var_nat_0), type_int(var_nat_2, var_nat_1)}, type_int(var_nat_3, var_nat_2)));
+    type_rarithop_ = pi({type_nat(), type_bool()},
+            pi({type_real(var_nat_1, var_nat_0), type_real(var_nat_2, var_nat_1)}, type_real(var_nat_3, var_nat_2)));
+}
 
 }
