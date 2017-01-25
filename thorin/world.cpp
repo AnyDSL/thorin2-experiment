@@ -121,9 +121,9 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
     // TODO subtyping check instead of equality here
     // TODO error message with more precise information
     assert(found_structural_type == expected_type && "can't give type to tuple");
-    if (!type->is_nominal() && defs.size() == 1) {
+
+    if (!type->is_nominal() && defs.size() == 1)
         return defs.front();
-    }
 
     return unify<Tuple>(defs.size(), *this, type->as<SigmaBase>(), defs, dbg);
 }
@@ -194,7 +194,8 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
 }
 
 const Def* WorldBase::variant(Defs defs, Qualifier q, Debug dbg) {
-    if (defs.size() == 1) { return single_qualified(defs, q); }
+    if (defs.size() == 1)
+        return single_qualified(defs, q);
 
     return unify<Variant>(defs.size(), *this, defs, q, dbg);
 }
