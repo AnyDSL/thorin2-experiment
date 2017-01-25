@@ -157,7 +157,7 @@ protected:
         , num_ops_(num_ops)
         , ops_(&vla_ops_[0])
     {
-        std::fill(ops_, ops_ + num_ops, nullptr);
+        std::fill_n(ops_, num_ops, nullptr);
     }
 
     /// A @em structural Def.
