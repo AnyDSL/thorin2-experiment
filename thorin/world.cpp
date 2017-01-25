@@ -16,12 +16,12 @@ WorldBase::WorldBase()
 {
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
-        universe_  [i] = insert<Universe >(0, *this, q);
-        star_      [i] = insert<Star     >(0, *this, q);
-        arity_kind_[i] = insert<ArityKind>(0, *this, q);
-        unit_      [i] = insert<Sigma    >(0, *this, Defs(), q, Debug("Σ()"));
-        tuple0_    [i] = insert<Tuple    >(0, *this, unit_[i], Defs(), Debug("()"));
+        universe_[i] = insert<Universe>(0, *this, q);
+        star_    [i] = insert<Star    >(0, *this, q);
+        unit_    [i] = insert<Sigma   >(0, *this, Defs(), q, Debug("Σ()"));
+        tuple0_  [i] = insert<Tuple   >(0, *this, unit_[i], Defs(), Debug("()"));
     }
+    arity_kind_ = insert<ArityKind>(0, *this);
 }
 
 WorldBase::~WorldBase() {
@@ -29,10 +29,10 @@ WorldBase::~WorldBase() {
         def->~Def();
 }
 
-const Def* WorldBase::index(size_t i, size_t a, Qualifier q, Debug dbg) {
+const Def* WorldBase::index(size_t i, size_t a, Debug dbg) {
     if (i < a)
-        return unify<Index>(0, *this, arity(a, q), i, dbg);
-    return error(arity(a, q));
+        return unify<Index>(0, *this, arity(a), i, dbg);
+    return error(arity(a));
 }
 
 const Pi* WorldBase::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
@@ -64,7 +64,7 @@ const Def* WorldBase::sigma(Defs defs, Qualifier q, Debug dbg) {
             return single_qualified(defs, q);
         default:
             if (std::equal(defs.begin() + 1, defs.end(), &defs.front()))
-                return variadic(arity(defs.size(), Qualifier::Unrestricted, dbg), defs.front(), dbg);
+                return variadic(arity(defs.size(), dbg), defs.front(), dbg);
     }
 
     return unify<Sigma>(defs.size(), *this, defs, q, dbg);
@@ -154,11 +154,11 @@ const Def* WorldBase::extracti(const Def* def, size_t i, Debug dbg) {
         };
 
         auto type = extract_type();
-        return unify<Extract>(2, *this, type, def, index(i, sigma->num_ops(), type->qualifier(), dbg), dbg);
+        return unify<Extract>(2, *this, type, def, index(i, sigma->num_ops(), dbg), dbg);
     }
 
     if (auto variadic = def->type()->isa<Variadic>()) {
-        auto idx = index(i, /*TODO*/variadic->arity()->as<Arity>()->arity(), Qualifier::Unrestricted, dbg);
+        auto idx = index(i, /*TODO*/variadic->arity()->as<Arity>()->arity(), dbg);
         return unify<Extract>(2, *this, variadic->body(), def, idx, dbg);
     }
 

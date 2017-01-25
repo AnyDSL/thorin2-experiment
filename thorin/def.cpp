@@ -215,11 +215,15 @@ Def::~Def() {
         delete[] ops_;
 }
 
-Arity::Arity(WorldBase& world, size_t arity, Qualifier q, Debug dbg)
-    : Def(world, Tag::Arity, world.arity_kind(q), Defs(), dbg)
+Arity::Arity(WorldBase& world, size_t arity, Debug dbg)
+    : Def(world, Tag::Arity, world.arity_kind(), Defs(), dbg)
 {
     arity_ = arity;
 }
+
+ArityKind::ArityKind(WorldBase& world)
+    : Def(world, Tag::ArityKind, world.universe(), Defs(), {"𝕊"})
+{}
 
 Intersection::Intersection(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
     : Def(world, Tag::Intersection, type_from_sort(world, ops[0]->sort(), q),
@@ -250,10 +254,6 @@ Index::Index(WorldBase& world, const Arity* arity, size_t index, Debug dbg)
 
 Sigma::Sigma(WorldBase& world, size_t num_ops, Qualifier q, Debug dbg)
     : Sigma(world, world.universe(q), num_ops, dbg)
-{}
-
-ArityKind::ArityKind(WorldBase& world, Qualifier q)
-    : Def(world, Tag::ArityKind, world.universe(q), Defs(), {"𝕊"})
 {}
 
 Star::Star(WorldBase& world, Qualifier q)
@@ -362,8 +362,8 @@ bool Var::equal(const Def* other) const {
 
 const Def* Any         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
-const Def* Arity       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity(arity(), qualifier(), debug()); }
-const Def* ArityKind   ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity_kind(qualifier()); }
+const Def* Arity       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity(arity(), debug()); }
+const Def* ArityKind   ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity_kind(); }
 const Def* Extract     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
@@ -382,7 +382,7 @@ const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* Index       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.index(index(), arity(), qualifier(), debug()); }
+const Def* Index       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.index(index(), arity(), debug()); }
 const Def* Sigma       ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
     assert(!is_nominal());
     return to.sigma(ops, qualifier(), debug());

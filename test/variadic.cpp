@@ -7,9 +7,7 @@ using namespace thorin;
 TEST(Variadic, Misc) {
     World w;
     w.arity_kind()->dump();
-    w.arity_kind(Qualifier::Affine)->dump();
     w.arity(3)->dump();
-    w.arity(7, Qualifier::Affine)->dump();
     auto p2_4 = w.index(2, 4);
     auto p2_4b = w.index(2, 4);
     ASSERT_EQ(p2_4, p2_4b);

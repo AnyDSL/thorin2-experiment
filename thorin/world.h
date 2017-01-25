@@ -27,14 +27,9 @@ public:
 
     const Universe* universe(Qualifier q = Qualifier::Unrestricted) const { return universe_[size_t(q)]; }
     const Star* star(Qualifier q = Qualifier::Unrestricted) const { return star_[size_t(q)]; }
-
-    const ArityKind* arity_kind(Qualifier q = Qualifier::Unrestricted) const {
-        return arity_kind_[size_t(q)];
-    }
-    const Arity* arity(size_t a, Qualifier q = Qualifier::Unrestricted, Debug dbg = {}) {
-        return unify<Arity>(0, *this, a, q, dbg);
-    }
-    const Def* index(size_t index, size_t arity, Qualifier q = Qualifier::Unrestricted, Debug dbg = {});
+    const ArityKind* arity_kind() const { return arity_kind_; }
+    const Arity* arity(size_t a, Debug dbg = {}) { return unify<Arity>(0, *this, a, dbg); }
+    const Def* index(size_t index, size_t arity, Debug dbg = {});
     const Variadic* variadic(const Def* arity, const Def* body, Debug dbg = {}) {
         return unify<Variadic>(2, *this, arity, body, dbg);
     }
@@ -231,9 +226,9 @@ protected:
     DefSet defs_;
     std::array<const Universe*, 4> universe_;
     std::array<const Star*, 4> star_;
-    std::array<const ArityKind*, 4> arity_kind_;
     std::array<const Sigma*, 4> unit_;
     std::array<const Tuple*, 4> tuple0_;
+    const ArityKind* arity_kind_;
 };
 
 class World : public WorldBase {

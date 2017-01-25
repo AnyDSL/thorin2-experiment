@@ -532,7 +532,7 @@ private:
 
 class ArityKind : public Def {
 private:
-    ArityKind(WorldBase& world, Qualifier q);
+    ArityKind(WorldBase& world);
 
 public:
     std::ostream& stream(std::ostream&) const override;
@@ -545,7 +545,7 @@ private:
 
 class Arity : public Def {
 private:
-    Arity(WorldBase& world, size_t arity, Qualifier q, Debug dbg);
+    Arity(WorldBase& world, size_t arity, Debug dbg);
 
 public:
     size_t arity() const { return arity_; }
@@ -558,6 +558,11 @@ private:
 
     friend class WorldBase;
 };
+
+//class Dimension : public Def {
+//private:
+    //Dimension(WorldBase& world,
+//};
 
 class Index : public Def {
 private:
