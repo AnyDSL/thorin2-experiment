@@ -33,6 +33,7 @@ TEST(Variadic, Misc) {
     ASSERT_EQ(lea2.type(), w.type_ptr(w.type_nat(), w.val_nat_4()));
     ASSERT_EQ(lea1.ptr_pointee(), s2);
     ASSERT_EQ(lea2.ptr_pointee(), n2);
+    ASSERT_EQ(w.op_insert(w.tuple({w.val_bool_top(), w.val_nat_2()}), w.index(1, 2), w.val_nat_8())->type(), s2);
 
     auto list = w.axiom(w.pi(w.star(), w.star()), {"list"});
     list->type()->dump();

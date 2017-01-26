@@ -304,14 +304,25 @@ World::World() {
     type_iarithop_ = pi({type_nat(), type_nat ()}, pi({type_int (vn1, vn0), type_int (vn2, vn1)}, type_int (vn3, vn2)));
     type_rarithop_ = pi({type_nat(), type_bool()}, pi({type_real(vn1, vn0), type_real(vn2, vn1)}, type_real(vn3, vn2)));
 
+    op_insert_ = axiom(pi(star(),
+            pi({var(star(), 0), dimension(var(star(), 1)), extract(var(star(), 2), var(dimension(var(star(), 2)), 0))},
+            var(star(), 3))), {"insert"});
+
     op_lea_ = axiom(pi({star(), type_nat()},
                 pi({type_ptr(var(star(), 1), var(type_nat(), 0)), dimension(var(star(), 2))},
                 type_ptr(extract(var(star(), 3), var(dimension(var(star(), 3)), 0)), var(type_nat(), 2)))), {"lea"});
 }
 
+const Def* World::op_insert(const Def* def, const Def* index, const Def* val, Debug dbg) {
+    auto x = app(op_insert_, def->type(), dbg);
+    x->dump();
+    x->type()->dump();
+    return app(x, {def, index, val}, dbg);
+}
+
 const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
     PtrType ptr_type(ptr->type());
-    return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}), {ptr, index}, dbg);
+    return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {ptr, index}, dbg);
 }
 
 }

@@ -293,17 +293,29 @@ public:
 #undef CODE
     //@}
 
-    //@{ operations
+    //@{ arithmetic operations
 #define CODE(x) \
     const Axiom* op_ ## x() { return op_ ## x ## _; } \
     const App* op_ ## x(const Def*, const Def*) { return nullptr; }
     THORIN_I_ARITHOP(CODE)
     //THORIN_R_ARITHOP(CODE)
 #undef CODE
+    //@}
+
+    //@{ relational operations
+    // TODO
+    //@}
+
+    //@{ tuple operations
+    const Axiom* op_insert() { return op_insert_; }
+    const Def* op_insert(const Def* def, const Def* index, const Def* val, Debug dbg = {});
     const Axiom* op_lea() { return op_lea_; }
     const Def* op_lea(const Def* ptr, const Def* index, Debug dbg = {});
     //@}
 
+    //@{ memory operations
+    // TODO
+    //@}
 private:
     std::array<const Axiom*, 4> type_nat_;
     std::array<const Axiom*, 4> val_nat_0_;
@@ -320,6 +332,7 @@ private:
     const Pi* type_iarithop_;
     const Pi* type_rarithop_;
     const Axiom* op_lea_;
+    const Axiom* op_insert_;
 
 #define CODE(x) \
     const Axiom* op_ ## x ## _; \
