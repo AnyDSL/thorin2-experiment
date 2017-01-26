@@ -16,6 +16,7 @@ TEST(Variadic, Misc) {
     w.index(2, 1234567890)->dump();
     auto v = w.variadic(w.arity(5), w.type_nat());
     ASSERT_TRUE(w.dimension(v) == w.arity(5));
+    ASSERT_TRUE(v->is_array());
 
     auto t = w.tuple({w.val_nat_2(), w.val_nat_4()});
     ASSERT_TRUE(t->type()->isa<Variadic>());
