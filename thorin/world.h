@@ -248,8 +248,9 @@ public:
     const Axiom* type_real() { return type_real_; }
     const Def* type_real(const Def* width, const Def* fast) { return app(type_real(), {width, fast}); }
 
-    const Axiom* type_mem() const { return type_mem_; }
+    const Axiom* type_mem() { return type_mem_; }
 
+    const Axiom* type_ptr() { return type_ptr_; }
     const Def* type_ptr(const Def* pointee, const Def* addr_space, Debug dbg = {}) {
         return app(type_ptr_, {pointee, addr_space}, dbg);
     }
@@ -299,6 +300,7 @@ public:
     THORIN_I_ARITHOP(CODE)
     //THORIN_R_ARITHOP(CODE)
 #undef CODE
+    const Axiom* op_lea() { return op_lea_; }
     const Def* op_lea(const Def* ptr, const Def* index, Debug dbg = {});
     //@}
 

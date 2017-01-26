@@ -2,6 +2,8 @@
 
 #include "thorin/world.h"
 
+#include "thorin/type.h"
+
 namespace thorin {
 
 /*
@@ -308,10 +310,8 @@ World::World() {
 }
 
 const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
-    auto ptr_type = ptr->type()->as<App>();
-    auto pointee = ptr_type->arg(0);
-    auto addr_space = ptr_type->arg(1);
-    return app(app(op_lea_, {pointee, addr_space}), {ptr, index}, dbg);
+    PtrType ptr_type(ptr->type());
+    return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}), {ptr, index}, dbg);
 }
 
 }

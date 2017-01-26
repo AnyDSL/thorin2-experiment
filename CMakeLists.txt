@@ -39,9 +39,11 @@ add_executable(coc
     test/qualifier.cpp
     thorin/def.cpp
     thorin/def.h
+    thorin/primop.h
     thorin/reduce.cpp
     thorin/reduce.h
     thorin/tables.h
+    thorin/type.h
     thorin/world.cpp
     thorin/world.h
     thorin/util/array.h
