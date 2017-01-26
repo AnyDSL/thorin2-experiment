@@ -96,8 +96,8 @@ TEST(Simple, Misc) {
     //w.app(int_id, n2)->dump();
 
     //// 3
-    //w.extracti(w.tuple({n1, n2, n3}), 2)->dump();
-    ////w.extracti(n3, 0)->dump();
+    //w.extract(w.tuple({n1, n2, n3}), 2)->dump();
+    ////w.extract(n3, 0)->dump();
 
     //auto make_pair = w.axiom(w.pi(w.unit(), w.sigma({w.type_nat(), w.type_nat()})), {"make_pair"});
     //make_pair->dump();
@@ -120,9 +120,9 @@ TEST(Simple, Misc) {
     auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))}, {"sig"});
     auto sigma_val = w.axiom(sigma,{"val"});
     std::cout << sigma_val << ": " << sigma << endl;
-    auto fst_sigma = w.extracti(sigma_val, 0);
+    auto fst_sigma = w.extract(sigma_val, 0_s);
     std::cout << fst_sigma << ": " << fst_sigma->type() << endl;
-    auto snd_sigma = w.extracti(sigma_val, 1);
+    auto snd_sigma = w.extract(sigma_val, 1);
     std::cout << snd_sigma << ": " << snd_sigma->type() << endl;
 
 

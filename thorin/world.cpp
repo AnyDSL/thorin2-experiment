@@ -104,7 +104,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
 
     if (auto sig = def->type()->isa<Sigma>()) {
         // See Harper PFPL 43.13b
-        auto ops = Array<const Def*>(sig->num_ops(), [&](auto i) { return this->singleton(this->extracti(def, i)); });
+        auto ops = Array<const Def*>(sig->num_ops(), [&](auto i) { return this->singleton(this->extract(def, i)); });
         return sigma(ops, sig->qualifier(), dbg);
     }
 
@@ -139,11 +139,11 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
 
 const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
     if (auto index = i->isa<Index>())
-        return extracti(def, index->index(), dbg);
+        return extract(def, index->index(), dbg);
     return unify<Extract>(2, *this, i->type(), def, i, dbg);
 }
 
-const Def* WorldBase::extracti(const Def* def, size_t i, Debug dbg) {
+const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
     if (def->isa<Tuple>() || def->isa<Sigma>())
         return def->op(i);
 
@@ -158,7 +158,7 @@ const Def* WorldBase::extracti(const Def* def, size_t i, Debug dbg) {
                 }
 
                 // this also shifts any Var with i > skipped_shifts by -1
-                type = type->reduce({extracti(def, i - delta)}, skipped_shifts);
+                type = type->reduce({extract(def, i - delta)}, skipped_shifts);
             }
         }
 
@@ -258,7 +258,7 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
             return app(callee, tuple->ops(), dbg);
 
         if (auto sigma_type = single->type()->isa<Sigma>()) {
-            auto extracts = Array<const Def*>(sigma_type->num_ops(), [&](auto i) { return this->extracti(single, i); });
+            auto extracts = Array<const Def*>(sigma_type->num_ops(), [&](auto i) { return this->extract(single, i); });
             return app(callee, extracts, dbg);
         }
     }

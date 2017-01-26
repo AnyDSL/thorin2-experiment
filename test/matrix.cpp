@@ -14,7 +14,7 @@ TEST(Matrix, Misc) {
     auto cFloatZero = w.axiom(Float, {"0.0"});
 
     // Some testing
-    auto getSecondValue = w.lambda(w.tuple({ Nat, Nat }), w.extracti(w.var({ Nat, Nat }, 0), 1));
+    auto getSecondValue = w.lambda(w.tuple({ Nat, Nat }), w.extract(w.var({ Nat, Nat }, 0), 1));
     getSecondValue->dump();
     getSecondValue->type()->dump();
 
@@ -28,7 +28,7 @@ TEST(Matrix, Misc) {
     // Array Creator
     // (n: Nat, tf: ArrTypeFuncT) -> (pi i:Nat -> tf i) -> (ArrT (n, tf))
     auto arrtype = w.app(ArrT, w.var({ Nat , ArrTypeFuncT }, 1));
-    auto arrcreatorfunctype = w.pi(Nat, w.app(w.extracti(w.var({ Nat , ArrTypeFuncT }, 1), 1), w.var(Nat, 0)));
+    auto arrcreatorfunctype = w.pi(Nat, w.app(w.extract(w.var({ Nat , ArrTypeFuncT }, 1), 1), w.var(Nat, 0)));
     auto ArrCreate = w.axiom(w.pi({ Nat , ArrTypeFuncT }, w.pi(arrcreatorfunctype, arrtype)), {"ArrCreate"});
     ArrCreate->dump();
     ArrCreate->type()->dump();
@@ -36,7 +36,7 @@ TEST(Matrix, Misc) {
     // Array Getter
     // (n: Nat, tf: ArrTypeFuncT) -> (ArrT (n, tf)) -> (pi i:Nat -> tf i)
     arrtype = w.app(ArrT, w.var({ Nat , ArrTypeFuncT }, 0));
-    auto resulttype = w.app(w.extracti(w.var({ Nat , ArrTypeFuncT }, 2), 1), w.var(Nat, 0));
+    auto resulttype = w.app(w.extract(w.var({ Nat , ArrTypeFuncT }, 2), 1), w.var(Nat, 0));
     auto ArrGet = w.axiom(w.pi({ Nat , ArrTypeFuncT }, w.pi(arrtype, w.pi(Nat, resulttype))), {"ArrGet"});
     ArrGet->dump();
     ArrGet->type()->dump();
