@@ -276,11 +276,7 @@ public:
     const Axiom* val_nat_32(Qualifier q = Qualifier::Unrestricted) { return val_nat_[5][size_t(q)]; }
     const Axiom* val_nat_64(Qualifier q = Qualifier::Unrestricted) { return val_nat_[6][size_t(q)]; }
 
-    const Axiom* val_bool(bool val, Qualifier q = Qualifier::Unrestricted) {
-        // TODO use this
-        //return val_bool_[size_t(val)][size_t(q)];
-        return assume(type_bool(q), {val}, {val ? "⊤" : "⊥"});
-    }
+    const Axiom* val_bool(bool val, Qualifier q = Qualifier::Unrestricted) { return val_bool_[size_t(val)][size_t(q)]; }
     const Axiom* val_bool_bot(Qualifier q = Qualifier::Unrestricted) { return val_bool_[0][size_t(q)]; }
     const Axiom* val_bool_top(Qualifier q = Qualifier::Unrestricted) { return val_bool_[1][size_t(q)]; }
 

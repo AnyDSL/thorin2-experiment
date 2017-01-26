@@ -284,8 +284,8 @@ World::World() {
         type_nat_ [i] = axiom(star(q), {"nat"});
         type_int_ [i] = axiom(pi({type_nat(), type_nat()}, star(q)), {"int"});
 
-        val_bool_[0][i] = val_bool(false, q);
-        val_bool_[1][i] = val_bool( true, q);
+        val_bool_[0][i] = assume(type_bool(q), {false}, {"⊥"});
+        val_bool_[1][i] = assume(type_bool(q), {true }, {"⊤"});
         val_nat_0_  [i] = val_nat(0, q);
         for (size_t j = 0; j != val_nat_.size(); ++j)
             val_nat_[j][i] = val_nat(1 << int64_t(j), q);
