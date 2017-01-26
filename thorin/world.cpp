@@ -314,10 +314,7 @@ World::World() {
 }
 
 const Def* World::op_insert(const Def* def, const Def* index, const Def* val, Debug dbg) {
-    auto x = app(op_insert_, def->type(), dbg);
-    x->dump();
-    x->type()->dump();
-    return app(x, {def, index, val}, dbg);
+    return app(app(op_insert_, def->type(), dbg), {def, index, val}, dbg);
 }
 
 const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
