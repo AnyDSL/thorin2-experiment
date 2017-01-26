@@ -308,8 +308,10 @@ public:
     //@{ tuple operations
     const Axiom* op_insert() { return op_insert_; }
     const Def* op_insert(const Def* def, const Def* index, const Def* val, Debug dbg = {});
+    const Def* op_insert(const Def* def, size_t index, const Def* val, Debug dbg = {});
     const Axiom* op_lea() { return op_lea_; }
     const Def* op_lea(const Def* ptr, const Def* index, Debug dbg = {});
+    const Def* op_lea(const Def* ptr, size_t index, Debug dbg = {});
     //@}
 
     //@{ memory operations

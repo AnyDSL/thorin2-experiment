@@ -27,13 +27,13 @@ TEST(Variadic, Misc) {
     auto ps2 = w.axiom(w.type_ptr(s2, w.val_nat_2()), {"ptr_s2"});
     auto pn2 = w.axiom(w.type_ptr(n2, w.val_nat_4()), {"ptr_n2"});
 
-    auto lea1 = LEA(w.op_lea(ps2, w.index(1, 2)));
-    auto lea2 = LEA(w.op_lea(pn2, w.index(1, 2)));
+    auto lea1 = LEA(w.op_lea(ps2, 1));
+    auto lea2 = LEA(w.op_lea(pn2, 1));
     ASSERT_EQ(lea1.type(), w.type_ptr(w.type_nat(), w.val_nat_2()));
     ASSERT_EQ(lea2.type(), w.type_ptr(w.type_nat(), w.val_nat_4()));
     ASSERT_EQ(lea1.ptr_pointee(), s2);
     ASSERT_EQ(lea2.ptr_pointee(), n2);
-    ASSERT_EQ(w.op_insert(w.tuple({w.val_bool_top(), w.val_nat_2()}), w.index(1, 2), w.val_nat_8())->type(), s2);
+    ASSERT_EQ(w.op_insert(w.tuple({w.val_bool_top(), w.val_nat_2()}), 1, w.val_nat_8())->type(), s2);
 
     auto list = w.axiom(w.pi(w.star(), w.star()), {"list"});
     list->type()->dump();

@@ -317,9 +317,21 @@ const Def* World::op_insert(const Def* def, const Def* index, const Def* val, De
     return app(app(op_insert_, def->type(), dbg), {def, index, val}, dbg);
 }
 
+const Def* World::op_insert(const Def* def, size_t i, const Def* val, Debug dbg) {
+    auto idx = index(i, dimension(def->type())->as<Arity>()->arity());
+    return app(app(op_insert_, def->type(), dbg), {def, idx, val}, dbg);
+}
+
 const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
     PtrType ptr_type(ptr->type());
     return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {ptr, index}, dbg);
+}
+
+const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
+    PtrType ptr_type(ptr->type());
+    auto idx = index(i, dimension(ptr_type.pointee())->as<Arity>()->arity());
+    idx->dump();
+    return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {ptr, idx}, dbg);
 }
 
 }
