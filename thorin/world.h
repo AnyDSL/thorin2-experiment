@@ -9,9 +9,6 @@
 
 namespace thorin {
 
-// move to util
-inline size_t operator""_s(unsigned long long int i) { return size_t(i); }
-
 class WorldBase {
 public:
     struct DefHash {
