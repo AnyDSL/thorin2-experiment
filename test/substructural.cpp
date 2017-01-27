@@ -268,7 +268,7 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
     print_value_type(SplitFCap);
     // JoinFCap : Π(C:*, F:*, ᴬFCap[C, Rd(F)], ᴬFCap[C, Rd(F)]).ᴬFCap[C, F]
     auto JoinFCap = w.axiom(w.pi({Star, Star, w.app(Cap, {C(1), w.app(Read, F(0))}),
-                                  w.app(Cap, {C(1), w.app(Read, F(0))})},
+                                  w.app(Cap, {C(2), w.app(Read, F(1))})},
                                  w.app(Cap, {C(3), F(2)})));
     print_value_type(JoinFCap);
     auto ref42 = w.app(w.app(NewRef, Nat), n42, {"&42"});

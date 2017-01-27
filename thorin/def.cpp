@@ -137,6 +137,8 @@ void Def::set(size_t i, const Def* def) {
     assert(!def->uses_.contains(Use(this, i)));
     const auto& p = def->uses_.emplace(this, i);
     assert_unused(p.second);
+    if (def->has_error())
+        has_error_ = true;
     if (i == num_ops() - 1) {
         assert(std::all_of(ops().begin(), ops().end(), [](const Def* def) { return static_cast<bool>(def); }));
         compute_free_vars();
@@ -224,7 +226,7 @@ Star::Star(WorldBase& world, const Def* qualifier)
 }
 
 Variadic::Variadic(WorldBase& world, const Def* arity, const Def* body, Debug dbg)
-    : SigmaBase(world, Tag::Variadic, world.universe(), {arity, body}, dbg)
+    : SigmaBase(world, Tag::Variadic, body->type(), {arity, body}, dbg)
 {
     compute_free_vars();
 }
@@ -417,7 +419,6 @@ const Def* Def::reduce(Defs args, size_t index) const {
 
 const Def* Pi::reduce(Defs args) const {
     assert(args.size() == num_domains());
-    // TODO assert arg types / return error
     return body()->reduce(args);
 }
 
@@ -442,6 +443,36 @@ const Def* App::try_reduce() const {
     }
 
     return cache_ = this;
+}
+
+//------------------------------------------------------------------------------
+
+/*
+ * Unification
+ */
+
+bool Sigma::assignable(Defs defs) const {
+    if (num_ops() != defs.size())
+        return false;
+    for (size_t i = 0, e = num_ops(); i != e; ++i) {
+        auto reduced_type = thorin::reduce(op(i), defs.get_front(i));
+        if (reduced_type->has_error() || defs[i]->type() != reduced_type)
+            return false;
+    }
+    return true;
+}
+
+bool Variadic::assignable(Defs defs) const {
+    auto size = defs.size();
+    if (arity() != world().arity(size))
+        return false;
+    for (size_t i = 0; i != size; ++i) {
+        auto indexed_type = thorin::reduce(body(), {world().index(i, size)});
+        assert(!indexed_type->has_error());
+        if (defs[i]->type() != indexed_type)
+            return false;
+    }
+    return true;
 }
 
 //------------------------------------------------------------------------------
