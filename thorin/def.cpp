@@ -302,7 +302,7 @@ uint64_t Def::vhash() const {
     if (is_nominal() || (sort() == Sort::Term && is_le_affine()))
         return gid();
 
-    uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type() ? type()->gid() : 0);
+    uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type()->gid());
     for (auto op : ops())
         seed = thorin::hash_combine(seed, op->gid());
     return seed;
