@@ -20,16 +20,11 @@ bool operator<=(Qualifier lhs, Qualifier rhs) {
 
 std::ostream& operator<<(std::ostream& ostream, const Qualifier s) {
     switch (s) {
-    case Qualifier::Unrestricted:
-        return ostream << ""; //ᵁ
-    case Qualifier::Relevant:
-        return ostream << "ᴿ";
-    case Qualifier::Affine:
-        return ostream << "ᴬ";
-    case Qualifier::Linear:
-        return ostream << "ᴸ";
-    default:
-        THORIN_UNREACHABLE;
+        case Qualifier::Unrestricted: return ostream << ""; //ᵁ
+        case Qualifier::Relevant:     return ostream << "ᴿ";
+        case Qualifier::Affine:       return ostream << "ᴬ";
+        case Qualifier::Linear:       return ostream << "ᴸ";
+        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -384,7 +379,7 @@ const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.pi_lambda(t->as<Pi>(), ops.front(), debug());
 }
-const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi    (ops.skip_back(), ops.back(), debug()); }
+const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
 const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
