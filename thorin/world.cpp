@@ -85,7 +85,7 @@ const Def* WorldBase::sigma(Defs defs, Qualifier q, Debug dbg) {
 }
 
 const Def* WorldBase::singleton(const Def* def, Debug dbg) {
-    assert(def->type() && "Can't create singletons of universes.");
+    assert(def->type() && "can't create singletons of universes");
 
     if (def->type()->isa<Singleton>())
         return def->type();
@@ -184,7 +184,7 @@ const Def* WorldBase::intersection(Defs defs, Qualifier q, Debug dbg) {
 const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     if (auto def_type = def->type()->isa<Intersection>()) {
         assert(std::any_of(def_type->ops().begin(), def_type->ops().end(), [&](auto t) { return t == type; })
-               && "Picked type must be a part of the intersection type.");
+               && "picked type must be a part of the intersection type");
 
         return unify<Pick>(1, *this, type, def, dbg);
     }
@@ -208,7 +208,7 @@ const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
 
     auto variants = type->ops();
     assert(std::any_of(variants.begin(), variants.end(), [&](auto t){ return t == def->type(); })
-           && "Type must be a part of the variant type.");
+           && "type must be a part of the variant type");
 
     return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
 }
@@ -228,7 +228,7 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
         return app(handlers.front(), def, dbg);
     }
     auto matched_type = def->type()->as<Variant>();
-    assert(def_type->num_ops() == handlers.size() && "Number of handlers does not match number of cases.");
+    assert(def_type->num_ops() == handlers.size() && "number of handlers does not match number of cases");
 
     Array<const Def*> sorted_handlers(handlers);
     std::sort(sorted_handlers.begin(), sorted_handlers.end(),
