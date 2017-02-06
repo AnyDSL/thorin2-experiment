@@ -31,7 +31,6 @@ include_directories(.)
 add_executable(coc 
     test/bitset.cpp
     test/main.cpp
-    test/matrix.cpp
     test/nominal.cpp
     test/singleton.cpp
     test/variadic.cpp
