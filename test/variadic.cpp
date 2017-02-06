@@ -38,14 +38,23 @@ TEST(Variadic, Misc) {
 
     auto list = w.axiom(w.pi(w.star(), w.star()), {"list"});
     list->type()->dump();
-#if 0
-    auto zip = w.axiom(
-            w.pi({w.arity_kind(),
-                  w.variadic_sigma(w.var(w.arity_kind(), 0), w.star())},
-            w.pi( w.variadic_sigma(w.var(w.arity_kind(), 1), w.variadic_tuple(w.var(w.arity_kind(), 1), w.app(list, w.var(w.variadic_sigma(w.var(w.arity_kind(), 1), w.star()), 0)))),
-                  w.app(list, w.var(w.variadic_sigma(w.var(w.arity_kind(), 2), w.star()), 1)))),
-            {"zip"});
+    auto ls2 = w.axiom(w.app(list, s2), {"ls2"});
+
+    // ΠT:*.Π(Vi:dim(T).list[T.i],list[T])
+    auto zip = w.axiom(w.pi(w.star(),
+                            w.pi(w.variadic(w.dimension(w.var(w.star(), 0)), w.app(list, w.extract(w.var(w.star(), 1), w.var(w.arity_kind(), 0)))),
+                                 w.app(list, w.var(w.star(), 1)))), {"zip"});
     zip->type()->dump();
-    //w.app(zip, {w.arity(2), w.tuple(w.variadic_sigma(w.arity(2), w.star()), {w.type_nat(), w.type_bool()})})->dump();
-#endif
+    auto z = w.app(w.app(zip, s2), ls2);
+    z->dump();
+    z->type()->dump();
+
+    // ΠT:*.Π(list[T],Vi:dim(T).list[T.i])
+    auto rip = w.axiom(w.pi(w.star(),
+                            w.pi(w.app(list, w.var(w.star(), 0)),
+                                 w.variadic(w.dimension(w.var(w.star(), 1)), w.app(list, w.extract(w.var(w.star(), 2), w.var(w.arity_kind(), 0)))))), {"rip"});
+    rip->type()->dump();
+    //auto r = w.app(w.app(rip, s2), w.tuple({w.app(list, w.type_bool()), w.app(list, w.type_nat())}));
+    //r->dump();
+    //r->type()->dump();
 }
