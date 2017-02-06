@@ -46,15 +46,16 @@ TEST(Variadic, Misc) {
                                  w.app(list, w.var(w.star(), 1)))), {"zip"});
     zip->type()->dump();
     auto z = w.app(w.app(zip, s2), ls2);
-    z->dump();
     z->type()->dump();
+    z->dump();
 
     // ΠT:*.Π(list[T],Vi:dim(T).list[T.i])
     auto rip = w.axiom(w.pi(w.star(),
                             w.pi(w.app(list, w.var(w.star(), 0)),
                                  w.variadic(w.dimension(w.var(w.star(), 1)), w.app(list, w.extract(w.var(w.star(), 2), w.var(w.arity_kind(), 0)))))), {"rip"});
+    auto l = w.axiom(w.app(list, s2), {"l"});
     rip->type()->dump();
-    //auto r = w.app(w.app(rip, s2), w.tuple({w.app(list, w.type_bool()), w.app(list, w.type_nat())}));
-    //r->dump();
-    //r->type()->dump();
+    auto r = w.app(w.app(rip, s2), l);
+    r->dump();
+    r->type()->dump();
 }
