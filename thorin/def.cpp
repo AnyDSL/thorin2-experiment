@@ -217,10 +217,6 @@ Arity::Arity(WorldBase& world, size_t arity, Debug dbg)
     arity_ = arity;
 }
 
-ArityKind::ArityKind(WorldBase& world)
-    : Def(world, Tag::ArityKind, world.universe(), Defs(), {"𝕊"})
-{}
-
 Dimension::Dimension(WorldBase& world, const Def* def, Debug dbg)
     : Def(world, Tag::Dimension, world.arity_kind(), {def}, dbg)
 {
@@ -246,12 +242,6 @@ Pi::Pi(WorldBase& world, Defs domains, const Def* body, Qualifier q, Debug dbg)
                  concat(domains, body), dbg)
 {
     compute_free_vars();
-}
-
-Index::Index(WorldBase& world, const Arity* arity, size_t index, Debug dbg)
-    : Def(world, Tag::Index, arity, Defs(), dbg)
-{
-    index_ = index;
 }
 
 Sigma::Sigma(WorldBase& world, size_t num_ops, Qualifier q, Debug dbg)
@@ -327,7 +317,6 @@ uint64_t Axiom::vhash() const {
     return thorin::hash_combine(seed, box_.get_u64());
 }
 
-uint64_t Index::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 
 //------------------------------------------------------------------------------
@@ -348,10 +337,6 @@ bool Axiom::equal(const Def* other) const {
         && this->box_.get_u64() == other->as<Axiom>()->box().get_u64();
 }
 
-bool Index::equal(const Def* other) const {
-    return Def::equal(other) && this->index() == other->as<Index>()->index();
-}
-
 bool Var::equal(const Def* other) const {
     return Def::equal(other) && this->index() == other->as<Var>()->index();
 }
@@ -365,7 +350,6 @@ bool Var::equal(const Def* other) const {
 const Def* Any         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
 const Def* Arity       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity(arity(), debug()); }
-const Def* ArityKind   ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity_kind(); }
 const Def* Dimension   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.dimension(ops[0], debug()); }
 const Def* Extract     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
@@ -385,7 +369,6 @@ const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* Index       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.index(index(), arity(), debug()); }
 const Def* Sigma       ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
     assert(!is_nominal());
     return to.sigma(ops, qualifier(), debug());
@@ -526,20 +509,20 @@ std::ostream& Pick::stream(std::ostream& os) const {
     return os << ")";
 }
 
-std::ostream& Index::stream(std::ostream& os) const {
-    os << qualifier() << index();
+//std::ostream& Index::stream(std::ostream& os) const {
+    //os << qualifier() << index();
 
-    std::vector<std::array<char, 3>> digits;
-    for (size_t a = arity(); a > 0; a /= 10)
-        digits.push_back({char(0xe2), char(0x82), char(char(0x80) + char(a % 10))}); // utf-8 prefix for subscript 0
+    //std::vector<std::array<char, 3>> digits;
+    //for (size_t a = arity(); a > 0; a /= 10)
+        //digits.push_back({char(0xe2), char(0x82), char(char(0x80) + char(a % 10))}); // utf-8 prefix for subscript 0
 
-    for (auto i = digits.rbegin(), e = digits.rend(); i != e; ++i) {
-        const auto& digit = *i;
-        os << digit[0] << digit[1] << digit[2];
-    }
+    //for (auto i = digits.rbegin(), e = digits.rend(); i != e; ++i) {
+        //const auto& digit = *i;
+        //os << digit[0] << digit[1] << digit[2];
+    //}
 
-    return os;
-}
+    //return os;
+//}
 
 std::ostream& Sigma::stream(std::ostream& os) const {
     return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
@@ -547,10 +530,6 @@ std::ostream& Sigma::stream(std::ostream& os) const {
 
 std::ostream& Singleton::stream(std::ostream& os) const {
     return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "S(", ")");
-}
-
-std::ostream& ArityKind::stream(std::ostream& os) const {
-    return os << qualifier() << name();
 }
 
 std::ostream& Star::stream(std::ostream& os) const {

@@ -107,7 +107,6 @@ public:
         Any,
         App,
         Arity,
-        ArityKind,
         Axiom,
         Dimension,
         Error,
@@ -530,19 +529,6 @@ private:
     friend class WorldBase;
 };
 
-class ArityKind : public Def {
-private:
-    ArityKind(WorldBase& world);
-
-public:
-    std::ostream& stream(std::ostream&) const override;
-
-private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-
-    friend class WorldBase;
-};
-
 class Arity : public Def {
 private:
     Arity(WorldBase& world, size_t arity, Debug dbg);
@@ -568,24 +554,6 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-
-    friend class WorldBase;
-};
-
-class Index : public Def {
-private:
-    Index(WorldBase& world, const Arity* arity, size_t index, Debug dbg);
-
-public:
-    size_t index() const { return index_; }
-    const Arity* type() const { return Def::type()->as<Arity>(); }
-    size_t arity() const { return type()->arity(); }
-    std::ostream& stream(std::ostream&) const override;
-
-private:
-    uint64_t vhash() const override;
-    bool equal(const Def*) const override;
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
 
     friend class WorldBase;

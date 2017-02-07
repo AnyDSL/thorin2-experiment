@@ -24,7 +24,7 @@ WorldBase::WorldBase()
         unit_    [i] = insert<Sigma   >(0, *this, Defs(), q, Debug("Σ()"));
         tuple0_  [i] = insert<Tuple   >(0, *this, unit_[i], Defs(), Debug("()"));
     }
-    arity_kind_ = insert<ArityKind>(0, *this);
+    arity_kind_ = axiom(universe(), {"𝔸"});
 }
 
 WorldBase::~WorldBase() {
@@ -34,7 +34,7 @@ WorldBase::~WorldBase() {
 
 const Def* WorldBase::index(size_t i, size_t a, Debug dbg) {
     if (i < a)
-        return unify<Index>(0, *this, arity(a), i, dbg);
+        return assume(arity(a), {u64(i)}, dbg);
     return error(arity(a));
 }
 
@@ -148,8 +148,8 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
 }
 
 const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
-    if (auto index = i->isa<Index>())
-        return extract(def, index->index(), dbg);
+    if (auto assume = i->isa<Axiom>())
+        return extract(def, assume->box().get_u64(), dbg);
     return unify<Extract>(2, *this, i->type(), def, i, dbg);
 }
 
