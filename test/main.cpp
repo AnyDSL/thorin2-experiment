@@ -133,6 +133,18 @@ TEST(Simple, Misc) {
     std::cout << single_pi << ": " << single_pi->type() << std::endl;
 }
 
+TEST(Simple, Curry) {
+    World w;
+    const Def* cur = w.val_nat_32();
+    for (int i = 0; i < 10000; ++i)
+        cur = w.lambda(w.type_nat(), cur);
+
+    for (int i = 0; i < 10000; ++i)
+        cur = w.app(cur, w.val_nat_64());
+
+    ASSERT_EQ(cur, w.val_nat_32());
+}
+
 int main(int argc, char** argv)  {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
