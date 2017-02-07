@@ -7,16 +7,16 @@ using namespace thorin;
 
 TEST(Variadic, Misc) {
     World w;
-    w.arity_kind()->dump();
-    w.arity(3)->dump();
+    //w.arity_kind()->dump();
+    //w.arity(3)->dump();
     auto p2_4 = w.index(2, 4);
     auto p2_4b = w.index(2, 4);
     ASSERT_EQ(p2_4, p2_4b);
-    p2_4->dump();
-    w.index(2, 1234567890)->dump();
+    //p2_4->dump();
+    //w.index(2, 1234567890)->dump();
     auto v = w.variadic(w.arity(5), w.type_nat());
     ASSERT_TRUE(w.dimension(v) == w.arity(5));
-    ASSERT_TRUE(v->is_array());
+    ASSERT_TRUE(is_array(v));
 
     auto t = w.tuple({w.val_nat_2(), w.val_nat_4()});
     ASSERT_TRUE(t->type()->isa<Variadic>());
@@ -38,24 +38,19 @@ TEST(Variadic, Misc) {
 
     auto list = w.axiom(w.pi(w.star(), w.star()), {"list"});
     list->type()->dump();
-    auto ls2 = w.axiom(w.app(list, s2), {"ls2"});
+    auto lb = w.axiom(w.app(list, w.type_bool()), {"lb"});
+    auto ln = w.axiom(w.app(list, w.type_nat() ), {"ln"});
 
     // ΠT:*.Π(Vi:dim(T).list[T.i],list[T])
     auto zip = w.axiom(w.pi(w.star(),
-                            w.pi(w.variadic(w.dimension(w.var(w.star(), 0)), w.app(list, w.extract(w.var(w.star(), 1), w.var(w.arity_kind(), 0)))),
+                            w.pi(w.variadic(w.dimension(w.var(w.star(), 0)), w.app(list, w.extract(w.var(w.star(), 1), w.var(w.dimension(w.var(w.star(), 1)), 0)))),
                                  w.app(list, w.var(w.star(), 1)))), {"zip"});
-    zip->type()->dump();
-    auto z = w.app(w.app(zip, s2), ls2);
-    z->type()->dump();
-    z->dump();
+    ASSERT_EQ(w.app(w.app(zip, s2), {lb, ln})->type(), w.app(list, s2));
 
     // ΠT:*.Π(list[T],Vi:dim(T).list[T.i])
     auto rip = w.axiom(w.pi(w.star(),
                             w.pi(w.app(list, w.var(w.star(), 0)),
-                                 w.variadic(w.dimension(w.var(w.star(), 1)), w.app(list, w.extract(w.var(w.star(), 2), w.var(w.arity_kind(), 0)))))), {"rip"});
+                                 w.variadic(w.dimension(w.var(w.star(), 1)), w.app(list, w.extract(w.var(w.star(), 2), w.var(w.dimension(w.var(w.star(), 2)), 0)))))), {"rip"});
     auto l = w.axiom(w.app(list, s2), {"l"});
-    rip->type()->dump();
-    auto r = w.app(w.app(rip, s2), l);
-    r->dump();
-    r->type()->dump();
+    ASSERT_EQ(w.app(w.app(rip, s2), l)->type(), w.sigma({lb->type(), ln->type()}));
 }

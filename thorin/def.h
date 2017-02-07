@@ -601,6 +601,8 @@ protected:
     {}
 };
 
+bool is_array(const Def*);
+
 class Sigma : public SigmaBase {
 private:
     /// Nominal Sigma kind
@@ -637,7 +639,6 @@ public:
     const Def* arity() const { return op(0); }
     const Def* body() const { return op(1); }
     std::ostream& stream(std::ostream&) const override;
-    bool is_array() const { return !free_vars().test(0); }
 
 private:
     size_t shift(size_t) const override;

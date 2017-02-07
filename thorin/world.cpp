@@ -2,6 +2,7 @@
 
 #include "thorin/world.h"
 
+#include "thorin/reduce.h"
 #include "thorin/type.h"
 
 namespace thorin {
@@ -61,6 +62,15 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
 const Lambda* WorldBase::pi_lambda(const Pi* pi, const Def* body, Debug dbg) {
     assert(pi->body() == body->type());
     return unify<Lambda>(1, *this, pi, body, dbg);
+}
+
+const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {
+    if (auto arity = a->isa<Arity>()) {
+        if (body->free_vars().test(0))
+            return sigma(Array<const Def*>(arity->arity(), [&](auto i) { return reduce(body, {this->index(i, arity->arity())}); }), dbg);
+    }
+
+    return unify<Variadic>(2, *this, a, body, dbg);
 }
 
 const Def* single_qualified(Defs defs, Qualifier q) {

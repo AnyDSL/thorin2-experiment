@@ -198,6 +198,7 @@ const Def* Sigma::max_type(WorldBase& world, Defs ops, Qualifier q) {
 }
 
 const Def* Pi::domain() const { return world().sigma(domains()); }
+bool is_array(const Def* def) { return def->isa<Variadic>() && !def->free_vars().test(0); }
 
 //------------------------------------------------------------------------------
 

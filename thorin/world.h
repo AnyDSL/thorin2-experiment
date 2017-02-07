@@ -30,9 +30,7 @@ public:
     const ArityKind* arity_kind() const { return arity_kind_; }
     const Arity* arity(size_t a, Debug dbg = {}) { return unify<Arity>(0, *this, a, dbg); }
     const Def* index(size_t index, size_t arity, Debug dbg = {});
-    const Variadic* variadic(const Def* arity, const Def* body, Debug dbg = {}) {
-        return unify<Variadic>(2, *this, arity, body, dbg);
-    }
+    const Def* variadic(const Def* arity, const Def* body, Debug dbg = {});
     /// @em nominal Axiom
     const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
     /// @em structural Axiom
