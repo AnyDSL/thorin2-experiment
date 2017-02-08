@@ -28,7 +28,7 @@ public:
     const Universe* universe(Qualifier q = Qualifier::Unrestricted) const { return universe_[size_t(q)]; }
     const Star* star(Qualifier q = Qualifier::Unrestricted) const { return star_[size_t(q)]; }
     const Axiom* arity_kind() const { return arity_kind_; }
-    const Arity* arity(size_t a, Debug dbg = {}) { return unify<Arity>(0, *this, a, dbg); }
+    const Axiom* arity(size_t a, Debug dbg = {}) { return assume(arity_kind(), {u64(a)}, dbg); }
     const Def* index(size_t index, size_t arity, Debug dbg = {});
     const Def* variadic(const Def* arity, const Def* body, Debug dbg = {});
     /// @em nominal Axiom

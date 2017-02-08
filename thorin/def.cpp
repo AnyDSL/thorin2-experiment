@@ -211,12 +211,6 @@ Def::~Def() {
         delete[] ops_;
 }
 
-Arity::Arity(WorldBase& world, size_t arity, Debug dbg)
-    : Def(world, Tag::Arity, world.arity_kind(), Defs(), dbg)
-{
-    arity_ = arity;
-}
-
 Dimension::Dimension(WorldBase& world, const Def* def, Debug dbg)
     : Def(world, Tag::Dimension, world.arity_kind(), {def}, dbg)
 {
@@ -307,8 +301,6 @@ bool Def::equal(const Def* other) const {
     return result;
 }
 
-uint64_t Arity::vhash() const { return thorin::hash_combine(Def::vhash(), arity()); }
-
 uint64_t Axiom::vhash() const {
     auto seed = Def::vhash();
     if (is_nominal())
@@ -324,10 +316,6 @@ uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index())
 /*
  * equal
  */
-
-bool Arity::equal(const Def* other) const {
-    return Def::equal(other) && this->arity() == other->as<Arity>()->arity();
-}
 
 bool Axiom::equal(const Def* other) const {
     if (is_nominal())
@@ -349,7 +337,6 @@ bool Var::equal(const Def* other) const {
 
 const Def* Any         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
-const Def* Arity       ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity(arity(), debug()); }
 const Def* Dimension   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.dimension(ops[0], debug()); }
 const Def* Extract     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
@@ -465,10 +452,6 @@ std::ostream& App::stream(std::ostream& os) const {
     }
     callee()->name_stream(os);
     return stream_list(os, args(), [&](const Def* def) { def->name_stream(os); }, begin, end);
-}
-
-std::ostream& Arity::stream(std::ostream& os) const {
-    return os << qualifier() << arity() << "ᴰ";
 }
 
 std::ostream& Axiom::stream(std::ostream& os) const { return os << qualifier() << name(); }

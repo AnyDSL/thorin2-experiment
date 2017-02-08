@@ -106,7 +106,6 @@ public:
         All,
         Any,
         App,
-        Arity,
         Axiom,
         Dimension,
         Error,
@@ -281,7 +280,6 @@ protected:
 
     union {
         mutable const Def* cache_;  ///< Used by App.
-        size_t arity_;              ///< Used by Arity.
         size_t index_;              ///< Used by Index, Var.
         Box box_;                   ///< Used by Axiom.
         Qualifier qualifier_;       ///< Used by Universe.
@@ -524,22 +522,6 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-
-    friend class WorldBase;
-};
-
-class Arity : public Def {
-private:
-    Arity(WorldBase& world, size_t arity, Debug dbg);
-
-public:
-    size_t arity() const { return arity_; }
-    std::ostream& stream(std::ostream&) const override;
-
-private:
-    uint64_t vhash() const override;
-    bool equal(const Def*) const override;
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
 
     friend class WorldBase;
