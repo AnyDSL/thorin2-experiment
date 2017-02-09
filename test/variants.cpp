@@ -8,7 +8,7 @@ TEST(Variants, negative_test) {
     World w;
     auto boolean = w.type_bool();
     auto nat = w.type_nat();
-    auto variant = w.variant({nat, boolean});
+    auto variant = w.variant({nat, boolean}, w.star());
     auto any_nat23 = w.any(variant, w.val_nat(23));
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
     w.lambda(boolean, w.val_nat(0));
@@ -21,7 +21,7 @@ TEST(Variants, positive_tests) {
     auto boolean = w.type_bool();
     auto nat = w.type_nat();
     // Test variant types and matches
-    auto variant = w.variant({nat, boolean});
+    auto variant = w.variant({nat, boolean}, w.star());
     auto any_nat23 = w.any(variant, w.val_nat(23));
     auto any_bool = w.any(variant, w.axiom(boolean,{"false"}));
     auto assumed_var = w.axiom(variant,{"someval"});
@@ -38,5 +38,5 @@ TEST(Variants, positive_tests) {
     match->dump(); // match someval with ...
     match->type()->dump();
     // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
-    w.intersection({w.pi(nat, nat), w.pi(boolean, boolean)})->dump();
+    w.intersection({w.pi(nat, nat), w.pi(boolean, boolean)}, w.star())->dump();
 }

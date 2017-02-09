@@ -17,12 +17,14 @@ WorldBase::WorldBase()
     : root_page_(new Page)
     , cur_page_(root_page_.get())
 {
+    universe_ = insert<Universe>(0, *this);
+    qualifier_kind_ = axiom(universe_, {"ℚ"});
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
-        universe_[i] = insert<Universe>(0, *this, q);
-        star_    [i] = insert<Star    >(0, *this, q);
-        unit_    [i] = insert<Sigma   >(0, *this, Defs(), q, Debug("Σ()"));
-        tuple0_  [i] = insert<Tuple   >(0, *this, unit_[i], Defs(), Debug("()"));
+        qualifier_[i] = assume(qualifier_kind(), {q}, {qualifier_cstr(q)});
+        star_     [i] = insert<Star >(1, *this, qualifier_[i]);
+        unit_     [i] = insert<Sigma>(0, *this, Defs(), star_[i], Debug("Σ()"));
+        tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
     }
     arity_kind_ = axiom(universe(), {"𝔸"});
 }
@@ -50,7 +52,7 @@ const Def* WorldBase::dim(const Def* def, Debug dbg) {
     return arity(1, dbg);
 }
 
-const Pi* WorldBase::pi(Defs domains, const Def* body, Qualifier q, Debug dbg) {
+const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) {
     if (domains.size() == 1) {
         if (auto sigma = domains.front()->isa<Sigma>())
             return pi(sigma->ops(), body, q, dbg);
@@ -75,25 +77,76 @@ const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {
     return unify<Variadic>(2, *this, a, body, dbg);
 }
 
-const Def* single_qualified(Defs defs, Qualifier q) {
-    assert(defs.size() == 1);
-    auto single = defs.front();
-    assert(!single || single->qualifier() == q);
-    return single;
+const Def* type_from_sort(WorldBase& world, Def::Sort sort, const Def* q = nullptr) {
+    using Sort = Def::Sort;
+    assert(sort != Sort::Term  && "A type can never be of sort Term.");
+    switch (sort) {
+    case Sort::Kind:
+        assert(q == nullptr);
+        return world.universe();
+    case Sort::Type:
+        assert(q != nullptr);
+        return world.star(q);
+    default:
+        THORIN_UNREACHABLE;
+    }
 }
 
-const Def* WorldBase::sigma(Defs defs, Qualifier q, Debug dbg) {
+const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_meet) {
+    using Sort = Def::Sort;
+    auto max_sort = Sort::Type;
+    const Def* inferred = use_meet ? world.linear() : world.unlimited();
+    for (auto op : ops) {
+        assert(op->sort() >= Sort::Type && "Operands must be at least types.");
+        max_sort = std::max(max_sort, op->sort());
+        assert(max_sort != Sort::Universe && "Type universes shouldn't be operands.");
+        if (max_sort == Sort::Type) {
+            if (use_meet)
+                inferred = world.intersection({inferred, op->qualifier()}, world.qualifier_kind());
+            else
+                inferred = world.variant({inferred, op->qualifier()}, world.qualifier_kind());
+        } else
+            inferred = nullptr;
+    }
+    if (max_sort == Sort::Type) {
+        if (q != nullptr) {
+#ifndef NDEBUG
+            if (auto qual_axiom = inferred->isa<Axiom>()) {
+                auto inferred_q = qual_axiom->box().get_qualifier();
+                if (auto q_axiom = q->isa<Axiom>())
+                    assert(q_axiom->box().get_qualifier() >= inferred_q &&
+                          "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
+            }
+#endif
+            return world.star(q);
+        } else
+            // no provided qualifier, so we use the inferred one
+            return world.star(inferred);
+    }
+    assert(max_sort == Sort::Kind);
+    return world.universe();
+}
+
+const Def* single_qualified(Defs defs, const Def* q) {
+    assert(defs.size() == 1);
+    assert(defs.front()->qualifier() == q);
+    return defs.front();
+}
+
+const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {
+    auto inferred_type = infer_max_type(*this, defs, q, false);
     switch (defs.size()) {
         case 0:
-            return unit();
+            return unit(inferred_type->qualifier());
         case 1:
-            return single_qualified(defs, q);
+            return defs.front();
         default:
+            // TODO variadic needs qualifiers, but need to pull rebase first
             if (std::equal(defs.begin() + 1, defs.end(), &defs.front()))
                 return variadic(arity(defs.size(), dbg), defs.front(), dbg);
     }
 
-    return unify<Sigma>(defs.size(), *this, defs, q, dbg);
+    return unify<Sigma>(defs.size(), *this, defs, inferred_type, dbg);
 }
 
 const Def* WorldBase::singleton(const Def* def, Debug dbg) {
@@ -105,7 +158,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     if (!def->is_nominal()) {
         if (def->isa<Variant>()) {
             auto ops = Array<const Def*>(def->num_ops(), [&](auto i) { return this->singleton(def->op(i)); });
-            return variant(ops, dbg);
+            return variant(ops, def->type()->type(),dbg);
         }
 
         if (def->isa<Intersection>()) {
@@ -186,11 +239,64 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
     return def;
 }
 
-const Def* WorldBase::intersection(Defs defs, Qualifier q, Debug dbg) {
-    if (defs.size() == 1)
-        return single_qualified(defs, q);
 
-    return unify<Intersection>(defs.size(), *this, defs, q, dbg);
+const Def* qualifier_glb_or_lub(WorldBase& w, Defs defs, bool use_meet,
+                                std::function<const Def*(Defs)> unify_fn) {
+    auto const_elem = use_meet ? Qualifier::Unlimited : Qualifier::Linear;
+    auto ident_elem = use_meet ? Qualifier::Linear : Qualifier::Unlimited;
+    size_t num_defs = defs.size();
+    Array<const Def*> reduced(num_defs);
+    Qualifier accu = Qualifier::Unlimited;
+    size_t num_const = 0;
+    for (size_t i = 0, e = num_defs; i != e; ++i) {
+        if (auto q = w.isa_const_qualifier(defs[i])) {
+            auto qual = q->box().get_qualifier();
+            accu = use_meet ? meet(accu, qual) : join(accu, qual);
+            num_const++;
+        } else {
+            assert(w.is_qualifier(defs[i]));
+            reduced[i - num_const] = defs[i];
+        }
+    }
+    if (num_const == num_defs)
+        return w.qualifier(accu);
+    if (accu == const_elem) {
+        // glb(U, x) = U/lub(L, x) = L
+        return w.qualifier(const_elem);
+    } else if (accu != ident_elem) {
+        // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
+        assert(num_const != 0);
+        reduced[num_defs - num_const] = w.qualifier(accu);
+        num_const--;
+    }
+    reduced.shrink(num_defs - num_const);
+    if (reduced.size() == 1)
+        return reduced[0];
+    return unify_fn(reduced);
+}
+
+const Def* WorldBase::intersection(Defs defs, Debug dbg) {
+    assert(defs.size() > 0);
+    return variant(defs, infer_max_type(*this, defs, nullptr, true), dbg);
+}
+
+const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
+    assert(defs.size() > 0);
+    if (defs.size() == 1) {
+        assert(defs.front()->type() == type);
+        return defs.front();
+    }
+    // implements a least upper bound on qualifiers,
+    // could possibly be replaced by something subtyping-generic
+    if (is_qualifier(defs.front())) {
+        assert(type == qualifier_kind());
+        return qualifier_glb_or_lub(*this, defs, true, [&] (Defs defs) {
+            return unify<Intersection>(defs.size(), *this, qualifier_kind(), defs, dbg);
+        });
+    }
+
+    // TODO recognize some empty intersections?
+    return unify<Intersection>(defs.size(), *this, type, defs, dbg);
 }
 
 const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
@@ -205,11 +311,27 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
-const Def* WorldBase::variant(Defs defs, Qualifier q, Debug dbg) {
-    if (defs.size() == 1)
-        return single_qualified(defs, q);
+const Def* WorldBase::variant(Defs defs, Debug dbg) {
+    assert(defs.size() > 0);
+    return variant(defs, infer_max_type(*this, defs, nullptr, false), dbg);
+}
 
-    return unify<Variant>(defs.size(), *this, defs, q, dbg);
+const Def* WorldBase::variant(Defs defs, const Def* type, Debug dbg) {
+    assert(defs.size() > 0);
+    if (defs.size() == 1) {
+        assert(defs.front()->type() == type);
+        return defs.front();
+    }
+    // implements a least upper bound on qualifiers,
+    // could possibly be replaced by something subtyping-generic
+    if (is_qualifier(defs.front())) {
+        assert(type == qualifier_kind());
+        return qualifier_glb_or_lub(*this, defs, false, [&] (Defs defs) {
+            return unify<Variant>(defs.size(), *this, qualifier_kind(), defs, dbg);
+        });
+    }
+
+    return unify<Variant>(defs.size(), *this, type, defs, dbg);
 }
 
 const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
@@ -225,7 +347,7 @@ const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
     return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
 }
 
-const Def* build_match_type(WorldBase& w, const Def* /*def*/, const Variant* /*type*/, Defs handlers) {
+const Def* build_match_type(WorldBase& w, Defs handlers) {
     auto types = Array<const Def*>(handlers.size(),
             [&](auto i) { return handlers[i]->type()->template as<Pi>()->body(); });
     // We're not actually building a sum type here, we need uniqueness
@@ -259,7 +381,7 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
         auto any_def = any->def();
         return app(sorted_handlers[any->index()], any_def, dbg);
     }
-    auto type = build_match_type(*this, def, matched_type, sorted_handlers);
+    auto type = build_match_type(*this, sorted_handlers);
     return unify<Match>(1, *this, type, def, sorted_handlers, dbg);
 }
 
@@ -292,16 +414,17 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
 World::World() {
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
+        // TODO these need to be apps from type constructors over all qualifiers, otherwise we won't be able
+        // to (e.g.) reduce a nominal Nat : *(q) with a qualifier variable to the same nominal Nat : *(A)
         type_bool_[i] = axiom(star(q), {"bool"});
         type_nat_ [i] = axiom(star(q), {"nat"});
         type_int_ [i] = axiom(pi({type_nat(), type_nat()}, star(q)), {"int"});
-
-        val_bool_[0][i] = assume(type_bool(q), {false}, {"⊥"});
-        val_bool_[1][i] = assume(type_bool(q), {true }, {"⊤"});
-        val_nat_0_  [i] = val_nat(0, q);
-        for (size_t j = 0; j != val_nat_.size(); ++j)
-            val_nat_[j][i] = val_nat(1 << int64_t(j), q);
     }
+    val_bool_[0] = assume(type_bool(), {false}, {"⊥"});
+    val_bool_[1] = assume(type_bool(), {true }, {"⊤"});
+    val_nat_0_   = val_nat(0);
+    for (size_t j = 0; j != val_nat_.size(); ++j)
+        val_nat_[j] = val_nat(1 << int64_t(j));
 
     type_real_  = axiom(pi({type_nat(), type_bool()}, star()), {"real"});
     type_mem_   = axiom(star(Qualifier::Linear), {"M"});

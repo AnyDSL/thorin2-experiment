@@ -12,6 +12,7 @@
 #include "thorin/util/hash.h"
 #include "thorin/util/stream.h"
 #include "thorin/tables.h"
+#include "thorin/qualifier.h"
 
 namespace thorin {
 
@@ -80,22 +81,7 @@ Array<const Def*> gid_sorted(Defs defs);
 void unique_gid_sort(Array<const Def*>* defs);
 Array<const Def*> unique_gid_sorted(Defs defs);
 
-//------------------------------------------------------------------------------
-
-enum class Qualifier {
-    Unrestricted,
-    Relevant = 1 << 0,
-    Affine   = 1 << 1,
-    Linear = Affine | Relevant,
-};
-
-bool operator<(Qualifier lhs, Qualifier rhs);
-bool operator<=(Qualifier lhs, Qualifier rhs);
-
-std::ostream& operator<<(std::ostream& ostream, const Qualifier q);
-
-Qualifier meet(Qualifier lhs, Qualifier rhs);
-Qualifier meet(const Defs& defs);
+Array<const Def*> qualifiers(Defs defs);
 
 //------------------------------------------------------------------------------
 
@@ -215,13 +201,8 @@ public:
     //@}
 
     //@{ get Qualifier
-    Qualifier qualifier() const  { return type() ? type()->qualifier() : Qualifier(qualifier_); }
-    bool is_unrestricted() const { return bool(qualifier()) & bool(Qualifier::Unrestricted); }
-    bool is_affine() const       { return bool(qualifier()) & bool(Qualifier::Affine); }
-    bool is_le_affine() const    { return bool(qualifier() <= Qualifier::Affine); }
-    bool is_relevant() const     { return bool(qualifier()) & bool(Qualifier::Relevant); }
-    bool is_le_relevant() const  { return bool(qualifier() <= Qualifier::Affine); }
-    bool is_linear() const       { return bool(qualifier()) & bool(Qualifier::Linear); }
+    const Def* qualifier() const;
+    bool maybe_affine() const;
     //@}
 
     //@{ misc getters
@@ -253,9 +234,19 @@ public:
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
 
     virtual Def* stub(WorldBase&, const Def*, Debug) const { THORIN_UNREACHABLE; }
+    std::ostream& qualifier_stream(std::ostream& os) const {
+        if (!is_type())
+            return os;
+        if (auto q = qualifier()) {
+            return os << q->name();
+        }
+        return os;
+    }
     virtual std::ostream& name_stream(std::ostream& os) const {
-        if (name() != "" || is_nominal())
-            return os << qualifier() << name();
+        if (name() != "" || is_nominal()) {
+            qualifier_stream(os);
+            return os << name();
+        }
         return stream(os);
     }
 
@@ -271,6 +262,11 @@ protected:
 @endcode
     */
     virtual size_t shift(size_t i) const;
+    /**
+     * The least upper bound of all qualifiers of types inhabiting this kind or nullptr if not a kind.
+     * All Defs that can be Kinds with qualified types should override this.
+     */
+    virtual const Def* kind_qualifier() const;
 
     //@{ hash and equal
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
@@ -282,7 +278,6 @@ protected:
         mutable const Def* cache_;  ///< Used by App.
         size_t index_;              ///< Used by Index, Var.
         Box box_;                   ///< Used by Axiom.
-        Qualifier qualifier_;       ///< Used by Universe.
     };
     BitSet free_vars_;
 
@@ -324,7 +319,7 @@ uint64_t UseHash::hash(Use use) {
 
 class Pi : public Def {
 private:
-    Pi(WorldBase& world, Defs domains, const Def* body, Qualifier q, Debug dbg);
+    Pi(WorldBase& world, Defs domains, const Def* body, const Def* qualifier, Debug dbg);
 
 public:
     const Def* domain() const;
@@ -412,9 +407,10 @@ private:
 
 class Intersection : public Def {
 private:
-    Intersection(WorldBase& world, Defs ops, Qualifier q, Debug dbg);
+    Intersection(WorldBase& world, const Def* type, Defs ops, Debug dbg);
 
 public:
+    const Def* kind_qualifier() const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -443,13 +439,15 @@ private:
 
 class Variant : public Def {
 private:
-    Variant(WorldBase& world, Defs ops, Qualifier q, Debug dbg);
+    Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg);
+    // Nominal Variant
     Variant(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
         : Def(world, Tag::Variant, type, num_ops, dbg)
     {}
 
 public:
     void set(size_t i, const Def* def) { Def::set(i, def); };
+    const Def* kind_qualifier() const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -519,6 +517,7 @@ private:
     }
 
 public:
+    const Def* kind_qualifier() const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -556,13 +555,13 @@ bool is_array(const Def*);
 class Sigma : public SigmaBase {
 private:
     /// Nominal Sigma kind
-    Sigma(WorldBase& world, size_t num_ops, Qualifier q, Debug dbg);
+    Sigma(WorldBase& world, size_t num_ops, Debug dbg);
     /// Nominal Sigma type, \a type is some Star/Universe
     Sigma(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
         : SigmaBase(world, Tag::Sigma, type, num_ops, dbg)
     {}
-    Sigma(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
-        : SigmaBase(world, Tag::Sigma, max_type(world, ops, q), ops, dbg)
+    Sigma(WorldBase& world, Defs ops, const Def* type, Debug dbg)
+        : SigmaBase(world, Tag::Sigma, type, ops, dbg)
     {
         compute_free_vars();
     }
@@ -574,7 +573,7 @@ public:
     Sigma* stub(WorldBase&, const Def*, Debug) const override;
 
 private:
-    static const Def* max_type(WorldBase& world, Defs ops, Qualifier q);
+    static const Def* max_type(WorldBase& world, Defs ops, const Def* qualifier);
     size_t shift(size_t) const override;
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
 
@@ -614,10 +613,11 @@ private:
 
 class Star : public Def {
 private:
-    Star(WorldBase& world, Qualifier q);
+    Star(WorldBase& world, const Def* qualifier);
 
 public:
     std::ostream& stream(std::ostream&) const override;
+    const Def* kind_qualifier() const override;
 
 private:
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
@@ -627,11 +627,9 @@ private:
 
 class Universe : public Def {
 private:
-    Universe(WorldBase& world, Qualifier q)
+    Universe(WorldBase& world)
         : Def(world, Tag::Universe, nullptr, 0, {"□"})
-    {
-        qualifier_ = q;
-    }
+    {}
 
 public:
     std::ostream& stream(std::ostream&) const override;
@@ -647,6 +645,7 @@ private:
     Var(WorldBase& world, const Def* type, size_t index, Debug dbg)
         : Def(world, Tag::Var, type, Defs(), dbg)
     {
+        assert(!type->is_universe());
         index_ = index;
         compute_free_vars();
         free_vars_.set(index);

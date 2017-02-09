@@ -35,7 +35,7 @@ add_executable(coc
     test/singleton.cpp
     test/variadic.cpp
     test/variants.cpp
-    test/qualifier.cpp
+    test/substructural.cpp
     thorin/def.cpp
     thorin/def.h
     thorin/primop.h
@@ -43,6 +43,7 @@ add_executable(coc
     thorin/reduce.h
     thorin/tables.h
     thorin/type.h
+    thorin/qualifier.h
     thorin/world.cpp
     thorin/world.h
     thorin/util/array.h

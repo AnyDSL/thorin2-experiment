@@ -7,37 +7,60 @@
 
 namespace thorin {
 
-bool operator<(Qualifier lhs, Qualifier rhs) {
-    if (lhs == rhs) return false;
-    if (rhs == Qualifier::Unrestricted) return true;
-    if (lhs == Qualifier::Linear) return true;
-    return false;
-}
-
-bool operator<=(Qualifier lhs, Qualifier rhs) {
-    return lhs == rhs || lhs < rhs;
-}
-
-std::ostream& operator<<(std::ostream& ostream, const Qualifier s) {
-    switch (s) {
-        case Qualifier::Unrestricted: return ostream << ""; //ᵁ
-        case Qualifier::Relevant:     return ostream << "ᴿ";
-        case Qualifier::Affine:       return ostream << "ᴬ";
-        case Qualifier::Linear:       return ostream << "ᴸ";
-        default: THORIN_UNREACHABLE;
+const Def* Def::qualifier() const {
+    switch(sort()) {
+    case Sort::Term:
+        return type()->type()->kind_qualifier();
+    case Sort::Type:
+        return type()->kind_qualifier();
+    case Sort::Kind:
+        return kind_qualifier();
+    case Sort::Universe:
+        return world().unlimited();
     }
 }
 
-Qualifier meet(Qualifier lhs, Qualifier rhs) {
-    return Qualifier(static_cast<int>(lhs) | static_cast<int>(rhs));
+const Def* Def::kind_qualifier() const {
+    return world().unlimited();
 }
 
-Qualifier meet(const Defs& defs) {
-    return std::accumulate(defs.begin(), defs.end(), Qualifier::Unrestricted,
-                            [](Qualifier q, const Def* const def) {
-                                return def ? meet(q, def->qualifier()) : q;});
+// const Def* Sigma::kind_qualifier() const {
+//     // TODO can Sigma kinds have types that are inhabited on the term level and provide a qualifier for them?
+//     return world().unlimited();
+// }
+
+const Def* Singleton::kind_qualifier() const {
+    // Types with a Singleton kind are equivalent to the operand of the Singleton and thus have the same
+    // qualifier
+    return is_kind() ? op(0)->qualifier() : world().unlimited();
 }
 
+const Def* Star::kind_qualifier() const {
+    return is_kind() ? op(0) : world().unlimited();
+}
+
+// const Def* Variadic::kind_qualifier() const {
+//     // TODO can Variadic kinds have types that are inhabited on the term level and provide a qualifier for them?
+//     return world().unlimited();
+// }
+
+const Def* Variant::kind_qualifier() const {
+    return is_kind() ? world().variant(qualifiers(ops()), world().qualifier_kind()) : world().unlimited();
+}
+
+const Def* Intersection::kind_qualifier() const {
+    return is_kind() ? world().intersection(qualifiers(ops()), world().qualifier_kind()) :
+        world().unlimited();
+}
+
+bool Def::maybe_affine() const {
+    const Def* q = qualifier();
+    assert(q != nullptr);
+    if (auto qu = world().isa_const_qualifier(q)) {
+        return qu->box().get_qualifier() >= Qualifier::Affine;
+    }
+    return true;
+}
 //------------------------------------------------------------------------------
 
 size_t Def::gid_counter_ = 1;
@@ -59,9 +82,10 @@ void Def::resize(size_t num_ops) {
 }
 
 Def::Sort Def::sort() const {
-    if (!type())
+    if (!type()) {
+        assert(isa<Universe>());
         return Sort::Universe;
-    else if (!type()->type())
+    } else if (!type()->type())
         return Sort::Kind;
     else if (!type()->type()->type())
         return Sort::Type;
@@ -94,6 +118,10 @@ void Def::set(size_t i, const Def* def) {
         compute_free_vars();
         closed_ = true;
     }
+    // TODO qualifier inference for types and thus possibly modification of kind?
+    // TODO this needs to be overwritten by Variant/Intersection, they may need to rewrite/fold? quadratic!
+    // TODO rather to something like mu? or do nominal variants/intersections just make no sense?
+    // other on-the-fly normalisation we need to do?
 }
 
 void Def::unregister_uses() const {
@@ -109,8 +137,6 @@ void Def::unregister_use(size_t i) const {
 }
 
 void Def::unset(size_t i) {
-    assert((sort() != Sort::Term || !type()->is_relevant())
-           && "Do not remove the use of a relevant value.");
     assert(ops_[i] && "must be set");
     unregister_use(i);
     ops_[i] = nullptr;
@@ -122,6 +148,13 @@ Array<const Def*> types(Defs defs) {
     Array<const Def*> result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)
         result[i] = defs[i]->type();
+    return result;
+}
+
+Array<const Def*> qualifiers(Defs defs) {
+    Array<const Def*> result(defs.size());
+    for (size_t i = 0, e = result.size(); i != e; ++i)
+        result[i] = defs[i]->qualifier();
     return result;
 }
 
@@ -160,41 +193,13 @@ const SortedDefSet set_flatten(Defs defs) {
     return flat_defs;
 }
 
-const Def* type_from_sort(WorldBase& world, Def::Sort sort, Qualifier q) {
-    assert(sort != Def::Sort::Term  && "A type can never be of sort Term.");
-    switch (sort) {
-    case Def::Sort::Kind: return world.universe(q);
-    case Def::Sort::Type: return world.star(q);
-    default:
-        return nullptr;
-    }
-}
-
-bool check_same_sorted_ops(Def::Sort sort, Defs ops, Qualifier q) {
-    auto qualifier = Qualifier::Unrestricted;
+bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
     for (auto op : ops) {
         assert(sort == op->sort() && "Operands must be of the same sort.");
-        qualifier = meet(qualifier, op->qualifier());
     }
     assertf(sort == Def::Sort::Type || sort == Def::Sort::Kind,
             "Only sort type or kind allowed.");
-    assert(q <= qualifier &&
-           "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
     return true;
-}
-
-const Def* Sigma::max_type(WorldBase& world, Defs ops, Qualifier q) {
-    auto qualifier = Qualifier::Unrestricted;
-    Sort max_sort = Sort::Type;
-    for (auto op : ops) {
-        assert(op->sort() >= Sort::Type && "Operands must be at least types.");
-        max_sort = std::max(max_sort, op->sort());
-        assert(max_sort != Sort::Universe && "Type universes shouldn't be operands.");
-        qualifier = meet(qualifier, op->qualifier());
-    }
-    assert(q <= qualifier &&
-           "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
-    return type_from_sort(world, max_sort, q);
 }
 
 const Def* Pi::domain() const { return world().sigma(domains()); }
@@ -217,11 +222,10 @@ Dim::Dim(WorldBase& world, const Def* def, Debug dbg)
     compute_free_vars();
 }
 
-Intersection::Intersection(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
-    : Def(world, Tag::Intersection, type_from_sort(world, ops[0]->sort(), q),
-                 set_flatten<Intersection>(ops), dbg)
+Intersection::Intersection(WorldBase& world, const Def* type, Defs ops, Debug dbg)
+    : Def(world, Tag::Intersection, type, set_flatten<Intersection>(ops), dbg)
 {
-    assert(check_same_sorted_ops(sort(), ops, q));
+    assert(check_same_sorted_ops(sort(), ops));
     compute_free_vars();
 }
 
@@ -231,32 +235,32 @@ Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
     compute_free_vars();
 }
 
-Pi::Pi(WorldBase& world, Defs domains, const Def* body, Qualifier q, Debug dbg)
-    : Def(world, Tag::Pi, body->type()->is_universe() ? (const Def*) world.universe(q) : world.star(q),
-                 concat(domains, body), dbg)
+Pi::Pi(WorldBase& world, Defs domains, const Def* body, const Def* q, Debug dbg)
+    : Def(world, Tag::Pi, body->type()->is_universe() ? (const Def*) world.universe() : world.star(q),
+          concat(domains, body), dbg)
 {
     compute_free_vars();
 }
 
-Sigma::Sigma(WorldBase& world, size_t num_ops, Qualifier q, Debug dbg)
-    : Sigma(world, world.universe(q), num_ops, dbg)
+Sigma::Sigma(WorldBase& world, size_t num_ops, Debug dbg)
+    : Sigma(world, world.universe(), num_ops, dbg)
 {}
 
-Star::Star(WorldBase& world, Qualifier q)
-    : Def(world, Tag::Star, world.universe(q), Defs(), {"*"})
+Star::Star(WorldBase& world, const Def* qualifier)
+    : Def(world, Tag::Star, world.universe(), {qualifier}, {"*"})
 {}
 
 Variadic::Variadic(WorldBase& world, const Def* arity, const Def* body, Debug dbg)
-    : SigmaBase(world, Tag::Variadic, world.universe(body->qualifier()), {arity, body}, dbg)
+    : SigmaBase(world, Tag::Variadic, world.universe(), {arity, body}, dbg)
 {
     compute_free_vars();
 }
 
-Variant::Variant(WorldBase& world, Defs ops, Qualifier q, Debug dbg)
-    : Def(world, Tag::Variant, type_from_sort(world, ops[0]->sort(), q), set_flatten<Variant>(ops),
-                 dbg)
+Variant::Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg)
+    : Def(world, Tag::Variant, type, set_flatten<Variant>(ops), dbg)
 {
-    assert(check_same_sorted_ops(sort(), ops, q));
+    // TODO does same sorted ops really hold? ex: matches that return different sorted stuff? allowed?
+    assert(check_same_sorted_ops(sort(), ops));
     compute_free_vars();
 }
 
@@ -279,7 +283,7 @@ size_t Variadic::shift(size_t i) const { return i; }
  */
 
 uint64_t Def::vhash() const {
-    if (is_nominal() || (sort() == Sort::Term && is_le_affine()))
+    if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
         return gid();
 
     uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type()->gid());
@@ -289,7 +293,7 @@ uint64_t Def::vhash() const {
 }
 
 bool Def::equal(const Def* other) const {
-    if (is_nominal() || (sort() == Sort::Term && is_le_affine()))
+    if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
         return this == other;
 
     bool result = this->fields() == other->fields() && this->type() == other->type();
@@ -344,7 +348,7 @@ const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     return to.assume(t, box(), debug());
 }
 const Def* Error       ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.error(t); }
-const Def* Intersection::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.intersection(ops, debug()); }
+const Def* Intersection::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.intersection(ops, t, debug()); }
 const Def* Match       ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
@@ -363,9 +367,9 @@ const Def* Sigma       ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
 const Def* Singleton   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
 const Def* Star        ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
 const Def* Tuple       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
-const Def* Universe    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(qualifier()); }
+const Def* Universe    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(); }
 const Def* Var         ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
-const Def* Variant     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variant(ops, debug()); }
+const Def* Variant     ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.variant(ops, t, debug()); }
 const Def* Variadic    ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic(ops[0], ops[1], debug()); }
 
 //------------------------------------------------------------------------------
@@ -416,7 +420,7 @@ const Def* App::try_reduce() const {
 
     auto pi_type = callee()->type()->as<Pi>();
     // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
-    if (!pi_type->is_le_affine() && !pi_type->body()->is_le_affine()) {
+    if (!pi_type->maybe_affine() && !pi_type->body()->maybe_affine()) {
         if (auto lambda = callee()->isa<Lambda>()) {
             if  (!lambda->is_closed()) // don't set cache as long lambda is unclosed
                 return this;
@@ -446,7 +450,7 @@ std::ostream& App::stream(std::ostream& os) const {
     auto end = ")";
     auto domains = callee()->type()->as<Pi>()->domains();
     if (std::any_of(domains.begin(), domains.end(), [](auto t) { return t->is_kind(); })) {
-        os << qualifier();
+        qualifier_stream(os);
         begin = "[";
         end = "]";
     }
@@ -454,7 +458,7 @@ std::ostream& App::stream(std::ostream& os) const {
     return stream_list(os, args(), [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
 
-std::ostream& Axiom::stream(std::ostream& os) const { return os << qualifier() << name(); }
+std::ostream& Axiom::stream(std::ostream& os) const { return qualifier_stream(os) << name(); }
 std::ostream& Dim::stream(std::ostream& os) const { return streamf(os, "dim({})", of()); }
 
 std::ostream& Error::stream(std::ostream& os) const { return os << "Error"; }
@@ -464,7 +468,7 @@ std::ostream& Extract::stream(std::ostream& os) const {
 }
 
 std::ostream& Intersection::stream(std::ostream& os) const {
-    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
+    return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
                        " ∩ ");
 }
 
@@ -476,12 +480,12 @@ std::ostream& Match::stream(std::ostream& os) const {
 }
 
 std::ostream& Lambda::stream(std::ostream& os) const {
-    stream_list(os << qualifier() << "λ", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    stream_list(qualifier_stream(os) << "λ", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
     return body()->name_stream(os << ".");
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
-    stream_list(os << qualifier() << "Π", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    stream_list(qualifier_stream(os) << "Π", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
     return body()->name_stream(os << ".");
 }
 
@@ -493,7 +497,7 @@ std::ostream& Pick::stream(std::ostream& os) const {
 }
 
 //std::ostream& Index::stream(std::ostream& os) const {
-    //os << qualifier() << index();
+    //qualifier_stream(os) << index();
 
     //std::vector<std::array<char, 3>> digits;
     //for (size_t a = arity(); a > 0; a /= 10)
@@ -508,7 +512,7 @@ std::ostream& Pick::stream(std::ostream& os) const {
 //}
 
 std::ostream& Sigma::stream(std::ostream& os) const {
-    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
+    return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
 }
 
 std::ostream& Singleton::stream(std::ostream& os) const {
@@ -516,11 +520,11 @@ std::ostream& Singleton::stream(std::ostream& os) const {
 }
 
 std::ostream& Star::stream(std::ostream& os) const {
-    return os << qualifier() << name();
+    return os << op(0) << name();
 }
 
 std::ostream& Universe::stream(std::ostream& os) const {
-    return os << qualifier() << name();
+    return qualifier_stream(os) << name();
 }
 
 std::ostream& Tuple::stream(std::ostream& os) const {
@@ -537,7 +541,7 @@ std::ostream& Variadic::stream(std::ostream& os) const {
 }
 
 std::ostream& Variant::stream(std::ostream& os) const {
-    return stream_list(os << qualifier(), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
+    return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
                        " ∪ ");
 }
 

@@ -77,6 +77,7 @@ TEST(Nominal, ReduceToUniqueNominals) {
 
     auto lam = w.lambda(star, w.tuple({sig, sig}));
     auto red = w.app(lam, nat);
+    ASSERT_FALSE(red->isa<App>());
     ASSERT_EQ(red->op(0), red->op(1));
 }
 
@@ -95,7 +96,7 @@ TEST(Nominal, PolymorphicList) {
     auto nil = w.sigma_type(0, {"nil"});
     ASSERT_TRUE(nil->is_closed());
     print_value_type(nil);
-    auto cons_or_nil = w.variant({cons, nil});
+    auto cons_or_nil = w.variant({cons, nil}, star);
     list->set(cons_or_nil);
     ASSERT_TRUE(list->is_closed());
     print_value_type(list);
