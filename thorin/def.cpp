@@ -65,11 +65,10 @@ const SortedDefSet set_flatten(Defs defs) {
 }
 
 bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
-    for (auto op : ops) {
-        assert(sort == op->sort() && "Operands must be of the same sort.");
-    }
-    assertf(sort == Def::Sort::Type || sort == Def::Sort::Kind,
-            "Only sort type or kind allowed.");
+    for (auto op : ops)
+        assert(sort == op->sort() && "operands must be of the same sort");
+
+    assertf(sort == Def::Sort::Type || sort == Def::Sort::Kind, "only sort type or kind allowed");
     return true;
 }
 
@@ -184,45 +183,6 @@ const Def* Pi::domain() const { return world().sigma(domains()); }
 //------------------------------------------------------------------------------
 
 /*
- * kind_qualifier
- */
-
-const Def* Def::kind_qualifier() const {
-    return world().unlimited();
-}
-
-const Def* Intersection::kind_qualifier() const {
-    return is_kind() ? world().intersection(qualifiers(ops()), world().qualifier_kind()) :
-        world().unlimited();
-}
-
-// const Def* Sigma::kind_qualifier() const {
-//     // TODO can Sigma kinds have types that are inhabited on the term level and provide a qualifier for them?
-//     return world().unlimited();
-// }
-
-const Def* Singleton::kind_qualifier() const {
-    // Types with a Singleton kind are equivalent to the operand of the Singleton and thus have the same
-    // qualifier
-    return is_kind() ? op(0)->qualifier() : world().unlimited();
-}
-
-const Def* Star::kind_qualifier() const {
-    return is_kind() ? op(0) : world().unlimited();
-}
-
-// const Def* Variadic::kind_qualifier() const {
-//     // TODO can Variadic kinds have types that are inhabited on the term level and provide a qualifier for them?
-//     return world().unlimited();
-// }
-
-const Def* Variant::kind_qualifier() const {
-    return is_kind() ? world().variant(qualifiers(ops()), world().qualifier_kind()) : world().unlimited();
-}
-
-//------------------------------------------------------------------------------
-
-/*
  * constructors/destructor
  */
 
@@ -279,6 +239,45 @@ Variant::Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg)
     // TODO does same sorted ops really hold? ex: matches that return different sorted stuff? allowed?
     assert(check_same_sorted_ops(sort(), ops));
     compute_free_vars();
+}
+
+//------------------------------------------------------------------------------
+
+/*
+ * kind_qualifier
+ */
+
+const Def* Def::kind_qualifier() const {
+    return world().unlimited();
+}
+
+const Def* Intersection::kind_qualifier() const {
+    return is_kind() ? world().intersection(qualifiers(ops()), world().qualifier_kind()) :
+        world().unlimited();
+}
+
+// const Def* Sigma::kind_qualifier() const {
+//     // TODO can Sigma kinds have types that are inhabited on the term level and provide a qualifier for them?
+//     return world().unlimited();
+// }
+
+const Def* Singleton::kind_qualifier() const {
+    // Types with a Singleton kind are equivalent to the operand of the Singleton and thus have the same
+    // qualifier
+    return is_kind() ? op(0)->qualifier() : world().unlimited();
+}
+
+const Def* Star::kind_qualifier() const {
+    return is_kind() ? op(0) : world().unlimited();
+}
+
+// const Def* Variadic::kind_qualifier() const {
+//     // TODO can Variadic kinds have types that are inhabited on the term level and provide a qualifier for them?
+//     return world().unlimited();
+// }
+
+const Def* Variant::kind_qualifier() const {
+    return is_kind() ? world().variant(qualifiers(ops()), world().qualifier_kind()) : world().unlimited();
 }
 
 //------------------------------------------------------------------------------
