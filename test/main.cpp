@@ -108,8 +108,7 @@ TEST(Simple, Misc) {
     //w.app(int_id, w.app(plus, {w.app(plus, {n1, n2}), n3}))->dump();
 
     auto Arr = w.axiom(w.pi({w.type_nat(), w.pi(w.type_nat(), w.star())}, w.star()),{"Arr"});
-    Defs dom{w.type_nat(), w.star()};
-    auto _Arr = w.lambda(dom, w.app(Arr, {w.var(w.type_nat(), 1), w.lambda(w.type_nat(), w.var(w.star(), 1))}));
+    auto _Arr = w.lambda({w.type_nat(), w.star()}, w.app(Arr, {w.var(w.type_nat(), 1), w.lambda(w.type_nat(), w.var(w.star(), 1))}));
     _Arr->dump();
 
     auto arr = w.app(_Arr, {n23, w.type_nat()});
