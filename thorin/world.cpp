@@ -66,8 +66,10 @@ const Lambda* WorldBase::pi_lambda(const Pi* pi, const Def* body, Debug dbg) {
 
 const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {
     if (auto arity = a->isa<Axiom>()) {
-        if (body->free_vars().test(0))
-            return sigma(Array<const Def*>(arity->box().get_u64(), [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
+        if (body->free_vars().test(0)) {
+            return sigma(Array<const Def*>(arity->box().get_u64(),
+                        [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
+        }
     }
 
     return unify<Variadic>(2, *this, a, body, dbg);
