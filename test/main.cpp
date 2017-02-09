@@ -133,12 +133,13 @@ TEST(Simple, Misc) {
 }
 
 TEST(Simple, Curry) {
+    static const int num = 10000;
     World w;
     const Def* cur = w.val_nat_32();
-    for (int i = 0; i < 10000; ++i)
+    for (int i = 0; i < num; ++i)
         cur = w.lambda(w.type_nat(), cur);
 
-    for (int i = 0; i < 10000; ++i)
+    for (int i = 0; i < num; ++i)
         cur = w.app(cur, w.val_nat_64());
 
     ASSERT_EQ(cur, w.val_nat_32());
