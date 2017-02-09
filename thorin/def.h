@@ -107,7 +107,7 @@ public:
         Any,
         App,
         Axiom,
-        Dimension,
+        Dim,
         Error,
         Extract,
         Index,
@@ -527,9 +527,9 @@ private:
     friend class WorldBase;
 };
 
-class Dimension : public Def {
+class Dim : public Def {
 private:
-    Dimension(WorldBase& world, const Def* def, Debug dbg);
+    Dim(WorldBase& world, const Def* def, Debug dbg);
 
 public:
     const Def* of() const { return op(0); }

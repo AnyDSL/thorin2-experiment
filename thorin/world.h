@@ -37,7 +37,7 @@ public:
     const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
         return unify<Axiom>(0, *this, type, box, dbg);
     }
-    const Def* dimension(const Def* def, Debug dbg = {});
+    const Def* dim(const Def* def, Debug dbg = {});
     const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
     const Var* var(Defs types, size_t index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
     const Var* var(const Def* type, size_t index, Debug dbg = {}) {

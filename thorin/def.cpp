@@ -211,8 +211,8 @@ Def::~Def() {
         delete[] ops_;
 }
 
-Dimension::Dimension(WorldBase& world, const Def* def, Debug dbg)
-    : Def(world, Tag::Dimension, world.arity_kind(), {def}, dbg)
+Dim::Dim(WorldBase& world, const Def* def, Debug dbg)
+    : Def(world, Tag::Dim, world.arity_kind(), {def}, dbg)
 {
     compute_free_vars();
 }
@@ -337,7 +337,7 @@ bool Var::equal(const Def* other) const {
 
 const Def* Any         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
-const Def* Dimension   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.dimension(ops[0], debug()); }
+const Def* Dim         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.dim(ops[0], debug()); }
 const Def* Extract     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
@@ -455,7 +455,7 @@ std::ostream& App::stream(std::ostream& os) const {
 }
 
 std::ostream& Axiom::stream(std::ostream& os) const { return os << qualifier() << name(); }
-std::ostream& Dimension::stream(std::ostream& os) const { return streamf(os, "dim({})", of()); }
+std::ostream& Dim::stream(std::ostream& os) const { return streamf(os, "dim({})", of()); }
 
 std::ostream& Error::stream(std::ostream& os) const { return os << "Error"; }
 

@@ -38,7 +38,7 @@ const Def* WorldBase::index(size_t i, size_t a, Debug dbg) {
     return error(arity(a));
 }
 
-const Def* WorldBase::dimension(const Def* def, Debug dbg) {
+const Def* WorldBase::dim(const Def* def, Debug dbg) {
     if (auto tuple = def->isa<Tuple>())
         return arity(tuple->num_ops(), dbg);
     if (auto sigma = def->isa<Sigma>())
@@ -46,7 +46,7 @@ const Def* WorldBase::dimension(const Def* def, Debug dbg) {
     if (auto variadic = def->isa<Variadic>())
         return variadic->arity();
     if (def->isa<Var>())
-        return unify<Dimension>(1, *this, def, dbg);
+        return unify<Dim>(1, *this, def, dbg);
     return arity(1, dbg);
 }
 
@@ -317,12 +317,12 @@ World::World() {
     type_rarithop_ = pi({type_nat(), type_bool()}, pi({type_real(vn1, vn0), type_real(vn2, vn1)}, type_real(vn3, vn2)));
 
     op_insert_ = axiom(pi(star(),
-            pi({var(star(), 0), dimension(var(star(), 1)), extract(var(star(), 2), var(dimension(var(star(), 2)), 0))},
+            pi({var(star(), 0), dim(var(star(), 1)), extract(var(star(), 2), var(dim(var(star(), 2)), 0))},
             var(star(), 3))), {"insert"});
 
     op_lea_ = axiom(pi({star(), type_nat()},
-                pi({type_ptr(var(star(), 1), var(type_nat(), 0)), dimension(var(star(), 2))},
-                type_ptr(extract(var(star(), 3), var(dimension(var(star(), 3)), 0)), var(type_nat(), 2)))), {"lea"});
+                pi({type_ptr(var(star(), 1), var(type_nat(), 0)), dim(var(star(), 2))},
+                type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(type_nat(), 2)))), {"lea"});
 }
 
 const Def* World::op_insert(const Def* def, const Def* index, const Def* val, Debug dbg) {
@@ -330,7 +330,7 @@ const Def* World::op_insert(const Def* def, const Def* index, const Def* val, De
 }
 
 const Def* World::op_insert(const Def* def, size_t i, const Def* val, Debug dbg) {
-    auto idx = index(i, dimension(def->type())->as<Axiom>()->box().get_u64());
+    auto idx = index(i, dim(def->type())->as<Axiom>()->box().get_u64());
     return app(app(op_insert_, def->type(), dbg), {def, idx, val}, dbg);
 }
 
@@ -341,7 +341,7 @@ const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
 
 const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
     PtrType ptr_type(ptr->type());
-    auto idx = index(i, dimension(ptr_type.pointee())->as<Axiom>()->box().get_u64());
+    auto idx = index(i, dim(ptr_type.pointee())->as<Axiom>()->box().get_u64());
     idx->dump();
     return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {ptr, idx}, dbg);
 }
