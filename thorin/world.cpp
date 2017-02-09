@@ -69,7 +69,7 @@ const Lambda* WorldBase::pi_lambda(const Pi* pi, const Def* body, Debug dbg) {
 const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {
     if (auto arity = a->isa<Axiom>()) {
         if (body->free_vars().test(0)) {
-            return sigma(Array<const Def*>(arity->box().get_u64(),
+            return sigma(DefArray(arity->box().get_u64(),
                         [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
         }
     }
@@ -157,7 +157,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
 
     if (!def->is_nominal()) {
         if (def->isa<Variant>()) {
-            auto ops = Array<const Def*>(def->num_ops(), [&](auto i) { return this->singleton(def->op(i)); });
+            auto ops = DefArray(def->num_ops(), [&](auto i) { return this->singleton(def->op(i)); });
             return variant(ops, def->type()->type(),dbg);
         }
 
@@ -169,7 +169,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
 
     if (auto sig = def->type()->isa<Sigma>()) {
         // See Harper PFPL 43.13b
-        auto ops = Array<const Def*>(sig->num_ops(), [&](auto i) { return this->singleton(this->extract(def, i)); });
+        auto ops = DefArray(sig->num_ops(), [&](auto i) { return this->singleton(this->extract(def, i)); });
         return sigma(ops, sig->qualifier(), dbg);
     }
 
@@ -177,7 +177,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
         // See Harper PFPL 43.13c
         auto domains = pi_type->domains();
         auto num_domains = pi_type->num_domains();
-        auto new_pi_vars = Array<const Def*>(num_domains,
+        auto new_pi_vars = DefArray(num_domains,
                 [&](auto i) { return this->var(domains[i], num_domains - i - 1); });
         auto applied = app(def, new_pi_vars);
         return pi(domains, singleton(applied), pi_type->qualifier(), dbg);
@@ -245,7 +245,7 @@ const Def* qualifier_glb_or_lub(WorldBase& w, Defs defs, bool use_meet,
     auto const_elem = use_meet ? Qualifier::Unlimited : Qualifier::Linear;
     auto ident_elem = use_meet ? Qualifier::Linear : Qualifier::Unlimited;
     size_t num_defs = defs.size();
-    Array<const Def*> reduced(num_defs);
+    DefArray reduced(num_defs);
     Qualifier accu = Qualifier::Unlimited;
     size_t num_const = 0;
     for (size_t i = 0, e = num_defs; i != e; ++i) {
@@ -348,7 +348,7 @@ const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
 }
 
 const Def* build_match_type(WorldBase& w, Defs handlers) {
-    auto types = Array<const Def*>(handlers.size(),
+    auto types = DefArray(handlers.size(),
             [&](auto i) { return handlers[i]->type()->template as<Pi>()->body(); });
     // We're not actually building a sum type here, we need uniqueness
     unique_gid_sort(&types);
@@ -364,7 +364,7 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
     auto matched_type = def->type()->as<Variant>();
     assert(def_type->num_ops() == handlers.size() && "number of handlers does not match number of cases");
 
-    Array<const Def*> sorted_handlers(handlers);
+    DefArray sorted_handlers(handlers);
     std::sort(sorted_handlers.begin(), sorted_handlers.end(),
               [](const Def* a, const Def* b) {
                   auto a_dom = a->type()->as<Pi>()->domain();
@@ -392,7 +392,7 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
             return app(callee, tuple->ops(), dbg);
 
         if (auto sigma_type = single->type()->isa<Sigma>()) {
-            auto extracts = Array<const Def*>(sigma_type->num_ops(), [&](auto i) { return this->extract(single, i); });
+            auto extracts = DefArray(sigma_type->num_ops(), [&](auto i) { return this->extract(single, i); });
             return app(callee, extracts, dbg);
         }
     }

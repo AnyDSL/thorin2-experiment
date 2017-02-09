@@ -30,7 +30,7 @@ public:
 
 private:
     WorldBase& world_;
-    Array<const Def*> args_;
+    DefArray args_;
     thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
     std::stack<DefIndex> nominals_;
 };
@@ -88,7 +88,7 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
     }
 
     // rebuild all other defs
-    Array<const Def*> new_ops(old_def->num_ops());
+    DefArray new_ops(old_def->num_ops());
     for (size_t i = 0, e = old_def->num_ops(); i != e; ++i) {
         auto new_op = reduce_structurals(old_def->op(i), offset + old_def->shift(i));
         new_ops[i] = new_op;

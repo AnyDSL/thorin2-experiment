@@ -71,18 +71,18 @@ TEST(Qualifiers, Variants) {
 
 TEST(Substructural, Misc) {
     World w;
-    auto R = Qualifier::Relevant;
+    //auto R = Qualifier::Relevant;
     auto A = Qualifier::Affine;
     auto L = Qualifier::Linear;
     auto a = w.affine();
-    auto l = w.linear();
+    //auto l = w.linear();
     auto r = w.relevant();
-    auto Star = w.star();
+    //auto Star = w.star();
     auto Unit = w.unit();
     auto Nat = w.type_nat();
-    auto n42 = w.axiom(Nat, {"42"});
+    //auto n42 = w.axiom(Nat, {"42"});
     auto ANat = w.type_nat(a);
-    auto LNat = w.type_nat(l);
+    //auto LNat = w.type_nat(l);
     auto RNat = w.type_nat(r);
     auto an0 = w.val_nat(0, a);
     ASSERT_NE(an0, w.val_nat(0, a));
@@ -109,7 +109,7 @@ TEST(Substructural, Misc) {
     auto a_id = w.lambda(Nat, nx, a, {"a_id"});
     ASSERT_EQ(a_id_type, a_id->type());
     auto n0 = w.axiom(Nat, {"0"});
-    /*auto a_id_app =*/ w.app(a_id, n0);
+    //auto a_id_app = w.app(a_id, n0);
     ASSERT_FALSE(is_error(w.app(a_id, n0)));
 
     // λᴬT:*.λx:ᴬT.x
@@ -128,9 +128,9 @@ TEST(Substructural, UnlimitedRefs) {
     World w;
     auto Star = w.star();
     auto Unit = w.unit();
-    auto Nat = w.type_nat();
-    auto n42 = w.val_nat(42);
-    auto n0 = w.val_nat_0();
+    //auto Nat = w.type_nat();
+    //auto n42 = w.val_nat(42);
+    //auto n0 = w.val_nat_0();
     auto T = [&](int i){ return w.var(Star, i, {"T"}); };
 
     auto Ref = w.axiom(w.pi(Star, Star), {"Ref"});
@@ -152,10 +152,10 @@ TEST(Substructural, AffineRefs) {
     auto a = w.affine();
     auto Star = w.star();
     auto Unit = w.unit();
-    auto Nat = w.type_nat();
-    auto n42 = w.val_nat(42);
-    auto n0 = w.val_nat_0();
-    auto ANat = w.type_nat(a);
+    //auto Nat = w.type_nat();
+    //auto n42 = w.val_nat(42);
+    //auto n0 = w.val_nat_0();
+    //auto ANat = w.type_nat(a);
     auto T = [&](int i){ return w.var(Star, i, {"T"}); };
 
     auto Ref = w.axiom(w.pi(Star, w.star(a)), {"ARef"});
@@ -181,8 +181,8 @@ TEST(Substructural, AffineCapabilityRefs) {
     auto Unit = w.unit();
     auto Nat = w.type_nat();
     auto n42 = w.val_nat(42);
-    auto n0 = w.val_nat_0();
-    auto ANat = w.type_nat(a);
+    //auto n0 = w.val_nat_0();
+    //auto ANat = w.type_nat(a);
     auto T = [&](int i){ return w.var(Star, i, {"T"}); };
 
     auto Ref = w.axiom(w.pi({Star, Star}, Star), {"CRef"});
@@ -229,7 +229,7 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
     auto Nat = w.type_nat();
     auto n42 = w.val_nat(42);
     auto n0 = w.val_nat_0();
-    auto ANat = w.type_nat(a);
+    //auto ANat = w.type_nat(a);
     auto T = [&](int i){ return w.var(Star, i, {"T"}); };
 
     auto Ref = w.axiom(w.pi({Star, Star}, Star), {"FRef"});

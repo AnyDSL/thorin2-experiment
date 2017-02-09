@@ -73,15 +73,16 @@ using DefSet  = GIDSet<const Def*>;
 using Def2Def = DefMap<const Def*>;
 using SortedDefSet = std::set<const Def*, GIDLt<const Def*>>;
 
+typedef Array<const Def*> DefArray;
 typedef ArrayRef<const Def*> Defs;
 
-Array<const Def*> types(Defs defs);
-void gid_sort(Array<const Def*>* defs);
-Array<const Def*> gid_sorted(Defs defs);
-void unique_gid_sort(Array<const Def*>* defs);
-Array<const Def*> unique_gid_sorted(Defs defs);
+DefArray types(Defs defs);
+void gid_sort(DefArray* defs);
+DefArray gid_sorted(Defs defs);
+void unique_gid_sort(DefArray* defs);
+DefArray unique_gid_sorted(Defs defs);
 
-Array<const Def*> qualifiers(Defs defs);
+DefArray qualifiers(Defs defs);
 
 //------------------------------------------------------------------------------
 

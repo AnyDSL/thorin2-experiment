@@ -15,38 +15,38 @@ namespace thorin {
 
 bool is_array(const Def* def) { return def->isa<Variadic>() && !def->free_vars().test(0); }
 
-Array<const Def*> types(Defs defs) {
-    Array<const Def*> result(defs.size());
+DefArray types(Defs defs) {
+    DefArray result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)
         result[i] = defs[i]->type();
     return result;
 }
 
-Array<const Def*> qualifiers(Defs defs) {
-    Array<const Def*> result(defs.size());
+DefArray qualifiers(Defs defs) {
+    DefArray result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)
         result[i] = defs[i]->qualifier();
     return result;
 }
 
-void gid_sort(Array<const Def*>* defs) {
+void gid_sort(DefArray* defs) {
     std::sort(defs->begin(), defs->end(), GIDLt<const Def*>());
 }
 
-Array<const Def*> gid_sorted(Defs defs) {
-    Array<const Def*> result(defs);
+DefArray gid_sorted(Defs defs) {
+    DefArray result(defs);
     gid_sort(&result);
     return result;
 }
 
-void unique_gid_sort(Array<const Def*>* defs) {
+void unique_gid_sort(DefArray* defs) {
     gid_sort(defs);
     auto first_non_unique = std::unique(defs->begin(), defs->end());
     defs->shrink(std::distance(defs->begin(), first_non_unique));
 }
 
-Array<const Def*> unique_gid_sorted(Defs defs) {
-    Array<const Def*> result(defs);
+DefArray unique_gid_sorted(Defs defs) {
+    DefArray result(defs);
     unique_gid_sort(&result);
     return result;
 }
