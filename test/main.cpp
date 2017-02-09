@@ -4,61 +4,15 @@
 
 using namespace thorin;
 
-TEST(Simple, unit) {
-    World w;
-    auto unit = w.unit();
-    auto tuple0 = w.tuple0();
-    ASSERT_EQ(tuple0->type(), unit);
-
-    auto lam = w.lambda(unit, tuple0);
-    ASSERT_EQ(lam->domain(), unit);
-    ASSERT_TRUE(lam->domains().size() == 0);
-    ASSERT_EQ(lam->type()->body(), unit);
-    auto pi = w.pi(Defs({}), unit);
-    ASSERT_EQ(pi, lam->type());
-    auto apped = w.app(lam, tuple0);
-    ASSERT_EQ(tuple0, apped);
-}
-
-TEST(Simple, Misc) {
+TEST(Base, PolyId) {
     World w;
     auto n16 = w.val_nat_16();
-    n16->dump();
-    ASSERT_EQ(n16, w.val_nat(16));
-
     auto n23 = w.val_nat(23);
-    auto n23x = w.val_nat(23);
-    ASSERT_EQ(n23, n23x);
     auto n42 = w.val_nat(42);
-    /*auto n32 =*/ w.val_nat(32);
-    auto Top = w.val_bool_top();
-    Top->dump();
 
-    {
-        auto s32w = w.type_int(32, ITypeFlags::sw);
-        auto a = w.axiom(s32w, {"a"});
-        auto b = w.axiom(s32w, {"b"});
-        a->dump();
-        b->dump();
-        //auto add = w.app(w.app(w.iadd(), {n32, w.nat(3)}), {a, b});
-        //auto mul = w.app(w.app(w.imul(), {n32, w.nat(3)}), {a, b});
-        //add->dump();
-        //add->type()->dump();
-        //mul->dump();
-        //mul->type()->dump();
-        w.type_mem()->dump();
-
-        auto load = w.axiom(w.pi(w.star(), w.pi({w.type_mem(), w.type_ptr(w.var(w.star(), 1))}, w.sigma({w.type_mem(), w.var(w.star(), 3)}))), {"load"});
-        load->type()->dump();
-        auto x = w.axiom(w.type_ptr(w.type_nat()), {"x"});
-        auto m = w.axiom(w.type_mem(), {"m"});
-        auto nat_load = w.app(load, w.type_nat());
-        nat_load->dump();
-        nat_load->type()->dump();
-        auto p = w.app(nat_load, {m, x});
-        p->dump();
-        p->type()->dump();
-    }
+    ASSERT_EQ(n16, w.val_nat(16));
+    ASSERT_EQ(n23, w.val_nat(23));
+    ASSERT_EQ(n42, w.val_nat(42));
 
     auto bb = w.var(w.type_nat(), 0);
     ASSERT_TRUE(bb->free_vars().test(0));
@@ -78,54 +32,47 @@ TEST(Simple, Misc) {
     ASSERT_FALSE(poly_id->free_vars().test(1));
     ASSERT_FALSE(poly_id->free_vars().any_end(2));
     ASSERT_FALSE(poly_id->free_vars().any_begin(0));
-    poly_id->dump();
-    poly_id->type()->dump();
 
     // λx:w.type_nat().x
     auto int_id = w.app(poly_id, w.type_nat());
-    int_id->dump();
-    int_id->type()->dump();
+    ASSERT_EQ(int_id, w.lambda(w.type_nat(), w.var(w.type_nat(), 0)));
+    ASSERT_EQ(w.app(int_id, n23), n23);
+}
+
+TEST(Sigma, unit) {
+    World w;
+
+    auto unit = w.unit();
+    auto tuple0 = w.tuple0();
+    ASSERT_EQ(tuple0->type(), unit);
+
+    auto lam = w.lambda(unit, tuple0);
+    ASSERT_EQ(lam->domain(), unit);
+    ASSERT_TRUE(lam->domains().size() == 0);
+    ASSERT_EQ(lam->type()->body(), unit);
+    auto pi = w.pi(Defs({}), unit);
+    ASSERT_EQ(pi, lam->type());
+    auto apped = w.app(lam, tuple0);
+    ASSERT_EQ(tuple0, apped);
+}
+
+TEST(Sigma, ExtractAndSingleton) {
+    World w;
+    auto n23 = w.val_nat(23);
+    auto n42 = w.val_nat(42);
 
     auto fst = w.lambda({w.type_nat(), w.type_nat()}, w.var(w.type_nat(), 1));
     auto snd = w.lambda({w.type_nat(), w.type_nat()}, w.var(w.type_nat(), 0));
-    w.app(fst, {n23, n42})->dump(); // 23
-    w.app(snd, {n23, n42})->dump(); // 42
+    ASSERT_EQ(w.app(fst, {n23, n42}), w.val_nat(23));
+    ASSERT_EQ(w.app(snd, {n23, n42}), w.val_nat(42));
 
-
-    //// 2
-    //w.app(int_id, n2)->dump();
-
-    //// 3
-    //w.extract(w.tuple({n1, n2, n3}), 2)->dump();
-    ////w.extract(n3, 0)->dump();
-
-    //auto make_pair = w.axiom(w.pi(w.unit(), w.sigma({w.type_nat(), w.type_nat()})), {"make_pair"});
-    //make_pair->dump();
-    //w.app(make_pair, n1)->dump();
-
-    //auto plus = w.axiom(w.pi({w.type_nat(), w.type_nat()}, w.type_nat()), {"+"});
-    //plus->type()->dump();
-    //w.app(int_id, w.app(plus, {w.app(plus, {n1, n2}), n3}))->dump();
-
-    auto Arr = w.axiom(w.pi({w.type_nat(), w.pi(w.type_nat(), w.star())}, w.star()),{"Arr"});
-    auto _Arr = w.lambda({w.type_nat(), w.star()}, w.app(Arr, {w.var(w.type_nat(), 1), w.lambda(w.type_nat(), w.var(w.star(), 1))}));
-    _Arr->dump();
-
-    auto arr = w.app(_Arr, {n23, w.type_nat()});
-    arr->dump();
-
-    // Test projections from dependent sigmas
-    auto poly = w.axiom(w.pi(w.star(), w.star()),{"Poly"});
+    auto poly = w.axiom(w.pi(w.star(), w.star()), {"Poly"});
     auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))}, {"sig"});
     auto sigma_val = w.axiom(sigma,{"val"});
-    std::cout << sigma_val << ": " << sigma << endl;
     auto fst_sigma = w.extract(sigma_val, 0_s);
-    std::cout << fst_sigma << ": " << fst_sigma->type() << endl;
+    ASSERT_EQ(fst_sigma->type(), w.star());
     auto snd_sigma = w.extract(sigma_val, 1);
-    std::cout << snd_sigma << ": " << snd_sigma->type() << endl;
-
-
-    // Test singleton types and kinds
+    snd_sigma->type()->dump();
     auto single_sigma = w.singleton(sigma_val);
     std::cout << single_sigma << ": " << single_sigma->type() << std::endl;
     auto single_pi = w.singleton(w.axiom(w.pi(w.star(), w.star()), {"pival"}));
@@ -134,7 +81,7 @@ TEST(Simple, Misc) {
 
 static const int test_num_vars = 10000;
 
-TEST(Simple, Curry) {
+TEST(App, Curry) {
     World w;
     const Def* cur = w.val_nat_32();
     for (int i = 0; i < test_num_vars; ++i)
@@ -146,7 +93,7 @@ TEST(Simple, Curry) {
     ASSERT_EQ(cur, w.val_nat_32());
 }
 
-TEST(Simple, Arity) {
+TEST(App, Arity) {
     World w;
     auto l = w.lambda(Array<const Def*>(test_num_vars, [&](auto i) { return w.var(w.type_nat(), i); }), w.val_nat_32());
     auto r = w.app(l, Array<const Def*>(test_num_vars, [&](auto) { return w.val_nat_64(); }));
