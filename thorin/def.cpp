@@ -7,142 +7,13 @@
 
 namespace thorin {
 
-const Def* Def::qualifier() const {
-    switch(sort()) {
-    case Sort::Term:
-        return type()->type()->kind_qualifier();
-    case Sort::Type:
-        return type()->kind_qualifier();
-    case Sort::Kind:
-        return kind_qualifier();
-    case Sort::Universe:
-        return world().unlimited();
-    }
-}
-
-const Def* Def::kind_qualifier() const {
-    return world().unlimited();
-}
-
-// const Def* Sigma::kind_qualifier() const {
-//     // TODO can Sigma kinds have types that are inhabited on the term level and provide a qualifier for them?
-//     return world().unlimited();
-// }
-
-const Def* Singleton::kind_qualifier() const {
-    // Types with a Singleton kind are equivalent to the operand of the Singleton and thus have the same
-    // qualifier
-    return is_kind() ? op(0)->qualifier() : world().unlimited();
-}
-
-const Def* Star::kind_qualifier() const {
-    return is_kind() ? op(0) : world().unlimited();
-}
-
-// const Def* Variadic::kind_qualifier() const {
-//     // TODO can Variadic kinds have types that are inhabited on the term level and provide a qualifier for them?
-//     return world().unlimited();
-// }
-
-const Def* Variant::kind_qualifier() const {
-    return is_kind() ? world().variant(qualifiers(ops()), world().qualifier_kind()) : world().unlimited();
-}
-
-const Def* Intersection::kind_qualifier() const {
-    return is_kind() ? world().intersection(qualifiers(ops()), world().qualifier_kind()) :
-        world().unlimited();
-}
-
-bool Def::maybe_affine() const {
-    const Def* q = qualifier();
-    assert(q != nullptr);
-    if (auto qu = world().isa_const_qualifier(q)) {
-        return qu->box().get_qualifier() >= Qualifier::Affine;
-    }
-    return true;
-}
 //------------------------------------------------------------------------------
 
-size_t Def::gid_counter_ = 1;
+/*
+ * helpers
+ */
 
-void Def::compute_free_vars() {
-    for (size_t i = 0, e = num_ops(); i != e; ++i)
-        free_vars_ |= op(i)->free_vars() >> shift(i);
-    free_vars_ |= type()->free_vars_;
-}
-
-void Def::resize(size_t num_ops) {
-    num_ops_ = num_ops;
-    if (num_ops_ > ops_capacity_) {
-        if (on_heap())
-            delete[] ops_;
-        ops_capacity_ *= size_t(2);
-        ops_ = new const Def*[ops_capacity_]();
-    }
-}
-
-Def::Sort Def::sort() const {
-    if (!type()) {
-        assert(isa<Universe>());
-        return Sort::Universe;
-    } else if (!type()->type())
-        return Sort::Kind;
-    else if (!type()->type()->type())
-        return Sort::Type;
-    else {
-        assert(!type()->type()->type()->type());
-        return Sort::Term;
-    }
-}
-
-void Def::wire_uses() const {
-    for (size_t i = 0, e = num_ops(); i != e; ++i) {
-        if (auto def = op(i)) {
-            assert(!def->uses_.contains(Use(this, i)));
-            const auto& p = def->uses_.emplace(this, i);
-            assert_unused(p.second);
-        }
-    }
-}
-
-void Def::set(size_t i, const Def* def) {
-    assert(!closed_);
-    assert(!op(i) && "already set");
-    assert(def && "setting null pointer");
-    ops_[i] = def;
-    assert(!def->uses_.contains(Use(this, i)));
-    const auto& p = def->uses_.emplace(this, i);
-    assert_unused(p.second);
-    if (i == num_ops() - 1) {
-        assert(std::all_of(ops().begin(), ops().end(), [](const Def* def) { return static_cast<bool>(def); }));
-        compute_free_vars();
-        closed_ = true;
-    }
-    // TODO qualifier inference for types and thus possibly modification of kind?
-    // TODO this needs to be overwritten by Variant/Intersection, they may need to rewrite/fold? quadratic!
-    // TODO rather to something like mu? or do nominal variants/intersections just make no sense?
-    // other on-the-fly normalisation we need to do?
-}
-
-void Def::unregister_uses() const {
-    for (size_t i = 0, e = num_ops(); i != e; ++i)
-        unregister_use(i);
-}
-
-void Def::unregister_use(size_t i) const {
-    auto def = ops_[i];
-    assert(def->uses_.contains(Use(this, i)));
-    def->uses_.erase(Use(this, i));
-    assert(!def->uses_.contains(Use(this, i)));
-}
-
-void Def::unset(size_t i) {
-    assert(ops_[i] && "must be set");
-    unregister_use(i);
-    ops_[i] = nullptr;
-}
-
-std::string Def::unique_name() const { return name() + '_' + std::to_string(gid()); }
+bool is_array(const Def* def) { return def->isa<Variadic>() && !def->free_vars().test(0); }
 
 Array<const Def*> types(Defs defs) {
     Array<const Def*> result(defs.size());
@@ -202,8 +73,152 @@ bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
     return true;
 }
 
+//------------------------------------------------------------------------------
+
+/*
+ * misc
+ */
+
+size_t Def::gid_counter_ = 1;
+
+Def::Sort Def::sort() const {
+    if (!type()) {
+        assert(isa<Universe>());
+        return Sort::Universe;
+    } else if (!type()->type())
+        return Sort::Kind;
+    else if (!type()->type()->type())
+        return Sort::Type;
+    else {
+        assert(!type()->type()->type()->type());
+        return Sort::Term;
+    }
+}
+
+const Def* Def::qualifier() const {
+    switch(sort()) {
+        case Sort::Term:     return type()->type()->kind_qualifier();
+        case Sort::Type:     return type()->kind_qualifier();
+        case Sort::Kind:     return kind_qualifier();
+        case Sort::Universe: return world().unlimited();
+        default:             THORIN_UNREACHABLE;
+    }
+}
+
+bool Def::maybe_affine() const {
+    const Def* q = qualifier();
+    assert(q != nullptr);
+    if (auto qu = world().isa_const_qualifier(q)) {
+        return qu->box().get_qualifier() >= Qualifier::Affine;
+    }
+    return true;
+}
+
+void Def::compute_free_vars() {
+    for (size_t i = 0, e = num_ops(); i != e; ++i)
+        free_vars_ |= op(i)->free_vars() >> shift(i);
+    free_vars_ |= type()->free_vars_;
+}
+
+void Def::resize(size_t num_ops) {
+    num_ops_ = num_ops;
+    if (num_ops_ > ops_capacity_) {
+        if (on_heap())
+            delete[] ops_;
+        ops_capacity_ *= size_t(2);
+        ops_ = new const Def*[ops_capacity_]();
+    }
+}
+
+void Def::set(size_t i, const Def* def) {
+    assert(!closed_);
+    assert(!op(i) && "already set");
+    assert(def && "setting null pointer");
+    ops_[i] = def;
+    assert(!def->uses_.contains(Use(this, i)));
+    const auto& p = def->uses_.emplace(this, i);
+    assert_unused(p.second);
+    if (i == num_ops() - 1) {
+        assert(std::all_of(ops().begin(), ops().end(), [](const Def* def) { return static_cast<bool>(def); }));
+        compute_free_vars();
+        closed_ = true;
+    }
+    // TODO qualifier inference for types and thus possibly modification of kind?
+    // TODO this needs to be overwritten by Variant/Intersection, they may need to rewrite/fold? quadratic!
+    // TODO rather to something like mu? or do nominal variants/intersections just make no sense?
+    // other on-the-fly normalisation we need to do?
+}
+
+void Def::unset(size_t i) {
+    assert(ops_[i] && "must be set");
+    unregister_use(i);
+    ops_[i] = nullptr;
+}
+
+void Def::wire_uses() const {
+    for (size_t i = 0, e = num_ops(); i != e; ++i) {
+        if (auto def = op(i)) {
+            assert(!def->uses_.contains(Use(this, i)));
+            const auto& p = def->uses_.emplace(this, i);
+            assert_unused(p.second);
+        }
+    }
+}
+
+void Def::unregister_uses() const {
+    for (size_t i = 0, e = num_ops(); i != e; ++i)
+        unregister_use(i);
+}
+
+void Def::unregister_use(size_t i) const {
+    auto def = ops_[i];
+    assert(def->uses_.contains(Use(this, i)));
+    def->uses_.erase(Use(this, i));
+    assert(!def->uses_.contains(Use(this, i)));
+}
+
+std::string Def::unique_name() const { return name() + '_' + std::to_string(gid()); }
+
 const Def* Pi::domain() const { return world().sigma(domains()); }
-bool is_array(const Def* def) { return def->isa<Variadic>() && !def->free_vars().test(0); }
+
+//------------------------------------------------------------------------------
+
+/*
+ * kind_qualifier
+ */
+
+const Def* Def::kind_qualifier() const {
+    return world().unlimited();
+}
+
+const Def* Intersection::kind_qualifier() const {
+    return is_kind() ? world().intersection(qualifiers(ops()), world().qualifier_kind()) :
+        world().unlimited();
+}
+
+// const Def* Sigma::kind_qualifier() const {
+//     // TODO can Sigma kinds have types that are inhabited on the term level and provide a qualifier for them?
+//     return world().unlimited();
+// }
+
+const Def* Singleton::kind_qualifier() const {
+    // Types with a Singleton kind are equivalent to the operand of the Singleton and thus have the same
+    // qualifier
+    return is_kind() ? op(0)->qualifier() : world().unlimited();
+}
+
+const Def* Star::kind_qualifier() const {
+    return is_kind() ? op(0) : world().unlimited();
+}
+
+// const Def* Variadic::kind_qualifier() const {
+//     // TODO can Variadic kinds have types that are inhabited on the term level and provide a qualifier for them?
+//     return world().unlimited();
+// }
+
+const Def* Variant::kind_qualifier() const {
+    return is_kind() ? world().variant(qualifiers(ops()), world().qualifier_kind()) : world().unlimited();
+}
 
 //------------------------------------------------------------------------------
 
@@ -294,19 +309,6 @@ uint64_t Def::vhash() const {
     return seed;
 }
 
-bool Def::equal(const Def* other) const {
-    if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
-        return this == other;
-
-    bool result = this->fields() == other->fields() && this->type() == other->type();
-    if (result) {
-        for (size_t i = 0, e = num_ops(); result && i != e; ++i)
-            result &= this->op(i) == other->op(i);
-    }
-
-    return result;
-}
-
 uint64_t Axiom::vhash() const {
     auto seed = Def::vhash();
     if (is_nominal())
@@ -322,6 +324,19 @@ uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index())
 /*
  * equal
  */
+
+bool Def::equal(const Def* other) const {
+    if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
+        return this == other;
+
+    bool result = this->fields() == other->fields() && this->type() == other->type();
+    if (result) {
+        for (size_t i = 0, e = num_ops(); result && i != e; ++i)
+            result &= this->op(i) == other->op(i);
+    }
+
+    return result;
+}
 
 bool Axiom::equal(const Def* other) const {
     if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
