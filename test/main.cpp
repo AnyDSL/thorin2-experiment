@@ -132,17 +132,25 @@ TEST(Simple, Misc) {
     std::cout << single_pi << ": " << single_pi->type() << std::endl;
 }
 
+static const int test_num_vars = 10000;
+
 TEST(Simple, Curry) {
-    static const int num = 10000;
     World w;
     const Def* cur = w.val_nat_32();
-    for (int i = 0; i < num; ++i)
+    for (int i = 0; i < test_num_vars; ++i)
         cur = w.lambda(w.type_nat(), cur);
 
-    for (int i = 0; i < num; ++i)
+    for (int i = 0; i < test_num_vars; ++i)
         cur = w.app(cur, w.val_nat_64());
 
     ASSERT_EQ(cur, w.val_nat_32());
+}
+
+TEST(Simple, Arity) {
+    World w;
+    auto l = w.lambda(Array<const Def*>(test_num_vars, [&](auto i) { return w.var(w.type_nat(), i); }), w.val_nat_32());
+    auto r = w.app(l, Array<const Def*>(test_num_vars, [&](auto) { return w.val_nat_64(); }));
+    ASSERT_EQ(r, w.val_nat_32());
 }
 
 int main(int argc, char** argv)  {
