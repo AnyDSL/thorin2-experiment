@@ -52,15 +52,20 @@ BitSet& BitSet::operator>>=(uint64_t shift) {
     uint64_t rem = shift%uint64_t(64);
     auto w = words();
 
-    for (size_t i = 0, e = num_words()-div; i != e; ++i)
-        w[i] = w[i+div];
-    std::fill(w+num_words()-div, w+num_words(), 0);
+    // TODO clean up
+    if (div >= num_words())
+        std::fill_n(w, num_words(), 0);
+    else {
+        for (size_t i = 0, e = num_words()-div; i != e; ++i)
+            w[i] = w[i+div];
+        std::fill(w+num_words()-div, w+num_words(), 0);
 
-    uint64_t carry = 0;
-    for (size_t i = num_words()-div; i-- != 0;) {
-        uint64_t new_carry = w[i] << (uint64_t(64)-rem);
-        w[i] = (w[i] >> rem) | carry;
-        carry = new_carry;
+        uint64_t carry = 0;
+        for (size_t i = num_words()-div; i-- != 0;) {
+            uint64_t new_carry = w[i] << (uint64_t(64)-rem);
+            w[i] = (w[i] >> rem) | carry;
+            carry = new_carry;
+        }
     }
 
     return *this;
