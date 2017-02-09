@@ -412,20 +412,24 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
  */
 
 World::World() {
-    for (size_t i = 0; i != 4; ++i) {
-        auto q = Qualifier(i);
-        // TODO these need to be apps from type constructors over all qualifiers, otherwise we won't be able
-        // to (e.g.) reduce a nominal Nat : *(q) with a qualifier variable to the same nominal Nat : *(A)
-        type_bool_[i] = axiom(star(q), {"bool"});
-        type_nat_ [i] = axiom(star(q), {"nat"});
-        type_int_ [i] = axiom(pi({type_nat(), type_nat()}, star(q)), {"int"});
-    }
+    auto u = unlimited();
+    auto q = qualifier_kind();
+    type_bool_q_ = axiom(pi(q, star(var(q, 0))), {"bool"});
+    type_bool_ = app(type_bool_q_, u, {"bool"});
+
+    type_nat_q_ = axiom(pi(q, star(var(q, 0))), {"nat"});
+    type_nat_ = app(type_nat_q_, u, {"nat"});
+
+    type_int_q_ = axiom(pi(q, pi({type_nat(), type_nat()}, star(var(q, 2)))), {"int"});
+    type_int_ = app(type_int_q_, u, {"int"});
+
     val_bool_[0] = assume(type_bool(), {false}, {"⊥"});
     val_bool_[1] = assume(type_bool(), {true }, {"⊤"});
     val_nat_0_   = val_nat(0);
     for (size_t j = 0; j != val_nat_.size(); ++j)
         val_nat_[j] = val_nat(1 << int64_t(j));
 
+    type_real_q_  = axiom(pi(q, pi({type_nat(), type_bool()}, star(var(q, 2)))), {"real"});
     type_real_  = axiom(pi({type_nat(), type_bool()}, star()), {"real"});
     type_mem_   = axiom(star(Qualifier::Linear), {"M"});
     type_frame_ = axiom(star(Qualifier::Linear), {"F"});

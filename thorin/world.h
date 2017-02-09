@@ -255,20 +255,38 @@ public:
     World();
 
     //@{ types and type constructors
-    const Axiom* type_bool(Qualifier q = Qualifier::Unlimited) { return type_bool_[size_t(q)]; }
-    const Axiom* type_bool(const Def* q) { return type_bool_[size_t(q)]; }
-    const Axiom* type_nat(Qualifier q = Qualifier::Unlimited) { return type_nat_[size_t(q)]; }
-    const Axiom* type_int(Qualifier q = Qualifier::Unlimited) { return type_int_[size_t(q)]; }
-    const Def* type_int(const Def* width, const Def* flags, Qualifier q = Qualifier::Unlimited) {
-        return app(type_int(q), {width, flags});
+    const Def* type_bool(const Def* q = nullptr) {
+        if (q == nullptr || q == unlimited())
+            return type_bool_;
+        return app(type_bool_q_, q);
     }
-    const Def* type_int(int64_t width, ITypeFlags flags, Qualifier q = Qualifier::Unlimited) {
-        auto f = val_nat(int64_t(flags));
-        return app(type_int(q), {val_nat(width), f});
+    const Def* type_nat(const Def* q = nullptr) {
+        if (q == nullptr || q == unlimited())
+            return type_nat_;
+        return app(type_nat_q_, q);
+    }
+    const Def* type_int(const Def* q = nullptr) {
+        if (q == nullptr || q == unlimited())
+            return type_int_;
+        return app(type_int_q_, q);
+    }
+    const Def* type_int(int64_t width, ITypeFlags flags, const Def* q = nullptr) {
+        return type_int(val_nat(width), val_nat(int64_t(flags), q));
+    }
+    const Def* type_int(const Def* width, const Def* flags, const Def* q = nullptr) {
+        if (q == nullptr || q == unlimited())
+            return app(type_int_, {width, flags});
+        return app(app(type_int_q_, q), {width, flags});
     }
 
-    const Axiom* type_real() { return type_real_; }
-    const Def* type_real(const Def* width, const Def* fast) { return app(type_real(), {width, fast}); }
+    const Def* type_real(const Def* q = nullptr) {
+        if (q == nullptr || q == unlimited())
+            return type_real_;
+        return app(type_real_q_, q);
+    }
+    const Def* type_real(const Def* width, const Def* fast, const Def* q = nullptr) {
+        return app(type_real(q), {width, fast});
+    }
 
     const Axiom* type_mem() { return type_mem_; }
 
@@ -286,7 +304,7 @@ public:
     //@}
 
     //@{ values
-    const Axiom* val_nat(int64_t val, Qualifier q = Qualifier::Unlimited) {
+    const Axiom* val_nat(int64_t val, const Def* q = nullptr) {
         return assume(type_nat(q), {val}, {std::to_string(val)});
     }
     const Axiom* val_nat_0() { return val_nat_0_; }
@@ -337,13 +355,17 @@ public:
     // TODO
     //@}
 private:
-    std::array<const Axiom*, 4> type_nat_;
+    const Axiom* type_nat_q_;
+    const Def* type_nat_;
     const Axiom* val_nat_0_;
     std::array<const Axiom*, 7> val_nat_;
-    std::array<const Axiom*, 4> type_bool_;
+    const Axiom* type_bool_q_;
+    const Def* type_bool_;
     std::array<const Axiom*, 2> val_bool_;
-    std::array<const Axiom*, 4> type_int_;
-    const Axiom* type_real_;
+    const Axiom* type_int_q_;
+    const Def* type_int_;
+    const Axiom* type_real_q_;
+    const Def* type_real_;
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;

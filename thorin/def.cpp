@@ -248,7 +248,9 @@ Sigma::Sigma(WorldBase& world, size_t num_ops, Debug dbg)
 
 Star::Star(WorldBase& world, const Def* qualifier)
     : Def(world, Tag::Star, world.universe(), {qualifier}, {"*"})
-{}
+{
+    compute_free_vars();
+}
 
 Variadic::Variadic(WorldBase& world, const Def* arity, const Def* body, Debug dbg)
     : SigmaBase(world, Tag::Variadic, world.universe(), {arity, body}, dbg)
@@ -322,7 +324,7 @@ uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index())
  */
 
 bool Axiom::equal(const Def* other) const {
-    if (is_nominal())
+    if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
         return this == other;
 
     return this->fields() == other->fields() && this->type() == other->type()
@@ -365,7 +367,7 @@ const Def* Sigma       ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
     return to.sigma(ops, qualifier(), debug());
 }
 const Def* Singleton   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
-const Def* Star        ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.star(qualifier()); }
+const Def* Star        ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.star(ops.front()); }
 const Def* Tuple       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
 const Def* Universe    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(); }
 const Def* Var         ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
