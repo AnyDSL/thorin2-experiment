@@ -32,6 +32,7 @@ add_executable(coc
     test/bitset.cpp
     test/main.cpp
     test/nominal.cpp
+    test/primop.cpp
     test/singleton.cpp
     test/variadic.cpp
     test/variants.cpp
