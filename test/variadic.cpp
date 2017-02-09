@@ -46,6 +46,7 @@ TEST(Variadic, Misc) {
                             w.pi(w.variadic(w.dimension(w.var(w.star(), 0)), w.app(list, w.extract(w.var(w.star(), 1), w.var(w.dimension(w.var(w.star(), 1)), 0)))),
                                  w.app(list, w.var(w.star(), 1)))), {"zip"});
     ASSERT_EQ(w.app(w.app(zip, s2), {lb, ln})->type(), w.app(list, s2));
+    ASSERT_EQ(w.app(w.app(zip, w.type_bool()), lb)->type(), w.app(list, w.type_bool()));
 
     // ΠT:*.Π(list[T],Vi:dim(T).list[T.i])
     auto rip = w.axiom(w.pi(w.star(),
