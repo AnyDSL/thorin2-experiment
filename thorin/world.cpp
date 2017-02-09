@@ -24,7 +24,7 @@ WorldBase::WorldBase()
         unit_    [i] = insert<Sigma   >(0, *this, Defs(), q, Debug("Σ()"));
         tuple0_  [i] = insert<Tuple   >(0, *this, unit_[i], Defs(), Debug("()"));
     }
-    arity_kind_ = insert<ArityKind>(0, *this);
+    arity_kind_ = axiom(universe(), {"𝔸"});
 }
 
 WorldBase::~WorldBase() {
@@ -34,7 +34,7 @@ WorldBase::~WorldBase() {
 
 const Def* WorldBase::index(size_t i, size_t a, Debug dbg) {
     if (i < a)
-        return unify<Index>(0, *this, arity(a), i, dbg);
+        return assume(arity(a), {u64(i)}, dbg);
     return error(arity(a));
 }
 
@@ -65,9 +65,9 @@ const Lambda* WorldBase::pi_lambda(const Pi* pi, const Def* body, Debug dbg) {
 }
 
 const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {
-    if (auto arity = a->isa<Arity>()) {
+    if (auto arity = a->isa<Axiom>()) {
         if (body->free_vars().test(0))
-            return sigma(Array<const Def*>(arity->arity(), [&](auto i) { return reduce(body, {this->index(i, arity->arity())}); }), dbg);
+            return sigma(Array<const Def*>(arity->box().get_u64(), [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
     }
 
     return unify<Variadic>(2, *this, a, body, dbg);
@@ -148,8 +148,8 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
 }
 
 const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
-    if (auto index = i->isa<Index>())
-        return extract(def, index->index(), dbg);
+    if (auto assume = i->isa<Axiom>())
+        return extract(def, assume->box().get_u64(), dbg);
     return unify<Extract>(2, *this, i->type(), def, i, dbg);
 }
 
@@ -176,7 +176,7 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
     }
 
     if (auto variadic = def->type()->isa<Variadic>()) {
-        auto idx = index(i, /*TODO*/variadic->arity()->as<Arity>()->arity(), dbg);
+        auto idx = index(i, /*TODO*/variadic->arity()->as<Axiom>()->box().get_u64(), dbg);
         return unify<Extract>(2, *this, variadic->body(), def, idx, dbg);
     }
 
@@ -328,7 +328,7 @@ const Def* World::op_insert(const Def* def, const Def* index, const Def* val, De
 }
 
 const Def* World::op_insert(const Def* def, size_t i, const Def* val, Debug dbg) {
-    auto idx = index(i, dimension(def->type())->as<Arity>()->arity());
+    auto idx = index(i, dimension(def->type())->as<Axiom>()->box().get_u64());
     return app(app(op_insert_, def->type(), dbg), {def, idx, val}, dbg);
 }
 
@@ -339,7 +339,7 @@ const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
 
 const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
     PtrType ptr_type(ptr->type());
-    auto idx = index(i, dimension(ptr_type.pointee())->as<Arity>()->arity());
+    auto idx = index(i, dimension(ptr_type.pointee())->as<Axiom>()->box().get_u64());
     idx->dump();
     return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {ptr, idx}, dbg);
 }
