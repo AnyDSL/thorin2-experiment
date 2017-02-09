@@ -27,7 +27,7 @@ TEST(Variants, positive_tests) {
     auto assumed_var = w.axiom(variant,{"someval"});
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
     auto handle_bool = w.lambda(boolean, w.axiom(nat,{"0"}));
-    Defs handlers{handle_nat, handle_bool};
+    Array<const Def*> handlers{handle_nat, handle_bool};
     auto match_nat = w.match(any_nat23, handlers);
     match_nat->dump(); // 23
     auto o_match_nat = w.match(any_nat23, {handle_bool, handle_nat});
