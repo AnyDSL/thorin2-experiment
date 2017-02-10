@@ -1,7 +1,14 @@
 #ifndef THORIN_TABLES_H
 #define THORIN_TABLES_H
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmismatched-tags"
+#endif
 #include <half.hpp>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #include "thorin/qualifier.h"
 
