@@ -274,12 +274,12 @@ public:
         return app(type_int_, {q, flags, width}, dbg)->as<App>();
     }
 
-    const Def* type_real() { return type_real_; }
-    const Def* type_real(Qualifier q, RTypeFlags flags, int64_t width) {
+    const Axiom* type_real() { return type_real_; }
+    const App* type_real(Qualifier q, RTypeFlags flags, int64_t width) {
         return type_reals_qfw_[size_t(q)][size_t(flags)][rwidth2index(width)];
     }
-    const Def* type_real(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
-        return app(type_real_, {q, flags, width}, dbg);
+    const App* type_real(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
+        return app(type_real_, {q, flags, width}, dbg)->as<App>();
     }
 
     const Axiom* type_mem() { return type_mem_; }

@@ -21,6 +21,8 @@ TEST(Primop, Arithop) {
 
     ASSERT_EQ(w.type_auo16(), w.app(w.type_int(), {w.affine(), w.val_nat(int64_t(ITypeFlags::uo)), w.val_nat_16()}));
     ASSERT_EQ(w.type_ruw64(), w.app(w.type_int(), {w.relevant(), w.val_nat(int64_t(ITypeFlags::uw)), w.val_nat_64()}));
+    ASSERT_EQ(w.type_auo16(), w.app(w.type_int(), {w.affine(), w.val_nat(int64_t(ITypeFlags::uo)), w.val_nat_16()}));
+    ASSERT_EQ(w.type_ruw64(), w.app(w.type_int(), {w.relevant(), w.val_nat(int64_t(ITypeFlags::uw)), w.val_nat_64()}));
     //ASSERT_EQ(w.
 
     //auto load = w.axiom(w.pi(w.star(), w.pi({w.type_mem(), w.type_ptr(w.var(w.star(), 1))}, w.sigma({w.type_mem(), w.var(w.star(), 3)}))), {"load"});
@@ -33,4 +35,12 @@ TEST(Primop, Arithop) {
     //auto p = w.app(nat_load, {m, x});
     //p->dump();
     //p->type()->dump();
+}
+
+TEST(Primop, Types) {
+    World w;
+    ASSERT_EQ(w.type_auo16(), w.app(w.type_int(), {w.affine(),   w.val_nat(int64_t(ITypeFlags::uo)), w.val_nat_16()}));
+    ASSERT_EQ(w.type_auo16(), w.app(w.type_int(), {w.affine(),   w.val_nat(int64_t(ITypeFlags::uo)), w.val_nat_16()}));
+    ASSERT_EQ(w.type_ruw64(), w.app(w.type_int(), {w.relevant(), w.val_nat(int64_t(ITypeFlags::uw)), w.val_nat_64()}));
+    ASSERT_EQ(w.type_ruw64(), w.app(w.type_int(), {w.relevant(), w.val_nat(int64_t(ITypeFlags::uw)), w.val_nat_64()}));
 }

@@ -101,14 +101,14 @@ enum class RType {
     Num
 };
 
-enum class IARithOp {
+enum class IArithop {
 #define CODE(x) \
     THORIN_I_ARITHOP(x),
 #undef CODE
     Num
 };
 
-enum class RArithOp {
+enum class RArithop {
 #define CODE(x) \
     THORIN_R_ARITHOP(x),
 #undef CODE
