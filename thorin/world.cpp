@@ -447,14 +447,14 @@ World::World() {
     for (size_t q = 0; q != 4; ++q) {
         for (size_t f = 0; f != size_t(ITypeFlags::Num); ++f) {
             for (size_t w = 0; w != 5; ++w)
-                type_ints_qfw_[q][f][w] = type_int(qualifier(Qualifier(q)), val_nat(f), val_nat(index2iwidth(w)));
+                type_int_qfw_[q][f][w] = type_int(qualifier(Qualifier(q)), val_nat(f), val_nat(index2iwidth(w)));
         }
     }
 
     for (size_t q = 0; q != 4; ++q) {
         for (size_t f = 0; f != size_t(RTypeFlags::Num); ++f) {
             for (size_t w = 0; w != 3; ++w)
-                type_reals_qfw_[q][f][w] = type_real(qualifier(Qualifier(q)), val_nat(f), val_nat(index2iwidth(w)));
+                type_real_qfw_[q][f][w] = type_real(qualifier(Qualifier(q)), val_nat(f), val_nat(index2rwidth(w)));
         }
     }
 

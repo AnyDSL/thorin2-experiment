@@ -33,8 +33,14 @@
     m(lsw1, s1) m(lsw8, s8) m(lsw16, s16) m(lsw32, s32) m(lsw64, s64)
 
 #define THORIN_R_TYPE(m) \
-    m(f16, r16) m(f32, r32) m(f64, r64) \
-    m(p16, r32) m(p32, r32) m(p64, r64)
+    m(uf16, r16) m(uf32, r32) m(uf64, r64) \
+    m(up16, r16) m(up32, r32) m(up64, r64) \
+    m(rf16, r16) m(rf32, r32) m(rf64, r64) \
+    m(rp16, r16) m(rp32, r32) m(rp64, r64) \
+    m(af16, r16) m(af32, r32) m(af64, r64) \
+    m(ap16, r16) m(ap32, r32) m(ap64, r64) \
+    m(lf16, r16) m(lf32, r32) m(lf64, r64) \
+    m(lp16, r16) m(lp32, r32) m(lp64, r64)
 
 #define THORIN_I_REL(f) \
     /*       E G L                         */ \
@@ -69,11 +75,17 @@
 namespace thorin {
 
 enum class ITypeFlags {
-        /* S W */
-    uo, /* o o */
-    uw, /* o x */
-    so, /* x o */
-    sw, /* x x */
+        // S W
+    uo, // o o
+    uw, // o x
+    so, // x o
+    sw, // x x
+    Num
+};
+
+enum class RTypeFlags {
+    f, // fast
+    p, // precise
     Num
 };
 
@@ -81,12 +93,6 @@ constexpr size_t iwidth2index(size_t i) { return i == 1 ? 0 : log2(i)-2; }
 constexpr size_t rwidth2index(size_t i) { return log2(i)-4; }
 constexpr size_t index2iwidth(size_t i) { return i == 0 ? 1 : 1 << (i+2); }
 constexpr size_t index2rwidth(size_t i) { return 1 << (i+4); }
-
-enum class RTypeFlags {
-    f, // fast
-    p, // precise
-    Num
-};
 
 enum class IType {
 #define CODE(x, y) THORIN_I_TYPE(x),

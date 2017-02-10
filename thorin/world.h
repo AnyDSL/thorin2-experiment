@@ -268,7 +268,7 @@ public:
 
     const Axiom* type_int() { return type_int_; }
     const App* type_int(Qualifier q, ITypeFlags flags, int64_t width) {
-        return type_ints_qfw_[size_t(q)][size_t(flags)][iwidth2index(width)];
+        return type_int_qfw_[size_t(q)][size_t(flags)][iwidth2index(width)];
     }
     const App* type_int(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
         return app(type_int_, {q, flags, width}, dbg)->as<App>();
@@ -276,11 +276,17 @@ public:
 
     const Axiom* type_real() { return type_real_; }
     const App* type_real(Qualifier q, RTypeFlags flags, int64_t width) {
-        return type_reals_qfw_[size_t(q)][size_t(flags)][rwidth2index(width)];
+        return type_real_qfw_[size_t(q)][size_t(flags)][rwidth2index(width)];
     }
     const App* type_real(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
         return app(type_real_, {q, flags, width}, dbg)->as<App>();
     }
+
+#define CODE(x, y) \
+    const App* type_ ## x() { return type_ ## x ## _; }
+    THORIN_I_TYPE(CODE)
+    THORIN_R_TYPE(CODE)
+#undef CODE
 
     const Axiom* type_mem() { return type_mem_; }
     const Axiom* type_frame() { return type_frame_; }
@@ -289,12 +295,6 @@ public:
     const Def* type_ptr(const Def* pointee, const Def* addr_space, Debug dbg = {}) {
         return app(type_ptr_, {pointee, addr_space}, dbg);
     }
-
-#define CODE(x, y) \
-    const App* type_ ## x() { return type_ ## x ## _; }
-    THORIN_I_TYPE(CODE)
-    //THORIN_R_TYPE(CODE)
-#undef CODE
     //@}
 
     //@{ values
@@ -387,8 +387,7 @@ private:
             THORIN_I_TYPE(CODE)
 #undef CODE
         };
-        const App* type_ints_qfw_[4][size_t(ITypeFlags::Num)][5];
-        const App* type_ints_[size_t(IType::Num)];
+        const App* type_int_qfw_[4][size_t(ITypeFlags::Num)][5];
     };
 
     union {
@@ -398,8 +397,7 @@ private:
             THORIN_R_TYPE(CODE)
 #undef CODE
         };
-        const App* type_reals_qfw_[4][size_t(RType::Num)][3];
-        const App* type_reals_[size_t(RType::Num)];
+        const App* type_real_qfw_[4][size_t(RTypeFlags::Num)][3];
     };
 
 #if 0
