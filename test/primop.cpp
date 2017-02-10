@@ -19,6 +19,9 @@ TEST(Primop, Types) {
 
     ASSERT_EQ(w.type_rf64(), w.app(w.type_real(), {w.relevant(),  w.val_nat(int64_t(RTypeFlags::f)), w.val_nat_64()}));
     ASSERT_EQ(w.type_up16(), w.app(w.type_real(), {w.unlimited(), w.val_nat(int64_t(RTypeFlags::p)), w.val_nat_16()}));
+
+    ASSERT_EQ(w.type_rf64(), w.type_real(Qualifier::r, RTypeFlags::f, 64));
+    ASSERT_EQ(w.type_up16(), w.type_real(Qualifier::u, RTypeFlags::p, 16));
 }
 
 TEST(Primop, Arithop) {
