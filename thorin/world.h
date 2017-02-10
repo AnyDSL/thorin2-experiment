@@ -265,39 +265,33 @@ public:
             return type_nat_;
         return app(type_nat_q_, q);
     }
-    const Def* type_int(const Def* q = nullptr) {
-        if (q == nullptr || q == unlimited())
-            return type_int_;
-        return app(type_int_q_, q);
+
+    const Axiom* type_int() { return type_int_; }
+    const App* type_int(Qualifier q, ITypeFlags flags, int64_t width) {
+        return type_ints_qfw_[size_t(q)][size_t(flags)][iwidth2index(width)];
     }
-    const Def* type_int(int64_t width, ITypeFlags flags, const Def* q = nullptr) {
-        return type_int(val_nat(width), val_nat(int64_t(flags), q));
-    }
-    const Def* type_int(const Def* width, const Def* flags, const Def* q = nullptr) {
-        if (q == nullptr || q == unlimited())
-            return app(type_int_, {width, flags});
-        return app(app(type_int_q_, q), {width, flags});
+    const App* type_int(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
+        return app(type_int_, {q, flags, width}, dbg)->as<App>();
     }
 
-    const Def* type_real(const Def* q = nullptr) {
-        if (q == nullptr || q == unlimited())
-            return type_real_;
-        return app(type_real_q_, q);
+    const Def* type_real() { return type_real_; }
+    const Def* type_real(Qualifier q, RTypeFlags flags, int64_t width) {
+        return type_reals_qfw_[size_t(q)][size_t(flags)][rwidth2index(width)];
     }
-    const Def* type_real(const Def* width, const Def* fast, const Def* q = nullptr) {
-        return app(type_real(q), {width, fast});
+    const Def* type_real(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
+        return app(type_real_, {q, flags, width}, dbg);
     }
 
     const Axiom* type_mem() { return type_mem_; }
-
+    const Axiom* type_frame() { return type_frame_; }
     const Axiom* type_ptr() { return type_ptr_; }
+    const Def* type_ptr(const Def* pointee, Debug dbg = {}) { return type_ptr(pointee, val_nat_0(), dbg); }
     const Def* type_ptr(const Def* pointee, const Def* addr_space, Debug dbg = {}) {
         return app(type_ptr_, {pointee, addr_space}, dbg);
     }
-    const Def* type_ptr(const Def* pointee, Debug dbg = {}) { return type_ptr(pointee, val_nat_0(), dbg); }
 
 #define CODE(x, y) \
-    const App* type_ ## x(Qualifier q = Qualifier::Unlimited) { return type_ ## x ## _[size_t(q)]; }
+    const App* type_ ## x() { return type_ ## x ## _; }
     THORIN_I_TYPE(CODE)
     //THORIN_R_TYPE(CODE)
 #undef CODE
@@ -362,10 +356,8 @@ private:
     const Axiom* type_bool_q_;
     const Def* type_bool_;
     std::array<const Axiom*, 2> val_bool_;
-    const Axiom* type_int_q_;
-    const Def* type_int_;
-    const Axiom* type_real_q_;
-    const Def* type_real_;
+    const Axiom* type_int_;
+    const Axiom* type_real_;
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
@@ -391,11 +383,12 @@ private:
     union {
         struct {
 #define CODE(x, y) \
-            const std::array<const App*, 4> type_ ## x ## _;
+            const App* type_ ## x ## _;
             THORIN_I_TYPE(CODE)
 #undef CODE
         };
-        std::array<const std::array<const App*,  size_t(IType::Num)>, 4> type_ints_;
+        const App* type_ints_qfw_[4][size_t(ITypeFlags::Num)][5];
+        const App* type_ints_[size_t(IType::Num)];
     };
 
     union {
@@ -405,9 +398,11 @@ private:
             THORIN_R_TYPE(CODE)
 #undef CODE
         };
+        const App* type_reals_qfw_[4][size_t(RType::Num)][3];
         const App* type_reals_[size_t(RType::Num)];
     };
 
+#if 0
     const Axiom* op_icmp_;
     union {
         struct {
@@ -429,6 +424,7 @@ private:
         };
         const App* op_rcmps_[size_t(IRel::Num)];
     };
+#endif
 };
 
 }

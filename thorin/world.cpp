@@ -413,43 +413,51 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
 
 World::World() {
     auto u = unlimited();
-    auto q = qualifier_kind();
-    type_bool_q_ = axiom(pi(q, star(var(q, 0))), {"bool"});
+    auto Q = qualifier_kind();
+    type_bool_q_ = axiom(pi(Q, star(var(Q, 0))), {"bool"});
     type_bool_ = app(type_bool_q_, u, {"bool"});
 
-    type_nat_q_ = axiom(pi(q, star(var(q, 0))), {"nat"});
+    type_nat_q_ = axiom(pi(Q, star(var(Q, 0))), {"nat"});
     type_nat_ = app(type_nat_q_, u, {"nat"});
+    auto N = type_nat();
+    auto B = type_bool();
 
-    type_int_q_ = axiom(pi(q, pi({type_nat(), type_nat()}, star(var(q, 2)))), {"int"});
-    type_int_ = app(type_int_q_, u, {"int"});
+    type_int_  = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
+    type_real_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});
 
-    val_bool_[0] = assume(type_bool(), {false}, {"⊥"});
-    val_bool_[1] = assume(type_bool(), {true }, {"⊤"});
+    val_bool_[0] = assume(B, {false}, {"⊥"});
+    val_bool_[1] = assume(B, {true }, {"⊤"});
     val_nat_0_   = val_nat(0);
     for (size_t j = 0; j != val_nat_.size(); ++j)
         val_nat_[j] = val_nat(1 << int64_t(j));
 
-    type_real_q_  = axiom(pi(q, pi({type_nat(), type_bool()}, star(var(q, 2)))), {"real"});
-    type_real_  = axiom(pi({type_nat(), type_bool()}, star()), {"real"});
     type_mem_   = axiom(star(Qualifier::Linear), {"M"});
     type_frame_ = axiom(star(Qualifier::Linear), {"F"});
-    type_ptr_   = axiom(pi({star(), type_nat()}, star()), {"ptr"});
+    type_ptr_   = axiom(pi({star(), N}, star()), {"ptr"});
 
-    auto vn0 = var(type_nat(), 0);
-    auto vn1 = var(type_nat(), 1);
-    auto vn2 = var(type_nat(), 2);
-    auto vn3 = var(type_nat(), 3);
+    /*auto vq0 = var(Q, 0)*/; auto vn0 = var(N, 0);
+    /*auto vq1 = var(Q, 1)*/; auto vn1 = var(N, 1);
+    auto vq2 = var(Q, 2);     auto vn2 = var(N, 2);
+    auto vq3 = var(Q, 3);     auto vn3 = var(N, 3);
+    auto vq4 = var(Q, 4);
 
-    type_iarithop_ = pi({type_nat(), type_nat ()}, pi({type_int (vn1, vn0), type_int (vn2, vn1)}, type_int (vn3, vn2)));
-    type_rarithop_ = pi({type_nat(), type_bool()}, pi({type_real(vn1, vn0), type_real(vn2, vn1)}, type_real(vn3, vn2)));
+    type_iarithop_ = pi({Q, N, N}, pi({type_int (vq2, vn1, vn0), type_int (vq3, vn2, vn1)}, type_int (vq4, vn3, vn2)));
+    type_rarithop_ = pi({Q, N, N}, pi({type_real(vq2, vn1, vn0), type_real(vq3, vn2, vn1)}, type_real(vq4, vn3, vn2)));
+
+    for (size_t q = 0; q != 4; ++q) {
+        for (size_t f = 0; f != size_t(ITypeFlags::Num); ++f) {
+            for (size_t w = 0; w != 5; ++w)
+                type_ints_qfw_[q][f][w] = type_int(qualifier(Qualifier(q)), val_nat(f), val_nat(index2iwidth(w)));
+        }
+    }
 
     op_insert_ = axiom(pi(star(),
             pi({var(star(), 0), dim(var(star(), 1)), extract(var(star(), 2), var(dim(var(star(), 2)), 0))},
             var(star(), 3))), {"insert"});
 
-    op_lea_ = axiom(pi({star(), type_nat()},
-                pi({type_ptr(var(star(), 1), var(type_nat(), 0)), dim(var(star(), 2))},
-                type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(type_nat(), 2)))), {"lea"});
+    op_lea_ = axiom(pi({star(), N},
+                pi({type_ptr(var(star(), 1), var(N, 0)), dim(var(star(), 2))},
+                type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(N, 2)))), {"lea"});
 }
 
 const Def* World::op_insert(const Def* def, const Def* index, const Def* val, Debug dbg) {
