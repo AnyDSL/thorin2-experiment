@@ -319,7 +319,7 @@ public:
         return assume(type_ ## x(), {val}, {std::to_string(val)}); \
     }
     THORIN_I_TYPE(CODE)
-    //THORIN_R_TYPE(CODE)
+    THORIN_R_TYPE(CODE)
 #undef CODE
     //@}
 
@@ -328,7 +328,7 @@ public:
     const Axiom* op_ ## x() { return op_ ## x ## _; } \
     const App* op_ ## x(const Def*, const Def*) { return nullptr; }
     THORIN_I_ARITHOP(CODE)
-    //THORIN_R_ARITHOP(CODE)
+    THORIN_R_ARITHOP(CODE)
 #undef CODE
     //@}
 

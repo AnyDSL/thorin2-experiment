@@ -26,6 +26,7 @@ TEST(Primop, Types) {
 
 TEST(Primop, Arithop) {
     World w;
+
     //auto s32w = w.type_int(32, ITypeFlags::sw);
     //auto a = w.axiom(s32w, {"a"});
     //auto b = w.axiom(s32w, {"b"});
