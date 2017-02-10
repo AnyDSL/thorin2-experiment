@@ -142,10 +142,6 @@ void Def::set(size_t i, const Def* def) {
         compute_free_vars();
         closed_ = true;
     }
-    // TODO qualifier inference for types and thus possibly modification of kind?
-    // TODO this needs to be overwritten by Variant/Intersection, they may need to rewrite/fold? quadratic!
-    // TODO rather to something like mu? or do nominal variants/intersections just make no sense?
-    // other on-the-fly normalisation we need to do?
 }
 
 void Def::unset(size_t i) {
