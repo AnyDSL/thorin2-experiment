@@ -267,16 +267,20 @@ public:
     }
 
     const Axiom* type_int() { return type_int_; }
-    const App* type_int(Qualifier q, ITypeFlags flags, int64_t width) {
-        return type_int_qfw_[size_t(q)][size_t(flags)][iwidth2index(width)];
+    const App* type_int(Qualifier q, IFlags flags, int64_t width) {
+        auto f = val_nat(int64_t(flags));
+        auto w = val_nat(width);
+        return type_int(qualifier(q), f, w);
     }
     const App* type_int(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
         return app(type_int_, {q, flags, width}, dbg)->as<App>();
     }
 
     const Axiom* type_real() { return type_real_; }
-    const App* type_real(Qualifier q, RTypeFlags flags, int64_t width) {
-        return type_real_qfw_[size_t(q)][size_t(flags)][rwidth2index(width)];
+    const App* type_real(Qualifier q, RFlags flags, int64_t width) {
+        auto f = val_nat(int64_t(flags));
+        auto w = val_nat(width);
+        return type_real(qualifier(q), f, w);
     }
     const App* type_real(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
         return app(type_real_, {q, flags, width}, dbg)->as<App>();
@@ -325,11 +329,18 @@ public:
 
     //@{ arithmetic operations
 
-#define CODE(r, data, x) \
-    const Axiom* BOOST_PP_CAT(op_, x)() { return BOOST_PP_CAT(BOOST_PP_CAT(op_, x), _); }
-    BOOST_PP_SEQ_FOR_EACH(CODE, _, THORIN_I_ARITHOP)
-    BOOST_PP_SEQ_FOR_EACH(CODE, _, THORIN_R_ARITHOP)
+#define CODE(r, IR, x) \
+    const Axiom* BOOST_PP_CAT(op_, x)() { return BOOST_PP_CAT(BOOST_PP_CAT(op_, x), _); } \
+    const App* BOOST_PP_CAT(op_, x)(const Def* q, const Def* f, const Def* w) { return app(BOOST_PP_CAT(op_, x)(), {q, f, w})->as<App>(); } \
+    const App* BOOST_PP_CAT(op_, x)(Qualifier q, BOOST_PP_CAT(IR, Flags) flags, int64_t width) { \
+        auto f = val_nat(int64_t(flags)); \
+        auto w = val_nat(width); \
+        return BOOST_PP_CAT(op_, x)(qualifier(q), f, w)->as<App>(); \
+    }
+    BOOST_PP_SEQ_FOR_EACH(CODE, I, THORIN_I_ARITHOP)
+    BOOST_PP_SEQ_FOR_EACH(CODE, R, THORIN_R_ARITHOP)
 #undef CODE
+
     //@}
 
     //@{ relational operations
@@ -368,55 +379,26 @@ private:
     const Axiom* op_lea_;
     const Axiom* op_insert_;
 
+#define CODE(r, x) \
+    const App* BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(x)), _);
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+#undef CODE
+
+#define CODE(r, x) \
+    const App* BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(x)), _);
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+#undef CODE
+
 #define CODE(r, data, x) \
     const Axiom* BOOST_PP_CAT(BOOST_PP_CAT(op_, x), _);
     BOOST_PP_SEQ_FOR_EACH(CODE, _, THORIN_I_ARITHOP)
     BOOST_PP_SEQ_FOR_EACH(CODE, _, THORIN_R_ARITHOP)
 #undef CODE
 
-    union {
-        struct {
 #define CODE(r, x) \
-            const App* BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(x)), _);
-            BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+    const App* BOOST_PP_CAT(BOOST_PP_CAT(op_, BOOST_PP_SEQ_CAT(x)), _);
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_I_ARITHOP)(THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
-        };
-        const App* type_int_qfw_[4][size_t(ITypeFlags::Num)][BOOST_PP_SEQ_SIZE(THORIN_I_WIDTH)];
-    };
-
-    union {
-        struct {
-#define CODE(r, x) \
-            const App* BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(x)), _);
-            BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
-#undef CODE
-        };
-        const App* type_real_qfw_[4][size_t(RTypeFlags::Num)][BOOST_PP_SEQ_SIZE(THORIN_R_WIDTH)];
-    };
-
-#if 0
-    const Axiom* op_icmp_;
-    union {
-        struct {
-#define CODE(x) \
-            const App* op_ ## icmp_ ## x ## _;
-            THORIN_I_REL(CODE)
-#undef CODE
-        };
-        const App* op_icmps_[size_t(IRel::Num)];
-    };
-
-    const Axiom* op_rcmp_;
-    union {
-        struct {
-#define CODE(x) \
-            const App* op_ ## rcmp_ ## x ## _;
-            THORIN_I_REL(CODE)
-#undef CODE
-        };
-        const App* op_rcmps_[size_t(IRel::Num)];
-    };
-#endif
 };
 
 }

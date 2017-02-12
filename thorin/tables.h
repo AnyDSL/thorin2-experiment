@@ -55,7 +55,7 @@
 
 namespace thorin {
 
-enum class ITypeFlags {
+enum class IFlags {
         // S W
     uo, // o o
     uw, // o x
@@ -64,16 +64,11 @@ enum class ITypeFlags {
     Num
 };
 
-enum class RTypeFlags {
+enum class RFlags {
     f, // fast
     p, // precise
     Num
 };
-
-constexpr size_t iwidth2index(size_t i) { return i == 1 ? 0 : log2(i)-2; }
-constexpr size_t rwidth2index(size_t i) { return log2(i)-4; }
-constexpr size_t index2iwidth(size_t i) { return i == 0 ? 1 : 1 << (i+2); }
-constexpr size_t index2rwidth(size_t i) { return 1 << (i+4); }
 
 enum class IType {
 #define CODE(r, x) BOOST_PP_SEQ_CAT(x),
