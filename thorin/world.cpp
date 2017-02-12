@@ -445,16 +445,14 @@ World::World() {
     type_rarithop_ = pi({Q, N, N}, pi({type_real(vq2, vn1, vn0), type_real(vq3, vn2, vn1)}, type_real(vq4, vn3, vn2)));
 
     for (size_t q = 0; q != 4; ++q) {
+        auto qq = qualifier(Qualifier(q));
         for (size_t f = 0; f != size_t(ITypeFlags::Num); ++f) {
-            for (size_t w = 0; w != 5; ++w)
-                type_int_qfw_[q][f][w] = type_int(qualifier(Qualifier(q)), val_nat(f), val_nat(index2iwidth(w)));
+            for (size_t w = 0; w != BOOST_PP_SEQ_SIZE(THORIN_I_WIDTH); ++w)
+                type_int_qfw_[q][f][w] = type_int(qq, val_nat(f), val_nat(index2iwidth(w)));
         }
-    }
-
-    for (size_t q = 0; q != 4; ++q) {
         for (size_t f = 0; f != size_t(RTypeFlags::Num); ++f) {
-            for (size_t w = 0; w != 3; ++w)
-                type_real_qfw_[q][f][w] = type_real(qualifier(Qualifier(q)), val_nat(f), val_nat(index2rwidth(w)));
+            for (size_t w = 0; w != BOOST_PP_SEQ_SIZE(THORIN_R_WIDTH); ++w)
+                type_real_qfw_[q][f][w] = type_real(qq, val_nat(f), val_nat(index2rwidth(w)));
         }
     }
 
