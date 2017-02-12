@@ -128,12 +128,12 @@ protected:
         : debug_(dbg)
         , world_(&world)
         , type_(type)
-        , gid_(gid_counter_++)
-        , ops_capacity_(num_ops)
-        , closed_(num_ops == 0)
-        , tag_(unsigned(tag))
-        , nominal_(true)
         , num_ops_(num_ops)
+        , ops_capacity_(num_ops)
+        , gid_(gid_counter_++)
+        , tag_(unsigned(tag))
+        , closed_(num_ops == 0)
+        , nominal_(true)
         , ops_(&vla_ops_[0])
     {
         std::fill_n(ops_, num_ops, nullptr);
@@ -146,12 +146,12 @@ protected:
         : debug_(dbg)
         , world_(&world)
         , type_(type)
-        , gid_(gid_counter_++)
-        , ops_capacity_(ops.size())
-        , closed_(true)
-        , tag_(unsigned(tag))
-        , nominal_(false)
         , num_ops_(ops.size())
+        , ops_capacity_(ops.size())
+        , gid_(gid_counter_++)
+        , tag_(unsigned(tag))
+        , closed_(true)
+        , nominal_(false)
         , ops_(&vla_ops_[0])
     {
         std::copy(ops.begin(), ops.end(), ops_);
@@ -208,7 +208,7 @@ public:
 
     //@{ misc getters
     const BitSet& free_vars() const { return free_vars_; }
-    uint32_t fields() const { return nominal_ << 23u | tag_ << 16u | num_ops_; }
+    uint64_t fields() const { return num_ops_ << 32_u64 | uint64_t(fields_) >> 23_u64; }
     size_t gid() const { return gid_; }
     static size_t gid_counter() { return gid_counter_; }
     /// A nominal Def is always different from each other Def.
@@ -293,13 +293,18 @@ private:
     mutable WorldBase* world_;
     const Def* type_;
     mutable uint64_t hash_ = 0;
-    unsigned gid_           : 23;
-    unsigned ops_capacity_  : 16;
-    unsigned closed_        :  1;
-    unsigned tag_           :  7;
-    unsigned nominal_       :  1;
-    unsigned num_ops_       : 16;
-    // this sum must be 64   ^^^
+    uint32_t num_ops_;
+    uint32_t ops_capacity_;
+    union {
+        struct {
+            unsigned gid_           : 23;
+            unsigned tag_           :  7;
+            unsigned closed_        :  1;
+            unsigned nominal_       :  1;
+            // this sum must be 32   ^^^
+        };
+        uint32_t fields_;
+    };
 
     static_assert(int(Tag::Num) <= 128, "you must increase the number of bits in tag_");
 
