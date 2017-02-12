@@ -468,19 +468,20 @@ World::World() {
 #undef CODE
 
     // arithop table
+    for (size_t q = 0; q != 4; ++q) {
+        auto qq = qualifier(Qualifier(q));
 #define CODE(r, ir, x) \
-    for (size_t q = 0; q != 4; ++q) { \
         for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) { \
-            for (size_t w = 0; w != size_t(iwidth::Num); ++w) { \
+            for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) { \
                 auto flags = val_nat(f); \
                 auto width = val_nat(T_CAT(index2, ir, width)(w)); \
-                T_CAT(op_, x, s_)[q][f][w] = T_CAT(op_, x)(qualifier(Qualifier(q)), flags, width)->as<App>(); \
+                T_CAT(op_, x, s_)[q][f][w] = T_CAT(op_, x)(qq, flags, width)->as<App>(); \
             } \
-        } \
-    }
+        }
     T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
     T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
 #undef CODE
+    }
 
     op_insert_ = axiom(pi(star(),
             pi({var(star(), 0), dim(var(star(), 1)), extract(var(star(), 2), var(dim(var(star(), 2)), 0))},
@@ -492,13 +493,13 @@ World::World() {
 
 }
 
-#define CODE(r, ir, x)                                                         \
-const App* World::T_CAT(op_, x)(const Def* a, const Def* b) {                  \
-    T_CAT(ir, Type) t(a->type());                                              \
-    auto callee = t.is_const()                                                 \
-        ? T_CAT(op_, x)(t.const_qualifier(), t.const_flags(), t.const_width()) \
-        : T_CAT(op_, x)(t.qualifier(), t.flags(), t.width());                  \
-    return app(callee, {a, b})->as<App>();                                     \
+#define CODE(r, ir, x)                                                          \
+const App* World::T_CAT(op_, x)(const Def* a, const Def* b) {                   \
+    T_CAT(ir, Type) t(a->type());                                               \
+    auto callee = t.is_const()                                                  \
+        ? T_CAT(op_, x)(t.const_qualifier(), t.const_flags(), t.const_width())  \
+        : T_CAT(op_, x)(t.      qualifier(), t.      flags(), t.      width()); \
+    return app(callee, {a, b})->as<App>();                                      \
 }
 T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
 T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
