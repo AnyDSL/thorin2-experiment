@@ -457,12 +457,15 @@ World::World() {
     T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
-    auto i_type_arithop = pi({Q, N, N}, pi({type_i(vq2, vn1, vn0), type_i(vq3, vn2, vn1)}, type_i(vq4, vn3, vn2)));
-    auto r_type_arithop = pi({Q, N, N}, pi({type_r(vq2, vn1, vn0), type_r(vq3, vn2, vn1)}, type_r(vq4, vn3, vn2)));
+    auto i1 = type_i(vq2, vn1, vn0); auto r1 = type_r(vq2, vn1, vn0);
+    auto i2 = type_i(vq3, vn2, vn1); auto r2 = type_r(vq3, vn2, vn1);
+    auto i3 = type_i(vq4, vn3, vn2); auto r3 = type_r(vq4, vn3, vn2);
+    auto i_type_arithop = pi({Q, N, N}, pi({i1, i2}, i3));
+    auto r_type_arithop = pi({Q, N, N}, pi({r1, r2}, r3));
 
     // arithop axioms
-#define CODE(r, data, x) \
-    T_CAT(op_, x, _) = axiom(T_CAT(data, _type_arithop), {T_STR(x)});
+#define CODE(r, ir, x) \
+    T_CAT(op_, x, _) = axiom(T_CAT(ir, _type_arithop), {T_STR(x)});
     T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
     T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
 #undef CODE
@@ -470,16 +473,48 @@ World::World() {
     // arithop table
     for (size_t q = 0; q != 4; ++q) {
         auto qq = qualifier(Qualifier(q));
-#define CODE(r, ir, x) \
-        for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) { \
-            for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) { \
-                auto flags = val_nat(f); \
-                auto width = val_nat(T_CAT(index2, ir, width)(w)); \
+#define CODE(r, ir, x)                                                                   \
+        for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                    \
+            for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                \
+                auto flags = val_nat(f);                                                 \
+                auto width = val_nat(T_CAT(index2, ir, width)(w));                       \
                 T_CAT(op_, x, s_)[q][f][w] = T_CAT(op_, x)(qq, flags, width)->as<App>(); \
-            } \
+            }                                                                            \
         }
-    T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
-    T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
+        T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
+        T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
+#undef CODE
+    }
+
+    auto b = type_i(vq4, val_nat(int64_t(iflags::uo)), val_nat_1());
+    auto i_type_cmp = pi(N, pi({Q, N, N}, pi({i1, i2}, b)));
+    auto r_type_cmp = pi(N, pi({Q, N, N}, pi({r1, r2}, b)));
+    op_icmp_ = axiom(i_type_cmp, {"icmp"});
+    op_rcmp_ = axiom(r_type_cmp, {"rcmp"});
+
+    // all cmp relations
+#define CODE(r, ir, x) \
+    T_CAT(op_, ir, cmp_, x, _) = app(T_CAT(op_, ir, cmp_), val_nat(int64_t(T_CAT(ir, rel)::x)), {T_STR(T_CAT(ir, cmp_, x))})->as<App>();
+    T_FOR_EACH(CODE, i, THORIN_I_REL)
+    T_FOR_EACH(CODE, r, THORIN_R_REL)
+#undef CODE
+
+    // cmp table
+    for (size_t q = 0; q != 4; ++q) {
+        auto qq = qualifier(Qualifier(q));
+#define CODE(ir)                                                                                               \
+        for (size_t r = 0; r != size_t(T_CAT(ir, rel)::Num); ++r) {                                            \
+            for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                                      \
+                for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                                  \
+                    auto rel = val_nat(r);                                                                     \
+                    auto flags = val_nat(f);                                                                   \
+                    auto width = val_nat(T_CAT(index2, ir, width)(w));                                         \
+                    T_CAT(op_, ir, cmps_)[r][q][f][w] = T_CAT(op_, ir, cmp)(rel, qq, flags, width)->as<App>(); \
+                }                                                                                              \
+            }                                                                                                  \
+        }
+        CODE(i)
+        CODE(r)
 #undef CODE
     }
 
