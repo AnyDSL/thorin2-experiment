@@ -1,5 +1,7 @@
 #include <functional>
 
+#include <boost/preprocessor/stringize.hpp>
+
 #include "thorin/world.h"
 
 #include "thorin/reduce.h"
@@ -460,7 +462,7 @@ World::World() {
 
     // arithop axioms
 #define CODE(r, data, x) \
-    BOOST_PP_CAT(BOOST_PP_CAT(op_, x), _) = axiom(BOOST_PP_CAT(data, _type_arithop), {#x});
+    BOOST_PP_CAT(BOOST_PP_CAT(op_, x), _) = axiom(BOOST_PP_CAT(data, _type_arithop), {BOOST_PP_STRINGIZE(x)});
     BOOST_PP_SEQ_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
     BOOST_PP_SEQ_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
 #undef CODE

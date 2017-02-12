@@ -35,6 +35,10 @@ TEST(Primop, Vals) {
 TEST(Primop, Arithop) {
     World w;
 
+    auto a = w.op_iadd_uuo32(w.val_uuo32(23), w.val_uuo32(42));
+    a->dump();
+    a->type()->dump();
+
     //auto s32w = w.type_int(32, IFlags::sw);
     //auto a = w.axiom(s32w, {"a"});
     //auto b = w.axiom(s32w, {"b"});

@@ -341,6 +341,14 @@ public:
     BOOST_PP_SEQ_FOR_EACH(CODE, R, THORIN_R_ARITHOP)
 #undef CODE
 
+#define CODE(r, x) \
+    const App* BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_, BOOST_PP_SEQ_HEAD(x)), _), BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(x)))(const Def* a, const Def* b) { \
+        return app(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_, BOOST_PP_SEQ_HEAD(x)), _), BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(x))), _), {a, b})->as<App>(); \
+    }
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_I_ARITHOP)(THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_R_ARITHOP)(THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+#undef CODE
+
     //@}
 
     //@{ relational operations
