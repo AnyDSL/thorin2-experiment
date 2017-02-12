@@ -424,8 +424,8 @@ World::World() {
     auto N = type_nat();
     auto B = type_bool();
 
-    type_int_  = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
-    type_real_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});
+    type_i_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
+    type_r_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});
 
     val_bool_[0] = assume(B, {false}, {"⊥"});
     val_bool_[1] = assume(B, {true }, {"⊤"});
@@ -443,42 +443,41 @@ World::World() {
     auto vq3 = var(Q, 3);     auto vn3 = var(N, 3);
     auto vq4 = var(Q, 4);
 
-    // type_int
+    // type_i
 #define CODE(r, x) \
-    BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(x)), _) = \
-        type_int(Qualifier::BOOST_PP_SEQ_ELEM(0, x), IFlags::BOOST_PP_SEQ_ELEM(1, x), BOOST_PP_SEQ_ELEM(2, x));
-    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+    T_CAT(type_, T_CAT(x), _) = \
+        type_i(Qualifier::T_ELEM(0, x), iflags::T_ELEM(1, x), T_ELEM(2, x));
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
 #undef CODE
 
-    // type_int
+    // type_i
 #define CODE(r, x) \
-    BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(x)), _) = \
-        type_real(Qualifier::BOOST_PP_SEQ_ELEM(0, x), RFlags::BOOST_PP_SEQ_ELEM(1, x), BOOST_PP_SEQ_ELEM(2, x));
-    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+    T_CAT(type_, T_CAT(x), _) = \
+        type_r(Qualifier::T_ELEM(0, x), rflags::T_ELEM(1, x), T_ELEM(2, x));
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
-    auto i_type_arithop = pi({Q, N, N}, pi({type_int (vq2, vn1, vn0), type_int (vq3, vn2, vn1)}, type_int (vq4, vn3, vn2)));
-    auto r_type_arithop = pi({Q, N, N}, pi({type_real(vq2, vn1, vn0), type_real(vq3, vn2, vn1)}, type_real(vq4, vn3, vn2)));
+    auto i_type_arithop = pi({Q, N, N}, pi({type_i(vq2, vn1, vn0), type_i(vq3, vn2, vn1)}, type_i(vq4, vn3, vn2)));
+    auto r_type_arithop = pi({Q, N, N}, pi({type_r(vq2, vn1, vn0), type_r(vq3, vn2, vn1)}, type_r(vq4, vn3, vn2)));
 
     // arithop axioms
 #define CODE(r, data, x) \
-    BOOST_PP_CAT(BOOST_PP_CAT(op_, x), _) = axiom(BOOST_PP_CAT(data, _type_arithop), {BOOST_PP_STRINGIZE(x)});
-    BOOST_PP_SEQ_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
-    BOOST_PP_SEQ_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
+    T_CAT(op_, x, _) = axiom(T_CAT(data, _type_arithop), {T_STR(x)});
+    T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
+    T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
 #undef CODE
 
-    // i arithops
-#define CODE(r, x) \
-    BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_, BOOST_PP_SEQ_HEAD(x)), _), BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(x))), _) = \
-        BOOST_PP_CAT(op_, BOOST_PP_SEQ_ELEM(0, x))(Qualifier::BOOST_PP_SEQ_ELEM(1, x), IFlags::BOOST_PP_SEQ_ELEM(2, x), BOOST_PP_SEQ_ELEM(3, x));
-    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_I_ARITHOP)(THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
-#undef CODE
-
-    // r arithops
-#define CODE(r, x) \
-    BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_, BOOST_PP_SEQ_HEAD(x)), _), BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(x))), _) = \
-        BOOST_PP_CAT(op_, BOOST_PP_SEQ_ELEM(0, x))(Qualifier::BOOST_PP_SEQ_ELEM(1, x), RFlags::BOOST_PP_SEQ_ELEM(2, x), BOOST_PP_SEQ_ELEM(3, x));
-    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_R_ARITHOP)(THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+    // arithop table
+#define CODE(r, ir, x) \
+    for (size_t q = 0; q != 4; ++q) { \
+        for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) { \
+            for (size_t w = 0; w != size_t(iwidth::Num); ++w) { \
+                T_CAT(op_, x, s_)[q][f][w] = T_CAT(op_, x)(Qualifier(q), T_CAT(ir, flags)(f), T_CAT(index2, ir, width)(w))->as<App>(); \
+            } \
+        } \
+    }
+    T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
+    T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
 #undef CODE
 
     op_insert_ = axiom(pi(star(),
@@ -488,7 +487,22 @@ World::World() {
     op_lea_ = axiom(pi({star(), N},
                 pi({type_ptr(var(star(), 1), var(N, 0)), dim(var(star(), 2))},
                 type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(N, 2)))), {"lea"});
+
 }
+
+#define CODE(r, ir, x) \
+const App* World::T_CAT(op_, x)(const Def* a, const Def* b) { \
+    const App* callee; \
+    T_CAT(ir, Type) t(a->type()); \
+    if (t.is_const()) \
+        callee = T_CAT(op_, x, s_)[size_t(t.const_qualifier())][size_t(t.const_flags())][t.const_width()]; \
+    else \
+        callee = app(T_CAT(op_, x)(), {t.qualifier(), t.flags(), t.width()})->as<App>(); \
+    return app(callee, {a, b})->as<App>(); \
+}
+T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
+T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
+#undef CODE
 
 const Def* World::op_insert(const Def* def, const Def* index, const Def* val, Debug dbg) {
     return app(app(op_insert_, def->type(), dbg), {def, index, val}, dbg);

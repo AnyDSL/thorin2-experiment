@@ -7,21 +7,21 @@ using namespace thorin;
 TEST(Primop, Types) {
     World w;
 
-    ASSERT_EQ(w.type_auo16(), w.app(w.type_int(), {w.affine(),   w.val_nat(int64_t(IFlags::uo)), w.val_nat_16()}));
-    ASSERT_EQ(w.type_auo16(), w.app(w.type_int(), {w.affine(),   w.val_nat(int64_t(IFlags::uo)), w.val_nat_16()}));
-    ASSERT_EQ(w.type_ruw64(), w.app(w.type_int(), {w.relevant(), w.val_nat(int64_t(IFlags::uw)), w.val_nat_64()}));
-    ASSERT_EQ(w.type_ruw64(), w.app(w.type_int(), {w.relevant(), w.val_nat(int64_t(IFlags::uw)), w.val_nat_64()}));
+    ASSERT_EQ(w.type_auo16(), w.app(w.type_i(), {w.affine(),   w.val_nat(int64_t(iflags::uo)), w.val_nat_16()}));
+    ASSERT_EQ(w.type_auo16(), w.app(w.type_i(), {w.affine(),   w.val_nat(int64_t(iflags::uo)), w.val_nat_16()}));
+    ASSERT_EQ(w.type_ruw64(), w.app(w.type_i(), {w.relevant(), w.val_nat(int64_t(iflags::uw)), w.val_nat_64()}));
+    ASSERT_EQ(w.type_ruw64(), w.app(w.type_i(), {w.relevant(), w.val_nat(int64_t(iflags::uw)), w.val_nat_64()}));
 
-    ASSERT_EQ(w.type_auo16(), w.type_int(Qualifier::a, IFlags::uo, 16));
-    ASSERT_EQ(w.type_auo16(), w.type_int(Qualifier::a, IFlags::uo, 16));
-    ASSERT_EQ(w.type_ruw64(), w.type_int(Qualifier::r, IFlags::uw, 64));
-    ASSERT_EQ(w.type_ruw64(), w.type_int(Qualifier::r, IFlags::uw, 64));
+    ASSERT_EQ(w.type_auo16(), w.type_i(Qualifier::a, iflags::uo, 16));
+    ASSERT_EQ(w.type_auo16(), w.type_i(Qualifier::a, iflags::uo, 16));
+    ASSERT_EQ(w.type_ruw64(), w.type_i(Qualifier::r, iflags::uw, 64));
+    ASSERT_EQ(w.type_ruw64(), w.type_i(Qualifier::r, iflags::uw, 64));
 
-    ASSERT_EQ(w.type_rf64(), w.app(w.type_real(), {w.relevant(),  w.val_nat(int64_t(RFlags::f)), w.val_nat_64()}));
-    ASSERT_EQ(w.type_up16(), w.app(w.type_real(), {w.unlimited(), w.val_nat(int64_t(RFlags::p)), w.val_nat_16()}));
+    ASSERT_EQ(w.type_rf64(), w.app(w.type_r(), {w.relevant(),  w.val_nat(int64_t(rflags::f)), w.val_nat_64()}));
+    ASSERT_EQ(w.type_up16(), w.app(w.type_r(), {w.unlimited(), w.val_nat(int64_t(rflags::p)), w.val_nat_16()}));
 
-    ASSERT_EQ(w.type_rf64(), w.type_real(Qualifier::r, RFlags::f, 64));
-    ASSERT_EQ(w.type_up16(), w.type_real(Qualifier::u, RFlags::p, 16));
+    ASSERT_EQ(w.type_rf64(), w.type_r(Qualifier::r, rflags::f, 64));
+    ASSERT_EQ(w.type_up16(), w.type_r(Qualifier::u, rflags::p, 16));
 }
 
 TEST(Primop, Vals) {
@@ -35,11 +35,11 @@ TEST(Primop, Vals) {
 TEST(Primop, Arithop) {
     World w;
 
-    auto a = w.op_iadd_uuo32(w.val_uuo32(23), w.val_uuo32(42));
+    auto a = w.op_iadd(w.val_uuo32(23), w.val_uuo32(42));
     a->dump();
     a->type()->dump();
 
-    //auto s32w = w.type_int(32, IFlags::sw);
+    //auto s32w = w.type_i(32, iflags::sw);
     //auto a = w.axiom(s32w, {"a"});
     //auto b = w.axiom(s32w, {"b"});
     //a->dump();
@@ -70,7 +70,7 @@ TEST(Primop, Cmp) {
 
 TEST(Primop, Ptr) {
     World w;
-    //auto s32w = w.type_int(32, IFlags::sw);
+    //auto s32w = w.type_i(32, iflags::sw);
     //auto a = w.axiom(s32w, {"a"});
     //auto b = w.axiom(s32w, {"b"});
     //a->dump();

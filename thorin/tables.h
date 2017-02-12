@@ -1,7 +1,26 @@
 #ifndef THORIN_TABLES_H
 #define THORIN_TABLES_H
 
+#include <boost/preprocessor/facilities/overload.hpp>
 #include <boost/preprocessor/seq.hpp>
+#include <boost/preprocessor/stringize.hpp>
+
+#define T_CAT_1(a)              BOOST_PP_SEQ_CAT(a)
+#define T_CAT_2(a, b)           BOOST_PP_CAT(a, b)
+#define T_CAT_3(a, b, c)        T_CAT_2(T_CAT_2(a, b), c)
+#define T_CAT_4(a, b, c, d)     T_CAT_2(T_CAT_3(a, b, c), d)
+#define T_CAT_5(a, b, c, d, e)  T_CAT_2(T_CAT_4(a, b, c, d), e)
+
+#define T_CAT(...) BOOST_PP_OVERLOAD(T_CAT_,__VA_ARGS__)(__VA_ARGS__)
+
+#define T_STR(x)                        BOOST_PP_STRINGIZE(x)
+
+#define T_ELEM(i, seq)                  BOOST_PP_SEQ_ELEM(i, seq)
+#define T_ENUM(seq)                     BOOST_PP_SEQ_ENUM(seq)
+#define T_FOR_EACH(macro, data, seq)    BOOST_PP_SEQ_FOR_EACH(macro, data, seq)
+#define T_FOR_EACH_PRODUCT(macro, seq)  BOOST_PP_SEQ_FOR_EACH_PRODUCT(macro, seq)
+#define T_HEAD(seq)                     BOOST_PP_SEQ_HEAD(seq)
+#define T_TAIL(seq)                     BOOST_PP_SEQ_TAIL(seq)
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -58,49 +77,66 @@
 
 namespace thorin {
 
-enum class IFlags {
-    BOOST_PP_SEQ_ENUM(THORIN_I_FLAGS),
+enum class iflags {
+    T_ENUM(THORIN_I_FLAGS),
     Num
 };
 
-enum class RFlags {
-    BOOST_PP_SEQ_ENUM(THORIN_R_FLAGS),
+enum class rflags {
+    T_ENUM(THORIN_R_FLAGS),
     Num
 };
 
-enum class IArithop {
-    BOOST_PP_SEQ_ENUM(THORIN_I_ARITHOP),
+#define CODE(r, ir, x) T_CAT(w, x),
+enum class iwidth {
+    T_FOR_EACH(CODE, _, THORIN_I_WIDTH)
     Num
 };
 
-enum class RArithop {
-    BOOST_PP_SEQ_ENUM(THORIN_R_ARITHOP),
+enum class rwidth {
+    T_FOR_EACH(CODE, _, THORIN_R_WIDTH)
+    Num
+};
+#undef CODE
+
+constexpr size_t iwidth2index(size_t i) { return i == 1 ? 0 : log2(i)-2; }
+constexpr size_t rwidth2index(size_t i) { return log2(i)-4; }
+constexpr size_t index2iwidth(size_t i) { return i == 0 ? 1 : 1 << (i+2); }
+constexpr size_t index2rwidth(size_t i) { return 1 << (i+4); }
+
+enum class iarithop {
+    T_ENUM(THORIN_I_ARITHOP),
     Num
 };
 
-enum class IRel {
-    BOOST_PP_SEQ_ENUM(THORIN_I_REL),
+enum class rarithop {
+    T_ENUM(THORIN_R_ARITHOP),
     Num
 };
 
-enum class RRel {
-    BOOST_PP_SEQ_ENUM(THORIN_R_REL),
+enum class irel {
+    T_ENUM(THORIN_I_REL),
+    Num
+};
+
+enum class rrel {
+    T_ENUM(THORIN_R_REL),
     Num
 };
 
 typedef bool u1; typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t u64;
 typedef bool s1; typedef  int8_t s8; typedef  int16_t s16; typedef  int32_t s32; typedef  int64_t s64;
-/*                        */ typedef half_float::half r16; typedef float    r32; typedef double   r64;
+/*                        */ typedef half_float::half r16; typedef    float r32; typedef   double r64;
 typedef Qualifier qualifier;
 
 #define CODE(r, x) \
-    typedef BOOST_PP_CAT(BOOST_PP_SEQ_ELEM(0, x), BOOST_PP_SEQ_ELEM(2, x)) BOOST_PP_SEQ_CAT(x);
-    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, ((u)(s))((o)(w))(THORIN_I_WIDTH))
+    typedef T_CAT(T_ELEM(0, x), T_ELEM(2, x)) T_CAT(x);
+    T_FOR_EACH_PRODUCT(CODE, ((u)(s))((o)(w))(THORIN_I_WIDTH))
 #undef CODE
 
 #define CODE(rest, x) \
-    typedef BOOST_PP_CAT(r, BOOST_PP_SEQ_ELEM(1, x)) BOOST_PP_SEQ_CAT(x);
-    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
+    typedef T_CAT(r, T_ELEM(1, x)) T_CAT(x);
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
 #define THORIN_TYPES(m) \
