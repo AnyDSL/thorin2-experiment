@@ -15,46 +15,46 @@
 #include "thorin/qualifier.h"
 
 #define THORIN_Q (u)(r)(a)(l)
+
 #define THORIN_I_WIDTH (1)(8)(16)(32)(64)
 #define THORIN_R_WIDTH       (16)(32)(64)
+
 #define THORIN_I_FLAGS (uo) /* o o */ \
                        (uw) /* o x */ \
                        (so) /* x o */ \
                        (sw) /* x x */
 #define THORIN_R_FLAGS (f)(p) // fast, precise
 
-#define THORIN_I_ARITHOP (iadd)(isub)(imul)(idiv)(imod)(ishl)(ishr)(iand)(i_or)(ixor)
+#define THORIN_I_ARITHOP (iadd)(isub)(imul)(idiv)(imod)(ishl)(ishr)(iand)(ior)(ixor)
 #define THORIN_R_ARITHOP (radd)(rsub)(rmul)(rdiv)(rmod)
 
-#define THORIN_I_REL(f) \
-    /*       E G L                         */ \
-    f(t)  /* o o o - always true           */ \
-    f(lt) /* o o x - less than             */ \
-    f(gt) /* o x o - greater than          */ \
-    f(ne) /* o x x - not equal             */ \
-    f(eq) /* x o o - equal                 */ \
-    f(le) /* x o x - less than or equal    */ \
-    f(ge) /* x x o - greater than or equal */ \
-    f(f)  /* x x x - always false          */
+#define THORIN_I_REL /*     E G L                         */ \
+                    (t)  /* o o o - always true           */ \
+                    (lt) /* o o x - less than             */ \
+                    (gt) /* o x o - greater than          */ \
+                    (ne) /* o x x - not equal             */ \
+                    (eq) /* x o o - equal                 */ \
+                    (le) /* x o x - less than or equal    */ \
+                    (ge) /* x x o - greater than or equal */ \
+                    (f)  /* x x x - always false          */
 
-#define THORIN_R_REL(f) \
-    /*        O E G L                                      */ \
-    f(t)   /* o o o o - always true                        */ \
-    f(ult) /* o o o x - unordered or less than             */ \
-    f(ugt) /* o o x o - unordered or greater than          */ \
-    f(une) /* o o x x - unordered or not equal             */ \
-    f(ueq) /* o x o o - unordered or equal                 */ \
-    f(ule) /* o x o x - unordered or less than or equal    */ \
-    f(uge) /* o x x o - unordered or greater than or equal */ \
-    f(uno) /* o x x x - unordered (either NaNs)            */ \
-    f(ord) /* x o o o - ordered (no NaNs)                  */ \
-    f(olt) /* x o o x - ordered and less than              */ \
-    f(ogt) /* x o x o - ordered and greater than           */ \
-    f(one) /* x o x x - ordered and not equal              */ \
-    f(oeq) /* x x o o - ordered and equal                  */ \
-    f(ole) /* x x o x - ordered and less than or equal     */ \
-    f(oge) /* x x x o - ordered and greater than or equal  */ \
-    f(f)   /* x x x x - always false                       */
+#define THORIN_R_REL /*       O E G L                                      */ \
+                     (t)   /* o o o o - always true                        */ \
+                     (ult) /* o o o x - unordered or less than             */ \
+                     (ugt) /* o o x o - unordered or greater than          */ \
+                     (une) /* o o x x - unordered or not equal             */ \
+                     (ueq) /* o x o o - unordered or equal                 */ \
+                     (ule) /* o x o x - unordered or less than or equal    */ \
+                     (uge) /* o x x o - unordered or greater than or equal */ \
+                     (uno) /* o x x x - unordered (either NaNs)            */ \
+                     (ord) /* x o o o - ordered (no NaNs)                  */ \
+                     (olt) /* x o o x - ordered and less than              */ \
+                     (ogt) /* x o x o - ordered and greater than           */ \
+                     (one) /* x o x x - ordered and not equal              */ \
+                     (oeq) /* x x o o - ordered and equal                  */ \
+                     (ole) /* x x o x - ordered and less than or equal     */ \
+                     (oge) /* x x x o - ordered and greater than or equal  */ \
+                     (f)   /* x x x x - always false                       */
 
 namespace thorin {
 
@@ -79,16 +79,12 @@ enum class RArithop {
 };
 
 enum class IRel {
-#define CODE(x) \
-    THORIN_I_REL(x),
-#undef CODE
+    BOOST_PP_SEQ_ENUM(THORIN_I_REL),
     Num
 };
 
 enum class RRel {
-#define CODE(x) \
-    THORIN_R_REL(x),
-#undef CODE
+    BOOST_PP_SEQ_ENUM(THORIN_R_REL),
     Num
 };
 

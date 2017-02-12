@@ -352,7 +352,25 @@ public:
     //@}
 
     //@{ relational operations
-    // TODO
+#define CODE(r, ir, x) \
+    const Axiom* BOOST_PP_CAT(op_icmp_, x)() { return BOOST_PP_CAT(BOOST_PP_CAT(op_icmp_, x), _); } \
+    const App* BOOST_PP_CAT(op_icmp_, x)(const Def* q, const Def* f, const Def* w) { return app(BOOST_PP_CAT(op_icmp_, x)(), {q, f, w})->as<App>(); } \
+    const App* BOOST_PP_CAT(op_icmp_, x)(Qualifier q, BOOST_PP_CAT(BOOST_PP_SEQ_ELEM(1, ir), Flags) flags, int64_t width) { \
+        auto f = val_nat(int64_t(flags)); \
+        auto w = val_nat(width); \
+        return BOOST_PP_CAT(op_icmp_, x)(qualifier(q), f, w)->as<App>(); \
+    }
+    BOOST_PP_SEQ_FOR_EACH(CODE, (i)(I), THORIN_I_REL)
+    //BOOST_PP_SEQ_FOR_EACH(CODE, (r R), THORIN_R_REL)
+#undef CODE
+
+#define CODE(r, x) \
+    const App* BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_icmp_, BOOST_PP_SEQ_HEAD(x)), _), BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(x)))(const Def* a, const Def* b) { \
+        return app(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_icmp_, BOOST_PP_SEQ_HEAD(x)), _), BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(x))), _), {a, b})->as<App>(); \
+    }
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_I_REL)(THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+    //BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_R_REL)(THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+#undef CODE
     //@}
 
     //@{ tuple operations
@@ -383,16 +401,19 @@ private:
     const Axiom* op_lea_;
     const Axiom* op_insert_;
 
+    // type int
 #define CODE(r, x) \
     const App* BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(x)), _);
     BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
 #undef CODE
 
+    // type real
 #define CODE(r, x) \
     const App* BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(x)), _);
     BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
+    // arithops
 #define CODE(r, data, x) \
     const Axiom* BOOST_PP_CAT(BOOST_PP_CAT(op_, x), _);
     BOOST_PP_SEQ_FOR_EACH(CODE, _, THORIN_I_ARITHOP)
@@ -403,6 +424,23 @@ private:
     const App* BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_, BOOST_PP_SEQ_HEAD(x)), _), BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(x))), _);
     BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_I_ARITHOP)(THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
     BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_R_ARITHOP)(THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+#undef CODE
+
+    // relops
+#define CODE(r, ir, x) \
+    const Axiom* BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_, ir), cmp_), x), _);
+    BOOST_PP_SEQ_FOR_EACH(CODE, i, THORIN_I_REL)
+    BOOST_PP_SEQ_FOR_EACH(CODE, r, THORIN_R_REL)
+#undef CODE
+
+#define CODE(r, x) \
+    const App* BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_icmp_, BOOST_PP_SEQ_HEAD(x)), _), BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(x))), _);
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_I_REL)(THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+#undef CODE
+
+#define CODE(r, x) \
+    const App* BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_rcmp_, BOOST_PP_SEQ_HEAD(x)), _), BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(x))), _);
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_R_REL)(THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 };
 

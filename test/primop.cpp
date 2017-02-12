@@ -64,6 +64,10 @@ TEST(Primop, Arithop) {
     //p->type()->dump();
 }
 
+TEST(Primop, Cmp) {
+    World w;
+}
+
 TEST(Primop, Ptr) {
     World w;
     //auto s32w = w.type_int(32, IFlags::sw);
