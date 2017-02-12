@@ -24,6 +24,14 @@ TEST(Primop, Types) {
     ASSERT_EQ(w.type_up16(), w.type_real(Qualifier::u, RTypeFlags::p, 16));
 }
 
+TEST(Primop, Vals) {
+    World w;
+    ASSERT_EQ(w.val_usw16(23), w.val_usw16(23));
+    ASSERT_EQ(w.val_usw16(23)->box().get_u16(), sw16(23));
+    ASSERT_NE(w.val_auo32(23), w.val_auo32(23));
+    ASSERT_EQ(w.val_auo32(23)->box().get_u32(), uo32(23));
+}
+
 TEST(Primop, Arithop) {
     World w;
 

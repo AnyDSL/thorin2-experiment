@@ -282,10 +282,10 @@ public:
         return app(type_real_, {q, flags, width}, dbg)->as<App>();
     }
 
-#define CODE(x, y) \
-    const App* type_ ## x() { return type_ ## x ## _; }
-    THORIN_I_TYPE(CODE)
-    THORIN_R_TYPE(CODE)
+#define CODE(r, prod) \
+    const App* BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(prod)) () { return BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(prod)), _); }
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
     const Axiom* type_mem() { return type_mem_; }
@@ -314,12 +314,12 @@ public:
     const Axiom* val_bool_bot() { return val_bool_[0]; }
     const Axiom* val_bool_top() { return val_bool_[1]; }
 
-#define CODE(x, y) \
-    const Axiom* val_ ## x(y val) { \
-        return assume(type_ ## x(), {val}, {std::to_string(val)}); \
+#define CODE(r, prod) \
+    const Axiom* BOOST_PP_CAT(val_, BOOST_PP_SEQ_CAT(prod)) (BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(prod)) val) { \
+        return assume(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(prod))(), {val}, {std::to_string(val)}); \
     }
-    THORIN_I_TYPE(CODE)
-    THORIN_R_TYPE(CODE)
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
     //@}
 
@@ -382,22 +382,22 @@ private:
 
     union {
         struct {
-#define CODE(x, y) \
-            const App* type_ ## x ## _;
-            THORIN_I_TYPE(CODE)
+#define CODE(r, prod) \
+            const App* BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(prod)), _);
+            BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
 #undef CODE
         };
-        const App* type_int_qfw_[4][size_t(ITypeFlags::Num)][5];
+        const App* type_int_qfw_[4][size_t(ITypeFlags::Num)][BOOST_PP_SEQ_SIZE(THORIN_I_WIDTH)];
     };
 
     union {
         struct {
-#define CODE(x, y) \
-            const App* type_ ## x ## _;
-            THORIN_R_TYPE(CODE)
+#define CODE(r, prod) \
+            const App* BOOST_PP_CAT(BOOST_PP_CAT(type_, BOOST_PP_SEQ_CAT(prod)), _);
+            BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
         };
-        const App* type_real_qfw_[4][size_t(RTypeFlags::Num)][3];
+        const App* type_real_qfw_[4][size_t(RTypeFlags::Num)][BOOST_PP_SEQ_SIZE(THORIN_R_WIDTH)];
     };
 
 #if 0

@@ -79,7 +79,7 @@ TEST(Sigma, ExtractAndSingleton) {
     std::cout << single_pi << ": " << single_pi->type() << std::endl;
 }
 
-static const int test_num_vars = 10000;
+static const int test_num_vars = 1000;
 
 TEST(App, Curry) {
     World w;
