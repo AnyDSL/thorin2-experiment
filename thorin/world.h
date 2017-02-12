@@ -330,12 +330,10 @@ public:
     //@{ arithmetic operations
 #define CODE(r, ir, x) \
     const Axiom* T_CAT(op_, x)() { return T_CAT(op_, x, _); } \
-    const App* T_CAT(op_, x)(const Def* q, const Def* f, const Def* w) { return app(T_CAT(op_, x)(), {q, f, w})->as<App>(); } \
     const App* T_CAT(op_, x)(Qualifier q, T_CAT(ir, flags) flags, int64_t width) { \
-        auto f = val_nat(int64_t(flags)); \
-        auto w = val_nat(width); \
-        return T_CAT(op_, x)(qualifier(q), f, w)->as<App>(); \
+        return T_CAT(op_, x, s_)[size_t(q)][size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>(); \
     } \
+    const App* T_CAT(op_, x)(const Def* q, const Def* f, const Def* w) { return app(T_CAT(op_, x)(), {q, f, w})->as<App>(); } \
     const App* T_CAT(op_, x)(const Def* a, const Def* b);
     T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
     T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
