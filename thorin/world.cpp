@@ -490,7 +490,6 @@ World::World() {
     op_lea_ = axiom(pi({star(), N},
                 pi({type_ptr(var(star(), 1), var(N, 0)), dim(var(star(), 2))},
                 type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(N, 2)))), {"lea"});
-
 }
 
 #define CODE(r, ir, x)                                                          \
