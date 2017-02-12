@@ -17,8 +17,11 @@
 #define THORIN_Q (u)(r)(a)(l)
 #define THORIN_I_WIDTH (1)(8)(16)(32)(64)
 #define THORIN_R_WIDTH       (16)(32)(64)
-#define THORIN_I_FLAGS (uo)(uw)(so)(sw)
-#define THORIN_R_FLAGS (f)(p)
+#define THORIN_I_FLAGS (uo) /* o o */ \
+                       (uw) /* o x */ \
+                       (so) /* x o */ \
+                       (sw) /* x x */
+#define THORIN_R_FLAGS (f)(p) // fast, precise
 
 #define THORIN_I_ARITHOP (iadd)(isub)(imul)(idiv)(imod)(ishl)(ishr)(iand)(i_or)(ixor)
 #define THORIN_R_ARITHOP (radd)(rsub)(rmul)(rdiv)(rmod)
@@ -56,31 +59,12 @@
 namespace thorin {
 
 enum class IFlags {
-        // S W
-    uo, // o o
-    uw, // o x
-    so, // x o
-    sw, // x x
+    BOOST_PP_SEQ_ENUM(THORIN_I_FLAGS),
     Num
 };
 
 enum class RFlags {
-    f, // fast
-    p, // precise
-    Num
-};
-
-enum class IType {
-#define CODE(r, x) BOOST_PP_SEQ_CAT(x),
-    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
-#undef CODE
-    Num
-};
-
-enum class RType {
-#define CODE(r, x) BOOST_PP_SEQ_CAT(x),
-    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
-#undef CODE
+    BOOST_PP_SEQ_ENUM(THORIN_R_FLAGS),
     Num
 };
 

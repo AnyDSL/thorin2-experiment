@@ -372,10 +372,6 @@ private:
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
-    const Pi* type_icmpop_;
-    const Pi* type_rcmpop_;
-    const Pi* type_iarithop_;
-    const Pi* type_rarithop_;
     const Axiom* op_lea_;
     const Axiom* op_insert_;
 
@@ -396,8 +392,9 @@ private:
 #undef CODE
 
 #define CODE(r, x) \
-    const App* BOOST_PP_CAT(BOOST_PP_CAT(op_, BOOST_PP_SEQ_CAT(x)), _);
-    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_I_ARITHOP)(THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+    const App* BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(BOOST_PP_CAT(op_, BOOST_PP_SEQ_HEAD(x)), _), BOOST_PP_SEQ_CAT(BOOST_PP_SEQ_TAIL(x))), _);
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_I_ARITHOP)(THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+    BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_R_ARITHOP)(THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 };
 
