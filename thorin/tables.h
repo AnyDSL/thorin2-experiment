@@ -20,11 +20,8 @@
 #define THORIN_I_FLAGS (uo)(uw)(so)(sw)
 #define THORIN_R_FLAGS (f)(p)
 
-#define THORIN_I_ARITHOP(m) \
-    m(iadd) m(isub) m(imul) m(idiv) m(imod) m(ishl) m(ishr) m(iand) m(i_or) m(ixor)
-
-#define THORIN_R_ARITHOP(m) \
-    m(radd) m(rsub) m(rmul) m(rdiv) m(rmod)
+#define THORIN_I_ARITHOP (iadd)(isub)(imul)(idiv)(imod)(ishl)(ishr)(iand)(i_or)(ixor)
+#define THORIN_R_ARITHOP (radd)(rsub)(rmul)(rdiv)(rmod)
 
 #define THORIN_I_REL(f) \
     /*       E G L                         */ \
@@ -79,31 +76,26 @@ constexpr size_t index2iwidth(size_t i) { return i == 0 ? 1 : 1 << (i+2); }
 constexpr size_t index2rwidth(size_t i) { return 1 << (i+4); }
 
 enum class IType {
-#define CODE(r, prod) BOOST_PP_SEQ_CAT(prod),
+#define CODE(r, x) BOOST_PP_SEQ_CAT(x),
     BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
 #undef CODE
     Num
 };
 
 enum class RType {
-#define CODE(r, prod) BOOST_PP_SEQ_CAT(prod),
+#define CODE(r, x) BOOST_PP_SEQ_CAT(x),
     BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
     Num
 };
 
-/*
 enum class IArithop {
-#define CODE(x) \
-    THORIN_I_ARITHOP(x),
-#undef CODE
+    BOOST_PP_SEQ_ENUM(THORIN_I_ARITHOP),
     Num
 };
 
 enum class RArithop {
-#define CODE(x) \
-    THORIN_R_ARITHOP(x),
-#undef CODE
+    BOOST_PP_SEQ_ENUM(THORIN_R_ARITHOP),
     Num
 };
 
@@ -120,20 +112,19 @@ enum class RRel {
 #undef CODE
     Num
 };
-*/
 
 typedef bool u1; typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t u64;
 typedef bool s1; typedef  int8_t s8; typedef  int16_t s16; typedef  int32_t s32; typedef  int64_t s64;
 /*                        */ typedef half_float::half r16; typedef float    r32; typedef double   r64;
 typedef Qualifier qualifier;
 
-#define CODE(r, prod) \
-    typedef BOOST_PP_CAT(BOOST_PP_SEQ_ELEM(0, prod), BOOST_PP_SEQ_ELEM(2, prod)) BOOST_PP_SEQ_CAT(prod);
+#define CODE(r, x) \
+    typedef BOOST_PP_CAT(BOOST_PP_SEQ_ELEM(0, x), BOOST_PP_SEQ_ELEM(2, x)) BOOST_PP_SEQ_CAT(x);
 BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, ((u)(s))((o)(w))(THORIN_I_WIDTH))
 #undef CODE
 
-#define CODE(rest, prod) \
-    typedef BOOST_PP_CAT(r, BOOST_PP_SEQ_ELEM(1, prod)) BOOST_PP_SEQ_CAT(prod);
+#define CODE(rest, x) \
+    typedef BOOST_PP_CAT(r, BOOST_PP_SEQ_ELEM(1, x)) BOOST_PP_SEQ_CAT(x);
 BOOST_PP_SEQ_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
