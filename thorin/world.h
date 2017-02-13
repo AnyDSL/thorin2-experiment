@@ -255,16 +255,8 @@ public:
     World();
 
     //@{ types and type constructors
-    const Def* type_bool(const Def* q = nullptr) {
-        if (q == nullptr || q == unlimited())
-            return type_bool_;
-        return app(type_bool_q_, q);
-    }
-    const Def* type_nat(const Def* q = nullptr) {
-        if (q == nullptr || q == unlimited())
-            return type_nat_;
-        return app(type_nat_q_, q);
-    }
+    const Def* type_bool() { return type_bool_; }
+    const Def* type_nat() { return type_nat_; }
 
     const Axiom* type_i() { return type_i_; }
     const App* type_i(Qualifier q, iflags flags, int64_t width) {
@@ -302,9 +294,7 @@ public:
     //@}
 
     //@{ values
-    const Axiom* val_nat(int64_t val, const Def* q = nullptr) {
-        return assume(type_nat(q), {val}, {std::to_string(val)});
-    }
+    const Axiom* val_nat(int64_t val) { return assume(type_nat(), {val}, {std::to_string(val)}); }
     const Axiom* val_nat_0() { return val_nat_0_; }
     const Axiom* val_nat_1() { return val_nat_[0]; }
     const Axiom* val_nat_2() { return val_nat_[1]; }
@@ -369,13 +359,11 @@ public:
     // TODO
     //@}
 private:
-    const Axiom* type_nat_q_;
+    const Def* type_bool_;
     const Def* type_nat_;
     const Axiom* val_nat_0_;
-    std::array<const Axiom*, 7> val_nat_;
-    const Axiom* type_bool_q_;
-    const Def* type_bool_;
     std::array<const Axiom*, 2> val_bool_;
+    std::array<const Axiom*, 7> val_nat_;
     const Axiom* type_i_;
     const Axiom* type_r_;
     const Axiom* type_mem_;

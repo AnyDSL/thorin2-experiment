@@ -416,13 +416,8 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
 World::World() {
     auto u = unlimited();
     auto Q = qualifier_kind();
-    type_bool_q_ = axiom(pi(Q, star(var(Q, 0))), {"bool"});
-    type_bool_ = app(type_bool_q_, u, {"bool"});
-
-    type_nat_q_ = axiom(pi(Q, star(var(Q, 0))), {"nat"});
-    type_nat_ = app(type_nat_q_, u, {"nat"});
-    auto N = type_nat();
-    auto B = type_bool();
+    auto B = type_bool_ = axiom(star(), {"bool"});
+    auto N = type_nat_  = axiom(star(), {"nat" });
 
     type_i_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
     type_r_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});
