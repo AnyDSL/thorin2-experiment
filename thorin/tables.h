@@ -1,19 +1,19 @@
 #ifndef THORIN_TABLES_H
 #define THORIN_TABLES_H
 
-#include <boost/preprocessor/facilities/overload.hpp>
 #include <boost/preprocessor/seq.hpp>
-#include <boost/preprocessor/stringize.hpp>
 
 #define T_CAT_1(a)              BOOST_PP_SEQ_CAT(a)
-#define T_CAT_2(a, b)           BOOST_PP_CAT(a, b)
+#define T_CAT_2(a, b)           T_CAT_2_(a, b)
+#define T_CAT_2_(a, b)          a ## b
 #define T_CAT_3(a, b, c)        T_CAT_2(T_CAT_2(a, b), c)
 #define T_CAT_4(a, b, c, d)     T_CAT_2(T_CAT_3(a, b, c), d)
 #define T_CAT_5(a, b, c, d, e)  T_CAT_2(T_CAT_4(a, b, c, d), e)
 
-#define T_CAT(...) BOOST_PP_OVERLOAD(T_CAT_,__VA_ARGS__)(__VA_ARGS__)
+#define T_GET_CAT(_1, _2, _3, _4, _5, NAME, ...) NAME
+#define T_CAT(...) T_GET_CAT(__VA_ARGS__, T_CAT_5, T_CAT_4, T_CAT_3, T_CAT_2, T_CAT_1)(__VA_ARGS__)
 
-#define T_STR(x)                        BOOST_PP_STRINGIZE(x)
+#define T_STR(x)                        #x
 
 #define T_ELEM(i, seq)                  BOOST_PP_SEQ_ELEM(i, seq)
 #define T_ENUM(seq)                     BOOST_PP_SEQ_ENUM(seq)
