@@ -244,7 +244,7 @@ protected:
     const Universe* universe_;
     const Axiom* qualifier_kind_;
     std::array<const Axiom*, 4> qualifier_;
-    std::array<const Star*, 4> star_;
+    std::array<const Star*,  4> star_;
     std::array<const Sigma*, 4> unit_;
     std::array<const Tuple*, 4> tuple0_;
     const Axiom* arity_kind_;

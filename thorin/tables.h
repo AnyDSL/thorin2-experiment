@@ -160,7 +160,6 @@ public:
 #undef CODE
     s1 get_s1() const { return s1_; }
     u1 get_u1() const { return u1_; }
-
     bool operator==(Box other) const { return this->u64_ == other.get_u64(); }
 
 private:
