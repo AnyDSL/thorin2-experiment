@@ -47,6 +47,9 @@ add_executable(coc
     thorin/qualifier.h
     thorin/world.cpp
     thorin/world.h
+    thorin/frontend/token.h
+    thorin/frontend/lexer.h
+    thorin/frontend/lexer.cpp
     thorin/util/array.h
     thorin/util/bitset.cpp
     thorin/util/bitset.h
@@ -58,6 +61,8 @@ add_executable(coc
     thorin/util/stream.cpp
     thorin/util/stream.h
     thorin/util/utility.h
+    thorin/util/log.h
+    thorin/util/log.cpp
 )
 
 set_property(TARGET coc PROPERTY CXX_STANDARD 14)
