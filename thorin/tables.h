@@ -3,24 +3,29 @@
 
 #include <boost/preprocessor/seq.hpp>
 
-#define T_STR(x)           #x
+#define T_STR(x) #x
 
-#define T_CAT_1(a)         BOOST_PP_SEQ_CAT(a)
-#define T_CAT_2(a,b)       T_CAT__(a,b)
-#define T_CAT__(a,b)       a ## b
-#define T_CAT_3(a,b,c)     T_CAT_2(T_CAT_2(a,b),c)
-#define T_CAT_4(a,b,c,d)   T_CAT_2(T_CAT_3(a,b,c),d)
-#define T_CAT_5(a,b,c,d,e) T_CAT_2(T_CAT_4(a,b,c,d),e)
-#define T_CAT(...)         T_GET_CAT(__VA_ARGS__,T_CAT_5,T_CAT_4,T_CAT_3,T_CAT_2,T_CAT_1)(__VA_ARGS__)
+#define T_CAT_1(a)               BOOST_PP_SEQ_CAT(a)
+#define T_CAT_2(a,b)             T_CAT__(a,b)
+#define T_CAT__(a,b)             a##b
+#define T_CAT_3(a,b,c)           T_CAT_2(T_CAT_2(a,b),c)
+#define T_CAT_4(a,b,c,d)         T_CAT_2(T_CAT_3(a,b,c),d)
+#define T_CAT_5(a,b,c,d,e)       T_CAT_2(T_CAT_4(a,b,c,d),e)
+#define T_CAT_6(a,b,c,d,e,f)     T_CAT_2(T_CAT_5(a,b,c,d,e),f)
+#define T_CAT_7(a,b,c,d,e,f,g)   T_CAT_2(T_CAT_6(a,b,c,d,e,f),g)
+#define T_CAT_8(a,b,c,d,e,f,g,h) T_CAT_2(T_CAT_7(a,b,c,d,e,f,g),h)
 
-#define T_GET_CAT(_1,_2,_3,_4,_5,NAME,...) NAME
+#define T_GET_MACRO(_1,_2,_3,_4,_5,_6,_7,_8, f, ...) f
+#define T_CAT(...) T_GET_MACRO(__VA_ARGS__,T_CAT_8,T_CAT_7,T_CAT_6,T_CAT_5,T_CAT_4,T_CAT_3,T_CAT_2,T_CAT_1)(__VA_ARGS__)
 
-#define T_ELEM(i,seq)                 BOOST_PP_SEQ_ELEM(i, seq)
+#define T_ELEM(i,seq)                 BOOST_PP_SEQ_ELEM(i,seq)
 #define T_ENUM(seq)                   BOOST_PP_SEQ_ENUM(seq)
-#define T_FOR_EACH(macro,data,seq)    BOOST_PP_SEQ_FOR_EACH(macro, data, seq)
-#define T_FOR_EACH_PRODUCT(macro,seq) BOOST_PP_SEQ_FOR_EACH_PRODUCT(macro, seq)
-#define T_HEAD(seq)                   BOOST_PP_SEQ_HEAD(seq)
-#define T_TAIL(seq)                   BOOST_PP_SEQ_TAIL(seq)
+#define T_FOR_EACH(macro,data,seq)    BOOST_PP_SEQ_FOR_EACH(macro,data,seq)
+#define T_FOR_EACH_PRODUCT(macro,seq) BOOST_PP_SEQ_FOR_EACH_PRODUCT(macro,seq)
+
+#define T_HEAD(seq) T_ELEM(0,seq)
+#define T_TAIL(seq) T_TAIL_ seq
+#define T_TAIL_(seq)
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -147,7 +152,7 @@ typedef Qualifier qualifier;
 
 union Box {
 public:
-    Box()        { u64_ = 0; }
+    Box() { u64_ = 0; }
 
 #define CODE(T) \
     Box(T val) { u64_ = 0; T ## _ = val; }
