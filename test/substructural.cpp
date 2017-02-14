@@ -76,7 +76,7 @@ TEST(Substructural, Misc) {
     auto L = Qualifier::Linear;
     auto a = w.affine();
     //auto l = w.linear();
-    auto r = w.relevant();
+    //auto r = w.relevant();
     //auto Star = w.star();
     auto Unit = w.unit();
     auto Nat = w.type_usw64();

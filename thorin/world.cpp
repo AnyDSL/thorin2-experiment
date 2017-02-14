@@ -9,90 +9,11 @@
 
 namespace thorin {
 
+//------------------------------------------------------------------------------
+
 /*
- * WorldBase
+ * helpers
  */
-
-bool WorldBase::alloc_guard_ = false;
-
-WorldBase::WorldBase()
-    : root_page_(new Page)
-    , cur_page_(root_page_.get())
-{
-    universe_ = insert<Universe>(0, *this);
-    qualifier_kind_ = axiom(universe_, {"ℚ"});
-    for (size_t i = 0; i != 4; ++i) {
-        auto q = Qualifier(i);
-        qualifier_[i] = assume(qualifier_kind(), {q}, {qualifier_cstr(q)});
-        star_     [i] = insert<Star >(1, *this, qualifier_[i]);
-        unit_     [i] = insert<Sigma>(0, *this, Defs(), star_[i], Debug("Σ()"));
-        tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
-    }
-    arity_kind_ = axiom(universe(), {"𝔸"});
-}
-
-WorldBase::~WorldBase() {
-    for (auto def : defs_)
-        def->~Def();
-}
-
-const Def* WorldBase::index(size_t i, size_t a, Debug dbg) {
-    if (i < a)
-        return assume(arity(a), {u64(i)}, dbg);
-    return error(arity(a));
-}
-
-const Def* WorldBase::dim(const Def* def, Debug dbg) {
-    if (auto tuple = def->isa<Tuple>())
-        return arity(tuple->num_ops(), dbg);
-    if (auto sigma = def->isa<Sigma>())
-        return arity(sigma->num_ops(), dbg);
-    if (auto variadic = def->isa<Variadic>())
-        return variadic->arity();
-    if (def->isa<Var>())
-        return unify<Dim>(1, *this, def, dbg);
-    return arity(1, dbg);
-}
-
-const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) {
-    if (domains.size() == 1) {
-        if (auto sigma = domains.front()->isa<Sigma>())
-            return pi(sigma->ops(), body, q, dbg);
-    }
-
-    return unify<Pi>(domains.size() + 1, *this, domains, body, q, dbg);
-}
-
-const Lambda* WorldBase::pi_lambda(const Pi* pi, const Def* body, Debug dbg) {
-    assert(pi->body() == body->type());
-    return unify<Lambda>(1, *this, pi, body, dbg);
-}
-
-const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {
-    if (auto arity = a->isa<Axiom>()) {
-        if (body->free_vars().test(0)) {
-            return sigma(DefArray(arity->box().get_u64(),
-                        [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
-        }
-    }
-
-    return unify<Variadic>(2, *this, a, body, dbg);
-}
-
-const Def* type_from_sort(WorldBase& world, Def::Sort sort, const Def* q = nullptr) {
-    using Sort = Def::Sort;
-    assert(sort != Sort::Term  && "A type can never be of sort Term.");
-    switch (sort) {
-    case Sort::Kind:
-        assert(q == nullptr);
-        return world.universe();
-    case Sort::Type:
-        assert(q != nullptr);
-        return world.star(q);
-    default:
-        THORIN_UNREACHABLE;
-    }
-}
 
 const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_meet) {
     using Sort = Def::Sort;
@@ -133,6 +54,219 @@ const Def* single_qualified(Defs defs, const Def* q) {
     assert(defs.size() == 1);
     assert(defs.front()->qualifier() == q);
     return defs.front();
+}
+
+const Def* qualifier_glb_or_lub(WorldBase& w, Defs defs, bool use_meet,
+                                std::function<const Def*(Defs)> unify_fn) {
+    auto const_elem = use_meet ? Qualifier::Unlimited : Qualifier::Linear;
+    auto ident_elem = use_meet ? Qualifier::Linear : Qualifier::Unlimited;
+    size_t num_defs = defs.size();
+    DefArray reduced(num_defs);
+    Qualifier accu = Qualifier::Unlimited;
+    size_t num_const = 0;
+    for (size_t i = 0, e = num_defs; i != e; ++i) {
+        if (auto q = w.isa_const_qualifier(defs[i])) {
+            auto qual = q->box().get_qualifier();
+            accu = use_meet ? meet(accu, qual) : join(accu, qual);
+            num_const++;
+        } else {
+            assert(w.is_qualifier(defs[i]));
+            reduced[i - num_const] = defs[i];
+        }
+    }
+    if (num_const == num_defs)
+        return w.qualifier(accu);
+    if (accu == const_elem) {
+        // glb(U, x) = U/lub(L, x) = L
+        return w.qualifier(const_elem);
+    } else if (accu != ident_elem) {
+        // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
+        assert(num_const != 0);
+        reduced[num_defs - num_const] = w.qualifier(accu);
+        num_const--;
+    }
+    reduced.shrink(num_defs - num_const);
+    if (reduced.size() == 1)
+        return reduced[0];
+    return unify_fn(reduced);
+}
+
+//------------------------------------------------------------------------------
+
+/*
+ * WorldBase
+ */
+
+bool WorldBase::alloc_guard_ = false;
+
+WorldBase::WorldBase()
+    : root_page_(new Page)
+    , cur_page_(root_page_.get())
+{
+    universe_ = insert<Universe>(0, *this);
+    qualifier_kind_ = axiom(universe_, {"ℚ"});
+    for (size_t i = 0; i != 4; ++i) {
+        auto q = Qualifier(i);
+        qualifier_[i] = assume(qualifier_kind(), {q}, {qualifier_cstr(q)});
+        star_     [i] = insert<Star >(1, *this, qualifier_[i]);
+        unit_     [i] = insert<Sigma>(0, *this, Defs(), star_[i], Debug("Σ()"));
+        tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
+    }
+    arity_kind_ = axiom(universe(), {"𝔸"});
+}
+
+WorldBase::~WorldBase() {
+    for (auto def : defs_)
+        def->~Def();
+}
+
+const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
+    if (!type->isa<Variant>()) {
+        assert(type == def->type());
+        return def;
+    }
+
+    auto variants = type->ops();
+    assert(std::any_of(variants.begin(), variants.end(), [&](auto t){ return t == def->type(); })
+           && "type must be a part of the variant type");
+
+    return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
+}
+
+const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
+    if (args.size() == 1) {
+        auto single = args.front();
+        if (auto tuple = single->isa<Tuple>())
+            return app(callee, tuple->ops(), dbg);
+
+        if (auto sigma_type = single->type()->isa<Sigma>()) {
+            auto extracts = DefArray(sigma_type->num_ops(), [&](auto i) { return this->extract(single, i); });
+            return app(callee, extracts, dbg);
+        }
+    }
+
+    // TODO what if args types don't match the domains? error?
+    auto type = callee->type()->as<Pi>()->reduce(args);
+    auto app = unify<App>(args.size() + 1, *this, type, callee, args, dbg);
+    assert(app->callee() == callee);
+
+    return app->try_reduce();
+}
+
+const Def* WorldBase::dim(const Def* def, Debug dbg) {
+    if (auto tuple = def->isa<Tuple>())
+        return arity(tuple->num_ops(), dbg);
+    if (auto sigma = def->isa<Sigma>())
+        return arity(sigma->num_ops(), dbg);
+    if (auto variadic = def->isa<Variadic>())
+        return variadic->arity();
+    if (def->isa<Var>())
+        return unify<Dim>(1, *this, def, dbg);
+    return arity(1, dbg);
+}
+
+const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
+    if (auto assume = i->isa<Axiom>())
+        return extract(def, assume->box().get_u64(), dbg);
+    return unify<Extract>(2, *this, i->type(), def, i, dbg);
+}
+
+const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
+    if (def->isa<Tuple>() || def->isa<Sigma>())
+        return def->op(i);
+
+    if (auto sigma = def->type()->isa<Sigma>()) {
+        auto type = sigma->op(i);
+        if (type->free_vars().any_end(i)) {
+            size_t skipped_shifts = 0;
+            for (size_t delta = 1; delta <= i; ++delta) {
+                if (type->free_vars().none_begin(skipped_shifts)) {
+                    ++skipped_shifts;
+                    continue;
+                }
+
+                // this also shifts any Var with i > skipped_shifts by -1
+                type = type->reduce({extract(def, i - delta)}, skipped_shifts);
+            }
+        }
+
+        return unify<Extract>(2, *this, type, def, index(i, sigma->num_ops(), dbg), dbg);
+    }
+
+    if (auto variadic = def->type()->isa<Variadic>()) {
+        auto idx = index(i, /*TODO*/variadic->arity()->as<Axiom>()->box().get_u64(), dbg);
+        return unify<Extract>(2, *this, variadic->body(), def, idx, dbg);
+    }
+
+    assert(i == 0);
+    return def;
+}
+
+const Def* WorldBase::index(size_t i, size_t a, Debug dbg) {
+    if (i < a)
+        return assume(arity(a), {u64(i)}, dbg);
+    return error(arity(a));
+}
+
+const Def* WorldBase::intersection(Defs defs, Debug dbg) {
+    assert(defs.size() > 0);
+    return variant(defs, infer_max_type(*this, defs, nullptr, true), dbg);
+}
+
+const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
+    assert(defs.size() > 0);
+    if (defs.size() == 1) {
+        assert(defs.front()->type() == type);
+        return defs.front();
+    }
+    // implements a least upper bound on qualifiers,
+    // could possibly be replaced by something subtyping-generic
+    if (is_qualifier(defs.front())) {
+        assert(type == qualifier_kind());
+        return qualifier_glb_or_lub(*this, defs, true, [&] (Defs defs) {
+            return unify<Intersection>(defs.size(), *this, qualifier_kind(), defs, dbg);
+        });
+    }
+
+    // TODO recognize some empty intersections?
+    return unify<Intersection>(defs.size(), *this, type, defs, dbg);
+}
+
+const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) {
+    if (domains.size() == 1) {
+        if (auto sigma = domains.front()->isa<Sigma>())
+            return pi(sigma->ops(), body, q, dbg);
+    }
+
+    return unify<Pi>(domains.size() + 1, *this, domains, body, q, dbg);
+}
+
+const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
+    if (auto def_type = def->type()->isa<Intersection>()) {
+        assert(std::any_of(def_type->ops().begin(), def_type->ops().end(), [&](auto t) { return t == type; })
+               && "picked type must be a part of the intersection type");
+
+        return unify<Pick>(1, *this, type, def, dbg);
+    }
+
+    assert(type == def->type());
+    return def;
+}
+
+const Lambda* WorldBase::pi_lambda(const Pi* pi, const Def* body, Debug dbg) {
+    assert(pi->body() == body->type());
+    return unify<Lambda>(1, *this, pi, body, dbg);
+}
+
+const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {
+    if (auto arity = a->isa<Axiom>()) {
+        if (body->free_vars().test(0)) {
+            return sigma(DefArray(arity->box().get_u64(),
+                        [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
+        }
+    }
+
+    return unify<Variadic>(2, *this, a, body, dbg);
 }
 
 const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {
@@ -204,115 +338,6 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
     return unify<Tuple>(defs.size(), *this, type->as<SigmaBase>(), defs, dbg);
 }
 
-const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
-    if (auto assume = i->isa<Axiom>())
-        return extract(def, assume->box().get_u64(), dbg);
-    return unify<Extract>(2, *this, i->type(), def, i, dbg);
-}
-
-const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
-    if (def->isa<Tuple>() || def->isa<Sigma>())
-        return def->op(i);
-
-    if (auto sigma = def->type()->isa<Sigma>()) {
-        auto type = sigma->op(i);
-        if (type->free_vars().any_end(i)) {
-            size_t skipped_shifts = 0;
-            for (size_t delta = 1; delta <= i; ++delta) {
-                if (type->free_vars().none_begin(skipped_shifts)) {
-                    ++skipped_shifts;
-                    continue;
-                }
-
-                // this also shifts any Var with i > skipped_shifts by -1
-                type = type->reduce({extract(def, i - delta)}, skipped_shifts);
-            }
-        }
-
-        return unify<Extract>(2, *this, type, def, index(i, sigma->num_ops(), dbg), dbg);
-    }
-
-    if (auto variadic = def->type()->isa<Variadic>()) {
-        auto idx = index(i, /*TODO*/variadic->arity()->as<Axiom>()->box().get_u64(), dbg);
-        return unify<Extract>(2, *this, variadic->body(), def, idx, dbg);
-    }
-
-    assert(i == 0);
-    return def;
-}
-
-
-const Def* qualifier_glb_or_lub(WorldBase& w, Defs defs, bool use_meet,
-                                std::function<const Def*(Defs)> unify_fn) {
-    auto const_elem = use_meet ? Qualifier::Unlimited : Qualifier::Linear;
-    auto ident_elem = use_meet ? Qualifier::Linear : Qualifier::Unlimited;
-    size_t num_defs = defs.size();
-    DefArray reduced(num_defs);
-    Qualifier accu = Qualifier::Unlimited;
-    size_t num_const = 0;
-    for (size_t i = 0, e = num_defs; i != e; ++i) {
-        if (auto q = w.isa_const_qualifier(defs[i])) {
-            auto qual = q->box().get_qualifier();
-            accu = use_meet ? meet(accu, qual) : join(accu, qual);
-            num_const++;
-        } else {
-            assert(w.is_qualifier(defs[i]));
-            reduced[i - num_const] = defs[i];
-        }
-    }
-    if (num_const == num_defs)
-        return w.qualifier(accu);
-    if (accu == const_elem) {
-        // glb(U, x) = U/lub(L, x) = L
-        return w.qualifier(const_elem);
-    } else if (accu != ident_elem) {
-        // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
-        assert(num_const != 0);
-        reduced[num_defs - num_const] = w.qualifier(accu);
-        num_const--;
-    }
-    reduced.shrink(num_defs - num_const);
-    if (reduced.size() == 1)
-        return reduced[0];
-    return unify_fn(reduced);
-}
-
-const Def* WorldBase::intersection(Defs defs, Debug dbg) {
-    assert(defs.size() > 0);
-    return variant(defs, infer_max_type(*this, defs, nullptr, true), dbg);
-}
-
-const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
-    assert(defs.size() > 0);
-    if (defs.size() == 1) {
-        assert(defs.front()->type() == type);
-        return defs.front();
-    }
-    // implements a least upper bound on qualifiers,
-    // could possibly be replaced by something subtyping-generic
-    if (is_qualifier(defs.front())) {
-        assert(type == qualifier_kind());
-        return qualifier_glb_or_lub(*this, defs, true, [&] (Defs defs) {
-            return unify<Intersection>(defs.size(), *this, qualifier_kind(), defs, dbg);
-        });
-    }
-
-    // TODO recognize some empty intersections?
-    return unify<Intersection>(defs.size(), *this, type, defs, dbg);
-}
-
-const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
-    if (auto def_type = def->type()->isa<Intersection>()) {
-        assert(std::any_of(def_type->ops().begin(), def_type->ops().end(), [&](auto t) { return t == type; })
-               && "picked type must be a part of the intersection type");
-
-        return unify<Pick>(1, *this, type, def, dbg);
-    }
-
-    assert(type == def->type());
-    return def;
-}
-
 const Def* WorldBase::variant(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
     return variant(defs, infer_max_type(*this, defs, nullptr, false), dbg);
@@ -334,19 +359,6 @@ const Def* WorldBase::variant(Defs defs, const Def* type, Debug dbg) {
     }
 
     return unify<Variant>(defs.size(), *this, type, defs, dbg);
-}
-
-const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
-    if (!type->isa<Variant>()) {
-        assert(type == def->type());
-        return def;
-    }
-
-    auto variants = type->ops();
-    assert(std::any_of(variants.begin(), variants.end(), [&](auto t){ return t == def->type(); })
-           && "type must be a part of the variant type");
-
-    return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
 }
 
 const Def* build_match_type(WorldBase& w, Defs handlers) {
@@ -387,26 +399,6 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
     return unify<Match>(1, *this, type, def, sorted_handlers, dbg);
 }
 
-const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
-    if (args.size() == 1) {
-        auto single = args.front();
-        if (auto tuple = single->isa<Tuple>())
-            return app(callee, tuple->ops(), dbg);
-
-        if (auto sigma_type = single->type()->isa<Sigma>()) {
-            auto extracts = DefArray(sigma_type->num_ops(), [&](auto i) { return this->extract(single, i); });
-            return app(callee, extracts, dbg);
-        }
-    }
-
-    // TODO what if args types don't match the domains? error?
-    auto type = callee->type()->as<Pi>()->reduce(args);
-    auto app = unify<App>(args.size() + 1, *this, type, callee, args, dbg);
-    assert(app->callee() == callee);
-
-    return app->try_reduce();
-}
-
 //------------------------------------------------------------------------------
 
 /*
@@ -414,7 +406,6 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
  */
 
 World::World() {
-    auto u = unlimited();
     auto Q = qualifier_kind();
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });
