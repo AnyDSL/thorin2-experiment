@@ -10,6 +10,8 @@ class Lexer {
 public:
     Lexer(std::istream&, const std::string&);
 
+    std::string filename() const { return filename_; }
+
     Token next();
 
 private:
@@ -22,7 +24,7 @@ private:
 
     std::istream& stream_;
     std::string   filename_;
-    uint32_t      row_, col_;
+    uint32_t      line_, col_;
 };
 
 }

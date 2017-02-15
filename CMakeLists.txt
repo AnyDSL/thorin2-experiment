@@ -50,6 +50,8 @@ add_executable(coc
     thorin/frontend/token.h
     thorin/frontend/lexer.h
     thorin/frontend/lexer.cpp
+    thorin/frontend/parser.h
+    thorin/frontend/parser.cpp
     thorin/util/array.h
     thorin/util/bitset.cpp
     thorin/util/bitset.h

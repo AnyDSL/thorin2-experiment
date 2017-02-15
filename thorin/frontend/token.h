@@ -5,8 +5,29 @@
 
 #include "thorin/tables.h"
 #include "thorin/util/location.h"
+#include "thorin/util/utility.h"
 
 namespace thorin {
+
+#define THORIN_TOKENS(f) \
+    f(L_Brace,    "{") \
+    f(R_Brace,    "}") \
+    f(L_Paren,    ")") \
+    f(R_Paren,    "(") \
+    f(L_Bracket,  "]") \
+    f(R_Bracket,  "[") \
+    f(L_Angle,    "<") \
+    f(R_Angle,    ">") \
+    f(Colon,      ":") \
+    f(Comma,      ",") \
+    f(Dot,        ".") \
+    f(Star,       "*") \
+    f(Pi,         "#pi") \
+    f(Sigma,      "#sigma") \
+    f(Lambda,     "#lambda") \
+    f(Identifier, "identifier") \
+    f(Literal,    "literal") \
+    f(Eof,        "eof")
 
 struct Literal {
     enum class Tag {
@@ -27,23 +48,9 @@ struct Literal {
 class Token {
 public:
     enum class Tag {
-        L_Brace,
-        R_Brace,
-        L_Paren,
-        R_Paren,
-        L_Bracket,
-        R_Bracket,
-        L_Angle,
-        R_Angle,
-        Colon,
-        Comma,
-        Identifier,
-        Literal,
-        Pi,
-        Sigma,
-        Lambda,
-        Star,
-        Eof
+#define CODE(T, S) T,
+        THORIN_TOKENS(CODE)
+#undef CODE
     };
 
     Token(Location loc, Literal lit)
@@ -63,9 +70,21 @@ public:
         , location_(loc)
     {}
 
+    Tag tag() const { return tag_; }
     Literal literal() const { return literal_; }
     std::string identifier() const { return identifier_; }
     Location location() const { return location_; }
+
+    bool isa(Tag tag) const { return tag_ == tag; }
+
+    static std::string tag_to_string(Tag tag) {
+        switch (tag) {
+#define CODE(T, S) case Tag::T: return S;
+            THORIN_TOKENS(CODE)
+#undef CODE
+            default: THORIN_UNREACHABLE;
+        }
+    }
 
 private:
     Tag      tag_;

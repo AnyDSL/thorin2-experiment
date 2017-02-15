@@ -8,17 +8,20 @@ namespace thorin {
 Lexer::Lexer(std::istream& is, const std::string& name)
     : stream_(is)
     , filename_(name)
-    , row_(1), col_(1)
+    , line_(1), col_(1)
 {}
 
 Token Lexer::next() {
     eat_spaces();
 
-    auto front_row = row_;
+    auto front_line = line_;
     auto front_col = col_;
     auto make_loc = [&] () {
-        return Location(filename_.c_str(), front_row, front_col, row_, col_);
+        return Location(filename_.c_str(), front_line, front_col, line_, col_);
     };
+
+    if (stream_.peek() == std::istream::traits_type::eof())
+        return Token(make_loc(), Token::Tag::Eof);
 
     if (accept('{')) return Token(make_loc(), Token::Tag::L_Brace);
     if (accept('}')) return Token(make_loc(), Token::Tag::R_Brace);
@@ -30,6 +33,7 @@ Token Lexer::next() {
     if (accept('>')) return Token(make_loc(), Token::Tag::R_Angle);
     if (accept(':')) return Token(make_loc(), Token::Tag::Colon);
     if (accept(',')) return Token(make_loc(), Token::Tag::Comma);
+    if (accept('.')) return Token(make_loc(), Token::Tag::Dot);
     if (accept('*')) return Token(make_loc(), Token::Tag::Star);
 
     if (accept('#')) {
@@ -71,7 +75,7 @@ void Lexer::eat() {
         return;
 
     if (c == '\n') {
-        row_++;
+        line_++;
         col_ = 1;
     } else {
         col_++;
@@ -145,7 +149,7 @@ Literal Lexer::parse_literal() {
         if (accept("r64")) return Literal(Literal::Tag::Lit_r64, r64(strtod(lit.c_str(), nullptr)));
     }
 
-    ELOG("invalid literal at {}", Location(filename_.c_str(), row_, col_));
+    ELOG("invalid literal in {}", Location(filename_.c_str(), line_, col_));
 }
 
 bool Lexer::accept(int c) {
