@@ -88,37 +88,45 @@ void Lexer::eat_spaces() {
 
 Literal Lexer::parse_literal() {
     std::string lit;
+    int base = 10;
+
     auto parse_digits = [&] () {
-        while (std::isdigit(stream_.peek())) {
-            lit += stream_.peek();
+        int c = stream_.peek();
+        while (std::isdigit(c) ||
+               (base == 16 && c >= 'a' && c <= 'f') ||
+               (base == 16 && c >= 'A' && c <= 'F')) {
+            lit += c;
             eat();
+            c = stream_.peek();
         }
     };
 
     // sign
     bool sign = false;
-    if (accept('+'))      lit += '+';
+    if (accept('+')) lit += '+';
     else if (accept('-')) {
         sign = true;
         lit += '-';
     }
 
     // prefix starting with '0'
-    int base = 10;
     if (accept('0')) {
         if (accept('b')) base = 2;
-        if (accept('x')) base = 16;
-        base = 8;
+        else if (accept('x')) base = 16;
+        else if (accept('o')) base = 8;
     }
 
     parse_digits();
 
+    bool exp = false;
     if (base == 10) {
         // parse fractional part
-        if (accept('.')) parse_digits();
+        if (accept('.')) {
+            lit += '.';
+            parse_digits();
+        }
 
         // parse exponent
-        bool exp = false;
         if (accept('e')) {
             exp = true;
             lit += 'e';
@@ -130,23 +138,25 @@ Literal Lexer::parse_literal() {
 
     // suffix
     if (!exp) {
-        if (accept("s8"))  return Literal(Literal::Tag::Lit_s8,   s8( strtol(lit.c_str(), nullptr, base)));
-        if (accept("s16")) return Literal(Literal::Tag::Lit_s16, s16( strtol(lit.c_str(), nullptr, base)));
-        if (accept("s32")) return Literal(Literal::Tag::Lit_s32, s32( strtol(lit.c_str(), nullptr, base)));
-        if (accept("s64")) return Literal(Literal::Tag::Lit_s64, s64(strtoll(lit.c_str(), nullptr, base)));
+        if (accept('s')) {
+            if (accept("8"))  return Literal(Literal::Tag::Lit_s8,   s8( strtol(lit.c_str(), nullptr, base)));
+            if (accept("16")) return Literal(Literal::Tag::Lit_s16, s16( strtol(lit.c_str(), nullptr, base)));
+            if (accept("32")) return Literal(Literal::Tag::Lit_s32, s32( strtol(lit.c_str(), nullptr, base)));
+            if (accept("64")) return Literal(Literal::Tag::Lit_s64, s64(strtoll(lit.c_str(), nullptr, base)));
+        }
 
-        if (!sign) {
-            if (accept("u8"))  return Literal(Literal::Tag::Lit_u8,   u8( strtoul(lit.c_str(), nullptr, base)));
-            if (accept("u16")) return Literal(Literal::Tag::Lit_u16, u16( strtoul(lit.c_str(), nullptr, base)));
-            if (accept("u32")) return Literal(Literal::Tag::Lit_u32, u32( strtoul(lit.c_str(), nullptr, base)));
-            if (accept("u64")) return Literal(Literal::Tag::Lit_u64, u64(strtoull(lit.c_str(), nullptr, base)));
+        if (!sign && accept('u')) {
+            if (accept("8"))  return Literal(Literal::Tag::Lit_u8,   u8( strtoul(lit.c_str(), nullptr, base)));
+            if (accept("16")) return Literal(Literal::Tag::Lit_u16, u16( strtoul(lit.c_str(), nullptr, base)));
+            if (accept("32")) return Literal(Literal::Tag::Lit_u32, u32( strtoul(lit.c_str(), nullptr, base)));
+            if (accept("64")) return Literal(Literal::Tag::Lit_u64, u64(strtoull(lit.c_str(), nullptr, base)));
         }
     }
 
-    if (base == 10) {
-        if (accept("r16")) return Literal(Literal::Tag::Lit_r16, r16(strtof(lit.c_str(), nullptr)));
-        if (accept("r32")) return Literal(Literal::Tag::Lit_r32, r32(strtof(lit.c_str(), nullptr)));
-        if (accept("r64")) return Literal(Literal::Tag::Lit_r64, r64(strtod(lit.c_str(), nullptr)));
+    if (base == 10 && accept('r')) {
+        if (accept("16")) return Literal(Literal::Tag::Lit_r16, r16(strtof(lit.c_str(), nullptr)));
+        if (accept("32")) return Literal(Literal::Tag::Lit_r32, r32(strtof(lit.c_str(), nullptr)));
+        if (accept("64")) return Literal(Literal::Tag::Lit_r64, r64(strtod(lit.c_str(), nullptr)));
     }
 
     ELOG("invalid literal in {}", Location(filename_.c_str(), line_, col_));

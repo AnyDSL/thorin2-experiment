@@ -27,4 +27,91 @@ TEST(Lexer, Tokens) {
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Pi));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Sigma));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Lambda));
+    ASSERT_TRUE(lexer.next().isa(Token::Tag::Eof));
+}
+
+TEST(Lexer, Literals) {
+    std::string str = "1s8 1s16 1s32 1s64 1u8 1u16 1u32 1u64 1.0r16 1.0r32 1.0r64 +1s32 -1s32 0xFFs32 -0xFFs32 0o10s32 -0o10s32 0b10s32 -0b10s32";
+    std::istringstream is(str);
+
+    Lexer lexer(is, "stdin");
+
+    constexpr int n = 19;
+    Literal::Tag tags[n] = {
+        Literal::Tag::Lit_s8,
+        Literal::Tag::Lit_s16,
+        Literal::Tag::Lit_s32,
+        Literal::Tag::Lit_s64,
+
+        Literal::Tag::Lit_u8,
+        Literal::Tag::Lit_u16,
+        Literal::Tag::Lit_u32,
+        Literal::Tag::Lit_u64,
+
+        Literal::Tag::Lit_r16,
+        Literal::Tag::Lit_r32,
+        Literal::Tag::Lit_r64,
+
+        Literal::Tag::Lit_s32,
+        Literal::Tag::Lit_s32,
+        Literal::Tag::Lit_s32,
+        Literal::Tag::Lit_s32,
+        Literal::Tag::Lit_s32,
+        Literal::Tag::Lit_s32,
+        Literal::Tag::Lit_s32,
+        Literal::Tag::Lit_s32
+    };
+
+    Box boxes[n] = {
+        Box(s8(1)),
+        Box(s16(1)),
+        Box(s32(1)),
+        Box(s64(1)),
+
+        Box(u8(1)),
+        Box(u16(1)),
+        Box(u32(1)),
+        Box(u64(1)),
+
+        Box(r16(1.0)),
+        Box(r32(1.0)),
+        Box(r64(1.0)),
+
+        Box(s32(1)),
+        Box(s32(-1)),
+        Box(s32(255)),
+        Box(s32(-255)),
+        Box(s32(8)),
+        Box(s32(-8)),
+        Box(s32(2)),
+        Box(s32(-2))
+    };
+
+    for (int i = 0; i < n; i++) {
+        auto tok = lexer.next();
+        ASSERT_TRUE(tok.isa(Token::Tag::Literal));
+        ASSERT_TRUE(tok.literal().tag == tags[i]);
+        ASSERT_TRUE(tok.literal().box == boxes[i]);
+    }
+    ASSERT_TRUE(lexer.next().isa(Token::Tag::Eof));
+}
+
+TEST(Lexer, Utf8) {
+    std::string str ="Π Σ λ";
+    std::istringstream is(str);
+
+    Lexer lexer(is, "stdin");
+    ASSERT_TRUE(lexer.next().isa(Token::Tag::Pi));
+    ASSERT_TRUE(lexer.next().isa(Token::Tag::Sigma));
+    ASSERT_TRUE(lexer.next().isa(Token::Tag::Lambda));
+    ASSERT_TRUE(lexer.next().isa(Token::Tag::Eof));
+}
+
+TEST(Lexer, Eof) {
+    std::istringstream is("");
+
+    Lexer lexer(is, "stdin");
+    for (int i = 0; i < 100; i++) {
+        ASSERT_TRUE(lexer.next().isa(Token::Tag::Eof));
+    }
 }
