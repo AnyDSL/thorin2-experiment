@@ -89,9 +89,9 @@ TEST(Lexer, Literals) {
 
     for (int i = 0; i < n; i++) {
         auto tok = lexer.next();
-        ASSERT_TRUE(tok.isa(Token::Tag::Literal));
-        ASSERT_TRUE(tok.literal().tag == tags[i]);
-        ASSERT_TRUE(tok.literal().box == boxes[i]);
+        ASSERT_TRUE(tok.isa(Token::Tag::Literal)) << "index " << i;
+        ASSERT_TRUE(tok.literal().tag == tags[i]) << "index " << i;
+        ASSERT_TRUE(tok.literal().box == boxes[i]) << "index " << i;
     }
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Eof));
 }

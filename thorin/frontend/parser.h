@@ -23,6 +23,7 @@ public:
     const Def*    parse_sigma();
     const Lambda* parse_lambda();
     const Star*   parse_star();
+    const Var*    parse_var();
 
 private:
     struct Anchor {
@@ -59,6 +60,7 @@ private:
             elems.emplace_back(f());
         }
         expect(end);
+        return elems;
     }
 
     void next();

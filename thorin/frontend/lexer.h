@@ -19,12 +19,19 @@ private:
     void eat_spaces();
     Literal parse_literal();
 
-    bool accept(int);
+    bool accept(uint32_t);
     bool accept(const std::string&);
 
-    std::istream& stream_;
-    std::string   filename_;
-    uint32_t      line_, col_;
+    uint32_t peek() const { return cur_; }
+    bool eof() const { return eof_; }
+
+    std::istream&                  stream_;
+    std::istreambuf_iterator<char> iterator_;
+
+    std::string filename_;
+    uint32_t    line_, col_;
+    uint32_t    cur_;
+    bool        eof_;
 };
 
 }

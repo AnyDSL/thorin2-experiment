@@ -38,6 +38,7 @@ add_executable(coc
     test/variants.cpp
     test/substructural.cpp
     test/lexer.cpp
+    test/parser.cpp
     thorin/def.cpp
     thorin/def.h
     thorin/primop.h

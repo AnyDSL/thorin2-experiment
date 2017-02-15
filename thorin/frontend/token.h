@@ -34,6 +34,7 @@ struct Literal {
 #define CODE(T) Lit_##T,
         THORIN_TYPES(CODE)
 #undef CODE
+        Lit_untyped
     };
 
     Tag tag;

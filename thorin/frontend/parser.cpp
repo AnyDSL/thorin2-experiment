@@ -3,10 +3,11 @@
 namespace thorin {
 
 const Def* Parser::parse_def() {
-    if (ahead_.isa(Token::Tag::Pi))     return parse_pi();
-    if (ahead_.isa(Token::Tag::Sigma))  return parse_sigma();
-    if (ahead_.isa(Token::Tag::Lambda)) return parse_lambda();
-    if (ahead_.isa(Token::Tag::Star))   return parse_star();
+    if (ahead_.isa(Token::Tag::Pi))      return parse_pi();
+    if (ahead_.isa(Token::Tag::Sigma))   return parse_sigma();
+    if (ahead_.isa(Token::Tag::Lambda))  return parse_lambda();
+    if (ahead_.isa(Token::Tag::Star))    return parse_star();
+    if (ahead_.isa(Token::Tag::L_Angle)) return parse_var();
     ELOG("definition expected in {}", ahead_.location());
 }
 
@@ -17,6 +18,7 @@ const Pi* Parser::parse_pi() {
     expect(Token::Tag::L_Paren);
     auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); });
     expect(Token::Tag::Dot);
+
     auto body = parse_def();
 
     return world_.pi(domains, body, anchor.location());
@@ -45,9 +47,26 @@ const Lambda* Parser::parse_lambda() {
 }
 
 const Star* Parser::parse_star() {
-    Anchor anchor(this);
     eat(Token::Tag::Star);
     return world_.star();
+}
+
+const Var* Parser::parse_var() {
+    Anchor anchor(this);
+    eat(Token::Tag::L_Angle);
+
+    if (!ahead_.isa(Token::Tag::Literal) ||
+        ahead_.literal().tag != Literal::Tag::Lit_untyped) {
+        ELOG("DeBruijn index expected in {}", ahead_.location());
+    }
+    size_t index = ahead_.literal().box.get_u64();
+    eat(Token::Tag::Literal);
+
+    expect(Token::Tag::Colon);
+    auto def = parse_def();
+    expect(Token::Tag::R_Angle);
+    
+    return world_.var(def, index, anchor.location());
 }
 
 void Parser::next() {

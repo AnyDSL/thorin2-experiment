@@ -1,5 +1,7 @@
 #include <cctype>
 
+#include <utf8.h>
+
 #include "thorin/util/log.h"
 #include "thorin/frontend/lexer.h"
 
@@ -7,9 +9,20 @@ namespace thorin {
 
 Lexer::Lexer(std::istream& is, const std::string& name)
     : stream_(is)
+    , iterator_(is)
     , filename_(name)
-    , line_(1), col_(1)
-{}
+    , line_(1), col_(0)
+    , cur_(0), eof_(false)
+{
+    char bytes[3];
+    stream_.read(bytes, 3);
+    if (!utf8::starts_with_bom(bytes, bytes + 3)) {
+        stream_.unget();
+        stream_.unget();
+        stream_.unget();
+    }
+    eat();
+}
 
 Token Lexer::next() {
     eat_spaces();
@@ -20,8 +33,7 @@ Token Lexer::next() {
         return Location(filename_.c_str(), front_line, front_col, line_, col_);
     };
 
-    if (stream_.peek() == std::istream::traits_type::eof())
-        return Token(make_loc(), Token::Tag::Eof);
+    if (eof()) return Token(make_loc(), Token::Tag::Eof);
 
     if (accept('{')) return Token(make_loc(), Token::Tag::L_Brace);
     if (accept('}')) return Token(make_loc(), Token::Tag::R_Brace);
@@ -43,47 +55,51 @@ Token Lexer::next() {
     }
 
     // greek letters for lambda, sigma, and pi
-    if (accept(0xce)) {
-        if (accept(0xbb)) return Token(make_loc(), Token::Tag::Lambda);
-        if (accept(0xa3)) return Token(make_loc(), Token::Tag::Sigma);
-        if (accept(0xa0)) return Token(make_loc(), Token::Tag::Pi);
-    }
+    if (accept(0x03bb)) return Token(make_loc(), Token::Tag::Lambda);
+    if (accept(0x03a3)) return Token(make_loc(), Token::Tag::Sigma);
+    if (accept(0x03a0)) return Token(make_loc(), Token::Tag::Pi);
 
     if (accept("true"))  return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(true)));
     if (accept("false")) return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(false)));
 
-    auto c = stream_.peek();
-    if (std::isdigit(c) || c == '+' || c == '-') {
+    if (std::isdigit(peek()) || peek() == '+' || peek() == '-') {
         auto lit = parse_literal();
         return Token(make_loc(), lit);
     }
 
     std::string ident;
-    while ((ident != "" && std::isalnum(c)) || std::isalpha(c) || c == '_') {
-        ident += stream_.peek();
+    auto is_identifier_char = [&] (uint32_t c) {
+        return std::isalpha(c) || c == '_' || (ident != "" && std::isdigit(c));
+    };
+    while (!eof() && is_identifier_char(peek())) {
+        ident += peek();
         eat();
     }
     if (ident != "") return Token(make_loc(), ident);
 
-    ELOG("invalid token in {}", make_loc());
+    std::string invalid;
+    utf8::append(peek(), std::back_inserter(invalid));
+    ELOG("invalid character '{}' in {}", invalid, make_loc());
 }
 
 void Lexer::eat() {
-    int c = stream_.get();
-
-    if (c == std::istream::traits_type::eof())
+    if (iterator_ == std::istreambuf_iterator<char>()) {
+        eof_ = true;
         return;
+    }
 
-    if (c == '\n') {
+    if (peek() == '\n') {
         line_++;
         col_ = 1;
     } else {
         col_++;
     }
+
+    cur_ = utf8::unchecked::next(iterator_);
 }
 
 void Lexer::eat_spaces() {
-    while (std::isspace(stream_.peek())) eat();
+    while (!eof() && std::isspace(peek())) eat();
 }
 
 Literal Lexer::parse_literal() {
@@ -91,13 +107,11 @@ Literal Lexer::parse_literal() {
     int base = 10;
 
     auto parse_digits = [&] () {
-        int c = stream_.peek();
-        while (std::isdigit(c) ||
-               (base == 16 && c >= 'a' && c <= 'f') ||
-               (base == 16 && c >= 'A' && c <= 'F')) {
-            lit += c;
+        while (std::isdigit(peek()) ||
+               (base == 16 && peek() >= 'a' && peek() <= 'f') ||
+               (base == 16 && peek() >= 'A' && peek() <= 'F')) {
+            lit += peek();
             eat();
-            c = stream_.peek();
         }
     };
 
@@ -118,10 +132,11 @@ Literal Lexer::parse_literal() {
 
     parse_digits();
 
-    bool exp = false;
+    bool exp = false, fract = false;
     if (base == 10) {
         // parse fractional part
         if (accept('.')) {
+            fract = true;
             lit += '.';
             parse_digits();
         }
@@ -137,7 +152,7 @@ Literal Lexer::parse_literal() {
     }
 
     // suffix
-    if (!exp) {
+    if (!exp && !fract) {
         if (accept('s')) {
             if (accept("8"))  return Literal(Literal::Tag::Lit_s8,   s8( strtol(lit.c_str(), nullptr, base)));
             if (accept("16")) return Literal(Literal::Tag::Lit_s16, s16( strtol(lit.c_str(), nullptr, base)));
@@ -159,11 +174,16 @@ Literal Lexer::parse_literal() {
         if (accept("64")) return Literal(Literal::Tag::Lit_r64, r64(strtod(lit.c_str(), nullptr)));
     }
 
+    // untyped literals
+    if (base == 10 && !fract && !exp) {
+        return Literal(Literal::Tag::Lit_untyped, u64(strtoull(lit.c_str(), nullptr, 10)));
+    }
+
     ELOG("invalid literal in {}", Location(filename_.c_str(), line_, col_));
 }
 
-bool Lexer::accept(int c) {
-    if (stream_.peek() == c) {
+bool Lexer::accept(uint32_t c) {
+    if (peek() == c) {
         eat();
         return true;
     }
@@ -173,8 +193,7 @@ bool Lexer::accept(int c) {
 bool Lexer::accept(const std::string& str) {
     auto it = str.begin();
     while (it != str.end() && accept(*(it++))) ;
-    auto c = stream_.peek();
-    return it == str.end() && !(c == '_' || std::isalnum(c));
+    return it == str.end() && (eof() || !(peek() == '_' || std::isalnum(peek())));
 }
 
 }
