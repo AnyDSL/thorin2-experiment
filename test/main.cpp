@@ -102,5 +102,6 @@ TEST(App, Arity) {
 
 int main(int argc, char** argv)  {
     ::testing::InitGoogleTest(&argc, argv);
+    Log::set(Log::Error, &std::cout);
     return RUN_ALL_TESTS();
 }

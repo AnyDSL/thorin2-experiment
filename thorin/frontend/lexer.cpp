@@ -59,7 +59,7 @@ Token Lexer::next() {
     }
 
     std::string ident;
-    while (std::isalpha(c)) {
+    while ((ident != "" && std::isalnum(c)) || std::isalpha(c) || c == '_') {
         ident += stream_.peek();
         eat();
     }
@@ -163,7 +163,8 @@ bool Lexer::accept(int c) {
 bool Lexer::accept(const std::string& str) {
     auto it = str.begin();
     while (it != str.end() && accept(*(it++))) ;
-    return it == str.end() && std::isspace(stream_.peek());
+    auto c = stream_.peek();
+    return it == str.end() && !(c == '_' || std::isalnum(c));
 }
 
 }
