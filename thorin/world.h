@@ -308,8 +308,8 @@ public:
     const Axiom* val_bool_bot() { return val_bool_[0]; }
     const Axiom* val_bool_top() { return val_bool_[1]; }
 
-#define CODE(r, x) \
-    const Axiom* T_CAT(val_, T_CAT(x)) (T_CAT(x) val) { \
+#define CODE(r, x)                                                             \
+    const Axiom* T_CAT(val_, T_CAT(x)) (T_CAT(x) val) {                        \
         return assume(T_CAT(type_, T_CAT(x))(), {val}, {std::to_string(val)}); \
     }
     T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
@@ -318,14 +318,14 @@ public:
     //@}
 
     //@{ arithmetic operations
-#define CODE(r, ir, x) \
-    const Axiom* T_CAT(op_, x)() { return T_CAT(op_, x, _); } \
-    const App* T_CAT(op_, x)(T_CAT(ir, flags) flags, int64_t width) { \
+#define CODE(r, ir, x)                                                                     \
+    const Axiom* T_CAT(op_, x)() { return T_CAT(op_, x, _); }                              \
+    const App* T_CAT(op_, x)(T_CAT(ir, flags) flags, int64_t width) {                      \
         return T_CAT(op_, x, s_)[size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>(); \
-    } \
-    const App* T_CAT(op_, x)(const Def* q, const Def* flags, const Def* width) { \
-        return app(T_CAT(op_, x)(), {q, flags, width})->as<App>(); \
-    } \
+    }                                                                                      \
+    const App* T_CAT(op_, x)(const Def* q, const Def* flags, const Def* width) {           \
+        return app(T_CAT(op_, x)(), {q, flags, width})->as<App>();                         \
+    }                                                                                      \
     const App* T_CAT(op_, x)(const Def* a, const Def* b);
     T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
     T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
@@ -333,13 +333,13 @@ public:
     //@}
 
     //@{ relational operations
-#define CODE(ir)                                                                                                        \
-    const Axiom* T_CAT(op_, ir, cmp)() { return op_icmp_; }                                                             \
-    const App* T_CAT(op_, ir, cmp)(const Def* r, const Def* q, const Def* flags, const Def* width) {                    \
-        return app(app(T_CAT(op_, ir, cmp_), r), {q, flags, width})->as<App>();                                         \
-    }                                                                                                                   \
-    const App* T_CAT(op_, ir, cmp)(T_CAT(ir, rel) rel, T_CAT(ir, flags) flags, int64_t width) {            \
-        return T_CAT(op_, ir, cmps_)[size_t(rel)][size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>();  \
+#define CODE(ir)                                                                                            \
+    const Axiom* T_CAT(op_, ir, cmp)() { return op_icmp_; }                                                 \
+    const App* T_CAT(op_, ir, cmp)(const Def* r, const Def* q, const Def* flags, const Def* width) {        \
+        return app(app(T_CAT(op_, ir, cmp_), r), {q, flags, width})->as<App>();                             \
+    }                                                                                                       \
+    const App* T_CAT(op_, ir, cmp)(T_CAT(ir, rel) rel, T_CAT(ir, flags) flags, int64_t width) {             \
+        return T_CAT(op_, ir, cmps_)[size_t(rel)][size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>(); \
     }
     CODE(i)
     CODE(r)
