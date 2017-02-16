@@ -407,6 +407,7 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
 
 World::World() {
     auto Q = qualifier_kind();
+    auto U = qualifier(Qualifier::Unlimited);
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });
 
@@ -432,15 +433,15 @@ World::World() {
     // type_i
 #define CODE(r, x) \
     T_CAT(type_, T_CAT(x), _) = \
-        type_i(Qualifier::T_ELEM(0, x), iflags::T_ELEM(1, x), T_ELEM(2, x));
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+        type_i(Qualifier::u, iflags::T_ELEM(0, x), T_ELEM(1, x));
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
 #undef CODE
 
     // type_i
 #define CODE(r, x) \
     T_CAT(type_, T_CAT(x), _) = \
-        type_r(Qualifier::T_ELEM(0, x), rflags::T_ELEM(1, x), T_ELEM(2, x));
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+        type_r(Qualifier::u, rflags::T_ELEM(0, x), T_ELEM(1, x));
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
     auto i1 = type_i(vq2, vn1, vn0); auto r1 = type_r(vq2, vn1, vn0);

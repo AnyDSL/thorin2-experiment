@@ -69,6 +69,7 @@ TEST(Qualifiers, Variants) {
     ASSERT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier());
 }
 
+#if 0
 TEST(Substructural, Misc) {
     World w;
     //auto R = Qualifier::Relevant;
@@ -79,7 +80,7 @@ TEST(Substructural, Misc) {
     //auto r = w.relevant();
     //auto Star = w.star();
     auto Unit = w.unit();
-    auto Nat = w.type_usw64();
+    auto Nat = w.type_sw64();
     //auto n42 = w.axiom(Nat, {"42"});
     auto ANat = w.type_asw64();
     //auto LNat = w.type_nat(l);
@@ -123,6 +124,7 @@ TEST(Substructural, Misc) {
     auto anid2 = w.app(poly_aid, ANat);
     std::cout << anid2 << " : " << anid2->type() << endl;
 }
+#endif
 
 TEST(Substructural, UnlimitedRefs) {
     World w;

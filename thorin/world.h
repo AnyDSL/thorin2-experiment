@@ -280,8 +280,8 @@ public:
 
 #define CODE(r, x) \
     const App* T_CAT(type_, T_CAT(x))() { return T_CAT(type_, T_CAT(x), _); }
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
     const Axiom* type_mem() { return type_mem_; }
@@ -309,11 +309,11 @@ public:
     const Axiom* val_bool_top() { return val_bool_[1]; }
 
 #define CODE(r, x) \
-    const Axiom* T_CAT(val_, T_CAT(x)) (T_CAT(T_TAIL(x)) val) { \
+    const Axiom* T_CAT(val_, T_CAT(x)) (T_CAT(x) val) { \
         return assume(T_CAT(type_, T_CAT(x))(), {val}, {std::to_string(val)}); \
     }
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
     //@}
 
@@ -375,8 +375,8 @@ private:
     // i/r type
 #define CODE(r, x) \
     const App* T_CAT(type_, T_CAT(x), _);
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
     // arithops
