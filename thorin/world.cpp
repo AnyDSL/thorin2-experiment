@@ -458,20 +458,17 @@ World::World() {
 #undef CODE
 
     // arithop table
-    for (size_t q = 0; q != 4; ++q) {
-        auto qq = qualifier(Qualifier(q));
 #define CODE(r, ir, x)                                                                   \
-        for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                    \
-            for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                \
-                auto flags = val_nat(f);                                                 \
-                auto width = val_nat(T_CAT(index2, ir, width)(w));                       \
-                T_CAT(op_, x, s_)[q][f][w] = T_CAT(op_, x)(qq, flags, width)->as<App>(); \
-            }                                                                            \
-        }
-        T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
-        T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
-#undef CODE
+    for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                    \
+        for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                \
+            auto flags = val_nat(f);                                                 \
+            auto width = val_nat(T_CAT(index2, ir, width)(w));                       \
+            T_CAT(op_, x, s_)[f][w] = T_CAT(op_, x)(U, flags, width)->as<App>(); \
+        }                                                                            \
     }
+    T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
+    T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
+#undef CODE
 
     auto b = type_i(vq4, val_nat(int64_t(iflags::uo)), val_nat_1());
     auto i_type_cmp = pi(N, pi({Q, N, N}, pi({i1, i2}, b)));
@@ -487,23 +484,20 @@ World::World() {
 #undef CODE
 
     // cmp table
-    for (size_t q = 0; q != 4; ++q) {
-        auto qq = qualifier(Qualifier(q));
-#define CODE(ir)                                                                                               \
-        for (size_t r = 0; r != size_t(T_CAT(ir, rel)::Num); ++r) {                                            \
-            for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                                      \
-                for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                                  \
-                    auto rel = val_nat(r);                                                                     \
-                    auto flags = val_nat(f);                                                                   \
-                    auto width = val_nat(T_CAT(index2, ir, width)(w));                                         \
-                    T_CAT(op_, ir, cmps_)[r][q][f][w] = T_CAT(op_, ir, cmp)(rel, qq, flags, width)->as<App>(); \
-                }                                                                                              \
-            }                                                                                                  \
-        }
-        CODE(i)
-        CODE(r)
-#undef CODE
+#define CODE(ir)                                                                                       \
+    for (size_t r = 0; r != size_t(T_CAT(ir, rel)::Num); ++r) {                                        \
+        for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                                  \
+            for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                              \
+                auto rel = val_nat(r);                                                                 \
+                auto flags = val_nat(f);                                                               \
+                auto width = val_nat(T_CAT(index2, ir, width)(w));                                     \
+                T_CAT(op_, ir, cmps_)[r][f][w] = T_CAT(op_, ir, cmp)(rel, U, flags, width)->as<App>(); \
+            }                                                                                          \
+        }                                                                                              \
     }
+    CODE(i)
+    CODE(r)
+#undef CODE
 
     op_insert_ = axiom(pi(star(),
             pi({var(star(), 0), dim(var(star(), 1)), extract(var(star(), 2), var(dim(var(star(), 2)), 0))},
@@ -514,13 +508,13 @@ World::World() {
                 type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(N, 2)))), {"lea"});
 }
 
-#define CODE(r, ir, x)                                                          \
-const App* World::T_CAT(op_, x)(const Def* a, const Def* b) {                   \
-    T_CAT(ir, Type) t(a->type());                                               \
-    auto callee = t.is_const()                                                  \
-        ? T_CAT(op_, x)(t.const_qualifier(), t.const_flags(), t.const_width())  \
-        : T_CAT(op_, x)(t.      qualifier(), t.      flags(), t.      width()); \
-    return app(callee, {a, b})->as<App>();                                      \
+#define CODE(r, ir, x)                                                    \
+const App* World::T_CAT(op_, x)(const Def* a, const Def* b) {             \
+    T_CAT(ir, Type) t(a->type());                                         \
+    auto callee = t.is_const() && t.const_qualifier() == Qualifier::u     \
+        ? T_CAT(op_, x)(               t.const_flags(), t.const_width())  \
+        : T_CAT(op_, x)(t.qualifier(), t.      flags(), t.      width()); \
+    return app(callee, {a, b})->as<App>();                                \
 }
 T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
 T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)

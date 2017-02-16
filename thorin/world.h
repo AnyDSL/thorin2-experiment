@@ -320,8 +320,8 @@ public:
     //@{ arithmetic operations
 #define CODE(r, ir, x) \
     const Axiom* T_CAT(op_, x)() { return T_CAT(op_, x, _); } \
-    const App* T_CAT(op_, x)(Qualifier q, T_CAT(ir, flags) flags, int64_t width) { \
-        return T_CAT(op_, x, s_)[size_t(q)][size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>(); \
+    const App* T_CAT(op_, x)(T_CAT(ir, flags) flags, int64_t width) { \
+        return T_CAT(op_, x, s_)[size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>(); \
     } \
     const App* T_CAT(op_, x)(const Def* q, const Def* flags, const Def* width) { \
         return app(T_CAT(op_, x)(), {q, flags, width})->as<App>(); \
@@ -338,8 +338,8 @@ public:
     const App* T_CAT(op_, ir, cmp)(const Def* r, const Def* q, const Def* flags, const Def* width) {                    \
         return app(app(T_CAT(op_, ir, cmp_), r), {q, flags, width})->as<App>();                                         \
     }                                                                                                                   \
-    const App* T_CAT(op_, ir, cmp)(T_CAT(ir, rel) rel, Qualifier q, T_CAT(ir, flags) flags, int64_t width) {            \
-        return T_CAT(op_, ir, cmps_)[size_t(rel)][size_t(q)][size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>();  \
+    const App* T_CAT(op_, ir, cmp)(T_CAT(ir, rel) rel, T_CAT(ir, flags) flags, int64_t width) {            \
+        return T_CAT(op_, ir, cmps_)[size_t(rel)][size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>();  \
     }
     CODE(i)
     CODE(r)
@@ -387,7 +387,7 @@ private:
 #undef CODE
 
 #define CODE(r, ir, x) \
-    const App* T_CAT(op_, x, s_)[4][size_t(T_CAT(ir, flags)::Num)][size_t(T_CAT(ir, width)::Num)];
+    const App* T_CAT(op_, x, s_)[size_t(T_CAT(ir, flags)::Num)][size_t(T_CAT(ir, width)::Num)];
     T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
     T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
 #undef CODE
@@ -401,7 +401,7 @@ private:
 
 #define CODE(ir)                                                                                                                    \
     const Axiom* T_CAT(op_, ir, cmp_);                                                                                              \
-    const App* T_CAT(op_, ir, cmps_)[size_t(T_CAT(ir, rel)::Num)][4][size_t(T_CAT(ir, flags)::Num)][size_t(T_CAT(ir, width)::Num)];
+    const App* T_CAT(op_, ir, cmps_)[size_t(T_CAT(ir, rel)::Num)][size_t(T_CAT(ir, flags)::Num)][size_t(T_CAT(ir, width)::Num)];
     CODE(i)
     CODE(r)
 #undef CODE
