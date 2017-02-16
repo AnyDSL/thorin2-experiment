@@ -2,7 +2,7 @@
 
 #include "thorin/world.h"
 
-using namespace thorin;
+namespace thorin {
 
 TEST(Primop, Types) {
     World w;
@@ -30,6 +30,13 @@ TEST(Primop, Vals) {
     ASSERT_EQ(w.val_uo32(23), w.val_uo32(23));
     ASSERT_EQ(w.val_sw16(23)->box().get_u16(), sw16(23));
     ASSERT_EQ(w.val_uo32(23)->box().get_u32(), uo32(23));
+
+    ASSERT_EQ(w.val_f16(23._h), w.val_f16(23._h));
+    ASSERT_EQ(w.val_f32(23.f), w.val_f32(23.f));
+    ASSERT_EQ(w.val_f64(23.0), w.val_f64(23.0));
+    //ASSERT_EQ(w.val_f16(23._h)->box().get_r16(), r16(23));
+    ASSERT_EQ(w.val_f32(23.f)->box().get_r32(), r32(23));
+    ASSERT_EQ(w.val_f64(23.0)->box().get_r64(), r64(23));
 }
 
 TEST(Primop, Arithop) {
@@ -45,4 +52,6 @@ TEST(Primop, Cmp) {
 
 TEST(Primop, Ptr) {
     World w;
+}
+
 }

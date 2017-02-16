@@ -3,6 +3,25 @@
 
 #include <boost/preprocessor/seq.hpp>
 
+#define HALF_ENABLE_CPP11_USER_LITERALS 1
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmismatched-tags"
+#endif
+#include <half.hpp>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
+namespace thorin {
+
+using namespace half_float::literal;
+
+}
+
+#include "thorin/qualifier.h"
+
 #define T_STR(x) #x
 
 #define T_CAT_1(a)               BOOST_PP_SEQ_CAT(a)
@@ -26,17 +45,6 @@
 #define T_HEAD(seq) T_ELEM(0,seq)
 #define T_TAIL(seq) T_TAIL_ seq
 #define T_TAIL_(seq)
-
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmismatched-tags"
-#endif
-#include <half.hpp>
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
-#include "thorin/qualifier.h"
 
 #define THORIN_Q (u)(r)(a)(l)
 
