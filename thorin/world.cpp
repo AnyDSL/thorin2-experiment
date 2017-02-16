@@ -248,8 +248,15 @@ const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
 
 const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) {
     if (domains.size() == 1) {
-        if (auto sigma = domains.front()->isa<Sigma>())
+        auto domain = domains.front();
+        if (auto sigma = domain->isa<Sigma>())
             return pi(sigma->ops(), body, q, dbg);
+        if (auto variadic = domain->isa<Variadic>()) {
+            if (auto arity = variadic->arity()->isa<Axiom>()) {
+                if (!variadic->body()->free_vars().test(0))
+                    return pi(DefArray(arity->box().get_u64(), variadic->body()), body, q, dbg);
+            }
+        }
     }
 
     return unify<Pi>(domains.size() + 1, *this, domains, body, q, dbg);
