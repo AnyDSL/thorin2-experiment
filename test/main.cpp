@@ -102,8 +102,8 @@ TEST(App, Curry) {
 
 TEST(App, Arity) {
     World w;
-    auto l = w.lambda(DefArray(test_num_vars, [&](auto i) { return w.type_nat(); }), w.val_nat_32());
-    auto r = w.app(l, DefArray(test_num_vars, [&](auto) { return w.val_nat_64(); }));
+    auto l = w.lambda(DefArray(test_num_vars, w.type_nat()), w.val_nat_32());
+    auto r = w.app(l, DefArray(test_num_vars, w.val_nat_64()));
     ASSERT_EQ(r, w.val_nat_32());
 }
 
