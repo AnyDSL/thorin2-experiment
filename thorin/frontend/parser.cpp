@@ -8,6 +8,8 @@ const Def* Parser::parse_def() {
     if (ahead_.isa(Token::Tag::Lambda))  return parse_lambda();
     if (ahead_.isa(Token::Tag::Star))    return parse_star();
     if (ahead_.isa(Token::Tag::L_Angle)) return parse_var();
+    if (ahead_.isa(Token::Tag::L_Paren)) return parse_tuple();
+    if (ahead_.isa(Token::Tag::L_Brace)) return parse_assume();
     ELOG("definition expected in {}", ahead_.location());
 }
 
@@ -67,6 +69,36 @@ const Var* Parser::parse_var() {
     expect(Token::Tag::R_Angle);
     
     return world_.var(def, index, anchor.location());
+}
+
+const Def* Parser::parse_tuple() {
+    Anchor anchor(this);
+    eat(Token::Tag::L_Paren);
+
+    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); });
+    expect(Token::Tag::Colon);
+    auto type = parse_def();
+
+    return world_.tuple(defs, type, anchor.location());
+}
+
+const Axiom* Parser::parse_assume() {
+    Anchor anchor(this);
+    eat(Token::Tag::L_Brace);
+
+    if (!ahead_.isa(Token::Tag::Literal)) {
+        ELOG("literal expected in {}", ahead_.location());
+    }
+
+    auto box = ahead_.literal().box;
+
+    eat(Token::Tag::Literal);
+    expect(Token::Tag::Colon);
+
+    auto type = parse_def();
+
+    expect(Token::Tag::R_Brace);
+    return world_.assume(type, box, anchor.location());
 }
 
 void Parser::next() {

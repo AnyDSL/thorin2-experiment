@@ -24,6 +24,8 @@ public:
     const Lambda* parse_lambda();
     const Star*   parse_star();
     const Var*    parse_var();
+    const Def*    parse_tuple();
+    const Axiom*  parse_assume();
 
 private:
     struct Anchor {
