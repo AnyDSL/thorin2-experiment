@@ -134,6 +134,7 @@ protected:
         , tag_(unsigned(tag))
         , closed_(num_ops == 0)
         , nominal_(true)
+        , has_error_(false)
         , ops_(&vla_ops_[0])
     {
         std::fill_n(ops_, num_ops, nullptr);
@@ -152,6 +153,7 @@ protected:
         , tag_(unsigned(tag))
         , closed_(true)
         , nominal_(false)
+        , has_error_(std::any_of(ops.begin(), ops.end(), std::mem_fn(&Def::has_error)))
         , ops_(&vla_ops_[0])
     {
         std::copy(ops.begin(), ops.end(), ops_);
@@ -214,6 +216,7 @@ public:
     /// A nominal Def is always different from each other Def.
     bool is_nominal() const { return nominal_; }
     bool is_closed() const { return closed_; }
+    bool has_error() const { return has_error_; }
     Tag tag() const { return Tag(tag_); }
     WorldBase& world() const { return *world_; }
     //@}
@@ -235,6 +238,10 @@ public:
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
 
     virtual Def* stub(WorldBase&, const Def*, Debug) const { THORIN_UNREACHABLE; }
+    virtual bool assignable(Defs defs) const {
+        assert(defs.size() == 1);
+        return this == defs.front()->type();
+    }
     std::ostream& qualifier_stream(std::ostream& os) const {
         if (!is_type())
             return os;
@@ -298,15 +305,16 @@ private:
     union {
         struct {
             unsigned gid_           : 23;
-            unsigned tag_           :  7;
+            unsigned tag_           :  6;
             unsigned closed_        :  1;
             unsigned nominal_       :  1;
+            unsigned has_error_     :  1;
             // this sum must be 32   ^^^
         };
         uint32_t fields_;
     };
 
-    static_assert(int(Tag::Num) <= 128, "you must increase the number of bits in tag_");
+    static_assert(int(Tag::Num) <= 64, "you must increase the number of bits in tag_");
 
     mutable Uses uses_;
     const Def** ops_;
@@ -323,6 +331,7 @@ uint64_t UseHash::hash(Use use) {
     return hash_begin(uint64_t(use.index()) << 48ull | uint64_t(use->gid()));
 }
 
+//------------------------------------------------------------------------------
 
 class Pi : public Def {
 private:
@@ -574,8 +583,10 @@ private:
     }
 
 public:
+    bool assignable(Defs defs) const override;
     bool is_unit() const { return ops().empty(); }
     Sigma* set(size_t i, const Def* def) { Def::set(i, def); return this; };
+
     std::ostream& stream(std::ostream&) const override;
     Sigma* stub(WorldBase&, const Def*, Debug) const override;
 
@@ -592,6 +603,7 @@ private:
     Variadic(WorldBase& world, const Def* arity, const Def* body, Debug dbg);
 
 public:
+    bool assignable(Defs defs) const override;
     const Def* arity() const { return op(0); }
     const Def* body() const { return op(1); }
     std::ostream& stream(std::ostream&) const override;

@@ -56,6 +56,13 @@ TEST(Sigma, unit) {
     ASSERT_EQ(tuple0, apped);
 }
 
+TEST(Sigma, Assign) {
+    World w;
+    auto sig = w.sigma({w.star(), w.var(w.star(), 0)})->as<Sigma>();
+    ASSERT_TRUE(sig->assignable({w.type_nat(), w.val_nat(42)}));
+    ASSERT_FALSE(sig->assignable({w.type_nat(), w.val_bool_bot()}));
+}
+
 TEST(Sigma, ExtractAndSingleton) {
     World w;
     auto n23 = w.val_nat(23);
@@ -95,8 +102,8 @@ TEST(App, Curry) {
 
 TEST(App, Arity) {
     World w;
-    auto l = w.lambda(DefArray(test_num_vars, [&](auto i) { return w.var(w.type_nat(), i); }), w.val_nat_32());
-    auto r = w.app(l, DefArray(test_num_vars, [&](auto) { return w.val_nat_64(); }));
+    auto l = w.lambda(DefArray(test_num_vars, w.type_nat()), w.val_nat_32());
+    auto r = w.app(l, DefArray(test_num_vars, w.val_nat_64()));
     ASSERT_EQ(r, w.val_nat_32());
 }
 

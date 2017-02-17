@@ -20,7 +20,6 @@ const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_mee
     auto max_sort = Sort::Type;
     const Def* inferred = use_meet ? world.linear() : world.unlimited();
     for (auto op : ops) {
-        assert(op->sort() >= Sort::Type && "Operands must be at least types.");
         max_sort = std::max(max_sort, op->sort());
         assert(max_sort != Sort::Universe && "Type universes shouldn't be operands.");
         if (max_sort == Sort::Type) {
@@ -34,11 +33,15 @@ const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_mee
     if (max_sort == Sort::Type) {
         if (q != nullptr) {
 #ifndef NDEBUG
-            if (auto qual_axiom = inferred->isa<Axiom>()) {
+            if (auto qual_axiom = world.isa_const_qualifier(inferred)) {
                 auto inferred_q = qual_axiom->box().get_qualifier();
-                if (auto q_axiom = q->isa<Axiom>())
-                    assert(q_axiom->box().get_qualifier() >= inferred_q &&
-                          "Provided qualifier must be as restricted as the meet of the operands qualifiers.");
+                if (auto q_axiom = world.isa_const_qualifier(q)) {
+                    auto qual = q_axiom->box().get_qualifier();
+                    auto test = use_meet ? qual <= inferred_q : qual >= inferred_q;
+                    assertf(test, "Qualifier must be {} than the {} of the operands' qualifiers.",
+                            use_meet ? "less" : "greater",
+                            use_meet ? "greatest lower bound" : "least upper bound");
+                }
             }
 #endif
             return world.star(q);
@@ -145,8 +148,10 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
         }
     }
 
-    // TODO what if args types don't match the domains? error?
-    auto type = callee->type()->as<Pi>()->reduce(args);
+    auto callee_type = callee->type()->as<Pi>();
+    assertf(callee_type->domain()->assignable(args),
+            "Callee {} with type {} cannot be called with arguments {}.", callee, callee_type, tuple(args));
+    auto type = callee_type->reduce(args);
     auto app = unify<App>(args.size() + 1, *this, type, callee, args, dbg);
     assert(app->callee() == callee);
 
@@ -166,9 +171,16 @@ const Def* WorldBase::dim(const Def* def, Debug dbg) {
 }
 
 const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
+    assert(!def->is_universe());
+    assertf(i->type() == dim(def), "Dimension {} of {} does not match dimension type {} of index {}.",
+            dim(def), def, i->type(), i);
     if (auto assume = i->isa<Axiom>())
         return extract(def, assume->box().get_u64(), dbg);
-    return unify<Extract>(2, *this, i->type(), def, i, dbg);
+    auto type = def->type();
+    if (def->is_term())
+        type = extract(def->type(), i);
+
+    return unify<Extract>(2, *this, type, def, i, dbg);
 }
 
 const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
@@ -194,8 +206,10 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
     }
 
     if (auto variadic = def->type()->isa<Variadic>()) {
-        auto idx = index(i, /*TODO*/variadic->arity()->as<Axiom>()->box().get_u64(), dbg);
-        return unify<Extract>(2, *this, variadic->body(), def, idx, dbg);
+        assertf(variadic->arity()->isa<Axiom>() && i < variadic->arity()->as<Axiom>()->box().get_u64(),
+                "Index {} not provably in Arity {}.", i, variadic->arity());
+        auto idx = index(i, variadic->arity()->as<Axiom>()->box().get_u64(), dbg);
+        return unify<Extract>(2, *this, variadic->body()->reduce({idx}), def, idx, dbg);
     }
 
     assert(i == 0);
@@ -234,8 +248,15 @@ const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
 
 const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) {
     if (domains.size() == 1) {
-        if (auto sigma = domains.front()->isa<Sigma>())
+        auto domain = domains.front();
+        if (auto sigma = domain->isa<Sigma>())
             return pi(sigma->ops(), body, q, dbg);
+        if (auto variadic = domain->isa<Variadic>()) {
+            if (auto arity = variadic->arity()->isa<Axiom>()) {
+                if (!variadic->body()->free_vars().test(0))
+                    return pi(DefArray(arity->box().get_u64(), variadic->body()), body, q, dbg);
+            }
+        }
     }
 
     return unify<Pi>(domains.size() + 1, *this, domains, body, q, dbg);
@@ -275,11 +296,13 @@ const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {
         case 0:
             return unit(inferred_type->qualifier());
         case 1:
+            assert(defs.front()->type() == inferred_type);
             return defs.front();
         default:
-            // TODO variadic needs qualifiers, but need to pull rebase first
-            if (std::equal(defs.begin() + 1, defs.end(), &defs.front()))
+            if (std::equal(defs.begin() + 1, defs.end(), &defs.front())) {
+                assert(q == nullptr || defs.front()->qualifier() == q);
                 return variadic(arity(defs.size(), dbg), defs.front(), dbg);
+            }
     }
 
     return unify<Sigma>(defs.size(), *this, defs, inferred_type, dbg);
@@ -323,16 +346,9 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
 }
 
 const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
-    // will return the single type in case of a single def
-    auto expected_type = sigma(types(defs));
-    const Def* found_structural_type = type;
-    // if defs is just one, we may not have a sigma to unpack
-    if (type->is_nominal() && type->isa<Sigma>())
-        found_structural_type = sigma(type->ops());
-    // TODO error message with more precise information
-    assert(found_structural_type == expected_type && "can't give type to tuple");
-
-    if (!type->is_nominal() && defs.size() == 1)
+    assertf(type->assignable(defs),
+            "Can't assign type {} to tuple with type {}", type, sigma(types(defs)));
+    if ((!type->is_nominal() || type == defs.front()->type()) && defs.size() == 1)
         return defs.front();
 
     return unify<Tuple>(defs.size(), *this, type->as<SigmaBase>(), defs, dbg);
@@ -407,6 +423,7 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
 
 World::World() {
     auto Q = qualifier_kind();
+    auto U = qualifier(Qualifier::Unlimited);
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });
 
@@ -432,15 +449,15 @@ World::World() {
     // type_i
 #define CODE(r, x) \
     T_CAT(type_, T_CAT(x), _) = \
-        type_i(Qualifier::T_ELEM(0, x), iflags::T_ELEM(1, x), T_ELEM(2, x));
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_I_FLAGS)(THORIN_I_WIDTH))
+        type_i(Qualifier::u, iflags::T_ELEM(0, x), T_ELEM(1, x));
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
 #undef CODE
 
     // type_i
 #define CODE(r, x) \
     T_CAT(type_, T_CAT(x), _) = \
-        type_r(Qualifier::T_ELEM(0, x), rflags::T_ELEM(1, x), T_ELEM(2, x));
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_Q)(THORIN_R_FLAGS)(THORIN_R_WIDTH))
+        type_r(Qualifier::u, rflags::T_ELEM(0, x), T_ELEM(1, x));
+    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
     auto i1 = type_i(vq2, vn1, vn0); auto r1 = type_r(vq2, vn1, vn0);
@@ -457,20 +474,17 @@ World::World() {
 #undef CODE
 
     // arithop table
-    for (size_t q = 0; q != 4; ++q) {
-        auto qq = qualifier(Qualifier(q));
 #define CODE(r, ir, x)                                                                   \
-        for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                    \
-            for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                \
-                auto flags = val_nat(f);                                                 \
-                auto width = val_nat(T_CAT(index2, ir, width)(w));                       \
-                T_CAT(op_, x, s_)[q][f][w] = T_CAT(op_, x)(qq, flags, width)->as<App>(); \
-            }                                                                            \
-        }
-        T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
-        T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
-#undef CODE
+    for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                    \
+        for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                \
+            auto flags = val_nat(f);                                                 \
+            auto width = val_nat(T_CAT(index2, ir, width)(w));                       \
+            T_CAT(op_, x, s_)[f][w] = T_CAT(op_, x)(U, flags, width)->as<App>(); \
+        }                                                                            \
     }
+    T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
+    T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
+#undef CODE
 
     auto b = type_i(vq4, val_nat(int64_t(iflags::uo)), val_nat_1());
     auto i_type_cmp = pi(N, pi({Q, N, N}, pi({i1, i2}, b)));
@@ -486,40 +500,38 @@ World::World() {
 #undef CODE
 
     // cmp table
-    for (size_t q = 0; q != 4; ++q) {
-        auto qq = qualifier(Qualifier(q));
-#define CODE(ir)                                                                                               \
-        for (size_t r = 0; r != size_t(T_CAT(ir, rel)::Num); ++r) {                                            \
-            for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                                      \
-                for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                                  \
-                    auto rel = val_nat(r);                                                                     \
-                    auto flags = val_nat(f);                                                                   \
-                    auto width = val_nat(T_CAT(index2, ir, width)(w));                                         \
-                    T_CAT(op_, ir, cmps_)[r][q][f][w] = T_CAT(op_, ir, cmp)(rel, qq, flags, width)->as<App>(); \
-                }                                                                                              \
-            }                                                                                                  \
-        }
-        CODE(i)
-        CODE(r)
-#undef CODE
+#define CODE(ir)                                                                                       \
+    for (size_t r = 0; r != size_t(T_CAT(ir, rel)::Num); ++r) {                                        \
+        for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                                  \
+            for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                              \
+                auto rel = val_nat(r);                                                                 \
+                auto flags = val_nat(f);                                                               \
+                auto width = val_nat(T_CAT(index2, ir, width)(w));                                     \
+                T_CAT(op_, ir, cmps_)[r][f][w] = T_CAT(op_, ir, cmp)(rel, U, flags, width)->as<App>(); \
+            }                                                                                          \
+        }                                                                                              \
     }
+    CODE(i)
+    CODE(r)
+#undef CODE
 
     op_insert_ = axiom(pi(star(),
             pi({var(star(), 0), dim(var(star(), 1)), extract(var(star(), 2), var(dim(var(star(), 2)), 0))},
             var(star(), 3))), {"insert"});
 
     op_lea_ = axiom(pi({star(), N},
-                pi({type_ptr(var(star(), 1), var(N, 0)), dim(var(star(), 2))},
-                type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(N, 2)))), {"lea"});
+                       pi({type_ptr(var(star(), 1), var(N, 0)), dim(var(star(), 2))},
+                          type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(N, 2)))),
+                    {"lea"});
 }
 
-#define CODE(r, ir, x)                                                          \
-const App* World::T_CAT(op_, x)(const Def* a, const Def* b) {                   \
-    T_CAT(ir, Type) t(a->type());                                               \
-    auto callee = t.is_const()                                                  \
-        ? T_CAT(op_, x)(t.const_qualifier(), t.const_flags(), t.const_width())  \
-        : T_CAT(op_, x)(t.      qualifier(), t.      flags(), t.      width()); \
-    return app(callee, {a, b})->as<App>();                                      \
+#define CODE(r, ir, x)                                                    \
+const App* World::T_CAT(op_, x)(const Def* a, const Def* b) {             \
+    T_CAT(ir, Type) t(a->type());                                         \
+    auto callee = t.is_const() && t.const_qualifier() == Qualifier::u     \
+        ? T_CAT(op_, x)(               t.const_flags(), t.const_width())  \
+        : T_CAT(op_, x)(t.qualifier(), t.      flags(), t.      width()); \
+    return app(callee, {a, b})->as<App>();                                \
 }
 T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
 T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
