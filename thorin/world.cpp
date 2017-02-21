@@ -216,9 +216,20 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
     return def;
 }
 
-const Def* WorldBase::index(size_t i, size_t a, Debug dbg) {
+const Def* WorldBase::index(size_t i, size_t a, Location location) {
+    std::vector<std::array<char, 3>> digits;
+    for (size_t aa = a; aa > 0; aa /= 10)
+        digits.push_back({char(0xe2), char(0x82), char(char(0x80) + char(aa % 10))}); // utf-8 prefix for subscript 0
+
+    std::string s = std::to_string(i);
+    for (auto i = digits.rbegin(), e = digits.rend(); i != e; ++i) {
+        auto digit = *i;
+        ((s += digit[0]) += digit[1]) += digit[2];
+    }
+
     if (i < a)
-        return assume(arity(a), {u64(i)}, dbg);
+        return assume(arity(a), {u64(i)}, {location, s});
+
     return error(arity(a));
 }
 

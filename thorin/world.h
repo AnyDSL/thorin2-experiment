@@ -52,7 +52,7 @@ public:
         return nullptr;
     }
 
-    const Def* index(size_t index, size_t arity, Debug dbg = {});
+    const Def* index(size_t index, size_t arity, Location location = {});
     const Def* variadic(const Def* arity, const Def* body, Debug dbg = {});
     /// @em nominal Axiom
     const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }

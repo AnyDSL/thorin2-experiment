@@ -539,21 +539,6 @@ std::ostream& Pick::stream(std::ostream& os) const {
     return os << ")";
 }
 
-//std::ostream& Index::stream(std::ostream& os) const {
-    //qualifier_stream(os) << index();
-
-    //std::vector<std::array<char, 3>> digits;
-    //for (size_t a = arity(); a > 0; a /= 10)
-        //digits.push_back({char(0xe2), char(0x82), char(char(0x80) + char(a % 10))}); // utf-8 prefix for subscript 0
-
-    //for (auto i = digits.rbegin(), e = digits.rend(); i != e; ++i) {
-        //const auto& digit = *i;
-        //os << digit[0] << digit[1] << digit[2];
-    //}
-
-    //return os;
-//}
-
 std::ostream& Sigma::stream(std::ostream& os) const {
     return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
 }
