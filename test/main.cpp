@@ -39,7 +39,17 @@ TEST(Base, PolyId) {
     ASSERT_EQ(w.app(int_id, n23), n23);
 }
 
-TEST(Sigma, unit) {
+TEST(Sigma, Normalization) {
+    World w;
+    auto N = w.type_nat();
+    auto n23 = w.val_nat(23);
+    auto plus = w.axiom(w.pi({N, N}, N), {"+"});
+    auto sNN = w.sigma({N, N});
+    auto v = w.var(sNN, 0);
+    w.lambda(sNN, w.app(plus, {w.extract(v, 0_s), w.extract(v, 1)}))->dump();
+}
+
+TEST(Sigma, Unit) {
     World w;
 
     auto unit = w.unit();
