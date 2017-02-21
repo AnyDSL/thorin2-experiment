@@ -25,17 +25,18 @@ public:
     WorldBase();
     ~WorldBase();
 
+    //@{ universe and kinds
     const Universe* universe() const { return universe_; }
+    const Axiom* arity_kind() const { return arity_kind_; }
     const Star* star(Qualifier q = Qualifier::Unlimited) const { return star_[size_t(q)]; }
     const Star* star(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
             return star(cq->box().get_qualifier());
         return unify<Star>(1, *this, q);
     }
+    //@}
 
-    const Axiom* arity_kind() const { return arity_kind_; }
-    const Axiom* arity(size_t a, Location location = {});
-
+    //@{ qualifier
     const Axiom* qualifier_kind() const { return qualifier_kind_; }
     const Axiom* qualifier(Qualifier q = Qualifier::Unlimited) const { return qualifier_[size_t(q)]; }
     const Axiom* unlimited() const { return qualifier(Qualifier::Unlimited); }
@@ -48,7 +49,9 @@ public:
             if (q == def) return q;
         return nullptr;
     }
+    //@}
 
+    const Axiom* arity(size_t a, Location location = {});
     const Def* index(size_t index, size_t arity, Location location = {});
     const Def* variadic(const Def* arity, const Def* body, Debug dbg = {});
     /// @em nominal Axiom
@@ -105,21 +108,21 @@ public:
             return unit(cq->box().get_qualifier());
         return unify<Sigma>(0, *this, Defs(), star(q), Debug("Σ()"));
     }
-    /// Structural sigma types or kinds
+    /// @em structural Sigma types or kinds
     const Def* sigma(Defs defs, Debug dbg = {}) { return sigma(defs, nullptr, dbg); }
     const Def* sigma(Defs, const Def* qualifier, Debug dbg = {});
     /// Nominal sigma types or kinds
     Sigma* sigma(size_t num_ops, const Def* type, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, type, num_ops, dbg);
     }
-    /// Nominal sigma types
+    /// @em nominal Sigma types
     Sigma* sigma_type(size_t num_ops, Debug dbg = {}) {
         return sigma_type(num_ops, unlimited(), dbg);
     }
     Sigma* sigma_type(size_t num_ops, const Def* qualifier, Debug dbg = {}) {
         return sigma(num_ops, star(qualifier), dbg);
     }
-    /// Nominal sigma kinds
+    /// @em nominal Sigma kinds
     Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, num_ops, dbg);
     }
