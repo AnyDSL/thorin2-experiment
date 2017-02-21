@@ -41,14 +41,23 @@ TEST(Base, PolyId) {
 
 TEST(Sigma, Normalization) {
     World w;
+    auto B = w.type_bool();
     auto N = w.type_nat();
-    auto n23 = w.val_nat(23);
-    n23->dump();
-    auto plus = w.axiom(w.pi({N, N}, N), {"+"});
+    auto fNB = w.axiom(w.pi({N, B}, w.star()), {"fNB"});
+    auto fNN = w.axiom(w.pi({N, N}, w.star()), {"fNN"});
+    auto gNB = w.axiom(w.pi({N, B}, N), {"gNB"});
+    auto gNN = w.axiom(w.pi({N, N}, N), {"gNN"});
+    auto sNB = w.sigma({N, B});
     auto sNN = w.sigma({N, N});
-    auto v = w.var(sNN, 0);
-    w.index(23, 12345)->dump();
-    w.lambda(sNN, w.app(plus, {w.extract(v, 0_s), w.extract(v, 1)}))->dump();
+    auto vNB = w.var(sNB, 0);
+    auto vNN = w.var(sNN, 0);
+
+    // TODO wip
+    w.pi(sNB, w.app(fNB, {w.extract(vNB, 0_s), w.extract(vNB, 1)}))->dump();
+    w.lambda(sNB, w.app(gNB, {w.extract(vNB, 0_s), w.extract(vNB, 1)}))->dump();
+
+    w.pi(sNN, w.app(fNN, {w.extract(vNN, 0_s), w.extract(vNN, 1)}))->dump();
+    w.lambda(sNN, w.app(gNN, {w.extract(vNN, 0_s), w.extract(vNN, 1)}))->dump();
 }
 
 TEST(Sigma, Unit) {

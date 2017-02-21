@@ -277,8 +277,15 @@ const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
 const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) {
     if (domains.size() == 1 && !domains.front()->is_nominal()) {
         auto domain = domains.front();
-        if (auto sigma = domain->isa<Sigma>())
+
+        if (auto sigma = domain->isa<Sigma>()) {
+#if 0
+            auto t = tuple(DefArray(sigma->num_ops(), [&](auto i) { return this->var(sigma->op(i), sigma->num_ops() - 1 - i); }));
+            return pi(sigma->ops(), reduce(body, {t}), q, dbg);
+#endif
             return pi(sigma->ops(), body, q, dbg);
+        }
+
         if (auto variadic = domain->isa<Variadic>()) {
             if (auto arity = variadic->arity()->isa<Axiom>()) {
                 if (!variadic->body()->free_vars().test(0))
