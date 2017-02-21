@@ -135,6 +135,16 @@ const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
     return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
 }
 
+const Axiom* WorldBase::arity(size_t a, Location location) {
+    auto cur = Def::gid_counter();
+    auto result = assume(arity_kind(), {u64(a)}, {location});
+
+    if (result->gid() >= cur)
+        result->debug().set(std::to_string(a) + "ₐ");
+
+    return result;
+}
+
 const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
     if (args.size() == 1) {
         auto single = args.front();

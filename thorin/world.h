@@ -34,7 +34,7 @@ public:
     }
 
     const Axiom* arity_kind() const { return arity_kind_; }
-    const Axiom* arity(size_t a, Debug dbg = {}) { return assume(arity_kind(), {u64(a)}, dbg); }
+    const Axiom* arity(size_t a, Location location = {});
 
     const Axiom* qualifier_kind() const { return qualifier_kind_; }
     const Axiom* qualifier(Qualifier q = Qualifier::Unlimited) const { return qualifier_[size_t(q)]; }
