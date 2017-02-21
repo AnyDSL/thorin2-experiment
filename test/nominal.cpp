@@ -10,9 +10,7 @@ using namespace thorin;
 TEST(Nominal, Sigma) {
     World w;
     auto nat = w.type_nat();
-    auto nat2 = w.sigma_type(2, {"Nat x Nat"});
-    nat2->set(0, nat);
-    nat2->set(1, nat);
+    auto nat2 = w.sigma_type(2, {"Nat x Nat"})->set(0, nat)->set(1, nat);
     ASSERT_TRUE(nat2->is_closed());
     ASSERT_TRUE(nat2->free_vars().none());
 
