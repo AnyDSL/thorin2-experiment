@@ -565,7 +565,7 @@ std::ostream& Var::stream(std::ostream& os) const {
 }
 
 std::ostream& Variadic::stream(std::ostream& os) const {
-    return streamf(os, "[{}; {}]", arity(), body());
+    return streamf(os, "[{} × {}]", arity(), body());
 }
 
 std::ostream& Variant::stream(std::ostream& os) const {
