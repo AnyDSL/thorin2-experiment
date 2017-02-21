@@ -42,9 +42,6 @@ public:
     const Axiom* affine() const { return qualifier(Qualifier::Affine); }
     const Axiom* linear() const { return qualifier(Qualifier::Linear); }
     const Axiom* relevant() const { return qualifier(Qualifier::Relevant); }
-    bool is_qualifier(const Def* def) const {
-        return def->type() == qualifier_kind();
-    }
     const Axiom* isa_const_qualifier(const Def* def) const {
         assert(def != nullptr);
         for (auto q : qualifier_)

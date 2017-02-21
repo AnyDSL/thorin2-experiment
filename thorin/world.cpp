@@ -52,6 +52,8 @@ const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_mee
     return world.universe();
 }
 
+bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_kind(); }
+
 const Def* single_qualified(Defs defs, const Def* q) {
     assert(defs.size() == 1);
     assert(defs.front()->qualifier() == q);
@@ -72,7 +74,7 @@ const Def* qualifier_glb_or_lub(WorldBase& w, Defs defs, bool use_meet,
             accu = use_meet ? meet(accu, qual) : join(accu, qual);
             num_const++;
         } else {
-            assert(w.is_qualifier(defs[i]));
+            assert(is_qualifier(defs[i]));
             reduced[i - num_const] = defs[i];
         }
     }
