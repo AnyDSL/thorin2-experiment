@@ -13,6 +13,7 @@ TEST(Nominal, Sigma) {
     auto nat2 = w.sigma_type(2, {"Nat x Nat"})->set(0, nat)->set(1, nat);
     ASSERT_TRUE(nat2->is_closed());
     ASSERT_TRUE(nat2->free_vars().none());
+    ASSERT_EQ(w.pi(nat2, nat)->domain(),  nat2);
 
     auto n42 = w.val_nat(42);
     ASSERT_DEATH(w.tuple(nat2, {n42}), ".*");

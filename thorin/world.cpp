@@ -275,7 +275,7 @@ const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
 }
 
 const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) {
-    if (domains.size() == 1) {
+    if (domains.size() == 1 && !domains.front()->is_nominal()) {
         auto domain = domains.front();
         if (auto sigma = domain->isa<Sigma>())
             return pi(sigma->ops(), body, q, dbg);
