@@ -504,7 +504,7 @@ std::ostream& App::stream(std::ostream& os) const {
 std::ostream& Axiom::stream(std::ostream& os) const { return qualifier_stream(os) << name(); }
 std::ostream& Dim::stream(std::ostream& os) const { return streamf(os, "dim({})", of()); }
 
-std::ostream& Error::stream(std::ostream& os) const { return os << "Error"; }
+std::ostream& Error::stream(std::ostream& os) const { return os << "<error>"; }
 
 std::ostream& Extract::stream(std::ostream& os) const {
     return tuple()->name_stream(os) << "." << index();
@@ -565,7 +565,7 @@ std::ostream& Var::stream(std::ostream& os) const {
 }
 
 std::ostream& Variadic::stream(std::ostream& os) const {
-    return streamf(os, "x{}({})", arity(), body());
+    return streamf(os, "[{}; {}]", arity(), body());
 }
 
 std::ostream& Variant::stream(std::ostream& os) const {

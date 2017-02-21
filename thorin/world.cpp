@@ -1,6 +1,5 @@
+#include <algorithm>
 #include <functional>
-
-#include <boost/preprocessor/stringize.hpp>
 
 #include "thorin/world.h"
 
@@ -217,18 +216,24 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
 }
 
 const Def* WorldBase::index(size_t i, size_t a, Location location) {
-    std::vector<std::array<char, 3>> digits;
-    for (size_t aa = a; aa > 0; aa /= 10)
-        digits.push_back({char(0xe2), char(0x82), char(char(0x80) + char(aa % 10))}); // utf-8 prefix for subscript 0
+    if (i < a) {
+        auto cur = Def::gid_counter();
+        auto result = assume(arity(a), {u64(i)}, {location});
 
-    std::string s = std::to_string(i);
-    for (auto i = digits.rbegin(), e = digits.rend(); i != e; ++i) {
-        auto digit = *i;
-        ((s += digit[0]) += digit[1]) += digit[2];
+        if (result->gid() >= cur) { // new assume -> build name
+            std::string s = std::to_string(i);
+            auto b = s.size();
+
+            // append utf-8 subscripts in reverse order
+            for (size_t aa = a; aa > 0; aa /= 10)
+                ((s += char(char(0x80) + char(aa % 10))) += char(0x82)) += char(0xe2);
+
+            std::reverse(s.begin() + b, s.end());
+            result->debug().set(s);
+        }
+
+        return result;
     }
-
-    if (i < a)
-        return assume(arity(a), {u64(i)}, {location, s});
 
     return error(arity(a));
 }
@@ -534,6 +539,14 @@ World::World() {
                        pi({type_ptr(var(star(), 1), var(N, 0)), dim(var(star(), 2))},
                           type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(N, 2)))),
                     {"lea"});
+}
+
+const Axiom* World::val_nat(int64_t val, Location location) {
+    auto cur = Def::gid_counter();
+    auto result = assume(type_nat(), {val}, {location});
+    if (result->gid() >= cur)
+        result->debug().set(std::to_string(val));
+    return result;
 }
 
 #define CODE(r, ir, x)                                                    \

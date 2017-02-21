@@ -43,9 +43,11 @@ TEST(Sigma, Normalization) {
     World w;
     auto N = w.type_nat();
     auto n23 = w.val_nat(23);
+    n23->dump();
     auto plus = w.axiom(w.pi({N, N}, N), {"+"});
     auto sNN = w.sigma({N, N});
     auto v = w.var(sNN, 0);
+    w.index(23, 12345)->dump();
     w.lambda(sNN, w.app(plus, {w.extract(v, 0_s), w.extract(v, 1)}))->dump();
 }
 

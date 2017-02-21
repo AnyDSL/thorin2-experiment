@@ -294,7 +294,7 @@ public:
     //@}
 
     //@{ values
-    const Axiom* val_nat(int64_t val) { return assume(type_nat(), {val}, {std::to_string(val)}); }
+    const Axiom* val_nat(int64_t val, Location location = {});
     const Axiom* val_nat_0() { return val_nat_0_; }
     const Axiom* val_nat_1() { return val_nat_[0]; }
     const Axiom* val_nat_2() { return val_nat_[1]; }
