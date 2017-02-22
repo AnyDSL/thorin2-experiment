@@ -111,14 +111,15 @@ public:
     Sigma* sigma(size_t num_ops, const Def* type, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, type, num_ops, dbg);
     }
-    /// @em nominal Sigma types
+    /// @em nominal Sigma of type Star
     Sigma* sigma_type(size_t num_ops, Debug dbg = {}) {
         return sigma_type(num_ops, unlimited(), dbg);
     }
+    /// @em nominal Sigma of type Star
     Sigma* sigma_type(size_t num_ops, const Def* qualifier, Debug dbg = {}) {
         return sigma(num_ops, star(qualifier), dbg);
     }
-    /// @em nominal Sigma kinds
+    /// @em nominal Sigma of type Univers
     Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, num_ops, dbg);
     }
