@@ -67,11 +67,13 @@ TEST(Sigma, Normalization) {
     auto l1b = w.nominal_lambda({N, N, B}, N)->set(w.app(gNNBNI, {w.var(N, 2),          w.var(N, 1),        w.var(B, 0),        w.var(N, 4), I}));
     ASSERT_EQ(l1a->type(), l1b->type());
     ASSERT_EQ(l1a->body(), l1b->body());
+    ASSERT_NE(l1a, l1b);
 
     auto l2a = w.nominal_lambda(sNNN, N)     ->set(w.app(gNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I}));
     auto l2b = w.nominal_lambda({N, N, N}, N)->set(w.app(gNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 4), I}));
     ASSERT_EQ(l2a->type(), l2b->type());
     ASSERT_EQ(l2a->body(), l2b->body());
+    ASSERT_NE(l2a, l2b);
 }
 
 TEST(Sigma, Unit) {
