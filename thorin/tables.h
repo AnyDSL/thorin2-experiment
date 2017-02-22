@@ -112,10 +112,10 @@ enum class rwidth {
 };
 #undef CODE
 
-constexpr size_t iwidth2index(size_t i) { return i == 1 ? 0 : log2(i)-2; }
-constexpr size_t rwidth2index(size_t i) { return log2(i)-4; }
-constexpr size_t index2iwidth(size_t i) { return i == 0 ? 1 : 1 << (i+2); }
-constexpr size_t index2rwidth(size_t i) { return 1 << (i+4); }
+inline size_t iwidth2index(size_t i) { return i == 1 ? 0 : log2(i)-2; }
+inline size_t rwidth2index(size_t i) { return log2(i)-4; }
+inline size_t index2iwidth(size_t i) { return i == 0 ? 1 : 1 << (i+2); }
+inline size_t index2rwidth(size_t i) { return 1 << (i+4); }
 
 enum class iarithop {
     T_ENUM(THORIN_I_ARITHOP),
