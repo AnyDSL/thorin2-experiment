@@ -139,8 +139,6 @@ protected:
         , ops_(&vla_ops_[0])
     {
         std::fill_n(ops_, num_ops, nullptr);
-        if (type != nullptr)
-            free_vars_ |= type->free_vars_;
     }
     /// A @em structural Def.
     template<class I>

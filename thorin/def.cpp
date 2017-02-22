@@ -127,17 +127,14 @@ void Def::set(size_t i, const Def* def) {
     assert(!is_closed() && is_nominal());
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
+
     ops_[i] = def;
-    const auto& p = def->uses_.emplace(this, i);
-    assert_unused(p.second);
+    has_error_ |= def->has_error();
 
-    free_vars_ |= op(i)->free_vars() >> shift(i);
-
-    if (def->has_error())
-        has_error_ = true;
     if (i == num_ops() - 1) {
-        assert(std::all_of(ops().begin(), ops().end(), [](const Def* def) { return static_cast<bool>(def); }));
+        assert(std::all_of(ops().begin(), ops().end(), [](const Def* def) { return def != nullptr; }));
         closed_ = true;
+        finalize();
     }
 }
 
@@ -148,14 +145,16 @@ void Def::unset(size_t i) {
 }
 
 void Def::finalize() {
-    assert(is_closed() && !is_nominal());
+    assert(is_closed());
 
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         const auto& p = op(i)->uses_.emplace(this, i);
         assert_unused(p.second);
         free_vars_ |= op(i)->free_vars() >> shift(i);
     }
-    free_vars_ |= type()->free_vars_;
+
+    if (type() != nullptr)
+        free_vars_ |= type()->free_vars_;
 }
 
 void Def::unregister_uses() const {
