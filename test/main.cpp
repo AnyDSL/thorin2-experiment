@@ -46,8 +46,8 @@ TEST(Sigma, Normalization) {
     auto I = w.lambda(N, w.var(N, 0));
     auto fNNBNI = w.axiom(w.pi({N, N, B, N, w.pi(N, N)}, w.star()), {"fNNBNI"});
     auto fNNNNI = w.axiom(w.pi({N, N, N, N, w.pi(N, N)}, w.star()), {"fNNNNI"});
-    auto gNNB = w.axiom(w.pi({N, N, B}, N), {"gNB"});
-    auto gNNN = w.axiom(w.pi({N, N, N}, N), {"gNN"});
+    //auto gNNB = w.axiom(w.pi({N, N, B}, N), {"gNB"});
+    //auto gNNN = w.axiom(w.pi({N, N, N}, N), {"gNN"});
     auto sNNB = w.sigma({N, N, B});
     auto sNNN = w.sigma({N, N, N});
     auto vNNB = w.var(sNNB, 0);

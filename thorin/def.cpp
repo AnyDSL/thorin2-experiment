@@ -190,7 +190,7 @@ Dim::Dim(WorldBase& world, const Def* def, Debug dbg)
 {}
 
 Intersection::Intersection(WorldBase& world, const Def* type, Defs ops, Debug dbg)
-    : Def(world, Tag::Intersection, type, set_flatten<Intersection>(ops), dbg)
+    : Def(world, Tag::Intersection, type, range(set_flatten<Intersection>(ops)), dbg)
 {
     assert(check_same_sorted_ops(sort(), ops));
 }
@@ -217,7 +217,7 @@ Variadic::Variadic(WorldBase& world, const Def* arity, const Def* body, Debug db
 {}
 
 Variant::Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg)
-    : Def(world, Tag::Variant, type, set_flatten<Variant>(ops), dbg)
+    : Def(world, Tag::Variant, type, range(set_flatten<Variant>(ops)), dbg)
 {
     // TODO does same sorted ops really hold? ex: matches that return different sorted stuff? allowed?
     assert(check_same_sorted_ops(sort(), ops));

@@ -7,9 +7,10 @@
 
 #include "thorin/util/array.h"
 #include "thorin/util/bitset.h"
-#include "thorin/util/location.h"
 #include "thorin/util/cast.h"
 #include "thorin/util/hash.h"
+#include "thorin/util/iterator.h"
+#include "thorin/util/location.h"
 #include "thorin/util/stream.h"
 #include "thorin/tables.h"
 #include "thorin/qualifier.h"
@@ -141,16 +142,14 @@ protected:
         if (type != nullptr)
             free_vars_ |= type->free_vars_;
     }
-
     /// A @em structural Def.
-    template<class R>
-    Def(WorldBase& world, Tag tag, const Def* type, const R& ops, Debug dbg,
-        typename std::enable_if<!std::is_integral<R>::value>::type* dummy = nullptr)
+    template<class I>
+    Def(WorldBase& world, Tag tag, const Def* type, Range<I> ops, Debug dbg)
         : debug_(dbg)
         , world_(&world)
         , type_(type)
-        , num_ops_(ops.size())
-        , ops_capacity_(ops.size())
+        , num_ops_(ops.distance())
+        , ops_capacity_(ops.distance())
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
         , closed_(true)
@@ -159,14 +158,11 @@ protected:
         , ops_(&vla_ops_[0])
     {
         std::copy(ops.begin(), ops.end(), ops_);
-        assert_unused(dummy == nullptr);
     }
-
     /// A @em structural Def.
-    Def(WorldBase& world, Tag tag, const Def* type, std::initializer_list<const Def*> ops, Debug dbg)
-        : Def(world, tag, type, Defs(ops), dbg)
+    Def(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+        : Def(world, tag, type, range(ops), dbg)
     {}
-
     ~Def() override;
 
     void set(size_t i, const Def*);
