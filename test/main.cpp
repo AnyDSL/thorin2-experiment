@@ -43,21 +43,25 @@ TEST(Sigma, Normalization) {
     World w;
     auto B = w.type_bool();
     auto N = w.type_nat();
-    auto fNB = w.axiom(w.pi({N, B}, w.star()), {"fNB"});
-    auto fNN = w.axiom(w.pi({N, N}, w.star()), {"fNN"});
-    auto gNB = w.axiom(w.pi({N, B}, N), {"gNB"});
-    auto gNN = w.axiom(w.pi({N, N}, N), {"gNN"});
-    auto sNB = w.sigma({N, B});
-    auto sNN = w.sigma({N, N});
-    auto vNB = w.var(sNB, 0);
-    auto vNN = w.var(sNN, 0);
+    auto I = w.lambda(N, w.var(N, 0));
+    auto fNNBNI = w.axiom(w.pi({N, N, B, N, w.pi(N, N)}, w.star()), {"fNNBNI"});
+    auto fNNNNI = w.axiom(w.pi({N, N, N, N, w.pi(N, N)}, w.star()), {"fNNNNI"});
+    auto gNNB = w.axiom(w.pi({N, N, B}, N), {"gNB"});
+    auto gNNN = w.axiom(w.pi({N, N, N}, N), {"gNN"});
+    auto sNNB = w.sigma({N, N, B});
+    auto sNNN = w.sigma({N, N, N});
+    auto vNNB = w.var(sNNB, 0);
+    auto vNNN = w.var(sNNN, 0);
 
-    // TODO wip
-    w.pi(sNB, w.app(fNB, {w.extract(vNB, 0_s), w.extract(vNB, 1)}))->dump();
-    w.lambda(sNB, w.app(gNB, {w.extract(vNB, 0_s), w.extract(vNB, 1)}))->dump();
+    ASSERT_EQ(w.pi(sNNB,      w.app(fNNBNI, {w.extract(vNNB, 0_s), w.extract(vNNB, 1), w.extract(vNNB, 2), w.var(N, 7), I})),
+              w.pi({N, N, B}, w.app(fNNBNI, {w.var(N, 2),          w.var(N, 1),        w.var(B, 0),        w.var(N, 4), I})));
 
-    w.pi(sNN, w.app(fNN, {w.extract(vNN, 0_s), w.extract(vNN, 1)}))->dump();
-    w.lambda(sNN, w.app(gNN, {w.extract(vNN, 0_s), w.extract(vNN, 1)}))->dump();
+    ASSERT_EQ(w.pi(sNNN,      w.app(fNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I})),
+              w.pi({N, N, N}, w.app(fNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 4), I})));
+    //w.pi(sNNN, w.app(fNNN, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I}))->dump();
+    //w.lambda(sNNB, w.app(gNNB, {w.extract(vNB, 0_s), w.extract(vNB, 1)}))->dump();
+
+    //w.lambda(sNNN, w.app(gNNN, {w.extract(vNN, 0_s), w.extract(vNN, 1)}))->dump();
 }
 
 TEST(Sigma, Unit) {

@@ -77,12 +77,13 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
             return args_[arg_index];
         }
 
-        // Is var not free? - keep index, substitute type
+        // is var not free? - keep index, substitute type
         if (var->index() < offset)
             return world().var(new_type, var->index(), var->debug());
 
-        // This var is free - shift by args.size()
-        return world().var(var->type(), var->index() - num_args(), var->debug());
+        // this var is free - shift by num_args but inline a sole tuple arg if applicable
+        auto shift = num_args() == 1 && args_[0]->isa<Tuple>() ? args_[0]->num_ops() : num_args();
+        return world().var(var->type(), var->index() - shift, var->debug());
     }
 
     // rebuild all other defs

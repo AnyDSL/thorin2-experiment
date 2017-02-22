@@ -279,17 +279,18 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) 
         auto domain = domains.front();
 
         if (auto sigma = domain->isa<Sigma>()) {
-#if 0
-            auto t = tuple(DefArray(sigma->num_ops(), [&](auto i) { return this->var(sigma->op(i), sigma->num_ops() - 1 - i); }));
+            size_t n = sigma->num_ops();
+            auto t = tuple(DefArray(n, [&](auto i) { return this->var(sigma->op(i), n-1-i); }));
             return pi(sigma->ops(), reduce(body, {t}), q, dbg);
-#endif
-            return pi(sigma->ops(), body, q, dbg);
         }
 
         if (auto variadic = domain->isa<Variadic>()) {
             if (auto arity = variadic->arity()->isa<Axiom>()) {
-                if (!variadic->body()->free_vars().test(0))
-                    return pi(DefArray(arity->box().get_u64(), variadic->body()), body, q, dbg);
+                if (!variadic->body()->free_vars().test(0)) {
+                    size_t n = arity->box().get_u64();
+                    auto t = tuple(DefArray(n, [&](auto i) { return this->var(variadic->body(), n-1-i); }));
+                    return pi(DefArray(n, variadic->body()), reduce(body, {t}), q, dbg);
+                }
             }
         }
     }
