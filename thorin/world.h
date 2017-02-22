@@ -25,7 +25,7 @@ public:
     WorldBase();
     ~WorldBase();
 
-    //@{ universe and kinds
+    //@{ create universe and kinds
     const Universe* universe() const { return universe_; }
     const Axiom* arity_kind() const { return arity_kind_; }
     const Star* star(Qualifier q = Qualifier::Unlimited) const { return star_[size_t(q)]; }
@@ -36,7 +36,7 @@ public:
     }
     //@}
 
-    //@{ qualifier
+    //@{ create qualifier
     const Axiom* qualifier_kind() const { return qualifier_kind_; }
     const Axiom* qualifier(Qualifier q = Qualifier::Unlimited) const { return qualifier_[size_t(q)]; }
     const Axiom* unlimited() const { return qualifier(Qualifier::Unlimited); }
@@ -51,22 +51,7 @@ public:
     }
     //@}
 
-    const Axiom* arity(size_t a, Location location = {});
-    const Def* index(size_t index, size_t arity, Location location = {});
-    const Def* variadic(const Def* arity, const Def* body, Debug dbg = {});
-    /// @em nominal Axiom
-    const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
-    /// @em structural Axiom
-    const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
-        return unify<Axiom>(0, *this, type, box, dbg);
-    }
-    const Def* dim(const Def* def, Debug dbg = {});
-    const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
-    const Var* var(Defs types, size_t index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
-    const Var* var(const Def* type, size_t index, Debug dbg = {}) {
-        return unify<Var>(0, *this, type, index, dbg);
-    }
-
+    //@{ create Pi
     const Pi* pi(const Def* domain, const Def* body, Debug dbg = {}) {
         return pi(Defs({domain}), body, dbg);
     }
@@ -77,6 +62,9 @@ public:
         return pi(Defs({domain}), body, qualifier, dbg);
     }
     const Pi* pi(Defs domains, const Def* body, const Def* qualifier, Debug dbg = {});
+    //@}
+
+    //@{ create Lambda
     const Lambda* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
         return lambda(domain, body, unlimited(), dbg);
     }
@@ -94,6 +82,9 @@ public:
         return insert<Lambda>(1, *this, pi, dbg);
     }
     const Lambda* pi_lambda(const Pi* pi, const Def* body, Debug dbg = {});
+    //@}
+
+    //@{ create App
     const Def* app(const Def* callee, Defs args, Debug dbg = {});
     const Def* app(const Def* callee, const Def* arg, Debug dbg = {}) {
         return app(callee, Defs({arg}), dbg);
@@ -101,7 +92,9 @@ public:
     const Def* app(const Def* callee, Debug dbg = {}) {
         return app(callee, tuple0(), dbg);
     }
+    //@}
 
+    //@{ create Sigma
     const Sigma* unit(Qualifier q = Qualifier::Unlimited) { return unit_[size_t(q)]; }
     const Sigma* unit(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
@@ -126,7 +119,9 @@ public:
     Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, num_ops, dbg);
     }
+    //@}
 
+    //@{ create Tuple
     const Tuple* tuple0(Qualifier q = Qualifier::Unlimited) { return tuple0_[size_t(q)]; }
     const Tuple* tuple0(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
@@ -140,23 +135,39 @@ public:
         return tuple(sigma(types(defs), type_q, dbg), defs, dbg);
     }
     const Def* tuple(const Def* type, Defs defs, Debug dbg = {});
+    //@}
+
+    //@{ misc factory methods
+    const Def* any(const Def* type, const Def* def, Debug dbg = {});
+    const Axiom* arity(size_t a, Location location = {});
+    /// @em nominal Axiom
+    const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
+    /// @em structural Axiom
+    const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
+        return unify<Axiom>(0, *this, type, box, dbg);
+    }
     const Def* extract(const Def* def, const Def* index, Debug dbg = {});
     const Def* extract(const Def* def, size_t index, Debug dbg = {});
-
+    const Def* index(size_t index, size_t arity, Location location = {});
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(Defs defs, const Def* type, Debug dbg = {});
+    const Def* dim(const Def* def, Debug dbg = {});
+    const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
+    const Def* match(const Def* def, Defs handlers, Debug dbg = {});
     const Def* pick(const Def* type, const Def* def, Debug dbg = {});
-
+    const Def* singleton(const Def* def, Debug dbg = {});
+    const Var* var(Defs types, size_t index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
+    const Var* var(const Def* type, size_t index, Debug dbg = {}) {
+        return unify<Var>(0, *this, type, index, dbg);
+    }
+    const Def* variadic(const Def* arity, const Def* body, Debug dbg = {});
     const Def* variant(Defs defs, Debug dbg = {});
     const Def* variant(Defs defs, const Def* type, Debug dbg = {});
     Variant* variant(size_t num_ops, const Def* type, Debug dbg = {}) {
         assert(num_ops > 1 && "It should not be necessary to build empty/unary variants.");
         return insert<Variant>(num_ops, *this, type, num_ops, dbg);
     }
-    const Def* any(const Def* type, const Def* def, Debug dbg = {});
-    const Def* match(const Def* def, Defs handlers, Debug dbg = {});
-
-    const Def* singleton(const Def* def, Debug dbg = {});
+    //@}
 
     const DefSet& defs() const { return defs_; }
 
