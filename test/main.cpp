@@ -55,13 +55,11 @@ TEST(Sigma, Normalization) {
 
     ASSERT_EQ(w.pi(sNNB,      w.app(fNNBNI, {w.extract(vNNB, 0_s), w.extract(vNNB, 1), w.extract(vNNB, 2), w.var(N, 7), I})),
               w.pi({N, N, B}, w.app(fNNBNI, {w.var(N, 2),          w.var(N, 1),        w.var(B, 0),        w.var(N, 4), I})));
-
     ASSERT_EQ(w.pi(sNNN,      w.app(fNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I})),
               w.pi({N, N, N}, w.app(fNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 4), I})));
 
     ASSERT_EQ(w.lambda(sNNB,      w.app(gNNBNI, {w.extract(vNNB, 0_s), w.extract(vNNB, 1), w.extract(vNNB, 2), w.var(N, 7), I})),
               w.lambda({N, N, B}, w.app(gNNBNI, {w.var(N, 2),          w.var(N, 1),        w.var(B, 0),        w.var(N, 4), I})));
-
     ASSERT_EQ(w.lambda(sNNN,      w.app(gNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I})),
               w.lambda({N, N, N}, w.app(gNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 4), I})));
 }
