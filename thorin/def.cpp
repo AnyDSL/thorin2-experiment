@@ -124,11 +124,10 @@ void Def::resize(size_t num_ops) {
 }
 
 void Def::set(size_t i, const Def* def) {
-    assert(!closed_);
+    assert(!is_closed() && is_nominal());
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
     ops_[i] = def;
-    assert(!def->uses_.contains(Use(this, i)));
     const auto& p = def->uses_.emplace(this, i);
     assert_unused(p.second);
 
@@ -149,8 +148,9 @@ void Def::unset(size_t i) {
 }
 
 void Def::finalize() {
+    assert(is_closed() && !is_nominal());
+
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
-        assert(!op(i)->uses_.contains(Use(this, i)));
         const auto& p = op(i)->uses_.emplace(this, i);
         assert_unused(p.second);
         free_vars_ |= op(i)->free_vars() >> shift(i);
