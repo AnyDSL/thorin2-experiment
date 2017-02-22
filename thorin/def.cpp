@@ -129,7 +129,6 @@ void Def::set(size_t i, const Def* def) {
     assert(def && "setting null pointer");
 
     ops_[i] = def;
-    has_error_ |= def->has_error();
 
     if (i == num_ops() - 1) {
         assert(std::all_of(ops().begin(), ops().end(), [](const Def* def) { return def != nullptr; }));
@@ -151,6 +150,7 @@ void Def::finalize() {
         const auto& p = op(i)->uses_.emplace(this, i);
         assert_unused(p.second);
         free_vars_ |= op(i)->free_vars() >> shift(i);
+        has_error_ |= op(i)->has_error();
     }
 
     if (type() != nullptr)
