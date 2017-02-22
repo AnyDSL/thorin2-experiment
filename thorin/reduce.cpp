@@ -111,4 +111,10 @@ const Def* reduce(const Def* def, Defs args, std::function<void(const Def*)> f, 
     return result;
 }
 
+const Def* flatten(const Def* body, Defs args) {
+    auto& w = body->world();
+    auto t = w.tuple(DefArray(args.size(), [&](auto i) { return w.var(args[i], args.size()-1-i); }));
+    return reduce(body, {t});
+}
+
 }

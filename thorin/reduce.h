@@ -16,6 +16,9 @@ const Def* reduce(const Def* def, Defs args, size_t index = 0);
  */
 const Def* reduce(const Def* def, Defs args, std::function<void(const Def*)> f, size_t index = 0);
 
+/// Flattens the use of Var @c 0 and Extract%s in @p body to directly use @p args instead.
+const Def* flatten(const Def* body, Defs args);
+
 }
 
 #endif

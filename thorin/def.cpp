@@ -139,13 +139,7 @@ Def* Def::set(size_t i, const Def* def) {
 }
 
 Lambda* Lambda::set(const Def* body) {
-    if (normalize_) {
-        size_t n = type()->domains().size();
-        auto t = world().tuple(DefArray(n, [&](auto i) { return world().var(type()->domains()[i], n-1-i); }));
-        body = thorin::reduce(body, {t});
-    }
-
-    return Def::set(0, body)->as<Lambda>();
+    return Def::set(0, normalize_ ? flatten(body, type()->domains()) : body)->as<Lambda>();
 };
 
 void Def::finalize() {
