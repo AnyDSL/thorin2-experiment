@@ -113,12 +113,6 @@ bool Def::maybe_affine() const {
     return true;
 }
 
-void Def::compute_free_vars() {
-    for (size_t i = 0, e = num_ops(); i != e; ++i)
-        free_vars_ |= op(i)->free_vars() >> shift(i);
-    free_vars_ |= type()->free_vars_;
-}
-
 void Def::resize(size_t num_ops) {
     num_ops_ = num_ops;
     if (num_ops_ > ops_capacity_) {
@@ -137,11 +131,13 @@ void Def::set(size_t i, const Def* def) {
     assert(!def->uses_.contains(Use(this, i)));
     const auto& p = def->uses_.emplace(this, i);
     assert_unused(p.second);
+
+    free_vars_ |= op(i)->free_vars() >> shift(i);
+
     if (def->has_error())
         has_error_ = true;
     if (i == num_ops() - 1) {
         assert(std::all_of(ops().begin(), ops().end(), [](const Def* def) { return static_cast<bool>(def); }));
-        compute_free_vars();
         closed_ = true;
     }
 }
@@ -152,13 +148,12 @@ void Def::unset(size_t i) {
     ops_[i] = nullptr;
 }
 
-void Def::wire_uses() const {
+void Def::finalize() {
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
-        if (auto def = op(i)) {
-            assert(!def->uses_.contains(Use(this, i)));
-            const auto& p = def->uses_.emplace(this, i);
-            assert_unused(p.second);
-        }
+        assert(!op(i)->uses_.contains(Use(this, i)));
+        const auto& p = op(i)->uses_.emplace(this, i);
+        assert_unused(p.second);
+        free_vars_ |= op(i)->free_vars() >> shift(i);
     }
 }
 
@@ -191,29 +186,22 @@ Def::~Def() {
 
 Dim::Dim(WorldBase& world, const Def* def, Debug dbg)
     : Def(world, Tag::Dim, world.arity_kind(), {def}, dbg)
-{
-    compute_free_vars();
-}
+{}
 
 Intersection::Intersection(WorldBase& world, const Def* type, Defs ops, Debug dbg)
     : Def(world, Tag::Intersection, type, set_flatten<Intersection>(ops), dbg)
 {
     assert(check_same_sorted_ops(sort(), ops));
-    compute_free_vars();
 }
 
 Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
     : Def(world, Tag::Lambda, type, {body}, dbg)
-{
-    compute_free_vars();
-}
+{}
 
 Pi::Pi(WorldBase& world, Defs domains, const Def* body, const Def* q, Debug dbg)
     : Def(world, Tag::Pi, body->type()->is_universe() ? (const Def*) world.universe() : world.star(q),
           concat(domains, body), dbg)
-{
-    compute_free_vars();
-}
+{}
 
 Sigma::Sigma(WorldBase& world, size_t num_ops, Debug dbg)
     : Sigma(world, world.universe(), num_ops, dbg)
@@ -221,22 +209,17 @@ Sigma::Sigma(WorldBase& world, size_t num_ops, Debug dbg)
 
 Star::Star(WorldBase& world, const Def* qualifier)
     : Def(world, Tag::Star, world.universe(), {qualifier}, {"*"})
-{
-    compute_free_vars();
-}
+{}
 
 Variadic::Variadic(WorldBase& world, const Def* arity, const Def* body, Debug dbg)
     : SigmaBase(world, Tag::Variadic, body->type(), {arity, body}, dbg)
-{
-    compute_free_vars();
-}
+{}
 
 Variant::Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg)
     : Def(world, Tag::Variant, type, set_flatten<Variant>(ops), dbg)
 {
     // TODO does same sorted ops really hold? ex: matches that return different sorted stuff? allowed?
     assert(check_same_sorted_ops(sort(), ops));
-    compute_free_vars();
 }
 
 //------------------------------------------------------------------------------

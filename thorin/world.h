@@ -177,7 +177,7 @@ protected:
         assert(!def->is_nominal());
         auto p = defs_.emplace(def);
         if (p.second) {
-            def->wire_uses();
+            def->finalize();
             return def;
         }
 

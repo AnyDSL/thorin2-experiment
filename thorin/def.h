@@ -138,6 +138,8 @@ protected:
         , ops_(&vla_ops_[0])
     {
         std::fill_n(ops_, num_ops, nullptr);
+        if (type != nullptr)
+            free_vars_ |= type->free_vars_;
     }
 
     /// A @em structural Def.
@@ -157,6 +159,7 @@ protected:
         , ops_(&vla_ops_[0])
     {
         std::copy(ops.begin(), ops.end(), ops_);
+        free_vars_ |= type->free_vars_;
         assert_unused(dummy == nullptr);
     }
 
@@ -167,9 +170,8 @@ protected:
 
     ~Def() override;
 
-    void compute_free_vars();
     void set(size_t i, const Def*);
-    void wire_uses() const;
+    void finalize();
     void unset(size_t i);
     void unregister_use(size_t i) const;
     void unregister_uses() const;
@@ -386,7 +388,6 @@ private:
         : Def(world, Tag::App, type, concat(callee, args), dbg)
     {
         cache_ = nullptr;
-        compute_free_vars();
     }
 
 public:
@@ -406,9 +407,7 @@ class Extract : public Def {
 private:
     Extract(WorldBase& world, const Def* type, const Def* tuple, const Def* index, Debug dbg)
         : Def(world, Tag::Extract, type, {tuple, index}, dbg)
-    {
-        compute_free_vars();
-    }
+    {}
 
 public:
     const Def* tuple() const { return op(0); }
@@ -439,9 +438,7 @@ class Pick : public Def {
 private:
     Pick(WorldBase& world, const Def* type, const Def* def, Debug dbg)
         : Def(world, Tag::Pick, type, {def}, dbg)
-    {
-        compute_free_vars();
-    }
+    {}
 
 public:
     const Def* destructee() const { return op(0); }
@@ -478,9 +475,7 @@ class Any : public Def {
 private:
     Any(WorldBase& world, const Variant* type, const Def* def, Debug dbg)
         : Def(world, Tag::Any, type, {def}, dbg)
-    {
-        compute_free_vars();
-    }
+    {}
 
 public:
     const Def* def() const { return op(0); }
@@ -505,9 +500,7 @@ class Match : public Def {
 private:
     Match(WorldBase& world, const Def* type, const Def* def, const Defs handlers, Debug dbg)
         : Def(world, Tag::Match, type, concat(def, handlers), dbg)
-    {
-        compute_free_vars();
-    }
+    {}
 
 public:
     const Def* destructee() const { return op(0); }
@@ -529,7 +522,6 @@ private:
         : Def(world, Tag::Singleton, def->type()->type(), {def}, dbg)
     {
         assert((def->is_term() || def->is_type()) && "No singleton type universes allowed.");
-        compute_free_vars();
     }
 
 public:
@@ -578,9 +570,7 @@ private:
     {}
     Sigma(WorldBase& world, Defs ops, const Def* type, Debug dbg)
         : SigmaBase(world, Tag::Sigma, type, ops, dbg)
-    {
-        compute_free_vars();
-    }
+    {}
 
 public:
     bool assignable(Defs defs) const override;
@@ -666,7 +656,6 @@ private:
     {
         assert(!type->is_universe());
         index_ = index;
-        compute_free_vars();
         free_vars_.set(index);
     }
 
