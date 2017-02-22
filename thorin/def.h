@@ -159,7 +159,6 @@ protected:
         , ops_(&vla_ops_[0])
     {
         std::copy(ops.begin(), ops.end(), ops_);
-        free_vars_ |= type->free_vars_;
         assert_unused(dummy == nullptr);
     }
 

@@ -155,6 +155,7 @@ void Def::finalize() {
         assert_unused(p.second);
         free_vars_ |= op(i)->free_vars() >> shift(i);
     }
+    free_vars_ |= type()->free_vars_;
 }
 
 void Def::unregister_uses() const {
