@@ -30,30 +30,32 @@ include_directories(.)
 
 add_executable(coc 
     test/bitset.cpp
+    test/lambda.cpp
+    test/lexer.cpp
     test/main.cpp
     test/nominal.cpp
+    test/parser.cpp
     test/primop.cpp
+    test/sigma.cpp
     test/singleton.cpp
+    test/substructural.cpp
     test/variadic.cpp
     test/variants.cpp
-    test/substructural.cpp
-    test/lexer.cpp
-    test/parser.cpp
     thorin/def.cpp
     thorin/def.h
     thorin/primop.h
+    thorin/qualifier.h
     thorin/reduce.cpp
     thorin/reduce.h
     thorin/tables.h
     thorin/type.h
-    thorin/qualifier.h
     thorin/world.cpp
     thorin/world.h
-    thorin/frontend/token.h
-    thorin/frontend/lexer.h
     thorin/frontend/lexer.cpp
-    thorin/frontend/parser.h
+    thorin/frontend/lexer.h
     thorin/frontend/parser.cpp
+    thorin/frontend/parser.h
+    thorin/frontend/token.h
     thorin/util/array.h
     thorin/util/bitset.cpp
     thorin/util/bitset.h
@@ -62,11 +64,11 @@ add_executable(coc
     thorin/util/hash.h
     thorin/util/location.cpp
     thorin/util/location.h
+    thorin/util/log.cpp
+    thorin/util/log.h
     thorin/util/stream.cpp
     thorin/util/stream.h
     thorin/util/utility.h
-    thorin/util/log.h
-    thorin/util/log.cpp
 )
 
 set_property(TARGET coc PROPERTY CXX_STANDARD 14)
