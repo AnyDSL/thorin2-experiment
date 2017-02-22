@@ -152,7 +152,7 @@ protected:
         , tag_(unsigned(tag))
         , closed_(true)
         , nominal_(false)
-        , has_error_(std::any_of(ops.begin(), ops.end(), std::mem_fn(&Def::has_error)))
+        , has_error_(false)
         , ops_(&vla_ops_[0])
     {
         std::copy(ops.begin(), ops.end(), ops_);
