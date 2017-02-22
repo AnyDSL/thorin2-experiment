@@ -62,6 +62,16 @@ TEST(Sigma, Normalization) {
               w.lambda({N, N, B}, w.app(gNNBNI, {w.var(N, 2),          w.var(N, 1),        w.var(B, 0),        w.var(N, 4), I})));
     ASSERT_EQ(w.lambda(sNNN,      w.app(gNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I})),
               w.lambda({N, N, N}, w.app(gNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 4), I})));
+
+    auto l1a = w.nominal_lambda(sNNB, N)     ->set(w.app(gNNBNI, {w.extract(vNNB, 0_s), w.extract(vNNB, 1), w.extract(vNNB, 2), w.var(N, 7), I}));
+    auto l1b = w.nominal_lambda({N, N, B}, N)->set(w.app(gNNBNI, {w.var(N, 2),          w.var(N, 1),        w.var(B, 0),        w.var(N, 4), I}));
+    ASSERT_EQ(l1a->type(), l1b->type());
+    ASSERT_EQ(l1a->body(), l1b->body());
+
+    auto l2a = w.nominal_lambda(sNNN, N)     ->set(w.app(gNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I}));
+    auto l2b = w.nominal_lambda({N, N, N}, N)->set(w.app(gNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 4), I}));
+    ASSERT_EQ(l2a->type(), l2b->type());
+    ASSERT_EQ(l2a->body(), l2b->body());
 }
 
 TEST(Sigma, Unit) {

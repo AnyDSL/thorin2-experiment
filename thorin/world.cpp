@@ -323,8 +323,7 @@ const Lambda* WorldBase::lambda(Defs domains, const Def* body, const Def* type_q
 
 Lambda* WorldBase::nominal_lambda(Defs domains, const Def* codomain, const Def* type_qualifier, Debug dbg) {
     auto l = insert<Lambda>(1, *this, pi(domains, codomain, type_qualifier, dbg), dbg);
-    if (l->type()->domains().size() != domains.size())
-        std::cout << "XXXXXXXXXXXXXX" << std::endl;
+    l->normalize_ = l->type()->domains().size() != domains.size();
     return l;
 }
 

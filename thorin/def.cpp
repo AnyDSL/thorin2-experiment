@@ -123,7 +123,7 @@ void Def::resize(size_t num_ops) {
     }
 }
 
-void Def::set(size_t i, const Def* def) {
+Def* Def::set(size_t i, const Def* def) {
     assert(!is_closed() && is_nominal());
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
@@ -135,7 +135,18 @@ void Def::set(size_t i, const Def* def) {
         closed_ = true;
         finalize();
     }
+    return this;
 }
+
+Lambda* Lambda::set(const Def* body) {
+    if (normalize_) {
+        size_t n = type()->domains().size();
+        auto t = world().tuple(DefArray(n, [&](auto i) { return world().var(type()->domains()[i], n-1-i); }));
+        body = thorin::reduce(body, {t});
+    }
+
+    return Def::set(0, body)->as<Lambda>();
+};
 
 void Def::finalize() {
     assert(is_closed());
