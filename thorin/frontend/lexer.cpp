@@ -15,6 +15,7 @@ Lexer::Lexer(std::istream& is, const std::string& name)
     , cur_(0), eof_(false)
 {
     char bytes[3];
+    std::fill_n(bytes, 3, std::char_traits<char>::eof());
     stream_.read(bytes, 3);
     if (!utf8::starts_with_bom(bytes, bytes + 3)) {
         stream_.unget();
