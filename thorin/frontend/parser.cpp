@@ -14,7 +14,7 @@ const Def* Parser::parse_def() {
 }
 
 const Pi* Parser::parse_pi() {
-    Anchor anchor(this);
+    Tracker tracker(this);
     eat(Token::Tag::Pi);
 
     expect(Token::Tag::L_Paren);
@@ -23,21 +23,21 @@ const Pi* Parser::parse_pi() {
 
     auto body = parse_def();
 
-    return world_.pi(domains, body, anchor.location());
+    return world_.pi(domains, body, tracker.location());
 }
 
 const Def* Parser::parse_sigma() {
-    Anchor anchor(this);
+    Tracker tracker(this);
     eat(Token::Tag::Sigma);
 
     expect(Token::Tag::L_Paren);
     auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); });
 
-    return world_.sigma(defs, anchor.location());
+    return world_.sigma(defs, tracker.location());
 }
 
 const Lambda* Parser::parse_lambda() {
-    Anchor anchor(this);
+    Tracker tracker(this);
     eat(Token::Tag::Lambda);
 
     expect(Token::Tag::L_Paren);
@@ -45,7 +45,7 @@ const Lambda* Parser::parse_lambda() {
     expect(Token::Tag::Dot);
     auto body = parse_def();
 
-    return world_.lambda(domains, body, anchor.location());
+    return world_.lambda(domains, body, tracker.location());
 }
 
 const Star* Parser::parse_star() {
@@ -54,7 +54,7 @@ const Star* Parser::parse_star() {
 }
 
 const Var* Parser::parse_var() {
-    Anchor anchor(this);
+    Tracker tracker(this);
     eat(Token::Tag::L_Angle);
 
     if (!ahead_.isa(Token::Tag::Literal) ||
@@ -68,22 +68,22 @@ const Var* Parser::parse_var() {
     auto def = parse_def();
     expect(Token::Tag::R_Angle);
     
-    return world_.var(def, index, anchor.location());
+    return world_.var(def, index, tracker.location());
 }
 
 const Def* Parser::parse_tuple() {
-    Anchor anchor(this);
+    Tracker tracker(this);
     eat(Token::Tag::L_Paren);
 
     auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); });
     expect(Token::Tag::Colon);
     auto type = parse_def();
 
-    return world_.tuple(defs, type, anchor.location());
+    return world_.tuple(defs, type, tracker.location());
 }
 
 const Axiom* Parser::parse_assume() {
-    Anchor anchor(this);
+    Tracker tracker(this);
     eat(Token::Tag::L_Brace);
 
     if (!ahead_.isa(Token::Tag::Literal)) {
@@ -98,7 +98,7 @@ const Axiom* Parser::parse_assume() {
     auto type = parse_def();
 
     expect(Token::Tag::R_Brace);
-    return world_.assume(type, box, anchor.location());
+    return world_.assume(type, box, tracker.location());
 }
 
 void Parser::next() {

@@ -28,8 +28,8 @@ public:
     const Axiom*  parse_assume();
 
 private:
-    struct Anchor {
-        Anchor(const Parser* parser)
+    struct Tracker {
+        Tracker(const Parser* parser)
             : parser(*parser)
             , line(parser->ahead_.location().front_line())
             , col(parser->ahead_.location().front_col())
