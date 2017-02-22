@@ -137,12 +137,6 @@ void Def::set(size_t i, const Def* def) {
     }
 }
 
-void Def::unset(size_t i) {
-    assert(ops_[i] && "must be set");
-    unregister_use(i);
-    ops_[i] = nullptr;
-}
-
 void Def::finalize() {
     assert(is_closed());
 
@@ -155,6 +149,12 @@ void Def::finalize() {
 
     if (type() != nullptr)
         free_vars_ |= type()->free_vars_;
+}
+
+void Def::unset(size_t i) {
+    assert(ops_[i] && "must be set");
+    unregister_use(i);
+    ops_[i] = nullptr;
 }
 
 void Def::unregister_uses() const {
