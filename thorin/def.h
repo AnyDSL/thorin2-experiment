@@ -212,7 +212,7 @@ public:
 
     //@{ misc getters
     const BitSet& free_vars() const { return free_vars_; }
-    uint64_t fields() const { return uint64_t(num_ops_) << 32_u64 | uint64_t(fields_) >> 23_u64; }
+    uint32_t fields() const { return uint32_t(num_ops_) << 8_u32 | uint32_t(tag()); }
     size_t gid() const { return gid_; }
     static size_t gid_counter() { return gid_counter_; }
     /// A nominal Def is always different from each other Def.
