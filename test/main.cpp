@@ -46,8 +46,8 @@ TEST(Sigma, Normalization) {
     auto I = w.lambda(N, w.var(N, 0));
     auto fNNBNI = w.axiom(w.pi({N, N, B, N, w.pi(N, N)}, w.star()), {"fNNBNI"});
     auto fNNNNI = w.axiom(w.pi({N, N, N, N, w.pi(N, N)}, w.star()), {"fNNNNI"});
-    //auto gNNB = w.axiom(w.pi({N, N, B}, N), {"gNB"});
-    //auto gNNN = w.axiom(w.pi({N, N, N}, N), {"gNN"});
+    auto gNNBNI = w.axiom(w.pi({N, N, B, N, w.pi(N, N)}, N), {"gNNBNI"});
+    auto gNNNNI = w.axiom(w.pi({N, N, N, N, w.pi(N, N)}, N), {"gNNNNI"});
     auto sNNB = w.sigma({N, N, B});
     auto sNNN = w.sigma({N, N, N});
     auto vNNB = w.var(sNNB, 0);
@@ -58,10 +58,12 @@ TEST(Sigma, Normalization) {
 
     ASSERT_EQ(w.pi(sNNN,      w.app(fNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I})),
               w.pi({N, N, N}, w.app(fNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 4), I})));
-    //w.pi(sNNN, w.app(fNNN, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I}))->dump();
-    //w.lambda(sNNB, w.app(gNNB, {w.extract(vNB, 0_s), w.extract(vNB, 1)}))->dump();
 
-    //w.lambda(sNNN, w.app(gNNN, {w.extract(vNN, 0_s), w.extract(vNN, 1)}))->dump();
+    ASSERT_EQ(w.lambda(sNNB,      w.app(gNNBNI, {w.extract(vNNB, 0_s), w.extract(vNNB, 1), w.extract(vNNB, 2), w.var(N, 7), I})),
+              w.lambda({N, N, B}, w.app(gNNBNI, {w.var(N, 2),          w.var(N, 1),        w.var(B, 0),        w.var(N, 4), I})));
+
+    ASSERT_EQ(w.lambda(sNNN,      w.app(gNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I})),
+              w.lambda({N, N, N}, w.app(gNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 4), I})));
 }
 
 TEST(Sigma, Unit) {

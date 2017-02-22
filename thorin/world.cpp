@@ -311,7 +311,21 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
 }
 
 const Lambda* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
-    return unify<Lambda>(1, *this, pi(domains, body->type(), type_qualifier, dbg), body, dbg);
+    auto p = pi(domains, body->type(), type_qualifier, dbg);
+    size_t n = p->domains().size();
+    if (n != domains.size()) {
+        auto t = tuple(DefArray(n, [&](auto i) { return this->var(p->domains()[i], n-1-i); }));
+        body = reduce(body, {t});
+    }
+
+    return unify<Lambda>(1, *this, p, body, dbg);
+}
+
+Lambda* WorldBase::nominal_lambda(Defs domains, const Def* codomain, const Def* type_qualifier, Debug dbg) {
+    auto l = insert<Lambda>(1, *this, pi(domains, codomain, type_qualifier, dbg), dbg);
+    if (l->type()->domains().size() != domains.size())
+        std::cout << "XXXXXXXXXXXXXX" << std::endl;
+    return l;
 }
 
 const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {

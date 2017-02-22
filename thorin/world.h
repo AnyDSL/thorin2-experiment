@@ -70,13 +70,20 @@ public:
         return lambda(domains, body, unlimited(), dbg);
     }
     const Lambda* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {}) {
-        return lambda(Defs({domain}), body, type_qualifier, dbg);
+        return lambda(Defs{domain}, body, type_qualifier, dbg);
     }
     const Lambda* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
         return lambda(domain, body, unlimited(), dbg);
     }
-    Lambda* pi_lambda(const Pi* pi, Debug dbg = {}) {
-        return insert<Lambda>(1, *this, pi, dbg);
+    Lambda* nominal_lambda(Defs domains, const Def* codomain, const Def* type_qualifier, Debug dbg = {});
+    Lambda* nominal_lambda(Defs domains, const Def* codomain, Debug dbg = {}) {
+        return nominal_lambda(domains, codomain, unlimited(), dbg);
+    }
+    Lambda* nominal_lambda(const Def* domain, const Def* codomain, const Def* type_qualifier, Debug dbg = {}) {
+        return nominal_lambda(Defs{domain}, codomain, type_qualifier, dbg);
+    }
+    Lambda* nominal_lambda(const Def* domain, const Def* codomain, Debug dbg = {}) {
+        return nominal_lambda(Defs{domain}, codomain, unlimited(), dbg);
     }
     //@}
 

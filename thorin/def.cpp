@@ -380,7 +380,8 @@ Axiom* Axiom::stub(WorldBase& to, const Def*, Debug) const {
     return const_cast<Axiom*>(this);
 }
 Lambda* Lambda::stub(WorldBase& to, const Def* type, Debug dbg) const {
-    return to.pi_lambda(type->as<Pi>(), dbg);
+    auto pi = type->as<Pi>();
+    return to.nominal_lambda(pi->domains(), pi->body(), pi->qualifier(), dbg);
 }
 Sigma* Sigma::stub(WorldBase& to, const Def* type, Debug dbg) const {
     return to.sigma(num_ops(), type, dbg);
