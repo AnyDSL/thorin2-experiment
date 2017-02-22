@@ -126,8 +126,8 @@ protected:
 
     /// A @em nominal Def.
     Def(WorldBase& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
-        : debug_(dbg)
-        , world_(&world)
+        : world_(&world)
+        , debug_(dbg)
         , type_(type)
         , num_ops_(num_ops)
         , ops_capacity_(num_ops)
@@ -136,15 +136,15 @@ protected:
         , closed_(num_ops == 0)
         , nominal_(true)
         , has_error_(false)
-        , ops_(&vla_ops_[0])
+        , ops_(ops_ptr())
     {
         std::fill_n(ops_, num_ops, nullptr);
     }
     /// A @em structural Def.
     template<class I>
     Def(WorldBase& world, Tag tag, const Def* type, Range<I> ops, Debug dbg)
-        : debug_(dbg)
-        , world_(&world)
+        : world_(&world)
+        , debug_(dbg)
         , type_(type)
         , num_ops_(ops.distance())
         , ops_capacity_(ops.distance())
@@ -153,7 +153,7 @@ protected:
         , closed_(true)
         , nominal_(false)
         , has_error_(false)
-        , ops_(&vla_ops_[0])
+        , ops_(ops_ptr())
     {
         std::copy(ops.begin(), ops.end(), ops_);
     }
@@ -285,16 +285,18 @@ protected:
     BitSet free_vars_;
 
 private:
+    const Def** ops_ptr() { return reinterpret_cast<const Def**>(reinterpret_cast<char*>(this) + sizeof(Def)); }
     virtual const Def* rebuild(WorldBase&, const Def*, Defs) const = 0;
-    bool on_heap() const { return ops_ != vla_ops_; }
+    bool on_heap() const { return ops_ != const_cast<Def*>(this)->ops_ptr(); }
     // this must match with the 64bit fields below
 
     static size_t gid_counter_;
 
-    mutable Debug debug_;
-    mutable WorldBase* world_;
-    const Def* type_;
+    mutable Uses uses_;
     mutable uint64_t hash_ = 0;
+    mutable WorldBase* world_;
+    mutable Debug debug_;
+    const Def* type_;
     uint32_t num_ops_;
     uint32_t ops_capacity_;
     union {
@@ -310,10 +312,7 @@ private:
     };
 
     static_assert(int(Tag::Num) <= 64, "you must increase the number of bits in tag_");
-
-    mutable Uses uses_;
     const Def** ops_;
-    const Def* vla_ops_[0];
 
     friend class App;
     friend class Cleaner;
