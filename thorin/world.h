@@ -65,23 +65,19 @@ public:
     //@}
 
     //@{ create Lambda
-    const Lambda* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
-        return lambda(domain, body, unlimited(), dbg);
-    }
-    const Lambda* lambda(const Def* domain, const Def* body, const Def* type_qualifier,
-                         Debug dbg = {}) {
-        return lambda(Defs({domain}), body, type_qualifier, dbg);
-    }
+    const Lambda* lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg = {});
     const Lambda* lambda(Defs domains, const Def* body, Debug dbg = {}) {
         return lambda(domains, body, unlimited(), dbg);
     }
-    const Lambda* lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg = {}) {
-        return pi_lambda(pi(domains, body->type(), type_qualifier), body, dbg);
+    const Lambda* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {}) {
+        return lambda(Defs({domain}), body, type_qualifier, dbg);
+    }
+    const Lambda* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
+        return lambda(domain, body, unlimited(), dbg);
     }
     Lambda* pi_lambda(const Pi* pi, Debug dbg = {}) {
         return insert<Lambda>(1, *this, pi, dbg);
     }
-    const Lambda* pi_lambda(const Pi* pi, const Def* body, Debug dbg = {});
     //@}
 
     //@{ create App

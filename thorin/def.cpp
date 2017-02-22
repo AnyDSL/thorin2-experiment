@@ -348,9 +348,8 @@ const Def* Error       ::rebuild(WorldBase& to, const Def* t, Defs    ) const { 
 const Def* Intersection::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.intersection(ops, t, debug()); }
 const Def* Match       ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
-    assert(ops.size() == 1);
     assert(!is_nominal());
-    return to.pi_lambda(t->as<Pi>(), ops.front(), debug());
+    return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
 }
 const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
 const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {

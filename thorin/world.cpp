@@ -310,9 +310,8 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
-const Lambda* WorldBase::pi_lambda(const Pi* pi, const Def* body, Debug dbg) {
-    assert(pi->body() == body->type());
-    return unify<Lambda>(1, *this, pi, body, dbg);
+const Lambda* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
+    return unify<Lambda>(1, *this, pi(domains, body->type(), type_qualifier, dbg), body, dbg);
 }
 
 const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {
