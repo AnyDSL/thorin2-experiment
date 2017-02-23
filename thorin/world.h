@@ -371,14 +371,14 @@ public:
     //@}
 
     //@{ memory operations
-    const Def* op_load(const Def* mem, const Def* ptr, Debug dbg = {});
-    const Def* op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg = {});
-    const Def* op_enter(const Def* mem, Debug dbg = {});
-    const Def* op_slot(const Def* type, const Def* frame, Debug dbg = {});
-    const Def* op_alloc(const Def* type, const Def* mem, const Def* extra, Debug dbg = {});
     const Def* op_alloc(const Def* type, const Def* mem, Debug dbg = {});
+    const Def* op_alloc(const Def* type, const Def* mem, const Def* extra, Debug dbg = {});
+    const Def* op_global_const(const Def* init, Debug dbg = {});
+    const Def* op_enter(const Def* mem, Debug dbg = {});
     const Def* op_global(const Def* init, Debug dbg = {});
-    const Def* op_const_global(const Def* init, Debug dbg = {});
+    const Def* op_load(const Def* mem, const Def* ptr, Debug dbg = {});
+    const Def* op_slot(const Def* type, const Def* frame, Debug dbg = {});
+    const Def* op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg = {});
     //@}
 
 private:
@@ -392,9 +392,11 @@ private:
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
-    const Axiom* op_lea_;
+    const Axiom* op_enter_;
     const Axiom* op_insert_;
+    const Axiom* op_lea_;
     const Axiom* op_load_;
+    const Axiom* op_slot_;
     const Axiom* op_store_;
 
     // i/r type

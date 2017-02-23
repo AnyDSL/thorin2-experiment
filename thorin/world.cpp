@@ -483,7 +483,7 @@ World::World() {
 
     type_ptr_ = axiom(pi({S, N}, S), {"ptr"});
     auto M = type_mem_   = axiom(star(Qualifier::Linear), {"M"});
-    auto F = type_frame_ = axiom(star(Qualifier::Linear), {"F"});
+    auto F = type_frame_ = axiom(S, {"F"});
 
     /*auto vq0 = var(Q, 0)*/; auto vn0 = var(N, 0); auto vs0 = var(S, 0);
     /*auto vq1 = var(Q, 1)*/; auto vn1 = var(N, 1); auto vs1 = var(S, 1);
@@ -560,6 +560,7 @@ World::World() {
     CODE(r)
 #undef CODE
 
+    op_enter_ = axiom(pi(M, sigma({M, F})), {"enter"});
     op_insert_ = axiom(pi(S, pi({vs0, dim(vs1), extract(vs2, var(dim(vs2), 0))}, vs3)), {"insert"});
     {
         auto p1 = type_ptr(vs1, vn0);
@@ -570,6 +571,10 @@ World::World() {
         auto p = type_ptr(vs2, vn1);
         auto r = sigma({M, vs4});
         op_load_ = axiom(pi({S, N}, pi({M, p}, r)), {"load"});
+    }
+    {
+        auto p = type_ptr(vs3, vn2);
+        op_slot_ = axiom(pi({S, N}, pi({F, N}, p)), {"slot"});
     }
     {
         auto p = type_ptr(vs2, vn1);
@@ -597,6 +602,10 @@ T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
 T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
 #undef CODE
 
+const Def* World::op_enter(const Def* mem, Debug dbg) {
+    return app(op_enter_, mem, dbg);
+}
+
 const Def* World::op_insert(const Def* def, const Def* index, const Def* val, Debug dbg) {
     return app(app(op_insert_, def->type(), dbg), {def, index, val}, dbg);
 }
@@ -620,6 +629,10 @@ const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
 const Def* World::op_load(const Def* mem, const Def* ptr, Debug dbg) {
     PtrType ptr_type(ptr->type());
     return app(app(op_load_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {mem, ptr}, dbg);
+}
+
+const Def* World::op_slot(const Def* type, const Def* frame, Debug dbg) {
+    return app(app(op_slot_, {type, val_nat_0()}, dbg), {frame, val_nat(Def::gid_counter())}, dbg);
 }
 
 const Def* World::op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg) {
