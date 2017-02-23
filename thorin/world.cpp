@@ -470,6 +470,7 @@ World::World() {
     auto U = qualifier(Qualifier::Unlimited);
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });
+    auto S = star();
 
     type_i_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
     type_r_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});
@@ -480,15 +481,15 @@ World::World() {
     for (size_t j = 0; j != val_nat_.size(); ++j)
         val_nat_[j] = val_nat(1 << int64_t(j));
 
-    type_mem_   = axiom(star(Qualifier::Linear), {"M"});
-    type_frame_ = axiom(star(Qualifier::Linear), {"F"});
-    type_ptr_   = axiom(pi({star(), N}, star()), {"ptr"});
+    type_ptr_ = axiom(pi({S, N}, S), {"ptr"});
+    auto M = type_mem_   = axiom(star(Qualifier::Linear), {"M"});
+    auto F = type_frame_ = axiom(star(Qualifier::Linear), {"F"});
 
-    /*auto vq0 = var(Q, 0)*/; auto vn0 = var(N, 0);
-    /*auto vq1 = var(Q, 1)*/; auto vn1 = var(N, 1);
-    auto vq2 = var(Q, 2);     auto vn2 = var(N, 2);
-    auto vq3 = var(Q, 3);     auto vn3 = var(N, 3);
-    auto vq4 = var(Q, 4);
+    /*auto vq0 = var(Q, 0)*/; auto vn0 = var(N, 0); auto vs0 = var(S, 0);
+    /*auto vq1 = var(Q, 1)*/; auto vn1 = var(N, 1); auto vs1 = var(S, 1);
+    auto vq2 = var(Q, 2);     auto vn2 = var(N, 2); auto vs2 = var(S, 2);
+    auto vq3 = var(Q, 3);     auto vn3 = var(N, 3); auto vs3 = var(S, 3);
+    auto vq4 = var(Q, 4);                           auto vs4 = var(S, 4);
 
     // type_i
 #define CODE(r, x) \
@@ -559,14 +560,21 @@ World::World() {
     CODE(r)
 #undef CODE
 
-    op_insert_ = axiom(pi(star(),
-            pi({var(star(), 0), dim(var(star(), 1)), extract(var(star(), 2), var(dim(var(star(), 2)), 0))},
-            var(star(), 3))), {"insert"});
-
-    op_lea_ = axiom(pi({star(), N},
-                       pi({type_ptr(var(star(), 1), var(N, 0)), dim(var(star(), 2))},
-                          type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(N, 2)))),
-                    {"lea"});
+    op_insert_ = axiom(pi(S, pi({vs0, dim(vs1), extract(vs2, var(dim(vs2), 0))}, vs3)), {"insert"});
+    {
+        auto p1 = type_ptr(vs1, vn0);
+        auto p2 = type_ptr(extract(vs3, var(dim(vs3), 0)), vn2);
+        op_lea_ = axiom(pi({S, N}, pi({p1, dim(vs2)}, p2)), {"lea"});
+    }
+    {
+        auto p = type_ptr(vs2, vn1);
+        auto r = sigma({M, vs4});
+        op_load_ = axiom(pi({S, N}, pi({M, p}, r)), {"load"});
+    }
+    {
+        auto p = type_ptr(vs2, vn1);
+        op_store_ = axiom(pi({S, N}, pi({M, p, vs3}, M)), {"store"});
+    }
 }
 
 const Axiom* World::val_nat(int64_t val, Location location) {
@@ -606,8 +614,17 @@ const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
 const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
     PtrType ptr_type(ptr->type());
     auto idx = index(i, dim(ptr_type.pointee())->as<Axiom>()->box().get_u64());
-    idx->dump();
     return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {ptr, idx}, dbg);
+}
+
+const Def* World::op_load(const Def* mem, const Def* ptr, Debug dbg) {
+    PtrType ptr_type(ptr->type());
+    return app(app(op_load_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {mem, ptr}, dbg);
+}
+
+const Def* World::op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg) {
+    PtrType ptr_type(ptr->type());
+    return app(app(op_store_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {mem, ptr, val}, dbg);
 }
 
 }

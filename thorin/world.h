@@ -371,8 +371,16 @@ public:
     //@}
 
     //@{ memory operations
-    // TODO
+    const Def* op_load(const Def* mem, const Def* ptr, Debug dbg = {});
+    const Def* op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg = {});
+    const Def* op_enter(const Def* mem, Debug dbg = {});
+    const Def* op_slot(const Def* type, const Def* frame, Debug dbg = {});
+    const Def* op_alloc(const Def* type, const Def* mem, const Def* extra, Debug dbg = {});
+    const Def* op_alloc(const Def* type, const Def* mem, Debug dbg = {});
+    const Def* op_global(const Def* init, Debug dbg = {});
+    const Def* op_const_global(const Def* init, Debug dbg = {});
     //@}
+
 private:
     const Def* type_bool_;
     const Def* type_nat_;
@@ -386,6 +394,8 @@ private:
     const Axiom* type_ptr_;
     const Axiom* op_lea_;
     const Axiom* op_insert_;
+    const Axiom* op_load_;
+    const Axiom* op_store_;
 
     // i/r type
 #define CODE(r, x) \

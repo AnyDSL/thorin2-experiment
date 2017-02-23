@@ -52,6 +52,16 @@ TEST(Primop, Cmp) {
 
 TEST(Primop, Ptr) {
     World w;
+    auto m = w.axiom(w.type_mem(), {"m"});
+    auto p = w.axiom(w.type_ptr(w.type_p32()), {"p"});
+    auto s1 = w.op_store(m, p, w.val_p32(23.f));
+    auto s2 = w.op_store(m, p, w.val_p32(23.f));
+    ASSERT_NE(s1, s2);
+    auto l1 = w.op_load(s1, p);
+    auto l2 = w.op_load(s1, p);
+    ASSERT_NE(l1, l2);
+    ASSERT_EQ(w.extract(l1->type(), 0_s), w.type_mem());
+    ASSERT_EQ(w.extract(l1->type(), 1_s), w.type_p32());
 }
 
 }
