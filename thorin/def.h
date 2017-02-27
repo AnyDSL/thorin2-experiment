@@ -163,7 +163,7 @@ protected:
     {}
     ~Def() override;
 
-    void set(size_t i, const Def*);
+    Def* set(size_t i, const Def*);
     void finalize();
     void unset(size_t i);
     void unregister_use(size_t i) const;
@@ -281,6 +281,7 @@ protected:
         mutable const Def* cache_;  ///< Used by App.
         size_t index_;              ///< Used by Index, Var.
         Box box_;                   ///< Used by Axiom.
+        bool normalize_;            ///< Used by nominal Lambda.
     };
     BitSet free_vars_;
 
@@ -288,7 +289,6 @@ private:
     const Def** ops_ptr() { return reinterpret_cast<const Def**>(reinterpret_cast<char*>(this) + sizeof(Def)); }
     virtual const Def* rebuild(WorldBase&, const Def*, Defs) const = 0;
     bool on_heap() const { return ops_ != const_cast<Def*>(this)->ops_ptr(); }
-    // this must match with the 64bit fields below
 
     static size_t gid_counter_;
 
@@ -361,7 +361,7 @@ public:
     size_t num_domains() const { return domains().size(); }
     const Def* body() const { return op(0); }
     const Def* reduce(Defs) const;
-    void set(const Def* def) { Def::set(0, def); };
+    Lambda* set(const Def* def);
     const Pi* type() const { return Def::type()->as<Pi>(); }
     Lambda* stub(WorldBase&, const Def*, Debug) const override;
 
@@ -451,7 +451,7 @@ private:
     {}
 
 public:
-    void set(size_t i, const Def* def) { Def::set(i, def); };
+    Variant* set(size_t i, const Def* def) { return Def::set(i, def)->as<Variant>(); };
     const Def* kind_qualifier() const override;
     std::ostream& stream(std::ostream&) const override;
 
@@ -567,7 +567,7 @@ private:
 public:
     bool assignable(Defs defs) const override;
     bool is_unit() const { return ops().empty(); }
-    Sigma* set(size_t i, const Def* def) { Def::set(i, def); return this; };
+    Sigma* set(size_t i, const Def* def) { return Def::set(i, def)->as<Sigma>(); };
 
     std::ostream& stream(std::ostream&) const override;
     Sigma* stub(WorldBase&, const Def*, Debug) const override;

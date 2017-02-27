@@ -123,7 +123,7 @@ void Def::resize(size_t num_ops) {
     }
 }
 
-void Def::set(size_t i, const Def* def) {
+Def* Def::set(size_t i, const Def* def) {
     assert(!is_closed() && is_nominal());
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
@@ -135,13 +135,12 @@ void Def::set(size_t i, const Def* def) {
         closed_ = true;
         finalize();
     }
+    return this;
 }
 
-void Def::unset(size_t i) {
-    assert(ops_[i] && "must be set");
-    unregister_use(i);
-    ops_[i] = nullptr;
-}
+Lambda* Lambda::set(const Def* body) {
+    return Def::set(0, normalize_ ? flatten(body, type()->domains()) : body)->as<Lambda>();
+};
 
 void Def::finalize() {
     assert(is_closed());
@@ -155,6 +154,12 @@ void Def::finalize() {
 
     if (type() != nullptr)
         free_vars_ |= type()->free_vars_;
+}
+
+void Def::unset(size_t i) {
+    assert(ops_[i] && "must be set");
+    unregister_use(i);
+    ops_[i] = nullptr;
 }
 
 void Def::unregister_uses() const {
@@ -348,9 +353,8 @@ const Def* Error       ::rebuild(WorldBase& to, const Def* t, Defs    ) const { 
 const Def* Intersection::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.intersection(ops, t, debug()); }
 const Def* Match       ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
-    assert(ops.size() == 1);
     assert(!is_nominal());
-    return to.pi_lambda(t->as<Pi>(), ops.front(), debug());
+    return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
 }
 const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
 const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
@@ -381,7 +385,8 @@ Axiom* Axiom::stub(WorldBase& to, const Def*, Debug) const {
     return const_cast<Axiom*>(this);
 }
 Lambda* Lambda::stub(WorldBase& to, const Def* type, Debug dbg) const {
-    return to.pi_lambda(type->as<Pi>(), dbg);
+    auto pi = type->as<Pi>();
+    return to.nominal_lambda(pi->domains(), pi->body(), pi->qualifier(), dbg);
 }
 Sigma* Sigma::stub(WorldBase& to, const Def* type, Debug dbg) const {
     return to.sigma(num_ops(), type, dbg);

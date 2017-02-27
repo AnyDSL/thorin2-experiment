@@ -65,23 +65,26 @@ public:
     //@}
 
     //@{ create Lambda
-    const Lambda* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
-        return lambda(domain, body, unlimited(), dbg);
-    }
-    const Lambda* lambda(const Def* domain, const Def* body, const Def* type_qualifier,
-                         Debug dbg = {}) {
-        return lambda(Defs({domain}), body, type_qualifier, dbg);
-    }
+    const Lambda* lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg = {});
     const Lambda* lambda(Defs domains, const Def* body, Debug dbg = {}) {
         return lambda(domains, body, unlimited(), dbg);
     }
-    const Lambda* lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg = {}) {
-        return pi_lambda(pi(domains, body->type(), type_qualifier), body, dbg);
+    const Lambda* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {}) {
+        return lambda(Defs{domain}, body, type_qualifier, dbg);
     }
-    Lambda* pi_lambda(const Pi* pi, Debug dbg = {}) {
-        return insert<Lambda>(1, *this, pi, dbg);
+    const Lambda* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
+        return lambda(domain, body, unlimited(), dbg);
     }
-    const Lambda* pi_lambda(const Pi* pi, const Def* body, Debug dbg = {});
+    Lambda* nominal_lambda(Defs domains, const Def* codomain, const Def* type_qualifier, Debug dbg = {});
+    Lambda* nominal_lambda(Defs domains, const Def* codomain, Debug dbg = {}) {
+        return nominal_lambda(domains, codomain, unlimited(), dbg);
+    }
+    Lambda* nominal_lambda(const Def* domain, const Def* codomain, const Def* type_qualifier, Debug dbg = {}) {
+        return nominal_lambda(Defs{domain}, codomain, type_qualifier, dbg);
+    }
+    Lambda* nominal_lambda(const Def* domain, const Def* codomain, Debug dbg = {}) {
+        return nominal_lambda(Defs{domain}, codomain, unlimited(), dbg);
+    }
     //@}
 
     //@{ create App
@@ -108,14 +111,15 @@ public:
     Sigma* sigma(size_t num_ops, const Def* type, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, type, num_ops, dbg);
     }
-    /// @em nominal Sigma types
+    /// @em nominal Sigma of type Star
     Sigma* sigma_type(size_t num_ops, Debug dbg = {}) {
         return sigma_type(num_ops, unlimited(), dbg);
     }
+    /// @em nominal Sigma of type Star
     Sigma* sigma_type(size_t num_ops, const Def* qualifier, Debug dbg = {}) {
         return sigma(num_ops, star(qualifier), dbg);
     }
-    /// @em nominal Sigma kinds
+    /// @em nominal Sigma of type Univers
     Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, num_ops, dbg);
     }
@@ -367,8 +371,16 @@ public:
     //@}
 
     //@{ memory operations
-    // TODO
+    const Def* op_alloc(const Def* type, const Def* mem, Debug dbg = {});
+    const Def* op_alloc(const Def* type, const Def* mem, const Def* extra, Debug dbg = {});
+    const Def* op_global_const(const Def* init, Debug dbg = {});
+    const Def* op_enter(const Def* mem, Debug dbg = {});
+    const Def* op_global(const Def* init, Debug dbg = {});
+    const Def* op_load(const Def* mem, const Def* ptr, Debug dbg = {});
+    const Def* op_slot(const Def* type, const Def* frame, Debug dbg = {});
+    const Def* op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg = {});
     //@}
+
 private:
     const Def* type_bool_;
     const Def* type_nat_;
@@ -380,8 +392,12 @@ private:
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
-    const Axiom* op_lea_;
+    const Axiom* op_enter_;
     const Axiom* op_insert_;
+    const Axiom* op_lea_;
+    const Axiom* op_load_;
+    const Axiom* op_slot_;
+    const Axiom* op_store_;
 
     // i/r type
 #define CODE(r, x) \

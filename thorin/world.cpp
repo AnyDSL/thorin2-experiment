@@ -278,18 +278,14 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) 
     if (domains.size() == 1 && !domains.front()->is_nominal()) {
         auto domain = domains.front();
 
-        if (auto sigma = domain->isa<Sigma>()) {
-            size_t n = sigma->num_ops();
-            auto t = tuple(DefArray(n, [&](auto i) { return this->var(sigma->op(i), n-1-i); }));
-            return pi(sigma->ops(), reduce(body, {t}), q, dbg);
-        }
+        if (auto sigma = domain->isa<Sigma>())
+            return pi(sigma->ops(), flatten(body, sigma->ops()), q, dbg);
 
         if (auto variadic = domain->isa<Variadic>()) {
             if (auto arity = variadic->arity()->isa<Axiom>()) {
                 if (!variadic->body()->free_vars().test(0)) {
-                    size_t n = arity->box().get_u64();
-                    auto t = tuple(DefArray(n, [&](auto i) { return this->var(variadic->body(), n-1-i); }));
-                    return pi(DefArray(n, variadic->body()), reduce(body, {t}), q, dbg);
+                    DefArray args(arity->box().get_u64(), variadic->body());
+                    return pi(args, flatten(body, args), q, dbg);
                 }
             }
         }
@@ -310,9 +306,21 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
-const Lambda* WorldBase::pi_lambda(const Pi* pi, const Def* body, Debug dbg) {
-    assert(pi->body() == body->type());
-    return unify<Lambda>(1, *this, pi, body, dbg);
+const Lambda* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
+    auto p = pi(domains, body->type(), type_qualifier, dbg);
+    size_t n = p->domains().size();
+    if (n != domains.size()) {
+        auto t = tuple(DefArray(n, [&](auto i) { return this->var(p->domains()[i], n-1-i); }));
+        body = reduce(body, {t});
+    }
+
+    return unify<Lambda>(1, *this, p, body, dbg);
+}
+
+Lambda* WorldBase::nominal_lambda(Defs domains, const Def* codomain, const Def* type_qualifier, Debug dbg) {
+    auto l = insert<Lambda>(1, *this, pi(domains, codomain, type_qualifier, dbg), dbg);
+    l->normalize_ = l->type()->domains().size() != domains.size();
+    return l;
 }
 
 const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {
@@ -462,6 +470,7 @@ World::World() {
     auto U = qualifier(Qualifier::Unlimited);
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });
+    auto S = star();
 
     type_i_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
     type_r_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});
@@ -472,15 +481,15 @@ World::World() {
     for (size_t j = 0; j != val_nat_.size(); ++j)
         val_nat_[j] = val_nat(1 << int64_t(j));
 
-    type_mem_   = axiom(star(Qualifier::Linear), {"M"});
-    type_frame_ = axiom(star(Qualifier::Linear), {"F"});
-    type_ptr_   = axiom(pi({star(), N}, star()), {"ptr"});
+    type_ptr_ = axiom(pi({S, N}, S), {"ptr"});
+    auto M = type_mem_   = axiom(star(Qualifier::Linear), {"M"});
+    auto F = type_frame_ = axiom(S, {"F"});
 
-    /*auto vq0 = var(Q, 0)*/; auto vn0 = var(N, 0);
-    /*auto vq1 = var(Q, 1)*/; auto vn1 = var(N, 1);
-    auto vq2 = var(Q, 2);     auto vn2 = var(N, 2);
-    auto vq3 = var(Q, 3);     auto vn3 = var(N, 3);
-    auto vq4 = var(Q, 4);
+    /*auto vq0 = var(Q, 0)*/; auto vn0 = var(N, 0); auto vs0 = var(S, 0);
+    /*auto vq1 = var(Q, 1)*/; auto vn1 = var(N, 1); auto vs1 = var(S, 1);
+    auto vq2 = var(Q, 2);     auto vn2 = var(N, 2); auto vs2 = var(S, 2);
+    auto vq3 = var(Q, 3);     auto vn3 = var(N, 3); auto vs3 = var(S, 3);
+    auto vq4 = var(Q, 4);                           auto vs4 = var(S, 4);
 
     // type_i
 #define CODE(r, x) \
@@ -551,14 +560,26 @@ World::World() {
     CODE(r)
 #undef CODE
 
-    op_insert_ = axiom(pi(star(),
-            pi({var(star(), 0), dim(var(star(), 1)), extract(var(star(), 2), var(dim(var(star(), 2)), 0))},
-            var(star(), 3))), {"insert"});
-
-    op_lea_ = axiom(pi({star(), N},
-                       pi({type_ptr(var(star(), 1), var(N, 0)), dim(var(star(), 2))},
-                          type_ptr(extract(var(star(), 3), var(dim(var(star(), 3)), 0)), var(N, 2)))),
-                    {"lea"});
+    op_enter_ = axiom(pi(M, sigma({M, F})), {"enter"});
+    op_insert_ = axiom(pi(S, pi({vs0, dim(vs1), extract(vs2, var(dim(vs2), 0))}, vs3)), {"insert"});
+    {
+        auto p1 = type_ptr(vs1, vn0);
+        auto p2 = type_ptr(extract(vs3, var(dim(vs3), 0)), vn2);
+        op_lea_ = axiom(pi({S, N}, pi({p1, dim(vs2)}, p2)), {"lea"});
+    }
+    {
+        auto p = type_ptr(vs2, vn1);
+        auto r = sigma({M, vs4});
+        op_load_ = axiom(pi({S, N}, pi({M, p}, r)), {"load"});
+    }
+    {
+        auto p = type_ptr(vs3, vn2);
+        op_slot_ = axiom(pi({S, N}, pi({F, N}, p)), {"slot"});
+    }
+    {
+        auto p = type_ptr(vs2, vn1);
+        op_store_ = axiom(pi({S, N}, pi({M, p, vs3}, M)), {"store"});
+    }
 }
 
 const Axiom* World::val_nat(int64_t val, Location location) {
@@ -581,6 +602,10 @@ T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
 T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
 #undef CODE
 
+const Def* World::op_enter(const Def* mem, Debug dbg) {
+    return app(op_enter_, mem, dbg);
+}
+
 const Def* World::op_insert(const Def* def, const Def* index, const Def* val, Debug dbg) {
     return app(app(op_insert_, def->type(), dbg), {def, index, val}, dbg);
 }
@@ -598,8 +623,21 @@ const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
 const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
     PtrType ptr_type(ptr->type());
     auto idx = index(i, dim(ptr_type.pointee())->as<Axiom>()->box().get_u64());
-    idx->dump();
     return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {ptr, idx}, dbg);
+}
+
+const Def* World::op_load(const Def* mem, const Def* ptr, Debug dbg) {
+    PtrType ptr_type(ptr->type());
+    return app(app(op_load_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {mem, ptr}, dbg);
+}
+
+const Def* World::op_slot(const Def* type, const Def* frame, Debug dbg) {
+    return app(app(op_slot_, {type, val_nat_0()}, dbg), {frame, val_nat(Def::gid_counter())}, dbg);
+}
+
+const Def* World::op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg) {
+    PtrType ptr_type(ptr->type());
+    return app(app(op_store_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {mem, ptr, val}, dbg);
 }
 
 }

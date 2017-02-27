@@ -57,7 +57,7 @@ TEST(Nominal, LambdaFreeVars) {
     World w;
     auto nat = w.type_nat();
 
-    auto lam = w.pi_lambda(w.pi(nat, nat), {"lam"});
+    auto lam = w.nominal_lambda(nat, nat, {"lam"});
     auto v0 = w.var(nat, 0);
     auto v1 = w.var(w.pi(nat, nat), 1);
     lam->set(w.app(v1, v0));
@@ -85,7 +85,7 @@ TEST(Nominal, PolymorphicList) {
     auto nat = w.type_nat();
     auto star = w.star();
 
-    auto list = w.pi_lambda(w.pi(star, star), {"list"});
+    auto list = w.nominal_lambda(star, star, {"list"});
     auto cons = w.sigma_type(2, {"cons"});
     cons->set(0, w.var(star, 0));
     cons->set(1, w.app(list, w.var(star, 1)));
