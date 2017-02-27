@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include <type_traits>
+#include <unordered_map>
 
 #include "thorin/def.h"
 #include "thorin/world.h"
@@ -16,6 +17,7 @@ public:
         : world_(world)
         , lexer_(lexer)
         , ahead_(lexer.next())
+        , depth_(0)
     {}
 
     const Def*    parse_def();
@@ -26,6 +28,7 @@ public:
     const Var*    parse_var();
     const Def*    parse_tuple();
     const Axiom*  parse_assume();
+    const Def*    parse_param();
 
 private:
     struct Tracker {
@@ -68,6 +71,21 @@ private:
     void next();
     void eat(Token::Tag);
     void expect(Token::Tag);
+    void pop_identifiers(size_t d) {
+        while (!id_stack_.empty()) {
+            std::string ident;
+            size_t index;
+            std::tie(ident, std::ignore, index) = id_stack_.back();
+            if (index < depth_) break;
+            id_stack_.pop_back();
+            id_map_.erase(ident);
+        }
+    }
+    const Def* shift_def(const Def*, size_t);
+
+    std::unordered_map<std::string, size_t> id_map_;
+    std::vector<std::tuple<std::string, const Def*, size_t>> id_stack_;
+    size_t depth_;
 
     WorldBase& world_;
     Lexer&     lexer_;

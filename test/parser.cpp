@@ -9,7 +9,7 @@
 using namespace thorin;
 
 TEST(Parser, SimplePi) {
-    std::string str ="Π(*). Π(<0 : *>). <1 : *>";
+    std::string str ="Π(T:*). Π(U:T). T";
     std::istringstream is(str);
 
     World world;
@@ -21,7 +21,7 @@ TEST(Parser, SimplePi) {
 }
 
 TEST(Parser, SimpleLambda) {
-    std::string str ="λ(*).λ(<0:*>).<0:<1:*>>";
+    std::string str ="λ(T:*). λ(x:T). x";
     std::istringstream is(str);
 
     World world;
