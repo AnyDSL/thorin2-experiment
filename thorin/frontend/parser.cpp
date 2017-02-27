@@ -7,10 +7,17 @@ const Def* Parser::parse_def() {
     if (ahead_.isa(Token::Tag::Sigma))      return parse_sigma();
     if (ahead_.isa(Token::Tag::Lambda))     return parse_lambda();
     if (ahead_.isa(Token::Tag::Star))       return parse_star();
-    if (ahead_.isa(Token::Tag::L_Angle) ||
+    if (ahead_.isa(Token::Tag::Sharp) ||
         ahead_.isa(Token::Tag::Identifier)) return parse_var();
-    if (ahead_.isa(Token::Tag::L_Paren))    return parse_tuple();
+    if (ahead_.isa(Token::Tag::L_Angle))    return parse_tuple();
     if (ahead_.isa(Token::Tag::L_Brace))    return parse_assume();
+    if (ahead_.isa(Token::Tag::L_Paren)) {
+        eat(Token::Tag::L_Paren);
+        auto def = parse_def();
+        expect(Token::Tag::R_Paren);
+        return def;
+    }
+
     ELOG("definition expected in {}", ahead_.location());
 }
 
@@ -66,15 +73,14 @@ const Var* Parser::parse_var() {
 
     const Def* def = nullptr;
     size_t index = 0;
-    if (ahead_.isa(Token::Tag::L_Angle)) {
-        eat(Token::Tag::L_Angle);
+    if (ahead_.isa(Token::Tag::Sharp)) {
+        eat(Token::Tag::Sharp);
         if (!ahead_.isa(Token::Tag::Literal) ||
             ahead_.literal().tag != Literal::Tag::Lit_untyped)
             ELOG("DeBruijn index expected in {}", ahead_.location());
 
         index = ahead_.literal().box.get_u64();
         eat(Token::Tag::Literal);
-        expect(Token::Tag::R_Angle);
 
         expect(Token::Tag::Colon);
         def = parse_def();
@@ -95,9 +101,9 @@ const Var* Parser::parse_var() {
 
 const Def* Parser::parse_tuple() {
     Tracker tracker(this);
-    eat(Token::Tag::L_Paren);
+    eat(Token::Tag::L_Angle);
 
-    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); });
+    auto defs = parse_list(Token::Tag::R_Angle, Token::Tag::Comma, [&] { return parse_def(); });
     expect(Token::Tag::Colon);
     auto type = parse_def();
 

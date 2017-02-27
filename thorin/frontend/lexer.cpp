@@ -53,6 +53,7 @@ Token Lexer::next() {
         if (accept("lambda")) return Token(make_loc(), Token::Tag::Lambda);
         if (accept("sigma"))  return Token(make_loc(), Token::Tag::Sigma);
         if (accept("pi"))     return Token(make_loc(), Token::Tag::Pi);
+        return Token(make_loc(), Token::Tag::Sharp);
     }
 
     // greek letters for lambda, sigma, and pi

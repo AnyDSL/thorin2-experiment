@@ -22,6 +22,7 @@ namespace thorin {
     f(Comma,      ",") \
     f(Dot,        ".") \
     f(Star,       "*") \
+    f(Sharp,      "#") \
     f(Pi,         "#pi") \
     f(Sigma,      "#sigma") \
     f(Lambda,     "#lambda") \
