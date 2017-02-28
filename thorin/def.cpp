@@ -65,8 +65,8 @@ const SortedDefSet set_flatten(Defs defs) {
 }
 
 bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
-    for (auto op : ops)
-        assert(sort == op->sort() && "operands must be of the same sort");
+    assertf(std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); }),
+            "Operands must be of the same sort.");
 
     assertf(sort == Def::Sort::Type || sort == Def::Sort::Kind, "only sort type or kind allowed");
     return true;
@@ -91,16 +91,6 @@ Def::Sort Def::sort() const {
     else {
         assert(!type()->type()->type()->type());
         return Sort::Term;
-    }
-}
-
-const Def* Def::qualifier() const {
-    switch(sort()) {
-        case Sort::Term:     return type()->type()->kind_qualifier();
-        case Sort::Type:     return type()->kind_qualifier();
-        case Sort::Kind:     return kind_qualifier();
-        case Sort::Universe: return world().unlimited();
-        default:             THORIN_UNREACHABLE;
     }
 }
 
@@ -131,7 +121,6 @@ Def* Def::set(size_t i, const Def* def) {
     ops_[i] = def;
 
     if (i == num_ops() - 1) {
-        assert(std::all_of(ops().begin(), ops().end(), [](const Def* def) { return def != nullptr; }));
         closed_ = true;
         finalize();
     }
@@ -146,6 +135,7 @@ void Def::finalize() {
     assert(is_closed());
 
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
+        assert(op(i) != nullptr);
         const auto& p = op(i)->uses_.emplace(this, i);
         assert_unused(p.second);
         free_vars_ |= op(i)->free_vars() >> shift(i);
@@ -230,40 +220,87 @@ Variant::Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg)
 //------------------------------------------------------------------------------
 
 /*
- * kind_qualifier
+ * has_values
  */
+
+bool Axiom::has_values() const {
+    return sort() == Sort::Type;
+}
+
+bool Intersection::has_values() const {
+    return std::all_of(ops().begin(), ops().end(), [](auto op){ return op->has_values(); });
+}
+
+bool Pi::has_values() const {
+    return true;
+}
+
+bool Sigma::has_values() const {
+    return true;
+}
+
+bool Singleton::has_values() const {
+    return op(0)->is_value();
+}
+
+bool Variadic::has_values() const {
+    return true;
+}
+
+bool Variant::has_values() const {
+    return std::any_of(ops().begin(), ops().end(), [](auto op){ return op->has_values(); });
+}
+
+//------------------------------------------------------------------------------
+
+/*
+ * qualifier/kind_qualifier
+ */
+
+const Def* Def::qualifier() const {
+    switch(sort()) {
+        case Sort::Term:     return type()->type()->kind_qualifier();
+        case Sort::Type:     return type()->kind_qualifier();
+        case Sort::Kind:     return kind_qualifier();
+        case Sort::Universe: return world().unlimited();
+    }
+}
 
 const Def* Def::kind_qualifier() const {
     return world().unlimited();
 }
 
 const Def* Intersection::kind_qualifier() const {
-    return is_kind() ? world().intersection(qualifiers(ops()), world().qualifier_kind()) :
-        world().unlimited();
+    assert(is_kind());
+    auto qualifiers = DefArray(num_ops(), [&](auto i) { return op(i)->has_values() ? op(i)->qualifier() : world().linear(); });
+    return world().intersection(qualifiers, world().qualifier_kind());
 }
 
-// const Def* Sigma::kind_qualifier() const {
-//     // TODO can Sigma kinds have types that are inhabited on the term level and provide a qualifier for them?
-//     return world().unlimited();
-// }
+const Def* Sigma::kind_qualifier() const {
+    assert(is_kind());
+    auto qualifiers = DefArray(num_ops(), [&](auto i) { return op(i)->has_values() ? op(i)->qualifier() : world().unlimited(); });
+    return world().variant(qualifiers, world().qualifier_kind());
+}
 
 const Def* Singleton::kind_qualifier() const {
-    // Types with a Singleton kind are equivalent to the operand of the Singleton and thus have the same
-    // qualifier
-    return is_kind() ? op(0)->qualifier() : world().unlimited();
+    assert(is_kind());
+    // TODO this might recur endlessly if op(0) has this as type, need to forbid that
+    return op(0)->qualifier();
 }
 
 const Def* Star::kind_qualifier() const {
-    return is_kind() ? op(0) : world().unlimited();
+    return op(0);
 }
 
-// const Def* Variadic::kind_qualifier() const {
-//     // TODO can Variadic kinds have types that are inhabited on the term level and provide a qualifier for them?
-//     return world().unlimited();
-// }
+const Def* Variadic::kind_qualifier() const {
+    assert(is_kind());
+    return body()->has_values() ? body()->qualifier() : world().unlimited();
+}
 
 const Def* Variant::kind_qualifier() const {
-    return is_kind() ? world().variant(qualifiers(ops()), world().qualifier_kind()) : world().unlimited();
+    assert(is_kind());
+    auto qualifiers = DefArray(num_ops(), [&](auto i) { return op(i)->has_values() ? op(i)->qualifier() : world().unlimited(); });
+    return world().variant(qualifiers, world().qualifier_kind());
 }
 
 //------------------------------------------------------------------------------

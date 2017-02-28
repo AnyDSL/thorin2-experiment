@@ -256,7 +256,7 @@ const Def* WorldBase::intersection(Defs defs, Debug dbg) {
 }
 
 const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
-    assert(defs.size() > 0);
+    assert(defs.size() > 0); // TODO empty intersection -> empty type/kind
     if (defs.size() == 1) {
         assert(defs.front()->type() == type);
         return defs.front();
@@ -270,7 +270,7 @@ const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
         });
     }
 
-    // TODO recognize some empty intersections?
+    // TODO recognize some empty intersections? i.e. same sorted ops, intersection of types non-empty?
     return unify<Intersection>(defs.size(), *this, type, defs, dbg);
 }
 
@@ -340,7 +340,8 @@ const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {
         case 0:
             return unit(inferred_type->qualifier());
         case 1:
-            assert(defs.front()->type() == inferred_type);
+            assertf(defs.front()->type() == inferred_type, "Type {} and inferred type {} don't match.",
+                    defs.front()->type(), inferred_type);
             return defs.front();
         default:
             if (std::equal(defs.begin() + 1, defs.end(), &defs.front())) {

@@ -196,6 +196,18 @@ public:
     bool is_type() const { return sort() == Sort::Type; }
     bool is_kind() const { return sort() == Sort::Kind; }
     bool is_universe() const { return sort() == Sort::Universe; }
+    bool is_value() const {
+        switch (sort()) {
+        case Sort::Universe:
+        case Sort::Kind:
+            return false;
+        case Sort::Type:
+            return type()->has_values();
+        case Sort::Term:
+            return true;
+        }
+    }
+    virtual bool has_values() const { return false; }
     //@}
 
     //@{ get Qualifier
@@ -254,6 +266,8 @@ public:
     }
 
 protected:
+    /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
+    virtual const Def* kind_qualifier() const;
     /**
      * The amount to shift De Bruijn indices when descending into this Def's @p i's Def::op.
      * For example:
@@ -265,11 +279,6 @@ protected:
 @endcode
     */
     virtual size_t shift(size_t i) const;
-    /**
-     * The least upper bound of all qualifiers of types inhabiting this kind or nullptr if not a kind.
-     * All Defs that can be Kinds with qualified types should override this.
-     */
-    virtual const Def* kind_qualifier() const;
 
     //@{ hash and equal
     uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
@@ -337,6 +346,7 @@ public:
     size_t num_domains() const { return domains().size(); }
     const Def* body() const { return ops().back(); }
     const Def* reduce(Defs) const;
+    bool has_values() const override;
 
     std::ostream& stream(std::ostream&) const override;
 
@@ -418,6 +428,7 @@ private:
 
 public:
     const Def* kind_qualifier() const override;
+    bool has_values() const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -453,6 +464,7 @@ private:
 public:
     Variant* set(size_t i, const Def* def) { return Def::set(i, def)->as<Variant>(); };
     const Def* kind_qualifier() const override;
+    bool has_values() const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -518,6 +530,7 @@ private:
 
 public:
     const Def* kind_qualifier() const override;
+    bool has_values() const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -565,6 +578,8 @@ private:
     {}
 
 public:
+    const Def* kind_qualifier() const override;
+    bool has_values() const override;
     bool assignable(Defs defs) const override;
     bool is_unit() const { return ops().empty(); }
     Sigma* set(size_t i, const Def* def) { return Def::set(i, def)->as<Sigma>(); };
@@ -585,6 +600,8 @@ private:
     Variadic(WorldBase& world, const Def* arity, const Def* body, Debug dbg);
 
 public:
+    const Def* kind_qualifier() const override;
+    bool has_values() const override;
     bool assignable(Defs defs) const override;
     const Def* arity() const { return op(0); }
     const Def* body() const { return op(1); }
@@ -685,6 +702,7 @@ public:
     Box box() const { assert(!is_nominal()); return box_; }
     std::ostream& stream(std::ostream&) const override;
     Axiom* stub(WorldBase&, const Def*, Debug) const override;
+    bool has_values() const override;
 
 private:
     uint64_t vhash() const override;

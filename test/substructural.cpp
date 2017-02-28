@@ -69,6 +69,23 @@ TEST(Qualifiers, Variants) {
     ASSERT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier());
 }
 
+TEST(Qualifiers, Kinds) {
+    World w;
+    auto r = w.relevant();
+    auto a = w.affine();
+    auto l = w.linear();
+    auto v = w.var(w.qualifier_kind(), 0);
+    auto lub = [&](Defs defs) { return w.variant(defs, w.qualifier_kind()); };
+
+    auto anat = w.axiom(w.star(a), {"nat"});
+    auto rnat = w.axiom(w.star(r), {"nat"});
+    auto vtype = w.assume(w.star(v), {0}, {"nat"});
+    ASSERT_EQ(w.sigma({anat, w.star()})->qualifier(), a);
+    ASSERT_EQ(w.sigma({anat, rnat})->qualifier(), l);
+    ASSERT_EQ(w.sigma({vtype, rnat})->qualifier(), lub({v, r}));
+    ASSERT_EQ(w.sigma({anat, w.star(l)})->qualifier(), a);
+}
+
 #if 0
 TEST(Substructural, Misc) {
     World w;
