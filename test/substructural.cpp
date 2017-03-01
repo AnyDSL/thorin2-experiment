@@ -66,11 +66,11 @@ TEST(Qualifiers, Variants) {
     ASSERT_EQ(l, lub({v, l}));
     ASSERT_EQ(l, lub({r, v, a}));
 
-    ASSERT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier());
 }
 
 TEST(Qualifiers, Kinds) {
     World w;
+    auto u = w.unlimited();
     auto r = w.relevant();
     auto a = w.affine();
     auto l = w.linear();
@@ -84,6 +84,9 @@ TEST(Qualifiers, Kinds) {
     ASSERT_EQ(w.sigma({anat, rnat})->qualifier(), l);
     ASSERT_EQ(w.sigma({vtype, rnat})->qualifier(), lub({v, r}));
     ASSERT_EQ(w.sigma({anat, w.star(l)})->qualifier(), a);
+
+    ASSERT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier());
+    ASSERT_EQ(l, w.variant({w.star(r), w.star(l)})->qualifier());
 }
 
 #if 0

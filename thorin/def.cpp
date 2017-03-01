@@ -272,7 +272,7 @@ const Def* Def::kind_qualifier() const {
 
 const Def* Intersection::kind_qualifier() const {
     assert(is_kind());
-    auto qualifiers = DefArray(num_ops(), [&](auto i) { return op(i)->has_values() ? op(i)->qualifier() : world().linear(); });
+    auto qualifiers = DefArray(num_ops(), [&](auto i) { return op(i)->qualifier(); });
     return world().intersection(qualifiers, world().qualifier_kind());
 }
 
@@ -299,7 +299,7 @@ const Def* Variadic::kind_qualifier() const {
 
 const Def* Variant::kind_qualifier() const {
     assert(is_kind());
-    auto qualifiers = DefArray(num_ops(), [&](auto i) { return op(i)->has_values() ? op(i)->qualifier() : world().unlimited(); });
+    auto qualifiers = DefArray(num_ops(), [&](auto i) { return op(i)->qualifier(); });
     return world().variant(qualifiers, world().qualifier_kind());
 }
 
