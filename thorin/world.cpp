@@ -338,7 +338,6 @@ const Def* WorldBase::variadic(Defs arities, const Def* body, Debug dbg) {
             return variadic(tuple->ops(), body, dbg);
     }
 
-
     if (auto v = body->isa<Variadic>()) {
         if (v->is_multi() || v->arities().front()->type() == arity_kind())
             return variadic(concat(arities, v->arities()), v->body());
