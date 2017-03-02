@@ -71,4 +71,9 @@ TEST(Variadic, Multi) {
     auto f3 = w.extract(f2, 3);
     ASSERT_EQ(w.lambda(w.variadic(3, w.variadic(8, w.variadic(5, N))), e3),
               w.lambda({w.variadic({8, 5}, N), w.variadic({8, 5}, N), w.variadic({8, 5}, N)}, f3));
+    w.lambda(w.variadic(3, w.variadic(8, w.variadic(5, N))), e3)->dump();
+
+    auto A = w.arity_kind();
+    auto l = w.lambda({A, w.variadic(w.var(A, 0), A)}, w.variadic(w.var(w.variadic(w.var(A, 1), A), 0), N));
+    ASSERT_EQ(w.app(l, {w.arity(2), w.tuple({w.arity(3), w.arity(4)})}), w.variadic({3, 4}, N));
 }

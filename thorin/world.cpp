@@ -325,14 +325,23 @@ Lambda* WorldBase::nominal_lambda(Defs domains, const Def* codomain, const Def* 
 }
 
 const Def* WorldBase::variadic(Defs arities, const Def* body, Debug dbg) {
-    if (auto v = body->isa<Variadic>())
-        return variadic(concat(arities, v->arities()), v->body());
     if (auto arity = arities.back()->isa<Axiom>()) {
         if (body->free_vars().test(0)) {
             auto s = sigma(DefArray(arity->box().get_u64(),
                     [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
             return arities.size() == 1 ? s : variadic(arities.skip_back(), s);
         }
+    }
+
+    if (arities.size() == 1) {
+        if (auto tuple = arities.front()->isa<Tuple>())
+            return variadic(tuple->ops(), body, dbg);
+    }
+
+
+    if (auto v = body->isa<Variadic>()) {
+        if (v->is_multi() || v->arities().front()->type() == arity_kind())
+            return variadic(concat(arities, v->arities()), v->body());
     }
 
     return unify<Variadic>(arities.size() + 1, *this, arities, body, dbg);
