@@ -457,13 +457,17 @@ const Def* App::try_reduce() const {
         return cache_;
 
     auto pi_type = callee()->type()->as<Pi>();
-    // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
-    if (!pi_type->maybe_affine() && !pi_type->body()->maybe_affine()) {
-        if (auto lambda = callee()->isa<Lambda>()) {
+
+    if (auto lambda = callee()->isa<Lambda>()) {
+        // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
+        auto args = ops().skip_front();
+        if (!pi_type->maybe_affine() && !pi_type->body()->maybe_affine() &&
+            (!lambda->is_nominal() ||
+             std::all_of(args.begin(), args.end(), [](auto def) { return def->free_vars().none(); }))) {
             if  (!lambda->is_closed()) // don't set cache as long lambda is unclosed
                 return this;
 
-            return thorin::reduce(lambda->body(), ops().skip_front(), [&] (const Def* def) { cache_ = def; });
+            return thorin::reduce(lambda->body(), args, [&] (const Def* def) { cache_ = def; });
         }
     }
 
