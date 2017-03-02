@@ -408,7 +408,7 @@ const Def* Tuple       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { 
 const Def* Universe    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(); }
 const Def* Var         ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
 const Def* Variant     ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.variant(ops, t, debug()); }
-const Def* Variadic    ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic(ops[0], ops[1], debug()); }
+const Def* Variadic    ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic(ops.skip_back(), ops.back(), debug()); }
 
 //------------------------------------------------------------------------------
 
@@ -496,7 +496,8 @@ bool Variadic::assignable(Defs defs) const {
     if (arities().front() != world().arity(size))
         return false;
     for (size_t i = 0; i != size; ++i) {
-        auto indexed_type = thorin::reduce(body(), {world().index(i, size)});
+        auto b = thorin::reduce(body(), {world().index(i, size)});
+        auto indexed_type = is_multi() ? world().variadic(arities().skip_front(), b, debug()) : b;
         assert(!indexed_type->has_error());
         if (defs[i]->type() != indexed_type)
             return false;

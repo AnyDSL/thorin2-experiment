@@ -164,10 +164,14 @@ public:
     const Var* var(const Def* type, size_t index, Debug dbg = {}) {
         return unify<Var>(0, *this, type, index, dbg);
     }
+    const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
     const Def* variadic(const Def* arity, const Def* body, Debug dbg = {}) {
         return variadic(Defs{arity}, body, dbg);
     }
-    const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
+    const Def* variadic(size_t a, const Def* body, Debug dbg = {}) { return variadic(arity(a, dbg), body, dbg); }
+    const Def* variadic(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
+        return variadic(DefArray(a.size(), [&](auto i) { return arity(a[i], dbg); }), body, dbg);
+    }
     const Def* variant(Defs defs, Debug dbg = {});
     const Def* variant(Defs defs, const Def* type, Debug dbg = {});
     Variant* variant(size_t num_ops, const Def* type, Debug dbg = {}) {

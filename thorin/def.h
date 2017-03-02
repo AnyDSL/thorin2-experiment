@@ -604,6 +604,7 @@ public:
     bool has_values() const override;
     bool assignable(Defs defs) const override;
     Defs arities() const { return ops().skip_back(); }
+    bool is_multi() const { return arities().size() != 1; }
     const Def* body() const { return ops().back(); }
     std::ostream& stream(std::ostream&) const override;
 
