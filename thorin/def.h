@@ -597,14 +597,14 @@ private:
 
 class Variadic : public SigmaBase {
 private:
-    Variadic(WorldBase& world, const Def* arity, const Def* body, Debug dbg);
+    Variadic(WorldBase& world, Defs arities, const Def* body, Debug dbg);
 
 public:
     const Def* kind_qualifier() const override;
     bool has_values() const override;
     bool assignable(Defs defs) const override;
-    const Def* arity() const { return op(0); }
-    const Def* body() const { return op(1); }
+    Defs arities() const { return ops().skip_back(); }
+    const Def* body() const { return ops().back(); }
     std::ostream& stream(std::ostream&) const override;
 
 private:

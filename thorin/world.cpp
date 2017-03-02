@@ -175,7 +175,7 @@ const Def* WorldBase::dim(const Def* def, Debug dbg) {
     if (auto sigma = def->isa<Sigma>())
         return arity(sigma->num_ops(), dbg);
     if (auto variadic = def->isa<Variadic>())
-        return variadic->arity();
+        return variadic->arities().front();
     if (def->isa<Var>())
         return unify<Dim>(1, *this, def, dbg);
     return arity(1, dbg);
@@ -217,9 +217,9 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
     }
 
     if (auto variadic = def->type()->isa<Variadic>()) {
-        assertf(variadic->arity()->isa<Axiom>() && i < variadic->arity()->as<Axiom>()->box().get_u64(),
-                "Index {} not provably in Arity {}.", i, variadic->arity());
-        auto idx = index(i, variadic->arity()->as<Axiom>()->box().get_u64(), dbg);
+        auto a = variadic->arities().front()->as<Axiom>()->box().get_u64();
+        assertf(i < a, "index {} not provably in Arity {}", i, variadic->arities().front());
+        auto idx = index(i, a, dbg);
         return unify<Extract>(2, *this, variadic->body()->reduce({idx}), def, idx, dbg);
     }
 
@@ -282,7 +282,7 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) 
             return pi(sigma->ops(), flatten(body, sigma->ops()), q, dbg);
 
         if (auto variadic = domain->isa<Variadic>()) {
-            if (auto arity = variadic->arity()->isa<Axiom>()) {
+            if (auto arity = variadic->arities().front()->isa<Axiom>()) {
                 if (!variadic->body()->free_vars().test(0)) {
                     DefArray args(arity->box().get_u64(), variadic->body());
                     return pi(args, flatten(body, args), q, dbg);
@@ -323,15 +323,16 @@ Lambda* WorldBase::nominal_lambda(Defs domains, const Def* codomain, const Def* 
     return l;
 }
 
-const Def* WorldBase::variadic(const Def* a, const Def* body, Debug dbg) {
-    if (auto arity = a->isa<Axiom>()) {
+const Def* WorldBase::variadic(Defs arities, const Def* body, Debug dbg) {
+    if (auto arity = arities.back()->isa<Axiom>()) {
+        // TODO
         if (body->free_vars().test(0)) {
             return sigma(DefArray(arity->box().get_u64(),
                         [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
         }
     }
 
-    return unify<Variadic>(2, *this, a, body, dbg);
+    return unify<Variadic>(arities.size() + 1, *this, arities, body, dbg);
 }
 
 const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {

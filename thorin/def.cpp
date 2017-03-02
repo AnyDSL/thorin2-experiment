@@ -206,8 +206,8 @@ Star::Star(WorldBase& world, const Def* qualifier)
     : Def(world, Tag::Star, world.universe(), {qualifier}, {"*"})
 {}
 
-Variadic::Variadic(WorldBase& world, const Def* arity, const Def* body, Debug dbg)
-    : SigmaBase(world, Tag::Variadic, body->type(), {arity, body}, dbg)
+Variadic::Variadic(WorldBase& world, Defs arities, const Def* body, Debug dbg)
+    : SigmaBase(world, Tag::Variadic, body->type(), concat(arities, body), dbg)
 {}
 
 Variant::Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg)
@@ -493,7 +493,7 @@ bool Sigma::assignable(Defs defs) const {
 
 bool Variadic::assignable(Defs defs) const {
     auto size = defs.size();
-    if (arity() != world().arity(size))
+    if (arities().front() != world().arity(size))
         return false;
     for (size_t i = 0; i != size; ++i) {
         auto indexed_type = thorin::reduce(body(), {world().index(i, size)});
@@ -594,7 +594,9 @@ std::ostream& Var::stream(std::ostream& os) const {
 }
 
 std::ostream& Variadic::stream(std::ostream& os) const {
-    return streamf(os, "[{} × {}]", arity(), body());
+    os << "[";
+    stream_list(os, arities(), [&](auto a) { a->name_stream(os); });
+    return streamf(os, "; {}]", body());
 }
 
 std::ostream& Variant::stream(std::ostream& os) const {
