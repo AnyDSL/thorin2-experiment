@@ -198,14 +198,12 @@ public:
     bool is_universe() const { return sort() == Sort::Universe; }
     bool is_value() const {
         switch (sort()) {
-        case Sort::Universe:
-        case Sort::Kind:
-            return false;
-        case Sort::Type:
-            return type()->has_values();
-        case Sort::Term:
-            return true;
+            case Sort::Universe:
+            case Sort::Kind: return false;
+            case Sort::Type: return type()->has_values();
+            case Sort::Term: return true;
         }
+        THORIN_UNREACHABLE;
     }
     virtual bool has_values() const { return false; }
     //@}

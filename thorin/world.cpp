@@ -170,18 +170,12 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
 }
 
 const Def* WorldBase::dim(const Def* def, Debug dbg) {
-    if (auto tuple = def->isa<Tuple>())
-        return arity(tuple->num_ops(), dbg);
-    if (auto sigma = def->isa<Sigma>())
-        return arity(sigma->num_ops(), dbg);
-    if (auto sigma = def->type()->isa<Sigma>())
-        return arity(sigma->num_ops(), dbg);
-    if (auto variadic = def->isa<Variadic>())
-        return variadic->arities().front();
-    if (auto variadic = def->type()->isa<Variadic>())
-        return variadic->arities().front();
-    if (auto var = def->isa<Var>())
-        return unify<Dim>(1, *this, def, dbg);
+    if (auto tuple    = def->isa<Tuple>())    return arity(tuple->num_ops(), dbg);
+    if (auto sigma    = def->isa<Sigma>())    return arity(sigma->num_ops(), dbg);
+    if (auto variadic = def->isa<Variadic>()) return variadic->arities().front();
+    if (auto sigma    = def->type()->isa<Sigma>())    return arity(sigma->num_ops(), dbg);
+    if (auto variadic = def->type()->isa<Variadic>()) return variadic->arities().front();
+    if (def->isa<Var>()) return unify<Dim>(1, *this, def, dbg);
     return arity(1, dbg);
 }
 

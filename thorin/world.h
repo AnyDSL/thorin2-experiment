@@ -170,7 +170,7 @@ public:
     }
     const Def* variadic(size_t a, const Def* body, Debug dbg = {}) { return variadic(arity(a, dbg), body, dbg); }
     const Def* variadic(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
-        return variadic(DefArray(a.size(), [&](auto i) { return arity(a[i], dbg); }), body, dbg);
+        return variadic(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
     }
     const Def* variant(Defs defs, Debug dbg = {});
     const Def* variant(Defs defs, const Def* type, Debug dbg = {});

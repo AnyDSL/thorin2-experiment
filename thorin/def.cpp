@@ -264,6 +264,7 @@ const Def* Def::qualifier() const {
         case Sort::Kind:     return kind_qualifier();
         case Sort::Universe: return world().unlimited();
     }
+    THORIN_UNREACHABLE;
 }
 
 const Def* Def::kind_qualifier() const {
@@ -272,13 +273,14 @@ const Def* Def::kind_qualifier() const {
 
 const Def* Intersection::kind_qualifier() const {
     assert(is_kind());
-    auto qualifiers = DefArray(num_ops(), [&](auto i) { return op(i)->qualifier(); });
+    auto qualifiers = DefArray(num_ops(), [&](auto i) { return this->op(i)->qualifier(); });
     return world().intersection(qualifiers, world().qualifier_kind());
 }
 
 const Def* Sigma::kind_qualifier() const {
     assert(is_kind());
-    auto qualifiers = DefArray(num_ops(), [&](auto i) { return op(i)->has_values() ? op(i)->qualifier() : world().unlimited(); });
+    auto qualifiers = DefArray(num_ops(), [&](auto i) {
+            return this->op(i)->has_values() ? this->op(i)->qualifier() : this->world().unlimited(); });
     return world().variant(qualifiers, world().qualifier_kind());
 }
 
@@ -299,7 +301,7 @@ const Def* Variadic::kind_qualifier() const {
 
 const Def* Variant::kind_qualifier() const {
     assert(is_kind());
-    auto qualifiers = DefArray(num_ops(), [&](auto i) { return op(i)->qualifier(); });
+    auto qualifiers = DefArray(num_ops(), [&](auto i) { return this->op(i)->qualifier(); });
     return world().variant(qualifiers, world().qualifier_kind());
 }
 
