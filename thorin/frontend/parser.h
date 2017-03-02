@@ -71,7 +71,7 @@ private:
     void next();
     void eat(Token::Tag);
     void expect(Token::Tag);
-    void pop_identifiers(size_t d) {
+    void pop_identifiers() {
         while (!id_stack_.empty()) {
             std::string ident;
             size_t index;
@@ -85,11 +85,11 @@ private:
 
     std::unordered_map<std::string, size_t> id_map_;
     std::vector<std::tuple<std::string, const Def*, size_t>> id_stack_;
-    size_t depth_;
 
     WorldBase& world_;
     Lexer&     lexer_;
     Token      ahead_;
+    size_t     depth_;
 };
 
 }

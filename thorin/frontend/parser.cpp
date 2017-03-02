@@ -25,14 +25,12 @@ const Pi* Parser::parse_pi() {
     Tracker tracker(this);
     eat(Token::Tag::Pi);
 
-    size_t prev_depth = depth_;
-
     expect(Token::Tag::L_Paren);
     auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); });
     expect(Token::Tag::Dot);
     auto body = parse_def();
 
-    pop_identifiers(prev_depth);
+    pop_identifiers();
 
     return world_.pi(domains, body, tracker.location());
 }
@@ -51,14 +49,12 @@ const Lambda* Parser::parse_lambda() {
     Tracker tracker(this);
     eat(Token::Tag::Lambda);
 
-    size_t prev_depth = depth_;
-
     expect(Token::Tag::L_Paren);
     auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); });
     expect(Token::Tag::Dot);
     auto body = parse_def();
 
-    pop_identifiers(prev_depth);
+    pop_identifiers();
 
     return world_.lambda(domains, body, tracker.location());
 }
