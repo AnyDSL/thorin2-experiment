@@ -12,8 +12,6 @@ TEST(Variadic, Misc) {
     auto p2_4 = w.index(2, 4);
     auto p2_4b = w.index(2, 4);
     ASSERT_EQ(p2_4, p2_4b);
-    //p2_4->dump();
-    //w.index(2, 1234567890)->dump();
     auto v = w.variadic(5, N);
     ASSERT_TRUE(w.dim(v) == w.arity(5));
     ASSERT_TRUE(is_array(v));
@@ -37,7 +35,6 @@ TEST(Variadic, Misc) {
     ASSERT_EQ(w.op_insert(w.tuple({w.val_bool_top(), w.val_nat_2()}), 1, w.val_nat_8())->type(), s2);
 
     auto list = w.axiom(w.pi(w.star(), w.star()), {"list"});
-    list->type()->dump();
     auto lb = w.axiom(w.app(list, B), {"lb"});
     auto ln = w.axiom(w.app(list, N ), {"ln"});
 
@@ -71,7 +68,6 @@ TEST(Variadic, Multi) {
     auto f3 = w.extract(f2, 3);
     ASSERT_EQ(w.lambda(w.variadic(3, w.variadic(8, w.variadic(5, N))), e3),
               w.lambda({w.variadic({8, 5}, N), w.variadic({8, 5}, N), w.variadic({8, 5}, N)}, f3));
-    w.lambda(w.variadic(3, w.variadic(8, w.variadic(5, N))), e3)->dump();
 
     auto A = w.arity_kind();
     auto l = w.lambda({A, w.variadic(w.var(A, 0), A)}, w.variadic(w.var(w.variadic(w.var(A, 1), A), 0), N));
