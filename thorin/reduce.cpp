@@ -82,7 +82,7 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
             return world().var(new_type, var->index(), var->debug());
 
         // this var is free - shift by num_args but inline a sole tuple arg if applicable
-        auto shift = num_args() == 1 && args_[0]->isa<Tuple>() ? args_[0]->num_ops() : num_args();
+        auto shift = num_args() == 1 && args_[0]->isa<Tuple>() ? -args_[0]->num_ops()+1 : num_args();
         return world().var(var->type(), var->index() - shift, var->debug());
     }
 
