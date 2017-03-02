@@ -77,6 +77,16 @@ using SortedDefSet = std::set<const Def*, GIDLt<const Def*>>;
 typedef Array<const Def*> DefArray;
 typedef ArrayRef<const Def*> Defs;
 
+typedef std::pair<DefArray, const Def*> EnvDef;
+
+struct EnvDefHash {
+    inline static uint64_t hash(const EnvDef&);
+    static bool eq(const EnvDef& a, const EnvDef& b) { return a == b; };
+    static EnvDef sentinel() { return EnvDef(DefArray(), nullptr); }
+};
+
+typedef thorin::HashSet<std::pair<DefArray, const Def*>, EnvDefHash> EnvDefSet;
+
 DefArray types(Defs defs);
 void gid_sort(DefArray* defs);
 DefArray gid_sorted(Defs defs);
@@ -226,6 +236,14 @@ public:
     WorldBase& world() const { return *world_; }
     //@}
 
+    void typecheck() const {
+        assert(free_vars().none());
+        std::vector<const Def*> types;
+        EnvDefSet checked;
+        typecheck_vars(types, checked);
+    }
+    virtual void typecheck_vars(std::vector<const Def*>& types, EnvDefSet& checked) const;
+
     /**
      * Substitutes Var%s beginning from @p index with @p args and shifts free Var%s by the number of @p args.
      * Note that @p args will be indexed in reverse order due to De Bruijn way of counting.
@@ -329,6 +347,13 @@ uint64_t UseHash::hash(Use use) {
     return murmur3(uint64_t(use.index()) << 48ull | uint64_t(use->gid()));
 }
 
+uint64_t EnvDefHash::hash(const EnvDef& p) {
+    uint64_t hash = hash_begin(p.second->gid());
+    for (auto def : p.first)
+        hash = hash_combine(hash, def->gid());
+    return hash;
+}
+
 //------------------------------------------------------------------------------
 
 class Pi : public Def {
@@ -342,6 +367,7 @@ public:
     const Def* body() const { return ops().back(); }
     const Def* reduce(Defs) const;
     bool has_values() const override;
+    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
 
     std::ostream& stream(std::ostream&) const override;
 
@@ -369,6 +395,7 @@ public:
     Lambda* set(const Def* def);
     const Pi* type() const { return Def::type()->as<Pi>(); }
     Lambda* stub(WorldBase&, const Def*, Debug) const override;
+    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
 
     std::ostream& stream(std::ostream&) const override;
 
@@ -581,6 +608,7 @@ public:
 
     std::ostream& stream(std::ostream&) const override;
     Sigma* stub(WorldBase&, const Def*, Debug) const override;
+    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
 
 private:
     static const Def* max_type(WorldBase& world, Defs ops, const Def* qualifier);
@@ -602,6 +630,7 @@ public:
     bool is_multi() const { return arities().size() != 1; }
     const Def* body() const { return ops().back(); }
     std::ostream& stream(std::ostream&) const override;
+    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
 
 private:
     size_t shift(size_t) const override;
@@ -669,6 +698,7 @@ public:
     std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
     std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
+    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
 
 private:
     uint64_t vhash() const override;

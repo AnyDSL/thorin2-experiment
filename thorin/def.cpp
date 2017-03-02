@@ -148,6 +148,11 @@ void Def::finalize() {
         free_vars_ |= type()->free_vars_;
         has_error_ |= type()->has_error();
     }
+
+#ifndef NDEBUG
+    if (free_vars().none())
+        typecheck();
+#endif
 }
 
 void Def::unset(size_t i) {
@@ -509,6 +514,94 @@ bool Variadic::assignable(Defs defs) const {
             return false;
     }
     return true;
+}
+
+//------------------------------------------------------------------------------
+
+/*
+ * check
+ */
+
+typedef std::vector<const Def*> Environment;
+
+void check(const Def* def, Environment& types, EnvDefSet& checked) {
+    // we assume any type/operand Def without free variables to be checked already
+    if (def->free_vars().any())
+        def->typecheck_vars(types, checked);
+}
+
+void dependent_typecheck(Defs defs, Environment& types, EnvDefSet& checked) {
+    for (auto def : defs) {
+        check(def, types, checked);
+        types.push_back(def);
+    }
+}
+
+bool nominal_typechecked(const Def* def, Environment& types, EnvDefSet& checked) {
+    if (def->is_nominal()) {
+        return checked.emplace(DefArray(types), def).second;
+    }
+    return false;
+}
+
+void Def::typecheck_vars(Environment& types, EnvDefSet& checked) const {
+    if (nominal_typechecked(this, types, checked))
+        return;
+    if (type()) {
+        check(type(), types, checked);
+    } else
+        assert(is_universe());
+    for (auto op : ops())
+        check(op, types, checked);
+}
+
+void Lambda::typecheck_vars(Environment& types, EnvDefSet& checked) const {
+    if (nominal_typechecked(this, types, checked))
+        return;
+    auto old_size = types.size();
+    check(type()->type(), types, checked);
+    // do Pi type check inline to reuse built up environment
+    dependent_typecheck(domains(), types, checked);
+    check(type()->body(), types, checked);
+    check(body(), types, checked);
+    types.erase(types.begin() + old_size, types.end());
+}
+
+void Pi::typecheck_vars(Environment& types, EnvDefSet& checked) const {
+    auto old_size = types.size();
+    check(type(), types, checked);
+    dependent_typecheck(domains(), types, checked);
+    check(body(), types, checked);
+    types.erase(types.begin() + old_size, types.end());
+}
+
+void Sigma::typecheck_vars(Environment& types, EnvDefSet& checked) const {
+    if (nominal_typechecked(this, types, checked))
+        return;
+    auto old_size = types.size();
+    check(type(), types, checked);
+    dependent_typecheck(ops(), types, checked);
+    types.erase(types.begin() + old_size, types.end());
+}
+
+void Var::typecheck_vars(Environment& types, EnvDefSet& checked) const {
+    check(type(), types, checked);
+    auto reverse_index = types.size() - 1 - index();
+    auto shifted_type = shift_free_vars(type(), index() + 1);
+    auto env_type = types[reverse_index];
+    assertf(env_type == shifted_type,
+            "The type {} of variable {} does not match the type {} declared by the binder.", shifted_type,
+            index(), types[reverse_index]);
+}
+
+void Variadic::typecheck_vars(Environment& types, EnvDefSet& checked) const {
+    if (nominal_typechecked(this, types, checked))
+        return;
+    check(type(), types, checked);
+    auto old_size = types.size();
+    dependent_typecheck(arities(), types, checked);
+    check(body(), types, checked);
+    types.erase(types.begin() + old_size, types.end());
 }
 
 //------------------------------------------------------------------------------

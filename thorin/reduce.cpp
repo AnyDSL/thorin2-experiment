@@ -19,9 +19,16 @@ public:
     Reducer(WorldBase& world, Defs args)
         : world_(world)
         , args_(args)
+        , shift_(args.size())
+    {}
+    Reducer(WorldBase& world, size_t shift)
+        : world_(world)
+        , args_()
+        , shift_(shift)
     {}
 
-    size_t num_args() const { return args_.size(); }
+    size_t shift_amount() const { return shift_; }
+    bool is_shift_only() const { return args_.empty(); }
     WorldBase& world() const { return world_; }
     const Def* reduce_structurals(const Def* def, size_t index = 0);
     void reduce_nominals();
@@ -29,6 +36,7 @@ public:
 private:
     WorldBase& world_;
     DefArray args_;
+    size_t shift_;
     thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
     std::stack<DefIndex> nominals_;
 };
@@ -68,21 +76,25 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
     }
 
     if (auto var = old_def->isa<Var>()) {
-        // Is var within our args? - Map index() back into the original argument array.
-        if (offset <= var->index() && var->index() < offset + num_args()) {
-            // remember that the lowest index corresponds to the last element in args due to De Bruijn's way of counting
-            size_t arg_index = num_args() - (var->index() - offset) - 1;
-            if (new_type != args_[arg_index]->type())
-                return world().error(new_type); // use the expected type, not the one provided by the arg
-            return args_[arg_index];
+        if (!is_shift_only()) {
+            // Is var within our args? - Map index() back into the original argument array.
+            if (offset <= var->index() && var->index() < offset + shift_amount()) {
+                // remember that the lowest index corresponds to the last element in args due to De Bruijn's
+                // way of counting
+                size_t arg_index = shift_amount() - (var->index() - offset) - 1;
+                if (new_type != args_[arg_index]->type())
+                    return world().error(new_type); // use the expected type, not the one provided by the arg
+                return args_[arg_index];
+            }
         }
 
         // is var not free? - keep index, substitute type
         if (var->index() < offset)
             return world().var(new_type, var->index(), var->debug());
 
-        // this var is free - shift by num_args but inline a sole tuple arg if applicable
-        auto shift = num_args() == 1 && args_[0]->isa<Tuple>() ? -args_[0]->num_ops()+1 : num_args();
+        // this var is free - shift by shift_amount but inline a sole tuple arg if applicable
+        auto shift = shift_amount() == 1 && !is_shift_only() && args_[0]->isa<Tuple>() ?
+            -args_[0]->num_ops()+1 : shift_amount();
         return world().var(var->type(), var->index() - shift, var->debug());
     }
 
@@ -115,6 +127,13 @@ const Def* flatten(const Def* body, Defs args) {
     auto& w = body->world();
     auto t = w.tuple(DefArray(args.size(), [&](auto i) { return w.var(args[i], args.size()-1-i); }));
     return reduce(body, {t});
+}
+
+const Def* shift_free_vars(const Def* def, size_t shift) {
+    Reducer reducer(def->world(), shift);
+    auto result = reducer.reduce_structurals(def, 0);
+    reducer.reduce_nominals();
+    return result;
 }
 
 }

@@ -167,7 +167,7 @@ TEST(Substructural, UnlimitedRefs) {
     print_value_type(NewRef);
     auto ReadRef = w.axiom(w.pi({Star, w.app(Ref, T(0))}, T(1)), {"ReadRef"});
     print_value_type(ReadRef);
-    auto WriteRef = w.axiom(w.pi({Star, app_Ref_T0, T(0)}, Unit), {"WriteRef"});
+    auto WriteRef = w.axiom(w.pi({Star, app_Ref_T0, T(1)}, Unit), {"WriteRef"});
     print_value_type(WriteRef);
     auto FreeRef = w.axiom(w.pi({Star, app_Ref_T0}, Unit), {"FreeRef"});
     print_value_type(FreeRef);
@@ -194,7 +194,7 @@ TEST(Substructural, AffineRefs) {
     // ReadRef : Π(*).Π(ARef[<0:*>]).Σ(<1:*>, ARef[<2:*>])
     auto ReadRef = w.axiom(w.pi({Star, app_Ref_T0}, w.sigma({T(1), w.app(Ref, T(2))})), {"ReadARef"});
     print_value_type(ReadRef);
-    auto WriteRef = w.axiom(w.pi({Star, app_Ref_T0, T(0)}, Unit), {"WriteARef"});
+    auto WriteRef = w.axiom(w.pi({Star, app_Ref_T0, T(1)}, Unit), {"WriteARef"});
     print_value_type(WriteRef);
     auto FreeRef = w.axiom(w.pi({Star, app_Ref_T0}, Unit), {"FreeARef"});
     print_value_type(FreeRef);
