@@ -223,7 +223,7 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
 
     if (auto v = def->type()->isa<Variadic>()) {
         auto a = v->arities().front()->as<Axiom>()->box().get_u64();
-        assertf(i < a, "index {} not provably in Arity {}", i, v->arities().front());
+        assertf(i < a, "index {} not provably in Arity {}", i, a);
         auto idx = index(i, a, dbg);
         auto body = v->is_multi() ? variadic(v->arities().skip_front(), v->body()) : v->body();
         return unify<Extract>(2, *this, body->reduce({idx}, v->arities().size()-1), def, idx, dbg);
