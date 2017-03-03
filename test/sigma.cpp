@@ -50,3 +50,10 @@ TEST(Sigma, Unit) {
     auto apped = w.app(lam, tuple0);
     ASSERT_EQ(tuple0, apped);
 }
+
+TEST(Tuple, Error) {
+    World w;
+
+    auto tuple = w.tuple({w.error(w.star())});
+    ASSERT_TRUE(tuple->has_error());
+}

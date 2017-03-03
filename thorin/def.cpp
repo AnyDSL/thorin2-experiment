@@ -134,6 +134,8 @@ Lambda* Lambda::set(const Def* body) {
 void Def::finalize() {
     assert(is_closed());
 
+    has_error_ |= this->tag() == Tag::Error;
+
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         assert(op(i) != nullptr);
         const auto& p = op(i)->uses_.emplace(this, i);
@@ -142,8 +144,10 @@ void Def::finalize() {
         has_error_ |= op(i)->has_error();
     }
 
-    if (type() != nullptr)
+    if (type() != nullptr) {
         free_vars_ |= type()->free_vars_;
+        has_error_ |= type()->has_error();
+    }
 }
 
 void Def::unset(size_t i) {
