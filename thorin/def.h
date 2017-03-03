@@ -329,7 +329,7 @@ private:
 };
 
 uint64_t UseHash::hash(Use use) {
-    return hash_begin(uint64_t(use.index()) << 48ull | uint64_t(use->gid()));
+    return murmur3(uint64_t(use.index()) << 48ull | uint64_t(use->gid()));
 }
 
 //------------------------------------------------------------------------------

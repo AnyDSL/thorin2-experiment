@@ -7,7 +7,7 @@ namespace thorin {
 typedef TaggedPtr<const Def, size_t> DefIndex;
 
 struct DefIndexHash {
-    static uint64_t hash(DefIndex s) { return hash_combine(hash_begin(s->gid()), uint32_t(s.index())); }
+    static uint64_t hash(DefIndex s) { return murmur3(uint64_t(s->gid()) << 32_u64 | uint64_t(s.index())); }
     static bool eq(DefIndex a, DefIndex b) { return a == b; }
     static DefIndex sentinel() { return DefIndex(nullptr, 0); }
 };

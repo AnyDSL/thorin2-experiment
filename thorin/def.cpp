@@ -325,7 +325,7 @@ size_t Variadic::shift(size_t i) const { return i; }
 
 uint64_t Def::vhash() const {
     if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
-        return gid();
+        return murmur3(gid());
 
     uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type()->gid());
     for (auto op : ops())
