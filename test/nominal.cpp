@@ -65,7 +65,7 @@ TEST(Nominal, LambdaFreeVars) {
     ASSERT_FALSE(lam->free_vars().any_begin(1));
 }
 
-TEST(Nominal, ReduceToUniqueNominals) {
+TEST(Nominal, ReduceWithNominals) {
     World w;
     auto nat = w.type_nat();
     auto star = w.star();
@@ -73,11 +73,20 @@ TEST(Nominal, ReduceToUniqueNominals) {
     auto sig = w.sigma_type(1, {"sig"});
     auto v0 = w.var(star, 0);
     sig->set(0, v0);
+    ASSERT_TRUE(sig->is_closed());
+    ASSERT_TRUE(sig->free_vars().test(0));
 
     auto lam = w.lambda(star, w.tuple({sig, sig}));
     auto red = w.app(lam, nat);
     ASSERT_FALSE(red->isa<App>());
     ASSERT_EQ(red->op(0), red->op(1));
+
+    auto sig2 = w.sigma({sig, sig});
+    ASSERT_FALSE(sig2->has_error());
+    auto lam2 = w.lambda(star, w.sigma({sig, sig}));
+    auto red2 = w.app(lam2, nat);
+    ASSERT_FALSE(red2->isa<App>());
+    ASSERT_NE(red2->op(0), red2->op(1));
 }
 
 TEST(Nominal, PolymorphicList) {

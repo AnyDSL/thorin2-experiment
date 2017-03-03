@@ -356,7 +356,8 @@ const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {
                     defs.front()->type(), inferred_type);
             return defs.front();
         default:
-            if (std::equal(defs.begin() + 1, defs.end(), &defs.front())) {
+            if (defs.front()->free_vars().none_end(defs.size()-1) &&
+                std::equal(defs.begin() + 1, defs.end(), &defs.front())) {
                 assert(q == nullptr || defs.front()->qualifier() == q);
                 return variadic(arity(defs.size(), dbg), defs.front(), dbg);
             }
