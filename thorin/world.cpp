@@ -23,9 +23,9 @@ const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_mee
         assert(max_sort != Sort::Universe && "Type universes shouldn't be operands.");
         if (max_sort == Sort::Type) {
             if (use_meet)
-                inferred = world.intersection({inferred, op->qualifier()}, world.qualifier_kind());
+                inferred = world.intersection({inferred, op->qualifier()}, world.qualifier_type());
             else
-                inferred = world.variant({inferred, op->qualifier()}, world.qualifier_kind());
+                inferred = world.variant({inferred, op->qualifier()}, world.qualifier_type());
         } else
             inferred = nullptr;
     }
@@ -52,7 +52,7 @@ const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_mee
     return world.universe();
 }
 
-bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_kind(); }
+bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
 const Def* single_qualified(Defs defs, const Def* q) {
     assert(defs.size() == 1);
@@ -108,10 +108,11 @@ WorldBase::WorldBase()
     , cur_page_(root_page_.get())
 {
     universe_ = insert<Universe>(0, *this);
-    qualifier_kind_ = axiom(universe_, {"ℚ"});
+    qualifier_kind_ = axiom(universe_, {"ℚₖ"});
+    qualifier_type_ = axiom(qualifier_kind_, {"ℚ"});
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
-        qualifier_[i] = assume(qualifier_kind(), {q}, {qualifier_cstr(q)});
+        qualifier_[i] = assume(qualifier_type(), {q}, {qualifier_cstr(q)});
         star_     [i] = insert<Star >(1, *this, qualifier_[i]);
         unit_     [i] = insert<Sigma>(0, *this, Defs(), star_[i], Debug("Σ()"));
         tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
@@ -264,9 +265,9 @@ const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
     // implements a least upper bound on qualifiers,
     // could possibly be replaced by something subtyping-generic
     if (is_qualifier(defs.front())) {
-        assert(type == qualifier_kind());
+        assert(type == qualifier_type());
         return qualifier_glb_or_lub(*this, defs, true, [&] (Defs defs) {
-            return unify<Intersection>(defs.size(), *this, qualifier_kind(), defs, dbg);
+            return unify<Intersection>(defs.size(), *this, qualifier_type(), defs, dbg);
         });
     }
 
@@ -426,9 +427,9 @@ const Def* WorldBase::variant(Defs defs, const Def* type, Debug dbg) {
     // implements a least upper bound on qualifiers,
     // could possibly be replaced by something subtyping-generic
     if (is_qualifier(defs.front())) {
-        assert(type == qualifier_kind());
+        assert(type == qualifier_type());
         return qualifier_glb_or_lub(*this, defs, false, [&] (Defs defs) {
-            return unify<Variant>(defs.size(), *this, qualifier_kind(), defs, dbg);
+            return unify<Variant>(defs.size(), *this, qualifier_type(), defs, dbg);
         });
     }
 
@@ -480,7 +481,7 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
  */
 
 World::World() {
-    auto Q = qualifier_kind();
+    auto Q = qualifier_type();
     auto U = qualifier(Qualifier::Unlimited);
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });

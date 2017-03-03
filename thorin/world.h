@@ -38,6 +38,7 @@ public:
 
     //@{ create qualifier
     const Axiom* qualifier_kind() const { return qualifier_kind_; }
+    const Axiom* qualifier_type() const { return qualifier_type_; }
     const Axiom* qualifier(Qualifier q = Qualifier::Unlimited) const { return qualifier_[size_t(q)]; }
     const Axiom* unlimited() const { return qualifier(Qualifier::Unlimited); }
     const Axiom* affine() const { return qualifier(Qualifier::Affine); }
@@ -265,6 +266,7 @@ protected:
     DefSet defs_;
     const Universe* universe_;
     const Axiom* qualifier_kind_;
+    const Axiom* qualifier_type_;
     std::array<const Axiom*, 4> qualifier_;
     std::array<const Star*,  4> star_;
     std::array<const Sigma*, 4> unit_;

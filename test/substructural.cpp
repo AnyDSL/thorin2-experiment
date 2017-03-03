@@ -41,7 +41,12 @@ TEST(Qualifiers, Variants) {
     auto r = w.relevant();
     auto a = w.affine();
     auto l = w.linear();
-    auto lub = [&](Defs defs) { return w.variant(defs, w.qualifier_kind()); };
+    auto lub = [&](Defs defs) { return w.variant(defs, w.qualifier_type()); };
+
+    ASSERT_TRUE(u->is_value());
+    ASSERT_TRUE(r->is_value());
+    ASSERT_TRUE(a->is_value());
+    ASSERT_TRUE(l->is_value());
 
     ASSERT_EQ(u, u->qualifier());
     ASSERT_EQ(u, r->qualifier());
@@ -59,7 +64,7 @@ TEST(Qualifiers, Variants) {
     ASSERT_EQ(l, lub({a, r}));
     ASSERT_EQ(l, lub({u, l, r, r}));
 
-    auto v = w.var(w.qualifier_kind(), 0);
+    auto v = w.var(w.qualifier_type(), 0);
     ASSERT_EQ(u, v->qualifier());
     ASSERT_EQ(v, lub({v}));
     ASSERT_EQ(v, lub({u, v, u}));
@@ -74,8 +79,8 @@ TEST(Qualifiers, Kinds) {
     auto r = w.relevant();
     auto a = w.affine();
     auto l = w.linear();
-    auto v = w.var(w.qualifier_kind(), 0);
-    auto lub = [&](Defs defs) { return w.variant(defs, w.qualifier_kind()); };
+    auto v = w.var(w.qualifier_type(), 0);
+    auto lub = [&](Defs defs) { return w.variant(defs, w.qualifier_type()); };
 
     auto anat = w.axiom(w.star(a), {"nat"});
     auto rnat = w.axiom(w.star(r), {"nat"});

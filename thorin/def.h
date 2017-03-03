@@ -248,12 +248,9 @@ public:
         return this == defs.front()->type();
     }
     std::ostream& qualifier_stream(std::ostream& os) const {
-        if (!is_type())
+        if (!has_values())
             return os;
-        if (auto q = qualifier()) {
-            return os << q->name();
-        }
-        return os;
+        return os << qualifier();
     }
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "" || is_nominal()) {

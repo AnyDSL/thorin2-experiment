@@ -67,8 +67,6 @@ const SortedDefSet set_flatten(Defs defs) {
 bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
     assertf(std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); }),
             "Operands must be of the same sort.");
-
-    assertf(sort == Def::Sort::Type || sort == Def::Sort::Kind, "only sort type or kind allowed");
     return true;
 }
 
@@ -95,6 +93,8 @@ Def::Sort Def::sort() const {
 }
 
 bool Def::maybe_affine() const {
+    if (type() == world().qualifier_type())
+        return false;
     const Def* q = qualifier();
     assert(q != nullptr);
     if (auto qu = world().isa_const_qualifier(q)) {
@@ -278,14 +278,14 @@ const Def* Def::kind_qualifier() const {
 const Def* Intersection::kind_qualifier() const {
     assert(is_kind());
     auto qualifiers = DefArray(num_ops(), [&](auto i) { return this->op(i)->qualifier(); });
-    return world().intersection(qualifiers, world().qualifier_kind());
+    return world().intersection(qualifiers, world().qualifier_type());
 }
 
 const Def* Sigma::kind_qualifier() const {
     assert(is_kind());
     auto qualifiers = DefArray(num_ops(), [&](auto i) {
             return this->op(i)->has_values() ? this->op(i)->qualifier() : this->world().unlimited(); });
-    return world().variant(qualifiers, world().qualifier_kind());
+    return world().variant(qualifiers, world().qualifier_type());
 }
 
 const Def* Singleton::kind_qualifier() const {
@@ -306,7 +306,7 @@ const Def* Variadic::kind_qualifier() const {
 const Def* Variant::kind_qualifier() const {
     assert(is_kind());
     auto qualifiers = DefArray(num_ops(), [&](auto i) { return this->op(i)->qualifier(); });
-    return world().variant(qualifiers, world().qualifier_kind());
+    return world().variant(qualifiers, world().qualifier_type());
 }
 
 //------------------------------------------------------------------------------
@@ -328,7 +328,7 @@ size_t Variadic::shift(size_t i) const { return i; }
  */
 
 uint64_t Def::vhash() const {
-    if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
+    if (is_nominal() || (is_value() && maybe_affine()))
         return murmur3(gid());
 
     uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type()->gid());
