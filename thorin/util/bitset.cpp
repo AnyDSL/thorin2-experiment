@@ -19,7 +19,7 @@ bool BitSet::any() const {
     bool result = false;
     auto w = words();
     for (size_t i = 0, e = num_words(); !result && i != e; ++i)
-        result |= w[i] & uint64_t(-1);
+        result |= w[i] & -1_u64;
     return result;
 }
 
@@ -35,7 +35,7 @@ bool BitSet::none() const {
     bool result = true;
     auto w = words();
     for (size_t i = 0, e = num_words(); result && i != e; ++i)
-        result &= w[i] == uint64_t(0);
+        result &= w[i] == 0_u64;
     return result;
 }
 
@@ -48,8 +48,8 @@ bool BitSet::none_range(const size_t begin, const size_t end) const {
 }
 
 BitSet& BitSet::operator>>=(uint64_t shift) {
-    uint64_t div = shift/uint64_t(64);
-    uint64_t rem = shift%uint64_t(64);
+    uint64_t div = shift/64_u64;
+    uint64_t rem = shift%64_u64;
     auto w = words();
 
     // TODO clean up
@@ -62,7 +62,7 @@ BitSet& BitSet::operator>>=(uint64_t shift) {
 
         uint64_t carry = 0;
         for (size_t i = num_words()-div; i-- != 0;) {
-            uint64_t new_carry = w[i] << (uint64_t(64)-rem);
+            uint64_t new_carry = w[i] << (64_u64-rem);
             w[i] = (w[i] >> rem) | carry;
             carry = new_carry;
         }
@@ -90,10 +90,10 @@ THORIN_BITSET_OPS(CODE)
 #undef CODE
 
 void BitSet::enlarge(size_t i) const {
-    size_t num_new_words = (i+size_t(64)) / size_t(64);
+    size_t num_new_words = (i+64_s) / 64_s;
     if (num_new_words > num_words_) {
         num_new_words = round_to_power_of_2(num_new_words);
-        assert(num_new_words >= num_words_ * size_t(2)
+        assert(num_new_words >= num_words_ * 2_s
                 && "num_new_words must be a power of two at least twice of num_words_");
         uint64_t* new_words = new uint64_t[num_new_words];
 

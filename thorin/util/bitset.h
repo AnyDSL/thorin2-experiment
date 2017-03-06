@@ -17,14 +17,14 @@ public:
 
     public:
         reference operator=(bool b) {
-            uint64_t mask = uint64_t(1) << index();
+            uint64_t mask = 1_u64 << index();
             if (b)
                 word() |= mask;
             else
                 word() &= ~mask;
             return *this;
         }
-        operator bool() const { return word() & (uint64_t(1) << index()); }
+        operator bool() const { return word() & (1_u64 << index()); }
 
     private:
         const uint64_t& word() const { return *tagged_ptr_.ptr(); }
@@ -63,32 +63,32 @@ public:
 
     //@{ get, set, clear, toggle, and test bits
     bool test(size_t i) const {
-        if ((i/size_t(64)) >= num_words())
+        if ((i/64_s) >= num_words())
             return false;
-        return *(words() + i/size_t(64)) & (uint64_t(1) << i%uint64_t(64));
+        return *(words() + i/64_s) & (1_u64 << i%64_u64);
     }
 
     BitSet& set(size_t i) {
         enlarge(i);
-        *(words() + i/size_t(64)) |= (uint64_t(1) << i%uint64_t(64));
+        *(words() + i/64_s) |= (1_u64 << i%64_u64);
         return *this;
     }
 
     BitSet& clear(size_t i) {
         enlarge(i);
-        *(words() + i/size_t(64)) &= ~(uint64_t(1) << i%uint64_t(64));
+        *(words() + i/64_s) &= ~(1_u64 << i%64_u64);
         return *this;
     }
 
     BitSet& toggle(size_t i) {
         enlarge(i);
-        *(words() + i/size_t(64)) ^= uint64_t(1) << i%uint64_t(64);
+        *(words() + i/64_s) ^= 1_u64 << i%64_u64;
         return *this;
     }
 
     reference operator[](size_t i) {
         enlarge(i);
-        return reference(words() + i/size_t(64), i%uint64_t(64));
+        return reference(words() + i/64_s, i%64_u64);
     }
 
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
@@ -146,7 +146,7 @@ private:
     const uint64_t* words() const { return num_words_ == 1 ? &word_ : words_; }
     uint64_t* words() { return num_words_ == 1 ? &word_ : words_; }
     size_t num_words() const { return num_words_; }
-    size_t num_bits() const { return num_words_*size_t(64); }
+    size_t num_bits() const { return num_words_*64_s; }
 
     mutable size_t num_words_;
     union {
