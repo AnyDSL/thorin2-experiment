@@ -63,7 +63,8 @@ public:
 
     //@{ get, set, clear, toggle, and test bits
     bool test(size_t i) const {
-        enlarge(i);
+        if ((i/size_t(64)) >= num_words())
+            return false;
         return *(words() + i/size_t(64)) & (uint64_t(1) << i%uint64_t(64));
     }
 
