@@ -530,11 +530,16 @@ void check(const Def* def, Environment& types, EnvDefSet& checked) {
         def->typecheck_vars(types, checked);
 }
 
-void dependent_typecheck(Defs defs, Environment& types, EnvDefSet& checked) {
+void dependent_check(Defs defs, Environment& types, EnvDefSet& checked, Defs bodies) {
+    auto old_size = types.size();
     for (auto def : defs) {
         check(def, types, checked);
         types.push_back(def);
     }
+    for (auto def : bodies) {
+        check(def, types, checked);
+    }
+    types.erase(types.begin() + old_size, types.end());
 }
 
 bool nominal_typechecked(const Def* def, Environment& types, EnvDefSet& checked) {
@@ -558,30 +563,21 @@ void Def::typecheck_vars(Environment& types, EnvDefSet& checked) const {
 void Lambda::typecheck_vars(Environment& types, EnvDefSet& checked) const {
     if (nominal_typechecked(this, types, checked))
         return;
-    auto old_size = types.size();
     check(type()->type(), types, checked);
     // do Pi type check inline to reuse built up environment
-    dependent_typecheck(domains(), types, checked);
-    check(type()->body(), types, checked);
-    check(body(), types, checked);
-    types.erase(types.begin() + old_size, types.end());
+    dependent_check(domains(), types, checked, {type()->body(), body()});
 }
 
 void Pi::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    auto old_size = types.size();
     check(type(), types, checked);
-    dependent_typecheck(domains(), types, checked);
-    check(body(), types, checked);
-    types.erase(types.begin() + old_size, types.end());
+    dependent_check(domains(), types, checked, {body()});
 }
 
 void Sigma::typecheck_vars(Environment& types, EnvDefSet& checked) const {
     if (nominal_typechecked(this, types, checked))
         return;
-    auto old_size = types.size();
     check(type(), types, checked);
-    dependent_typecheck(ops(), types, checked);
-    types.erase(types.begin() + old_size, types.end());
+    dependent_check(ops(), types, checked, Defs());
 }
 
 void Var::typecheck_vars(Environment& types, EnvDefSet& checked) const {
@@ -598,10 +594,7 @@ void Variadic::typecheck_vars(Environment& types, EnvDefSet& checked) const {
     if (nominal_typechecked(this, types, checked))
         return;
     check(type(), types, checked);
-    auto old_size = types.size();
-    dependent_typecheck(arities(), types, checked);
-    check(body(), types, checked);
-    types.erase(types.begin() + old_size, types.end());
+    dependent_check(arities(), types, checked, {body()});
 }
 
 //------------------------------------------------------------------------------
