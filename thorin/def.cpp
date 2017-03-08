@@ -542,7 +542,7 @@ void dependent_check(Defs defs, Environment& types, EnvDefSet& checked, Defs bod
     types.erase(types.begin() + old_size, types.end());
 }
 
-bool nominal_typechecked(const Def* def, Environment& types, EnvDefSet& checked) {
+bool is_nominal_typechecked(const Def* def, Environment& types, EnvDefSet& checked) {
     if (def->is_nominal()) {
         return checked.emplace(DefArray(types), def).second;
     }
@@ -550,7 +550,7 @@ bool nominal_typechecked(const Def* def, Environment& types, EnvDefSet& checked)
 }
 
 void Def::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    if (nominal_typechecked(this, types, checked))
+    if (is_nominal_typechecked(this, types, checked))
         return;
     if (type()) {
         check(type(), types, checked);
@@ -561,10 +561,10 @@ void Def::typecheck_vars(Environment& types, EnvDefSet& checked) const {
 }
 
 void Lambda::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    if (nominal_typechecked(this, types, checked))
+    if (is_nominal_typechecked(this, types, checked))
         return;
-    check(type()->type(), types, checked);
     // do Pi type check inline to reuse built up environment
+    check(type()->type(), types, checked);
     dependent_check(domains(), types, checked, {type()->body(), body()});
 }
 
@@ -574,7 +574,7 @@ void Pi::typecheck_vars(Environment& types, EnvDefSet& checked) const {
 }
 
 void Sigma::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    if (nominal_typechecked(this, types, checked))
+    if (is_nominal_typechecked(this, types, checked))
         return;
     check(type(), types, checked);
     dependent_check(ops(), types, checked, Defs());
@@ -591,7 +591,7 @@ void Var::typecheck_vars(Environment& types, EnvDefSet& checked) const {
 }
 
 void Variadic::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    if (nominal_typechecked(this, types, checked))
+    if (is_nominal_typechecked(this, types, checked))
         return;
     check(type(), types, checked);
     dependent_check(arities(), types, checked, {body()});
