@@ -249,6 +249,7 @@ public:
      * Note that @p args will be indexed in reverse order due to De Bruijn way of counting.
      */
     const Def* reduce(Defs args, size_t index = 0) const;
+    const Def* shift_free_vars(size_t shift) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const {
         if (!name().empty()) {
