@@ -620,7 +620,7 @@ private:
 
 class Variadic : public SigmaBase {
 private:
-    Variadic(WorldBase& world, Defs arities, const Def* body, Debug dbg);
+    Variadic(WorldBase& world, const Def* type, Defs arities, const Def* body, Debug dbg);
 
 public:
     const Def* kind_qualifier() const override;

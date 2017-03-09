@@ -16,27 +16,42 @@ namespace thorin {
 
 const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_meet) {
     using Sort = Def::Sort;
-    auto max_sort = Sort::Type;
-    const Def* inferred = use_meet ? world.linear() : world.unlimited();
+    const Def* max_type = nullptr;
+    const Def* inferred_q = use_meet ? world.linear() : world.unlimited();
+    auto universe = world.universe();
     for (auto op : ops) {
-        max_sort = std::max(max_sort, op->sort());
-        assert(max_sort != Sort::Universe && "Type universes shouldn't be operands.");
-        if (max_sort == Sort::Type) {
-            if (use_meet)
-                inferred = world.intersection({inferred, op->qualifier()}, world.qualifier_type());
-            else
-                inferred = world.variant({inferred, op->qualifier()}, world.qualifier_type());
-        } else
-            inferred = nullptr;
+        assertf(!op->is_value(), "Can't have values as operands here.");
+        assert(op->sort() != Sort::Universe && "Type universes must not be operands.");
+
+        if (use_meet)
+            inferred_q = world.intersection({inferred_q, op->qualifier()}, world.qualifier_type());
+        else
+            inferred_q = world.variant({inferred_q, op->qualifier()}, world.qualifier_type());
+        auto op_type = op->type();
+
+        if (max_type == nullptr)
+            max_type = op_type;
+        else if (op_type->isa<Star>() && max_type->isa<Star>())
+            max_type = world.star(inferred_q);
+        else if (op_type == universe || max_type != op_type)
+            max_type = universe;
     }
-    if (max_sort == Sort::Type) {
-        if (q != nullptr) {
+    if (!max_type) {
+        assert(ops.empty());
+        max_type = world.star(inferred_q);
+    }
+    if (max_type->isa<Star>()) {
+        if (q == nullptr) {
+            // no provided qualifier, so we use the inferred one
+            assert(!max_type || max_type->op(0) == inferred_q);
+            return max_type;
+        } else {
 #ifndef NDEBUG
-            if (auto qual_axiom = world.isa_const_qualifier(inferred)) {
-                auto inferred_q = qual_axiom->box().get_qualifier();
+            if (auto qual_axiom = world.isa_const_qualifier(inferred_q)) {
+                auto box_qual = qual_axiom->box().get_qualifier();
                 if (auto q_axiom = world.isa_const_qualifier(q)) {
                     auto qual = q_axiom->box().get_qualifier();
-                    auto test = use_meet ? qual <= inferred_q : qual >= inferred_q;
+                    auto test = use_meet ? qual <= box_qual : qual >= box_qual;
                     assertf(test, "Qualifier must be {} than the {} of the operands' qualifiers.",
                             use_meet ? "less" : "greater",
                             use_meet ? "greatest lower bound" : "least upper bound");
@@ -44,12 +59,9 @@ const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_mee
             }
 #endif
             return world.star(q);
-        } else
-            // no provided qualifier, so we use the inferred one
-            return world.star(inferred);
+        }
     }
-    assert(max_sort == Sort::Kind);
-    return world.universe();
+    return max_type;
 }
 
 bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
@@ -253,7 +265,7 @@ const Def* WorldBase::index(size_t i, size_t a, Location location) {
 
 const Def* WorldBase::intersection(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return variant(defs, infer_max_type(*this, defs, nullptr, true), dbg);
+    return intersection(defs, infer_max_type(*this, defs, nullptr, true), dbg);
 }
 
 const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
@@ -335,8 +347,8 @@ const Def* WorldBase::variadic(Defs arities, const Def* body, Debug dbg) {
     }
 
     if (arities.size() == 1) {
-        if (auto tuple = arities.front()->isa<Tuple>())
-            return variadic(tuple->ops(), body, dbg);
+        if (auto sigma = arities.front()->isa<Sigma>())
+            return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
     }
 
     if (auto v = body->isa<Variadic>()) {
@@ -344,7 +356,9 @@ const Def* WorldBase::variadic(Defs arities, const Def* body, Debug dbg) {
             return variadic(concat(arities, v->arities()), v->body());
     }
 
-    return unify<Variadic>(arities.size() + 1, *this, arities, body, dbg);
+    auto type = body->type()->reduce(arities);
+
+    return unify<Variadic>(arities.size() + 1, *this, type, arities, body, dbg);
 }
 
 const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {

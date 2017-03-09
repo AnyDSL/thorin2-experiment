@@ -215,8 +215,8 @@ Star::Star(WorldBase& world, const Def* qualifier)
     : Def(world, Tag::Star, world.universe(), {qualifier}, {"*"})
 {}
 
-Variadic::Variadic(WorldBase& world, Defs arities, const Def* body, Debug dbg)
-    : SigmaBase(world, Tag::Variadic, body->type(), concat(arities, body), dbg)
+Variadic::Variadic(WorldBase& world, const Def* type, Defs arities, const Def* body, Debug dbg)
+    : SigmaBase(world, Tag::Variadic, type, concat(arities, body), dbg)
 {}
 
 Variant::Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg)

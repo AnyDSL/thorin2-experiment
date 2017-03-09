@@ -70,6 +70,20 @@ TEST(Variadic, Multi) {
               w.lambda({w.variadic({8, 5}, N), w.variadic({8, 5}, N), w.variadic({8, 5}, N)}, f3));
 
     auto A = w.arity_kind();
-    auto l = w.lambda({A, w.variadic(w.var(A, 0), A)}, w.variadic(w.var(w.variadic(w.var(A, 1), A), 0), N));
-    ASSERT_EQ(w.app(l, {w.arity(2), w.tuple({w.arity(3), w.arity(4)})}), w.variadic({3, 4}, N));
+    auto arity_tuple = [&](auto i) { return w.variadic(w.var(A, i), A); };
+    auto a = [&](auto i) { return w.var(A, i); };
+    auto build_variadic = w.variadic(a(1), w.extract(w.var(arity_tuple(2), 1), w.var(a(2), 0)));
+    ASSERT_TRUE(build_variadic->free_vars().test(0));
+    ASSERT_TRUE(build_variadic->free_vars().test(1));
+    ASSERT_TRUE(build_variadic->free_vars().none_begin(2));
+    auto arity_tuple_to_type = w.lambda({/*a:*/A, arity_tuple(0)}, build_variadic);
+    ASSERT_TRUE(arity_tuple_to_type->free_vars().none());
+    ASSERT_TRUE(arity_tuple_to_type->type()->free_vars().none());
+
+    auto args = w.tuple({w.arity(2), w.tuple({w.arity(3), w.arity(4)})});
+    ASSERT_EQ(w.app(arity_tuple_to_type, args), w.sigma({w.arity(3), w.arity(4)}));
+
+    auto l = w.lambda({/*a:*/A, arity_tuple(0)},
+                      w.variadic(w.variadic(a(1), w.extract(w.var(arity_tuple(2), 1), w.var(a(2), 0))), N));
+    ASSERT_EQ(w.app(l, args), w.variadic({3, 4}, N));
 }
