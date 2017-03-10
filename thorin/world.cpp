@@ -14,7 +14,7 @@ namespace thorin {
  * helpers
  */
 
-const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_meet) {
+const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_meet, bool require_qualifier = true) {
     using Sort = Def::Sort;
     const Def* max_type = nullptr;
     const Def* inferred_q = use_meet ? world.linear() : world.unlimited();
@@ -41,6 +41,8 @@ const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_mee
         max_type = world.star(inferred_q);
     }
     if (max_type->isa<Star>()) {
+        if (!require_qualifier)
+            return world.star(q ? q : world.unlimited());
         if (q == nullptr) {
             // no provided qualifier, so we use the inferred one
             assert(!max_type || max_type->op(0) == inferred_q);
@@ -305,7 +307,9 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) 
         }
     }
 
-    return unify<Pi>(domains.size() + 1, *this, domains, body, q, dbg);
+    auto type = infer_max_type(*this, concat(domains, body), q, false, false);
+
+    return unify<Pi>(domains.size() + 1, *this, type, domains, body, q, dbg);
 }
 
 const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {

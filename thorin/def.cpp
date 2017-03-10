@@ -202,9 +202,8 @@ Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
     : Def(world, Tag::Lambda, type, {body}, dbg)
 {}
 
-Pi::Pi(WorldBase& world, Defs domains, const Def* body, const Def* q, Debug dbg)
-    : Def(world, Tag::Pi, body->type()->is_universe() ? (const Def*) world.universe() : world.star(q),
-          concat(domains, body), dbg)
+Pi::Pi(WorldBase& world, const Def* type, Defs domains, const Def* body, const Def* q, Debug dbg)
+    : Def(world, Tag::Pi, type, concat(domains, body), dbg)
 {}
 
 Sigma::Sigma(WorldBase& world, size_t num_ops, Debug dbg)

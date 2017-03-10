@@ -4,6 +4,16 @@
 
 using namespace thorin;
 
+TEST(Pi, Kinds) {
+    World w;
+    ASSERT_EQ(w.pi(w.star(), w.star())->type(), w.universe());
+    ASSERT_EQ(w.pi(w.star(), w.arity_kind())->type(), w.universe());
+    ASSERT_EQ(w.pi(w.type_nat(), w.type_nat())->type(), w.star());
+    // TODO subkinding -> w.variant(w.star(), w.arity_kind()) or make arity_kind a (defined?) subkind of star, then star
+    // this currently means we can't quantify over functions mapping from one kind (or types within) to (types within) another
+    ASSERT_EQ(w.pi(w.type_nat(), w.arity(2))->type(), w.universe());
+}
+
 TEST(Lambda, PolyId) {
     World w;
     auto n16 = w.val_nat_16();
