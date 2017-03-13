@@ -134,7 +134,30 @@ TEST(Nominal, PolymorphicListNoOuterNominal) {
     cons->set(1, w.app(list, w.var(star, 1)));
     ASSERT_TRUE(cons->is_closed());
     ASSERT_TRUE(cons->free_vars().any_end(1));
+    ASSERT_TRUE(cons_or_nil->free_vars().any_end(1));
     print_value_type(cons);
+    print_value_type(list);
+    auto apped = w.app(list, nat);
+    print_value_type(apped);
+    print_value_type(apped->op(0));
+    print_value_type(apped->op(1));
+    ASSERT_EQ(apped->op(1)->op(0), nat);
+}
+
+TEST(Nominal, PolymorphicListVariantNominal) {
+    World w;
+    auto nat = w.type_nat();
+    auto star = w.star();
+
+    auto cons_or_nil = w.variant(2, star, {"cons_or_nil"});
+    auto list = w.lambda(star, cons_or_nil);
+    auto nil = w.unit();
+    auto cons = w.sigma({w.var(star, 0), w.app(list, w.var(star, 1))});
+    ASSERT_TRUE(cons->free_vars().any_end(1));
+    cons_or_nil->set(0, nil);
+    cons_or_nil->set(1, cons);
+    print_value_type(cons);
+    print_value_type(cons_or_nil);
     print_value_type(list);
     auto apped = w.app(list, nat);
     print_value_type(apped);
