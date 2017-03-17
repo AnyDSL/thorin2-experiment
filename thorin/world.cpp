@@ -176,7 +176,7 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
 
     auto callee_type = callee->type()->as<Pi>();
     assertf(callee_type->domain()->assignable(args),
-            "Callee {} with type {} cannot be called with arguments {}.", callee, callee_type, tuple(args));
+            "Callee {} with type {} cannot be called with arguments {}.", callee, callee_type, args);
     auto type = callee_type->reduce(args);
     auto app = unify<App>(args.size() + 1, *this, type, callee, args, dbg);
     assert(app->callee() == callee);

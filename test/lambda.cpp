@@ -49,6 +49,17 @@ TEST(Lambda, PolyId) {
     ASSERT_EQ(w.app(int_id, n23), n23);
 }
 
+TEST(Lambda, PolyIdPredicative) {
+    World w;
+    // λT:*.λx:T.x
+    auto T_1 = w.var(w.star(), 0, {"T"});
+    auto T_2 = w.var(w.star(), 1, {"T"});
+    auto x = w.var(T_2, 0, {"x"});
+    auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
+
+    ASSERT_DEATH(w.app(poly_id, poly_id->type()), ".*");
+}
+
 TEST(Lambda, Normalization) {
     World w;
     auto B = w.type_bool();
