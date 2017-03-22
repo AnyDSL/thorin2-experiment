@@ -18,6 +18,9 @@ TEST(Variadic, Misc) {
     auto t = w.tuple({w.val_nat_2(), w.val_nat_4()});
     ASSERT_TRUE(t->type()->isa<Variadic>());
 
+    // TODO currently broken
+    // ASSERT_EQ(w.variadic(1, N), N);
+
     // ΠT:*,a:N.Π(ptr[T,a], i:dim(T)).ptr[T.i,a]
 
     auto s2 = w.sigma({B, N});
