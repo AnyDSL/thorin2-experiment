@@ -34,6 +34,7 @@ add_executable(coc
     test/lexer.cpp
     test/main.cpp
     test/nominal.cpp
+    test/pack.cpp
     test/parser.cpp
     test/primop.cpp
     test/sigma.cpp

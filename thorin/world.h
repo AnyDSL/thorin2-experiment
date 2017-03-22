@@ -138,28 +138,28 @@ public:
     //@}
 
     //@{ create Tuple
-    const Tuple* tuple0(Qualifier q = Qualifier::Unlimited) { return tuple0_[size_t(q)]; }
-    const Tuple* tuple0(const Def* q) {
-        if (auto cq = isa_const_qualifier(q))
-            return tuple0(cq->box().get_qualifier());
-        return unify<Tuple>(0, *this, unit(q), Defs(), Debug("()"));
-    }
+    const Def* tuple(const Def* type, Defs defs, Debug dbg = {});
     const Def* tuple(Defs defs, Debug dbg = {}) {
         return tuple(sigma(types(defs), dbg), defs, dbg);
     }
     const Def* tuple(Defs defs, const Def* type_q, Debug dbg = {}) {
         return tuple(sigma(types(defs), type_q, dbg), defs, dbg);
     }
-    const Def* tuple(const Def* type, Defs defs, Debug dbg = {});
+    const Tuple* tuple0(Qualifier q = Qualifier::Unlimited) { return tuple0_[size_t(q)]; }
+    const Tuple* tuple0(const Def* q) {
+        if (auto cq = isa_const_qualifier(q))
+            return tuple0(cq->box().get_qualifier());
+        return unify<Tuple>(0, *this, unit(q), Defs(), Debug("()"));
+    }
     //@}
 
     //@{ create Pack
-    const Def* pack(const SigmaBase* type, Defs arities, const Def* body, Debug dbg = {});
-    const Def* pack(const SigmaBase* type, const Def* arity, const Def* body, Debug dbg = {}) {
+    const Def* pack(const Def* type, Defs arities, const Def* body, Debug dbg = {});
+    const Def* pack(const Def* type, const Def* arity, const Def* body, Debug dbg = {}) {
         return pack(type, Defs{arity}, body, dbg);
     }
-    const Def* pack(const SigmaBase* type, size_t a, const Def* body, Debug dbg = {}) { return pack(type, arity(a, dbg), body, dbg); }
-    const Def* pack(const SigmaBase* type, ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
+    const Def* pack(const Def* type, size_t a, const Def* body, Debug dbg = {}) { return pack(type, arity(a, dbg), body, dbg); }
+    const Def* pack(const Def* type, ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
         return pack(type, DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
     }
     const Def* pack(Defs arities, const Def* body, Debug dbg = {});

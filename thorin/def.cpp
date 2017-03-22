@@ -200,7 +200,7 @@ Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
     : Def(world, Tag::Lambda, type, {body}, dbg)
 {}
 
-Pack::Pack(WorldBase& world, const SigmaBase* type, Defs arities, const Def* body, Debug dbg)
+Pack::Pack(WorldBase& world, const Def* type, Defs arities, const Def* body, Debug dbg)
     : TupleBase(world, Tag::Pack, type, concat(arities, body), dbg)
 {}
 
@@ -406,7 +406,7 @@ const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
 }
-const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.pack(t->as<SigmaBase>(), ops.skip_back(), ops.back(), debug()); }
+const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.pack(t, ops.skip_back(), ops.back(), debug()); }
 const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
 const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);

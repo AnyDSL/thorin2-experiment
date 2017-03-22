@@ -495,7 +495,7 @@ private:
 
 class TupleBase : public Def {
 protected:
-    TupleBase(WorldBase& world, Tag tag, const SigmaBase* type, Defs ops, Debug dbg)
+    TupleBase(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
         : Def(world, tag, type, ops, dbg)
     {}
 };
@@ -517,7 +517,7 @@ private:
 
 class Pack : public TupleBase {
 private:
-    Pack(WorldBase& world, const SigmaBase* type, Defs arities, const Def* body, Debug dbg);
+    Pack(WorldBase& world, const Def* type, Defs arities, const Def* body, Debug dbg);
 
 public:
     bool assignable(Defs defs) const override;
