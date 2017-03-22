@@ -13,8 +13,6 @@ namespace thorin {
  * helpers
  */
 
-bool is_array(const Def* def) { return def->isa<Variadic>() && !def->free_vars().test(0); }
-
 DefArray types(Defs defs) {
     DefArray result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)

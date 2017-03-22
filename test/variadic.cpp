@@ -14,7 +14,6 @@ TEST(Variadic, Misc) {
     ASSERT_EQ(p2_4, p2_4b);
     auto v = w.variadic(5, N);
     ASSERT_TRUE(w.dim(v) == w.arity(5));
-    ASSERT_TRUE(is_array(v));
 
     auto t = w.tuple({w.val_nat_2(), w.val_nat_4()});
     ASSERT_TRUE(t->type()->isa<Variadic>());

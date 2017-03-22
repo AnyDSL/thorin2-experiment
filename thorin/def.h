@@ -440,8 +440,6 @@ protected:
     {}
 };
 
-bool is_array(const Def*);
-
 class Sigma : public SigmaBase {
 private:
     /// Nominal Sigma kind
