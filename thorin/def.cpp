@@ -200,6 +200,10 @@ Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
     : Def(world, Tag::Lambda, type, {body}, dbg)
 {}
 
+Pack::Pack(WorldBase& world, const SigmaBase* type, Defs arities, const Def* body, Debug dbg)
+    : TupleBase(world, Tag::Pack, type, concat(arities, body), dbg)
+{}
+
 Pi::Pi(WorldBase& world, const Def* type, Defs domains, const Def* body, const Def* q, Debug dbg)
     : Def(world, Tag::Pi, type, concat(domains, body), dbg)
 {}
@@ -318,8 +322,9 @@ const Def* Variant::kind_qualifier() const {
  */
 
 size_t Def::shift(size_t) const { return 0; }
-size_t Pi::shift(size_t i) const { return i; }
 size_t Lambda::shift(size_t) const { return num_domains(); }
+size_t Pack::shift(size_t i) const { return i; }
+size_t Pi::shift(size_t i) const { return i; }
 size_t Sigma::shift(size_t i) const { return i; }
 size_t Variadic::shift(size_t i) const { return i; }
 
@@ -401,6 +406,7 @@ const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
 }
+const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.pack(t->as<SigmaBase>(), ops.skip_back(), ops.back(), debug()); }
 const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
 const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
@@ -489,8 +495,13 @@ const Def* Def::shift_free_vars(size_t shift) const {
 //------------------------------------------------------------------------------
 
 /*
- * Unification
+ * assignable
  */
+
+bool Pack::assignable(Defs defs) const {
+    // TODO
+    return true;
+}
 
 bool Sigma::assignable(Defs defs) const {
     if (num_ops() != defs.size())
@@ -567,6 +578,13 @@ void Lambda::typecheck_vars(Environment& types, EnvDefSet& checked) const {
     // do Pi type check inline to reuse built up environment
     check(type()->type(), types, checked);
     dependent_check(domains(), types, checked, {type()->body(), body()});
+}
+
+void Pack::typecheck_vars(Environment& types, EnvDefSet& checked) const {
+    if (is_nominal_typechecked(this, types, checked))
+        return;
+    check(type(), types, checked);
+    dependent_check(arities(), types, checked, {body()});
 }
 
 void Pi::typecheck_vars(Environment& types, EnvDefSet& checked) const {
@@ -648,6 +666,12 @@ std::ostream& Match::stream(std::ostream& os) const {
 std::ostream& Lambda::stream(std::ostream& os) const {
     stream_list(qualifier_stream(os) << "λ", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
     return body()->name_stream(os << ".");
+}
+
+std::ostream& Pack::stream(std::ostream& os) const {
+    os << "(";
+    stream_list(os, arities(), [&](auto a) { a->name_stream(os); });
+    return streamf(os, "; {})", body());
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {

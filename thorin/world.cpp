@@ -361,7 +361,6 @@ const Def* WorldBase::variadic(Defs arities, const Def* body, Debug dbg) {
     }
 
     auto type = body->type()->reduce(arities);
-
     return unify<Variadic>(arities.size() + 1, *this, type, arities, body, dbg);
 }
 
@@ -420,6 +419,28 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     }
 
     return unify<Singleton>(1, *this, def, dbg);
+}
+
+const Def* WorldBase::pack(const SigmaBase* type, Defs arities, const Def* body, Debug dbg) {
+    if (auto arity = arities.back()->isa<Axiom>()) {
+        if (body->free_vars().test(0)) {
+            auto s = tuple(type, DefArray(arity->box().get_u64(),
+                    [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
+            return arities.size() == 1 ? s : pack(type, arities.skip_back(), s);
+        }
+    }
+
+    if (arities.size() == 1) {
+        if (auto sigma = arities.front()->isa<Sigma>())
+            return pack(type, sigma->ops(), flatten(body, sigma->ops()), dbg);
+    }
+
+    if (auto v = body->isa<Pack>()) {
+        if (v->is_multi() || v->arities().front()->type() == arity_kind())
+            return pack(type, concat(arities, v->arities()), v->body());
+    }
+
+    return unify<Pack>(arities.size() + 1, *this, type, arities, body, dbg);
 }
 
 const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {

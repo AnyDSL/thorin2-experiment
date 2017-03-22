@@ -126,6 +126,17 @@ public:
     }
     //@}
 
+    //@{ create Variadic
+    const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
+    const Def* variadic(const Def* arity, const Def* body, Debug dbg = {}) {
+        return variadic(Defs{arity}, body, dbg);
+    }
+    const Def* variadic(size_t a, const Def* body, Debug dbg = {}) { return variadic(arity(a, dbg), body, dbg); }
+    const Def* variadic(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
+        return variadic(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
+    }
+    //@}
+
     //@{ create Tuple
     const Tuple* tuple0(Qualifier q = Qualifier::Unlimited) { return tuple0_[size_t(q)]; }
     const Tuple* tuple0(const Def* q) {
@@ -140,6 +151,25 @@ public:
         return tuple(sigma(types(defs), type_q, dbg), defs, dbg);
     }
     const Def* tuple(const Def* type, Defs defs, Debug dbg = {});
+    //@}
+
+    //@{ create Pack
+    const Def* pack(const SigmaBase* type, Defs arities, const Def* body, Debug dbg = {});
+    const Def* pack(const SigmaBase* type, const Def* arity, const Def* body, Debug dbg = {}) {
+        return pack(type, Defs{arity}, body, dbg);
+    }
+    const Def* pack(const SigmaBase* type, size_t a, const Def* body, Debug dbg = {}) { return pack(type, arity(a, dbg), body, dbg); }
+    const Def* pack(const SigmaBase* type, ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
+        return pack(type, DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
+    }
+    const Def* pack(Defs arities, const Def* body, Debug dbg = {});
+    const Def* pack(const Def* arity, const Def* body, Debug dbg = {}) {
+        return pack(Defs{arity}, body, dbg);
+    }
+    const Def* pack(size_t a, const Def* body, Debug dbg = {}) { return pack(arity(a, dbg), body, dbg); }
+    const Def* pack(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
+        return pack(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
+    }
     //@}
 
     //@{ misc factory methods
@@ -164,14 +194,6 @@ public:
     const Var* var(Defs types, size_t index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
     const Var* var(const Def* type, size_t index, Debug dbg = {}) {
         return unify<Var>(0, *this, type, index, dbg);
-    }
-    const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
-    const Def* variadic(const Def* arity, const Def* body, Debug dbg = {}) {
-        return variadic(Defs{arity}, body, dbg);
-    }
-    const Def* variadic(size_t a, const Def* body, Debug dbg = {}) { return variadic(arity(a, dbg), body, dbg); }
-    const Def* variadic(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
-        return variadic(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
     }
     const Def* variant(Defs defs, Debug dbg = {});
     const Def* variant(Defs defs, const Def* type, Debug dbg = {});
