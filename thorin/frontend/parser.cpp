@@ -18,7 +18,7 @@ const Def* Parser::parse_def() {
         return def;
     }
 
-    ELOG("definition expected in {}", ahead_.location());
+    assertf(false, "definition expected in {}", ahead_.location());
 }
 
 const Pi* Parser::parse_pi() {
@@ -73,7 +73,7 @@ const Var* Parser::parse_var() {
         eat(Token::Tag::Sharp);
         if (!ahead_.isa(Token::Tag::Literal) ||
             ahead_.literal().tag != Literal::Tag::Lit_untyped)
-            ELOG("DeBruijn index expected in {}", ahead_.location());
+            assertf(false, "DeBruijn index expected in {}", ahead_.location());
 
         index = ahead_.literal().box.get_u64();
         eat(Token::Tag::Literal);
@@ -83,7 +83,7 @@ const Var* Parser::parse_var() {
     } else if (ahead_.isa(Token::Tag::Identifier)) {
         auto it = id_map_.find(ahead_.identifier());
         if (it == id_map_.end())
-            ELOG("unknown identifier '{}' in {}", ahead_.identifier(), ahead_.location());
+            assertf(false, "unknown identifier '{}' in {}", ahead_.identifier(), ahead_.location());
 
         std::tie(std::ignore, def, index) = id_stack_[it->second];
         def = shift_def(def, depth_ - index);
@@ -111,7 +111,7 @@ const Axiom* Parser::parse_assume() {
 
     eat(Token::Tag::L_Brace);
     if (!ahead_.isa(Token::Tag::Literal))
-        ELOG("literal expected in {}", ahead_.location());
+        ELOG_LOC(ahead_.location(), "literal expected in {}");
 
     auto box = ahead_.literal().box;
     eat(Token::Tag::Literal);
@@ -160,7 +160,7 @@ void Parser::eat(Token::Tag tag) {
 
 void Parser::expect(Token::Tag tag) {
     if (!ahead_.isa(tag))
-        ELOG("'{}' expected in {}", Token::tag_to_string(tag), ahead_.location());
+        ELOG_LOC(ahead_.location(), "'{}' expected in {}", Token::tag_to_string(tag));
 
     next();
 }

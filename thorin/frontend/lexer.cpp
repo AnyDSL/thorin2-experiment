@@ -81,7 +81,7 @@ Token Lexer::next() {
 
     std::string invalid;
     utf8::append(peek(), std::back_inserter(invalid));
-    ELOG("invalid character '{}' in {}", invalid, make_loc());
+    ELOG_LOC(make_loc(), "{}: invalid character '{}'", invalid);
 }
 
 void Lexer::eat() {
@@ -181,7 +181,7 @@ Literal Lexer::parse_literal() {
         return Literal(Literal::Tag::Lit_untyped, u64(strtoull(lit.c_str(), nullptr, 10)));
     }
 
-    ELOG("invalid literal in {}", Location(filename_.c_str(), line_, col_));
+    ELOG_LOC(Location(filename_.c_str(), line_, col_), "invalid literal in {}");
 }
 
 bool Lexer::accept(uint32_t c) {
