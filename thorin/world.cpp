@@ -342,17 +342,17 @@ Lambda* WorldBase::nominal_lambda(Defs domains, const Def* codomain, const Def* 
 }
 
 const Def* WorldBase::variadic(Defs arities, const Def* body, Debug dbg) {
-    if (auto arity = arities.back()->isa<Axiom>()) {
-        if (body->free_vars().test(0)) {
-            auto s = sigma(DefArray(arity->box().get_u64(),
-                    [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
-            return arities.size() == 1 ? s : variadic(arities.skip_back(), s);
-        }
-    }
-
     if (arities.size() == 1) {
         if (auto sigma = arities.front()->isa<Sigma>())
             return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
+    }
+
+    if (auto arity = arities.back()->isa<Axiom>()) {
+        auto index = arity->box().get_u64();
+        if (body->free_vars().test(0)) {
+            auto s = sigma(DefArray(index, [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
+            return arities.size() == 1 ? s : variadic(arities.skip_back(), s);
+        }
     }
 
     if (auto v = body->isa<Variadic>()) {
@@ -360,8 +360,26 @@ const Def* WorldBase::variadic(Defs arities, const Def* body, Debug dbg) {
             return variadic(concat(arities, v->arities()), v->body());
     }
 
+    std::vector<const Def*> normalized_arities;
+    normalized_arities.reserve(arities.size());
+
+    for (size_t i = arities.size(); i-- != 0;) {
+        if (auto arity = arities[i]->isa<Axiom>()) {
+            if (arity->box().get_u64() == 1) {
+                body = body->reduce({arity}, i);
+                continue;
+            }
+        }
+        normalized_arities.push_back(arities[i]);
+    }
+
+    if (normalized_arities.empty())
+        return body;
+
+    std::reverse(normalized_arities.begin(), normalized_arities.end());
+
     auto type = body->type()->reduce(arities);
-    return unify<Variadic>(arities.size() + 1, *this, type, arities, body, dbg);
+    return unify<Variadic>(normalized_arities.size() + 1, *this, type, normalized_arities, body, dbg);
 }
 
 const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {
@@ -370,7 +388,7 @@ const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {
         case 0:
             return unit(inferred_type->qualifier());
         case 1:
-            assertf(defs.front()->type() == inferred_type, "Type {} and inferred type {} don't match.",
+            assertf(defs.front()->type() == inferred_type, "type {} and inferred type {} don't match",
                     defs.front()->type(), inferred_type);
             return defs.front();
         default:
@@ -422,25 +440,43 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
 }
 
 const Def* WorldBase::pack(const Def* type, Defs arities, const Def* body, Debug dbg) {
+    if (arities.size() == 1) {
+        if (auto sigma = arities.front()->isa<Sigma>())
+            return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
+    }
+
     if (auto arity = arities.back()->isa<Axiom>()) {
+        auto index = arity->box().get_u64();
         if (body->free_vars().test(0)) {
-            auto s = tuple(type, DefArray(arity->box().get_u64(),
-                    [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
-            return arities.size() == 1 ? s : pack(type, arities.skip_back(), s);
+            auto t = tuple(type, DefArray(index, [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
+            return arities.size() == 1 ? t : pack(type, arities.skip_back(), t);
         }
     }
 
-    if (arities.size() == 1) {
-        if (auto sigma = arities.front()->isa<Sigma>())
-            return pack(type, sigma->ops(), flatten(body, sigma->ops()), dbg);
+    if (auto p = body->isa<Pack>()) {
+        if (p->is_multi() || p->arities().front()->type() == arity_kind())
+            return pack(type, concat(arities, p->arities()), p->body());
     }
 
-    if (auto v = body->isa<Pack>()) {
-        if (v->is_multi() || v->arities().front()->type() == arity_kind())
-            return pack(type, concat(arities, v->arities()), v->body());
+    // TODO remove copy&paste code from WorldBase::variadic
+    std::vector<const Def*> normalized_arities;
+    normalized_arities.reserve(arities.size());
+
+    for (size_t i = arities.size(); i-- != 0;) {
+        if (auto arity = arities[i]->isa<Axiom>()) {
+            if (arity->box().get_u64() == 1) {
+                body = body->reduce({arity}, i);
+                continue;
+            }
+        }
+        normalized_arities.push_back(arities[i]);
     }
 
-    return unify<Pack>(arities.size() + 1, *this, type, arities, body, dbg);
+    if (normalized_arities.empty())
+        return body;
+
+    std::reverse(normalized_arities.begin(), normalized_arities.end());
+    return unify<Pack>(normalized_arities.size() + 1, *this, type, normalized_arities, body, dbg);
 }
 
 const Def* WorldBase::pack(Defs arities, const Def* body, Debug dbg) {
