@@ -87,3 +87,14 @@ TEST(Variadic, Multi) {
                       w.variadic(w.variadic(a(1), w.extract(w.var(arity_tuple(2), 1), w.var(a(2), 0))), N));
     ASSERT_EQ(w.app(l, args), w.variadic({3, 4}, N));
 }
+
+TEST(Variadic, InlineSigmaInterOp) {
+    World w;
+    auto star = w.star();
+    auto pair = w.sigma({star, star});
+    ASSERT_TRUE(pair->isa<Variadic>());
+
+    auto lam = w.lambda(pair, w.type_nat(), {"lam"});
+    auto app = w.app(lam, w.var(pair, 1));
+    ASSERT_EQ(app, w.type_nat());
+}

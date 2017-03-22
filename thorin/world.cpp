@@ -168,7 +168,7 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
         if (auto tuple = single->isa<Tuple>())
             return app(callee, tuple->ops(), dbg);
 
-        if (auto sigma_type = single->type()->isa<Sigma>()) {
+        if (auto sigma_type = single->type()->isa<SigmaBase>()) {
             auto extracts = DefArray(sigma_type->num_ops(), [&](auto i) { return this->extract(single, i); });
             return app(callee, extracts, dbg);
         }
