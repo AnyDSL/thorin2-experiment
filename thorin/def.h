@@ -428,6 +428,94 @@ public:
     friend class WorldBase;
 };
 
+//------------------------------------------------------------------------------
+
+class SigmaBase : public Def {
+protected:
+    SigmaBase(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+        : Def(world, tag, type, ops, dbg)
+    {}
+    SigmaBase(WorldBase& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
+        : Def(world, tag, type, num_ops, dbg)
+    {}
+};
+
+bool is_array(const Def*);
+
+class Sigma : public SigmaBase {
+private:
+    /// Nominal Sigma kind
+    Sigma(WorldBase& world, size_t num_ops, Debug dbg);
+    /// Nominal Sigma type, \a type is some Star/Universe
+    Sigma(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
+        : SigmaBase(world, Tag::Sigma, type, num_ops, dbg)
+    {}
+    Sigma(WorldBase& world, Defs ops, const Def* type, Debug dbg)
+        : SigmaBase(world, Tag::Sigma, type, ops, dbg)
+    {}
+
+public:
+    const Def* kind_qualifier() const override;
+    bool has_values() const override;
+    bool assignable(Defs defs) const override;
+    bool is_unit() const { return ops().empty(); }
+    Sigma* set(size_t i, const Def* def) { return Def::set(i, def)->as<Sigma>(); };
+
+    std::ostream& stream(std::ostream&) const override;
+    Sigma* stub(WorldBase&, const Def*, Debug) const override;
+    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
+
+private:
+    static const Def* max_type(WorldBase& world, Defs ops, const Def* qualifier);
+    size_t shift(size_t) const override;
+    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+
+    friend class WorldBase;
+};
+
+class Variadic : public SigmaBase {
+private:
+    Variadic(WorldBase& world, const Def* type, Defs arities, const Def* body, Debug dbg);
+
+public:
+    const Def* kind_qualifier() const override;
+    bool has_values() const override;
+    bool assignable(Defs defs) const override;
+    Defs arities() const { return ops().skip_back(); }
+    bool is_multi() const { return arities().size() != 1; }
+    const Def* body() const { return ops().back(); }
+    std::ostream& stream(std::ostream&) const override;
+    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
+
+private:
+    size_t shift(size_t) const override;
+    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+
+    friend class WorldBase;
+};
+
+class TupleBase : public Def {
+protected:
+    TupleBase(WorldBase& world, Tag tag, const SigmaBase* type, Defs ops, Debug dbg)
+        : Def(world, tag, type, ops, dbg)
+    {}
+};
+
+class Tuple : public TupleBase {
+private:
+    Tuple(WorldBase& world, const SigmaBase* type, Defs ops, Debug dbg)
+        : TupleBase(world, Tag::Tuple, type, ops, dbg)
+    {}
+
+public:
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+
+    friend class WorldBase;
+};
+
 class Extract : public Def {
 private:
     Extract(WorldBase& world, const Def* type, const Def* tuple, const Def* index, Debug dbg)
@@ -444,6 +532,8 @@ private:
 
     friend class WorldBase;
 };
+
+//------------------------------------------------------------------------------
 
 class Intersection : public Def {
 private:
@@ -568,85 +658,6 @@ private:
 
 public:
     const Def* of() const { return op(0); }
-    std::ostream& stream(std::ostream&) const override;
-
-private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-
-    friend class WorldBase;
-};
-
-class SigmaBase : public Def {
-protected:
-    SigmaBase(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(world, tag, type, ops, dbg)
-    {}
-    SigmaBase(WorldBase& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
-        : Def(world, tag, type, num_ops, dbg)
-    {}
-};
-
-bool is_array(const Def*);
-
-class Sigma : public SigmaBase {
-private:
-    /// Nominal Sigma kind
-    Sigma(WorldBase& world, size_t num_ops, Debug dbg);
-    /// Nominal Sigma type, \a type is some Star/Universe
-    Sigma(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
-        : SigmaBase(world, Tag::Sigma, type, num_ops, dbg)
-    {}
-    Sigma(WorldBase& world, Defs ops, const Def* type, Debug dbg)
-        : SigmaBase(world, Tag::Sigma, type, ops, dbg)
-    {}
-
-public:
-    const Def* kind_qualifier() const override;
-    bool has_values() const override;
-    bool assignable(Defs defs) const override;
-    bool is_unit() const { return ops().empty(); }
-    Sigma* set(size_t i, const Def* def) { return Def::set(i, def)->as<Sigma>(); };
-
-    std::ostream& stream(std::ostream&) const override;
-    Sigma* stub(WorldBase&, const Def*, Debug) const override;
-    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
-
-private:
-    static const Def* max_type(WorldBase& world, Defs ops, const Def* qualifier);
-    size_t shift(size_t) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-
-    friend class WorldBase;
-};
-
-class Variadic : public SigmaBase {
-private:
-    Variadic(WorldBase& world, const Def* type, Defs arities, const Def* body, Debug dbg);
-
-public:
-    const Def* kind_qualifier() const override;
-    bool has_values() const override;
-    bool assignable(Defs defs) const override;
-    Defs arities() const { return ops().skip_back(); }
-    bool is_multi() const { return arities().size() != 1; }
-    const Def* body() const { return ops().back(); }
-    std::ostream& stream(std::ostream&) const override;
-    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
-
-private:
-    size_t shift(size_t) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-
-    friend class WorldBase;
-};
-
-class Tuple : public Def {
-private:
-    Tuple(WorldBase& world, const SigmaBase* type, Defs ops, Debug dbg)
-        : Def(world, Tag::Tuple, type, ops, dbg)
-    {}
-
-public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
