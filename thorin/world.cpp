@@ -433,19 +433,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     return unify<Singleton>(1, *this, def, dbg);
 }
 
-const Def* WorldBase::pack(const Def* type, const Def* arity, const Def* body, Debug dbg) {
-    return nullptr; // TODO
-}
-
-const Def* WorldBase::pack(const Def* type, Defs arity, const Def* body, Debug dbg) {
-    return nullptr; // TODO
-}
-
-const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
-    return nullptr; // TODO
-}
-
-const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
+const Def* WorldBase::pack(const Def* type, const Def* body, Debug dbg) {
     return nullptr; // TODO
 }
 

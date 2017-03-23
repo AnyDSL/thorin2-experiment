@@ -120,7 +120,7 @@ public:
     Sigma* sigma_type(size_t num_ops, const Def* qualifier, Debug dbg = {}) {
         return sigma(num_ops, star(qualifier), dbg);
     }
-    /// @em nominal Sigma of type Univers
+    /// @em nominal Sigma of type Universe
     Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, num_ops, dbg);
     }
@@ -152,18 +152,17 @@ public:
     //@}
 
     //@{ create Pack
-    const Def* pack(const Def* type, const Def* arities, const Def* body, Debug dbg = {});
-    const Def* pack(const Def* type, Defs arities, const Def* body, Debug dbg = {});
-    const Def* pack(const Def* type, size_t a, const Def* body, Debug dbg = {}) { return pack(type, arity(a, dbg), body, dbg); }
-    const Def* pack(const Def* type, ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
-        return pack(type, DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
-    }
-    const Def* pack(const Def* arities, const Def* body, Debug dbg = {});
-    const Def* pack(Defs arities, const Def* body, Debug dbg = {});
-    const Def* pack(size_t a, const Def* body, Debug dbg = {}) { return pack(arity(a, dbg), body, dbg); }
-    const Def* pack(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
-        return pack(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
-    }
+    const Def* pack(const Def* type, const Def* body, Debug dbg = {});
+    //const Def* pack(const Def* arity, const Def* body, Debug dbg = {}) {
+        //return pack(variadic(arity, body->type(), dbg), body, dbg);
+    //}
+    //const Def* pack(Defs arities, const Def* body, Debug dbg = {}) {
+        //return pack(variadic(arities, body->type(), dbg), body, dbg);
+    //}
+    //const Def* pack(size_t a, const Def* body, Debug dbg = {}) { return pack(arity(a, dbg), body, dbg); }
+    //const Def* pack(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
+        //return pack(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
+    //}
     //@}
 
     //@{ misc factory methods
