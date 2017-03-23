@@ -174,6 +174,7 @@ void Def::unregister_use(size_t i) const {
 std::string Def::unique_name() const { return name() + '_' + std::to_string(gid()); }
 
 const Def* Pi::domain() const { return world().sigma(domains()); }
+const Def* Pack::arity() const { return world().dim(type()); }
 
 //------------------------------------------------------------------------------
 
@@ -200,8 +201,8 @@ Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
     : Def(world, Tag::Lambda, type, {body}, dbg)
 {}
 
-Pack::Pack(WorldBase& world, const Def* type, Defs arities, const Def* body, Debug dbg)
-    : TupleBase(world, Tag::Pack, type, concat(arities, body), dbg)
+Pack::Pack(WorldBase& world, const Def* type, const Def* body, Debug dbg)
+    : TupleBase(world, Tag::Pack, type, {body}, dbg)
 {}
 
 Pi::Pi(WorldBase& world, const Def* type, Defs domains, const Def* body, const Def* q, Debug dbg)
@@ -216,8 +217,8 @@ Star::Star(WorldBase& world, const Def* qualifier)
     : Def(world, Tag::Star, world.universe(), {qualifier}, {"*"})
 {}
 
-Variadic::Variadic(WorldBase& world, const Def* type, Defs arities, const Def* body, Debug dbg)
-    : SigmaBase(world, Tag::Variadic, type, concat(arities, body), dbg)
+Variadic::Variadic(WorldBase& world, const Def* type, const Def* arity, const Def* body, Debug dbg)
+    : SigmaBase(world, Tag::Variadic, type, {arity, body}, dbg)
 {}
 
 Variant::Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg)
@@ -406,7 +407,7 @@ const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
 }
-const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.pack(t, ops.skip_back(), ops.back(), debug()); }
+const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.pack(t, ops[0], ops[1], debug()); }
 const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
 const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
@@ -422,7 +423,7 @@ const Def* Tuple       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { 
 const Def* Universe    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(); }
 const Def* Var         ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
 const Def* Variant     ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.variant(ops, t, debug()); }
-const Def* Variadic    ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic(ops.skip_back(), ops.back(), debug()); }
+const Def* Variadic    ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic(ops[0], ops[1], debug()); }
 
 //------------------------------------------------------------------------------
 
@@ -498,16 +499,11 @@ const Def* Def::shift_free_vars(size_t shift) const {
  * assignable
  */
 
-bool Pack::assignable(Defs defs) const {
-    // TODO
-    return true;
-}
-
 bool Sigma::assignable(Defs defs) const {
     if (num_ops() != defs.size())
         return false;
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
-        auto reduced_type = thorin::reduce(op(i), defs.get_front(i));
+        auto reduced_type = op(i)->reduce(defs.get_front(i));
         if (reduced_type->has_error() || defs[i]->type() != reduced_type)
             return false;
     }
@@ -516,13 +512,12 @@ bool Sigma::assignable(Defs defs) const {
 
 bool Variadic::assignable(Defs defs) const {
     auto size = defs.size();
-    if (arities().front() != world().arity(size))
+    if (arity() != world().arity(size))
         return false;
     for (size_t i = 0; i != size; ++i) {
-        auto b = thorin::reduce(body(), {world().index(i, size)});
-        auto indexed_type = is_multi() ? world().variadic(arities().skip_front(), b, debug()) : b;
-        assert(!indexed_type->has_error());
-        if (defs[i]->type() != indexed_type)
+        auto b = body()->reduce(world().index(i, size));
+        assert(!b->has_error());
+        if (defs[i]->type() != b)
             return false;
     }
     return true;
@@ -581,10 +576,8 @@ void Lambda::typecheck_vars(Environment& types, EnvDefSet& checked) const {
 }
 
 void Pack::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    if (is_nominal_typechecked(this, types, checked))
-        return;
     check(type(), types, checked);
-    dependent_check(arities(), types, checked, {body()});
+    dependent_check({arity()}, types, checked, {body()});
 }
 
 void Pi::typecheck_vars(Environment& types, EnvDefSet& checked) const {
@@ -613,7 +606,7 @@ void Variadic::typecheck_vars(Environment& types, EnvDefSet& checked) const {
     if (is_nominal_typechecked(this, types, checked))
         return;
     check(type(), types, checked);
-    dependent_check(arities(), types, checked, {body()});
+    dependent_check({arity()}, types, checked, {body()});
 }
 
 //------------------------------------------------------------------------------
@@ -669,9 +662,7 @@ std::ostream& Lambda::stream(std::ostream& os) const {
 }
 
 std::ostream& Pack::stream(std::ostream& os) const {
-    os << "(";
-    stream_list(os, arities(), [&](auto a) { a->name_stream(os); });
-    return streamf(os, "; {})", body());
+    return streamf(os, "({}; {})", arity(), body());
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
@@ -712,9 +703,7 @@ std::ostream& Var::stream(std::ostream& os) const {
 }
 
 std::ostream& Variadic::stream(std::ostream& os) const {
-    os << "[";
-    stream_list(os, arities(), [&](auto a) { a->name_stream(os); });
-    return streamf(os, "; {}]", body());
+    return streamf(os, "[{}; {}]", arity(), body());
 }
 
 std::ostream& Variant::stream(std::ostream& os) const {

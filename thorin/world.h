@@ -127,10 +127,8 @@ public:
     //@}
 
     //@{ create Variadic
+    const Def* variadic(const Def* arities, const Def* body, Debug dbg = {});
     const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
-    const Def* variadic(const Def* arity, const Def* body, Debug dbg = {}) {
-        return variadic(Defs{arity}, body, dbg);
-    }
     const Def* variadic(size_t a, const Def* body, Debug dbg = {}) { return variadic(arity(a, dbg), body, dbg); }
     const Def* variadic(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
         return variadic(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
@@ -154,18 +152,14 @@ public:
     //@}
 
     //@{ create Pack
+    const Def* pack(const Def* type, const Def* arities, const Def* body, Debug dbg = {});
     const Def* pack(const Def* type, Defs arities, const Def* body, Debug dbg = {});
-    const Def* pack(const Def* type, const Def* arity, const Def* body, Debug dbg = {}) {
-        return pack(type, Defs{arity}, body, dbg);
-    }
     const Def* pack(const Def* type, size_t a, const Def* body, Debug dbg = {}) { return pack(type, arity(a, dbg), body, dbg); }
     const Def* pack(const Def* type, ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
         return pack(type, DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
     }
+    const Def* pack(const Def* arities, const Def* body, Debug dbg = {});
     const Def* pack(Defs arities, const Def* body, Debug dbg = {});
-    const Def* pack(const Def* arity, const Def* body, Debug dbg = {}) {
-        return pack(Defs{arity}, body, dbg);
-    }
     const Def* pack(size_t a, const Def* body, Debug dbg = {}) { return pack(arity(a, dbg), body, dbg); }
     const Def* pack(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
         return pack(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);

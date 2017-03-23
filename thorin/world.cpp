@@ -187,9 +187,9 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
 const Def* WorldBase::dim(const Def* def, Debug dbg) {
     if (auto tuple    = def->isa<Tuple>())    return arity(tuple->num_ops(), dbg);
     if (auto sigma    = def->isa<Sigma>())    return arity(sigma->num_ops(), dbg);
-    if (auto variadic = def->isa<Variadic>()) return variadic->arities().front();
+    if (auto variadic = def->isa<Variadic>()) return variadic->arity();
     if (auto sigma    = def->type()->isa<Sigma>())    return arity(sigma->num_ops(), dbg);
-    if (auto variadic = def->type()->isa<Variadic>()) return variadic->arities().front();
+    if (auto variadic = def->type()->isa<Variadic>()) return variadic->arity();
     if (def->isa<Var>()) return unify<Dim>(1, *this, def, dbg);
     return arity(1, dbg);
 }
@@ -231,11 +231,10 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
     }
 
     if (auto v = def->type()->isa<Variadic>()) {
-        auto a = v->arities().front()->as<Axiom>()->box().get_u64();
+        auto a = v->arity()->as<Axiom>()->box().get_u64();
         assertf(i < a, "index {} not provably in Arity {}", i, a);
         auto idx = index(i, a, dbg);
-        auto body = v->is_multi() ? variadic(v->arities().skip_front(), v->body()) : v->body();
-        return unify<Extract>(2, *this, body->reduce({idx}, v->arities().size()-1), def, idx, dbg);
+        return unify<Extract>(2, *this, v->body()->reduce({idx}), def, idx, dbg);
     }
 
     assert(i == 0);
@@ -297,12 +296,12 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) 
             return pi(sigma->ops(), flatten(body, sigma->ops()), q, dbg);
 
         if (auto v = domain->isa<Variadic>()) {
-            if (auto arity = v->arities().front()->isa<Axiom>()) {
-                if (!v->body()->free_vars().test(0)) {
-                    DefArray args(arity->box().get_u64(),
-                            v->is_multi() ? variadic(v->arities().skip_front(), v->body()) : v->body());
-                    return pi(args, flatten(body, args), q, dbg);
-                }
+            if (auto arity = v->arity()->isa<Axiom>()) {
+                auto a = arity->box().get_u64();
+                assert(!v->body()->free_vars().test(0));
+                // TODO test this
+                DefArray args(a, [&] (auto i) { return v->body()->shift_free_vars(i); });
+                return pi(args, flatten(body, args), q, dbg);
             }
         }
     }
@@ -329,7 +328,7 @@ const Lambda* WorldBase::lambda(Defs domains, const Def* body, const Def* type_q
     size_t n = p->domains().size();
     if (n != domains.size()) {
         auto t = tuple(DefArray(n, [&](auto i) { return this->var(p->domains()[i], n-1-i); }));
-        body = reduce(body, {t});
+        body = body->reduce(t);
     }
 
     return unify<Lambda>(1, *this, p, body, dbg);
@@ -341,45 +340,39 @@ Lambda* WorldBase::nominal_lambda(Defs domains, const Def* codomain, const Def* 
     return l;
 }
 
-const Def* WorldBase::variadic(Defs arities, const Def* body, Debug dbg) {
-    if (arities.size() == 1) {
-        if (auto sigma = arities.front()->isa<Sigma>())
-            return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
-    }
+const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
+    if (auto sigma = arity->isa<Sigma>())
+        return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
 
-    if (auto arity = arities.back()->isa<Axiom>()) {
-        auto index = arity->box().get_u64();
-        if (body->free_vars().test(0)) {
-            auto s = sigma(DefArray(index, [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
-            return arities.size() == 1 ? s : variadic(arities.skip_back(), s);
+    if (auto v = arity->isa<Variadic>()) {
+        if (auto axiom = v->arity()->isa<Axiom>()) {
+            assert(!v->body()->free_vars().test(0));
+            auto a = axiom->box().get_u64();
+            assert(a != 1);
+            DefArray args(a, [&] (auto i) { return this->index(i, a); });
+            const Def* result = flatten(body, args);
+            for (size_t i = a; i-- != 0;)
+                result = variadic(args[i], result, dbg);
+            return result;
         }
     }
 
-    if (auto v = body->isa<Variadic>()) {
-        if (v->is_multi() || v->arities().front()->type() == arity_kind())
-            return variadic(concat(arities, v->arities()), v->body());
+    if (auto axiom = arity->isa<Axiom>()) {
+        auto a = axiom->box().get_u64();
+        if (a == 1)
+            return body->reduce({this->index(0, 1)});
+        if (body->free_vars().test(0))
+            return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(i, a)); }), dbg);
     }
 
-    std::vector<const Def*> normalized_arities;
-    normalized_arities.reserve(arities.size());
+    auto type = body->type()->reduce({arity});
+    return unify<Variadic>(2, *this, type, arity, body, dbg);
+}
 
-    for (size_t i = arities.size(); i-- != 0;) {
-        if (auto arity = arities[i]->isa<Axiom>()) {
-            if (arity->box().get_u64() == 1) {
-                body = body->reduce({arity}, i);
-                continue;
-            }
-        }
-        normalized_arities.push_back(arities[i]);
-    }
-
-    if (normalized_arities.empty())
+const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
+    if (arity.empty())
         return body;
-
-    std::reverse(normalized_arities.begin(), normalized_arities.end());
-
-    auto type = body->type()->reduce(arities);
-    return unify<Variadic>(normalized_arities.size() + 1, *this, type, normalized_arities, body, dbg);
+    return variadic(arity.skip_back(), variadic(arity.back(), body, dbg), dbg);
 }
 
 const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {
@@ -439,49 +432,20 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     return unify<Singleton>(1, *this, def, dbg);
 }
 
-const Def* WorldBase::pack(const Def* type, Defs arities, const Def* body, Debug dbg) {
-    if (arities.size() == 1) {
-        if (auto sigma = arities.front()->isa<Sigma>())
-            return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
-    }
-
-    if (auto arity = arities.back()->isa<Axiom>()) {
-        auto index = arity->box().get_u64();
-        if (body->free_vars().test(0)) {
-            auto t = tuple(type, DefArray(index, [&](auto i) { return reduce(body, {this->index(i, arity->box().get_u64())}); }), dbg);
-            return arities.size() == 1 ? t : pack(type, arities.skip_back(), t);
-        }
-    }
-
-    if (auto p = body->isa<Pack>()) {
-        if (p->is_multi() || p->arities().front()->type() == arity_kind())
-            return pack(type, concat(arities, p->arities()), p->body());
-    }
-
-    // TODO remove copy&paste code from WorldBase::variadic
-    std::vector<const Def*> normalized_arities;
-    normalized_arities.reserve(arities.size());
-
-    for (size_t i = arities.size(); i-- != 0;) {
-        if (auto arity = arities[i]->isa<Axiom>()) {
-            if (arity->box().get_u64() == 1) {
-                body = body->reduce({arity}, i);
-                continue;
-            }
-        }
-        normalized_arities.push_back(arities[i]);
-    }
-
-    if (normalized_arities.empty())
-        return body;
-
-    std::reverse(normalized_arities.begin(), normalized_arities.end());
-    return unify<Pack>(normalized_arities.size() + 1, *this, type, normalized_arities, body, dbg);
+const Def* WorldBase::pack(const Def* type, const Def* arity, const Def* body, Debug dbg) {
+    return nullptr; // TODO
 }
 
-const Def* WorldBase::pack(Defs arities, const Def* body, Debug dbg) {
-    auto type = body->type()->reduce(arities);
-    return pack(variadic(arities, type, dbg), arities, body, dbg);
+const Def* WorldBase::pack(const Def* type, Defs arity, const Def* body, Debug dbg) {
+    return nullptr; // TODO
+}
+
+const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
+    return nullptr; // TODO
+}
+
+const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
+    return nullptr; // TODO
 }
 
 const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {

@@ -250,6 +250,7 @@ public:
      * Note that @p args will be indexed in reverse order due to De Bruijn way of counting.
      */
     const Def* reduce(Defs args, size_t index = 0) const;
+    const Def* reduce(const Def* arg, size_t index = 0) const { return reduce(Defs{arg}, index); }
     const Def* shift_free_vars(size_t shift) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const {
@@ -474,17 +475,16 @@ private:
 
 class Variadic : public SigmaBase {
 private:
-    Variadic(WorldBase& world, const Def* type, Defs arities, const Def* body, Debug dbg);
+    Variadic(WorldBase& world, const Def* type, const Def* arity, const Def* body, Debug dbg);
 
 public:
+    const Def* arity() const { return op(0); }
+    const Def* body() const { return op(1); }
     const Def* kind_qualifier() const override;
     bool has_values() const override;
     bool assignable(Defs defs) const override;
-    Defs arities() const { return ops().skip_back(); }
-    bool is_multi() const { return arities().size() != 1; }
-    const Def* body() const { return ops().back(); }
-    std::ostream& stream(std::ostream&) const override;
     void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
+    std::ostream& stream(std::ostream&) const override;
 
 private:
     size_t shift(size_t) const override;
@@ -517,15 +517,13 @@ private:
 
 class Pack : public TupleBase {
 private:
-    Pack(WorldBase& world, const Def* type, Defs arities, const Def* body, Debug dbg);
+    Pack(WorldBase& world, const Def* type, const Def* body, Debug dbg);
 
 public:
-    bool assignable(Defs defs) const override;
-    Defs arities() const { return ops().skip_back(); }
-    bool is_multi() const { return arities().size() != 1; }
-    const Def* body() const { return ops().back(); }
-    std::ostream& stream(std::ostream&) const override;
+    const Def* body() const { return op(0); }
+    const Def* arity() const;
     void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
+    std::ostream& stream(std::ostream&) const override;
 
 private:
     size_t shift(size_t) const override;
