@@ -186,6 +186,7 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
 
 const Def* WorldBase::dim(const Def* def, Debug dbg) {
     if (auto tuple    = def->isa<Tuple>())    return arity(tuple->num_ops(), dbg);
+    if (auto pack     = def->isa<Pack>())     return pack->arity();
     if (auto sigma    = def->isa<Sigma>())    return arity(sigma->num_ops(), dbg);
     if (auto variadic = def->isa<Variadic>()) return variadic->arity();
     if (auto sigma    = def->type()->isa<Sigma>())    return arity(sigma->num_ops(), dbg);
