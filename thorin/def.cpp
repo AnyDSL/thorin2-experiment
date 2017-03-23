@@ -205,7 +205,7 @@ Pack::Pack(WorldBase& world, const Def* type, const Def* body, Debug dbg)
     : TupleBase(world, Tag::Pack, type, {body}, dbg)
 {}
 
-Pi::Pi(WorldBase& world, const Def* type, Defs domains, const Def* body, const Def* q, Debug dbg)
+Pi::Pi(WorldBase& world, const Def* type, Defs domains, const Def* body, Debug dbg)
     : Def(world, Tag::Pi, type, concat(domains, body), dbg)
 {}
 

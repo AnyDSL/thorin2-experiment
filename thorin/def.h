@@ -361,7 +361,7 @@ uint64_t EnvDefHash::hash(const EnvDef& p) {
 
 class Pi : public Def {
 private:
-    Pi(WorldBase& world, const Def* type, Defs domains, const Def* body, const Def* qualifier, Debug dbg);
+    Pi(WorldBase& world, const Def* type, Defs domains, const Def* body, Debug dbg);
 
 public:
     const Def* domain() const;

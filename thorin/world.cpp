@@ -309,7 +309,7 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) 
 
     auto type = infer_max_type(*this, concat(domains, body), q, false, false);
 
-    return unify<Pi>(domains.size() + 1, *this, type, domains, body, q, dbg);
+    return unify<Pi>(domains.size() + 1, *this, type, domains, body, dbg);
 }
 
 const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
