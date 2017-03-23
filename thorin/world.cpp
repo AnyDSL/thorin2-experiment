@@ -224,7 +224,7 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
                 }
 
                 // this also shifts any Var with i > skipped_shifts by -1
-                type = type->reduce({extract(def, i - delta)}, skipped_shifts);
+                type = type->reduce(extract(def, i - delta), skipped_shifts);
             }
         }
 
@@ -235,7 +235,7 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
         auto a = v->arity()->as<Axiom>()->box().get_u64();
         assertf(i < a, "index {} not provably in Arity {}", i, a);
         auto idx = index(i, a, dbg);
-        return unify<Extract>(2, *this, v->body()->reduce({idx}), def, idx, dbg);
+        return unify<Extract>(2, *this, v->body()->reduce(idx), def, idx, dbg);
     }
 
     assert(i == 0);
@@ -361,12 +361,12 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
     if (auto axiom = arity->isa<Axiom>()) {
         auto a = axiom->box().get_u64();
         if (a == 1)
-            return body->reduce({this->index(0, 1)});
+            return body->reduce(this->index(0, 1));
         if (body->free_vars().test(0))
             return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(i, a)); }), dbg);
     }
 
-    auto type = body->type()->reduce({arity});
+    auto type = body->type()->reduce(arity);
     return unify<Variadic>(2, *this, type, arity, body, dbg);
 }
 
