@@ -360,10 +360,15 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
 
     if (auto axiom = arity->isa<Axiom>()) {
         auto a = axiom->box().get_u64();
-        if (a == 1)
-            return body->reduce(this->index(0, 1));
-        if (body->free_vars().test(0))
-            return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(i, a)); }), dbg);
+        switch (a) {
+            case 0:
+                return unit(body->type()->qualifier());
+            case 1:
+                return body->reduce(this->index(0, 1));
+            default:
+                if (body->free_vars().test(0))
+                    return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(i, a)); }), dbg);
+        }
     }
 
     auto type = body->type()->reduce(arity);
