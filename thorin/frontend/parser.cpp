@@ -103,7 +103,7 @@ const Def* Parser::parse_tuple() {
     expect(Token::Tag::Colon);
     auto type = parse_def();
 
-    return world_.tuple(defs, type, tracker.location());
+    return world_.tuple(type, defs, tracker.location());
 }
 
 const Axiom* Parser::parse_assume() {

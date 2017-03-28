@@ -140,9 +140,6 @@ public:
     const Def* tuple(Defs defs, Debug dbg = {}) {
         return tuple(sigma(types(defs), dbg), defs, dbg);
     }
-    const Def* tuple(Defs defs, const Def* type_q, Debug dbg = {}) {
-        return tuple(sigma(type_q, types(defs), dbg), defs, dbg);
-    }
     const Tuple* tuple0(Qualifier q = Qualifier::Unlimited) { return tuple0_[size_t(q)]; }
     const Tuple* tuple0(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
