@@ -382,13 +382,13 @@ const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
 }
 
 const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
-    auto inferred_type = infer_max_type(*this, defs, q, false);
+    auto type = infer_max_type(*this, defs, q, false);
     switch (defs.size()) {
         case 0:
-            return unit(inferred_type->qualifier());
+            return unit(type->qualifier());
         case 1:
-            assertf(defs.front()->type() == inferred_type, "type {} and inferred type {} don't match",
-                    defs.front()->type(), inferred_type);
+            assertf(defs.front()->type() == type, "type {} and inferred type {} don't match",
+                    defs.front()->type(), type);
             return defs.front();
         default:
             if (defs.front()->free_vars().none_end(defs.size()-1) &&
@@ -398,7 +398,7 @@ const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
             }
     }
 
-    return unify<Sigma>(defs.size(), *this, inferred_type, defs, dbg);
+    return unify<Sigma>(defs.size(), *this, type, defs, dbg);
 }
 
 const Def* WorldBase::singleton(const Def* def, Debug dbg) {
