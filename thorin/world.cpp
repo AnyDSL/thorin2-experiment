@@ -14,15 +14,15 @@ namespace thorin {
  * helpers
  */
 
-template<bool use_meet>
-const Def* WorldBase::infer_max_type(Defs ops, const Def* q, bool require_qualifier) {
+template<bool glb>
+const Def* WorldBase::bound(Defs ops, const Def* q, bool require_qualifier) {
     const Def* max_type = nullptr;
-    const Def* inferred_q = use_meet ? linear() : unlimited();
+    const Def* inferred_q = glb ? linear() : unlimited();
     for (auto op : ops) {
         assertf(!op->is_value(), "can't have values as operands here");
         assert(op->sort() != Def::Sort::Universe && "type universes must not be operands");
 
-        if (use_meet)
+        if (glb)
             inferred_q = intersection(qualifier_type(), {inferred_q, op->qualifier()});
         else
             inferred_q = variant(qualifier_type(), {inferred_q, op->qualifier()});
@@ -52,10 +52,10 @@ const Def* WorldBase::infer_max_type(Defs ops, const Def* q, bool require_qualif
                 auto box_qual = qual_axiom->box().get_qualifier();
                 if (auto q_axiom = isa_const_qualifier(q)) {
                     auto qual = q_axiom->box().get_qualifier();
-                    auto test = use_meet ? qual <= box_qual : qual >= box_qual;
+                    auto test = glb ? qual <= box_qual : qual >= box_qual;
                     assertf(test, "qualifier must be {} than the {} of the operands' qualifiers",
-                            use_meet ? "less" : "greater",
-                            use_meet ? "greatest lower bound" : "least upper bound");
+                            glb ? "less" : "greater",
+                            glb ? "greatest lower bound" : "least upper bound");
                 }
             }
 #endif
@@ -266,7 +266,7 @@ const Def* WorldBase::index(size_t i, size_t a, Location location) {
 
 const Def* WorldBase::intersection(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return intersection(lub(defs, nullptr), defs, dbg);
+    return intersection(glb(defs, nullptr), defs, dbg);
 }
 
 const Def* WorldBase::intersection(const Def* type, Defs defs, Debug dbg) {
@@ -306,7 +306,7 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) 
         }
     }
 
-    auto type = glb(concat(domains, body), q, false);
+    auto type = lub(concat(domains, body), q, false);
 
     return unify<Pi>(domains.size() + 1, *this, type, domains, body, dbg);
 }
@@ -381,7 +381,7 @@ const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
 }
 
 const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
-    auto type = glb(defs, q);
+    auto type = lub(defs, q);
     switch (defs.size()) {
         case 0:
             return unit(type->qualifier());
@@ -452,7 +452,7 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
 
 const Def* WorldBase::variant(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return variant(glb(defs, nullptr), defs, dbg);
+    return variant(lub(defs, nullptr), defs, dbg);
 }
 
 const Def* WorldBase::variant(const Def* type, Defs defs, Debug dbg) {

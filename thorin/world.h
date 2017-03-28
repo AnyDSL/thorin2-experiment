@@ -203,10 +203,10 @@ public:
     }
 
 private:
-    template<bool use_meet>
-    const Def* infer_max_type(Defs ops, const Def* q, bool require_qualifier = true);
-    const Def* lub(Defs ops, const Def* q, bool require_qualifier = true) { return infer_max_type<true >(ops, q, require_qualifier); }
-    const Def* glb(Defs ops, const Def* q, bool require_qualifier = true) { return infer_max_type<false>(ops, q, require_qualifier); }
+    template<bool glb>
+    const Def* bound(Defs ops, const Def* q, bool require_qualifier = true);
+    const Def* lub(Defs ops, const Def* q, bool require_qualifier = true) { return bound<false>(ops, q, require_qualifier); }
+    const Def* glb(Defs ops, const Def* q, bool require_qualifier = true) { return bound<true >(ops, q, require_qualifier); }
 
     void fix() { for (auto def : defs_) def->world_ = this; }
 
