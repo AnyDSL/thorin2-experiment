@@ -269,7 +269,7 @@ bool Variant::has_values() const {
  */
 
 const Def* Def::qualifier() const {
-    switch(sort()) {
+    switch (sort()) {
         case Sort::Term:     return type()->type()->kind_qualifier();
         case Sort::Type:     return type()->kind_qualifier();
         case Sort::Kind:     return kind_qualifier();
@@ -415,7 +415,7 @@ const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
 }
 const Def* Sigma       ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
     assert(!is_nominal());
-    return to.sigma(ops, qualifier(), debug());
+    return to.sigma(qualifier(), ops, debug());
 }
 const Def* Singleton   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
 const Def* Star        ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.star(ops.front()); }
@@ -441,7 +441,7 @@ Lambda* Lambda::stub(WorldBase& to, const Def* type, Debug dbg) const {
     return to.nominal_lambda(pi->domains(), pi->body(), pi->qualifier(), dbg);
 }
 Sigma* Sigma::stub(WorldBase& to, const Def* type, Debug dbg) const {
-    return to.sigma(num_ops(), type, dbg);
+    return to.sigma(type, num_ops(), dbg);
 }
 Variant* Variant::stub(WorldBase& to, const Def* type, Debug dbg) const {
     return to.variant(type, num_ops(), dbg);

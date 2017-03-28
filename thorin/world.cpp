@@ -128,7 +128,7 @@ WorldBase::WorldBase()
         auto q = Qualifier(i);
         qualifier_[i] = assume(qualifier_type(), {q}, {qualifier_cstr(q)});
         star_     [i] = insert<Star >(1, *this, qualifier_[i]);
-        unit_     [i] = insert<Sigma>(0, *this, Defs(), star_[i], Debug("Σ()"));
+        unit_     [i] = insert<Sigma>(0, *this, star_[i], Defs(), Debug("Σ()"));
         tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
     }
     arity_kind_ = axiom(universe(), {"𝔸"});
@@ -381,7 +381,7 @@ const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
     return variadic(arity.skip_back(), variadic(arity.back(), body, dbg), dbg);
 }
 
-const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {
+const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
     auto inferred_type = infer_max_type(*this, defs, q, false);
     switch (defs.size()) {
         case 0:
@@ -398,7 +398,7 @@ const Def* WorldBase::sigma(Defs defs, const Def* q, Debug dbg) {
             }
     }
 
-    return unify<Sigma>(defs.size(), *this, defs, inferred_type, dbg);
+    return unify<Sigma>(defs.size(), *this, inferred_type, defs, dbg);
 }
 
 const Def* WorldBase::singleton(const Def* def, Debug dbg) {
@@ -422,7 +422,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     if (auto sig = def->type()->isa<Sigma>()) {
         // See Harper PFPL 43.13b
         auto ops = DefArray(sig->num_ops(), [&](auto i) { return this->singleton(this->extract(def, i)); });
-        return sigma(ops, sig->qualifier(), dbg);
+        return sigma(sig->qualifier(), ops, dbg);
     }
 
     if (auto pi_type = def->type()->isa<Pi>()) {

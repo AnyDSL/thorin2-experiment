@@ -450,7 +450,7 @@ private:
     Sigma(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
         : SigmaBase(world, Tag::Sigma, type, num_ops, dbg)
     {}
-    Sigma(WorldBase& world, Defs ops, const Def* type, Debug dbg)
+    Sigma(WorldBase& world, const Def* type, Defs ops, Debug dbg)
         : SigmaBase(world, Tag::Sigma, type, ops, dbg)
     {}
 

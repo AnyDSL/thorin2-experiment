@@ -103,22 +103,22 @@ public:
     const Sigma* unit(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
             return unit(cq->box().get_qualifier());
-        return unify<Sigma>(0, *this, Defs(), star(q), Debug("Σ()"));
+        return unify<Sigma>(0, *this, star(q), Defs(), Debug("Σ()"));
     }
     /// @em structural Sigma types or kinds
-    const Def* sigma(Defs defs, Debug dbg = {}) { return sigma(defs, nullptr, dbg); }
-    const Def* sigma(Defs, const Def* qualifier, Debug dbg = {});
+    const Def* sigma(Defs defs, Debug dbg = {}) { return sigma(nullptr, defs, dbg); }
+    const Def* sigma(const Def* qualifier, Defs, Debug dbg = {});
     /// Nominal sigma types or kinds
-    Sigma* sigma(size_t num_ops, const Def* type, Debug dbg = {}) {
+    Sigma* sigma(const Def* type, size_t num_ops, Debug dbg = {}) {
         return insert<Sigma>(num_ops, *this, type, num_ops, dbg);
     }
     /// @em nominal Sigma of type Star
     Sigma* sigma_type(size_t num_ops, Debug dbg = {}) {
-        return sigma_type(num_ops, unlimited(), dbg);
+        return sigma_type(unlimited(), num_ops, dbg);
     }
     /// @em nominal Sigma of type Star
-    Sigma* sigma_type(size_t num_ops, const Def* qualifier, Debug dbg = {}) {
-        return sigma(num_ops, star(qualifier), dbg);
+    Sigma* sigma_type(const Def* qualifier, size_t num_ops, Debug dbg = {}) {
+        return sigma(star(qualifier), num_ops, dbg);
     }
     /// @em nominal Sigma of type Universe
     Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) {
@@ -141,7 +141,7 @@ public:
         return tuple(sigma(types(defs), dbg), defs, dbg);
     }
     const Def* tuple(Defs defs, const Def* type_q, Debug dbg = {}) {
-        return tuple(sigma(types(defs), type_q, dbg), defs, dbg);
+        return tuple(sigma(type_q, types(defs), dbg), defs, dbg);
     }
     const Tuple* tuple0(Qualifier q = Qualifier::Unlimited) { return tuple0_[size_t(q)]; }
     const Tuple* tuple0(const Def* q) {
