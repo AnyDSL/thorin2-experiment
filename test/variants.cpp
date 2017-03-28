@@ -38,5 +38,5 @@ TEST(Variants, positive_tests) {
     match->dump(); // match someval with ...
     match->type()->dump();
     // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
-    w.intersection({w.pi(nat, nat), w.pi(boolean, boolean)}, w.star())->dump();
+    w.intersection(w.star(), {w.pi(nat, nat), w.pi(boolean, boolean)})->dump();
 }

@@ -285,7 +285,7 @@ const Def* Def::kind_qualifier() const {
 const Def* Intersection::kind_qualifier() const {
     assert(is_kind());
     auto qualifiers = DefArray(num_ops(), [&](auto i) { return this->op(i)->qualifier(); });
-    return world().intersection(qualifiers, world().qualifier_type());
+    return world().intersection(world().qualifier_type(), qualifiers);
 }
 
 const Def* Sigma::kind_qualifier() const {
@@ -401,7 +401,7 @@ const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     return to.assume(t, box(), debug());
 }
 const Def* Error       ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.error(t); }
-const Def* Intersection::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.intersection(ops, t, debug()); }
+const Def* Intersection::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
 const Def* Match       ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(!is_nominal());

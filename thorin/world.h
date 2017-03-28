@@ -178,7 +178,7 @@ public:
     const Def* extract(const Def* def, size_t index, Debug dbg = {});
     const Def* index(size_t index, size_t arity, Location location = {});
     const Def* intersection(Defs defs, Debug dbg = {});
-    const Def* intersection(Defs defs, const Def* type, Debug dbg = {});
+    const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
     const Def* dim(const Def* def, Debug dbg = {});
     const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});

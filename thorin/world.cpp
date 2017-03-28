@@ -24,7 +24,7 @@ const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_mee
         assert(op->sort() != Sort::Universe && "Type universes must not be operands.");
 
         if (use_meet)
-            inferred_q = world.intersection({inferred_q, op->qualifier()}, world.qualifier_type());
+            inferred_q = world.intersection(world.qualifier_type(), {inferred_q, op->qualifier()});
         else
             inferred_q = world.variant({inferred_q, op->qualifier()}, world.qualifier_type());
         auto op_type = op->type();
@@ -267,10 +267,10 @@ const Def* WorldBase::index(size_t i, size_t a, Location location) {
 
 const Def* WorldBase::intersection(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return intersection(defs, infer_max_type(*this, defs, nullptr, true), dbg);
+    return intersection(infer_max_type(*this, defs, nullptr, true), defs, dbg);
 }
 
-const Def* WorldBase::intersection(Defs defs, const Def* type, Debug dbg) {
+const Def* WorldBase::intersection(const Def* type, Defs defs, Debug dbg) {
     assert(defs.size() > 0); // TODO empty intersection -> empty type/kind
     if (defs.size() == 1) {
         assert(defs.front()->type() == type);
