@@ -292,7 +292,7 @@ const Def* Sigma::kind_qualifier() const {
     assert(is_kind());
     auto qualifiers = DefArray(num_ops(), [&](auto i) {
             return this->op(i)->has_values() ? this->op(i)->qualifier() : this->world().unlimited(); });
-    return world().variant(qualifiers, world().qualifier_type());
+    return world().variant(world().qualifier_type(), qualifiers);
 }
 
 const Def* Singleton::kind_qualifier() const {
@@ -313,7 +313,7 @@ const Def* Variadic::kind_qualifier() const {
 const Def* Variant::kind_qualifier() const {
     assert(is_kind());
     auto qualifiers = DefArray(num_ops(), [&](auto i) { return this->op(i)->qualifier(); });
-    return world().variant(qualifiers, world().qualifier_type());
+    return world().variant(world().qualifier_type(), qualifiers);
 }
 
 //------------------------------------------------------------------------------
@@ -422,7 +422,7 @@ const Def* Star        ::rebuild(WorldBase& to, const Def*  , Defs ops) const { 
 const Def* Tuple       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
 const Def* Universe    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(); }
 const Def* Var         ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
-const Def* Variant     ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.variant(ops, t, debug()); }
+const Def* Variant     ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.variant(t, ops, debug()); }
 const Def* Variadic    ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic(ops[0], ops[1], debug()); }
 
 //------------------------------------------------------------------------------
@@ -444,7 +444,7 @@ Sigma* Sigma::stub(WorldBase& to, const Def* type, Debug dbg) const {
     return to.sigma(num_ops(), type, dbg);
 }
 Variant* Variant::stub(WorldBase& to, const Def* type, Debug dbg) const {
-    return to.variant(num_ops(), type, dbg);
+    return to.variant(type, num_ops(), dbg);
 }
 
 //------------------------------------------------------------------------------

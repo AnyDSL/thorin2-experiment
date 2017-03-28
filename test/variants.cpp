@@ -8,7 +8,7 @@ TEST(Variants, negative_test) {
     World w;
     auto boolean = w.type_bool();
     auto nat = w.type_nat();
-    auto variant = w.variant({nat, boolean}, w.star());
+    auto variant = w.variant(w.star(), {nat, boolean});
     auto any_nat23 = w.any(variant, w.val_nat(23));
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
     w.lambda(boolean, w.val_nat(0));
@@ -21,10 +21,10 @@ TEST(Variants, positive_tests) {
     auto boolean = w.type_bool();
     auto nat = w.type_nat();
     // Test variant types and matches
-    auto variant = w.variant({nat, boolean}, w.star());
+    auto variant = w.variant(w.star(), {nat, boolean});
     auto any_nat23 = w.any(variant, w.val_nat(23));
     auto any_bool = w.any(variant, w.axiom(boolean,{"false"}));
-    auto assumed_var = w.axiom(variant,{"someval"});
+    auto assumed_var = w.axiom(variant, {"someval"});
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
     auto handle_bool = w.lambda(boolean, w.axiom(nat,{"0"}));
     Array<const Def*> handlers{handle_nat, handle_bool};

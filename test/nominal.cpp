@@ -104,7 +104,7 @@ TEST(Nominal, PolymorphicList) {
     auto nil = w.sigma_type(0, {"nil"});
     ASSERT_TRUE(nil->is_closed());
     print_value_type(nil);
-    auto cons_or_nil = w.variant({cons, nil}, star);
+    auto cons_or_nil = w.variant(star, {cons, nil});
     list->set(cons_or_nil);
     ASSERT_TRUE(list->is_closed());
     print_value_type(list);
@@ -120,7 +120,7 @@ TEST(Nominal, PolymorphicListVariantNominal) {
     auto nat = w.type_nat();
     auto star = w.star();
 
-    auto cons_or_nil = w.variant(2, star, {"cons_or_nil"});
+    auto cons_or_nil = w.variant(star, 2, {"cons_or_nil"});
     auto list = w.lambda(star, cons_or_nil);
     auto nil = w.unit();
     auto cons = w.sigma({w.var(star, 0), w.app(list, w.var(star, 1))});
@@ -141,7 +141,7 @@ TEST(Nominal, Nat) {
     World w;
     auto star = w.star();
 
-    auto variant = w.variant(2, star, {"Nat"});
+    auto variant = w.variant(star, 2, {"Nat"});
     variant->set(0, w.sigma_type(0, {"0"}));
     auto succ = w.sigma_type(1, {"Succ"});
     succ->set(0, variant);

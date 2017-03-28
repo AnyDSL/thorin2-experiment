@@ -41,7 +41,7 @@ TEST(Qualifiers, Variants) {
     auto r = w.relevant();
     auto a = w.affine();
     auto l = w.linear();
-    auto lub = [&](Defs defs) { return w.variant(defs, w.qualifier_type()); };
+    auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
 
     ASSERT_TRUE(u->is_value());
     ASSERT_TRUE(r->is_value());
@@ -80,7 +80,7 @@ TEST(Qualifiers, Kinds) {
     auto a = w.affine();
     auto l = w.linear();
     auto v = w.var(w.qualifier_type(), 0);
-    auto lub = [&](Defs defs) { return w.variant(defs, w.qualifier_type()); };
+    auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
 
     auto anat = w.axiom(w.star(a), {"nat"});
     auto rnat = w.axiom(w.star(r), {"nat"});

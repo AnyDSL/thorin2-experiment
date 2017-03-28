@@ -26,7 +26,7 @@ const Def* infer_max_type(WorldBase& world, Defs ops, const Def* q, bool use_mee
         if (use_meet)
             inferred_q = world.intersection(world.qualifier_type(), {inferred_q, op->qualifier()});
         else
-            inferred_q = world.variant({inferred_q, op->qualifier()}, world.qualifier_type());
+            inferred_q = world.variant(world.qualifier_type(), {inferred_q, op->qualifier()});
         auto op_type = op->type();
 
         if (max_type == nullptr)
@@ -410,7 +410,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     if (!def->is_nominal()) {
         if (def->isa<Variant>()) {
             auto ops = DefArray(def->num_ops(), [&](auto i) { return this->singleton(def->op(i)); });
-            return variant(ops, def->type()->type(),dbg);
+            return variant(def->type()->type(), ops, dbg);
         }
 
         if (def->isa<Intersection>()) {
@@ -438,7 +438,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     return unify<Singleton>(1, *this, def, dbg);
 }
 
-const Def* WorldBase::pack(const Def* type, const Def* body, Debug dbg) {
+const Def* WorldBase::pack(const Def* /*type*/, const Def* /*body*/, Debug /*dbg*/) {
     return nullptr; // TODO
 }
 
@@ -453,10 +453,10 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
 
 const Def* WorldBase::variant(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return variant(defs, infer_max_type(*this, defs, nullptr, false), dbg);
+    return variant(infer_max_type(*this, defs, nullptr, false), defs, dbg);
 }
 
-const Def* WorldBase::variant(Defs defs, const Def* type, Debug dbg) {
+const Def* WorldBase::variant(const Def* type, Defs defs, Debug dbg) {
     assert(defs.size() > 0);
     if (defs.size() == 1) {
         assert(defs.front()->type() == type);

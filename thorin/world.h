@@ -189,8 +189,8 @@ public:
         return unify<Var>(0, *this, type, index, dbg);
     }
     const Def* variant(Defs defs, Debug dbg = {});
-    const Def* variant(Defs defs, const Def* type, Debug dbg = {});
-    Variant* variant(size_t num_ops, const Def* type, Debug dbg = {}) {
+    const Def* variant(const Def* type, Defs defs, Debug dbg = {});
+    Variant* variant(const Def* type, size_t num_ops, Debug dbg = {}) {
         assert(num_ops > 1 && "It should not be necessary to build empty/unary variants.");
         return insert<Variant>(num_ops, *this, type, num_ops, dbg);
     }
