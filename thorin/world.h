@@ -229,9 +229,9 @@ protected:
         return def;
     }
 
-    struct Page {
+    struct Zone {
         static const size_t Size = 1024 * 1024 - sizeof(std::unique_ptr<int>); // 1MB - sizeof(next)
-        std::unique_ptr<Page> next;
+        std::unique_ptr<Zone> next;
         char buffer[Size];
     };
 
@@ -244,10 +244,10 @@ protected:
         assert(alloc_guard_ = !alloc_guard_ && "you are not allowed to recursively invoke alloc");
 #endif
         size_t num_bytes = sizeof(T) + sizeof(const Def*) * num_ops;
-        assert(num_bytes < Page::Size);
+        assert(num_bytes < Zone::Size);
 
-        if (buffer_index_ + num_bytes >= Page::Size) {
-            auto page = new Page;
+        if (buffer_index_ + num_bytes >= Zone::Size) {
+            auto page = new Zone;
             cur_page_->next.reset(page);
             cur_page_ = page;
             buffer_index_ = 0;
@@ -272,8 +272,8 @@ protected:
         assert(buffer_index_ % alignof(T) == 0);
     }
 
-    std::unique_ptr<Page> root_page_;
-    Page* cur_page_;
+    std::unique_ptr<Zone> root_page_;
+    Zone* cur_page_;
     size_t buffer_index_ = 0;
     DefSet defs_;
     const Universe* universe_;

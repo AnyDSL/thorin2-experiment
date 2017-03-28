@@ -118,7 +118,7 @@ const Def* qualifier_glb_or_lub(WorldBase& w, Defs defs, bool use_meet,
 bool WorldBase::alloc_guard_ = false;
 
 WorldBase::WorldBase()
-    : root_page_(new Page)
+    : root_page_(new Zone)
     , cur_page_(root_page_.get())
 {
     universe_ = insert<Universe>(0, *this);
