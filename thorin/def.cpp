@@ -417,8 +417,8 @@ const Def* Sigma       ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
     assert(!is_nominal());
     return to.sigma(qualifier(), ops, debug());
 }
-const Def* Singleton   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops.front()); }
-const Def* Star        ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.star(ops.front()); }
+const Def* Singleton   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops[0]); }
+const Def* Star        ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.star(ops[0]); }
 const Def* Tuple       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
 const Def* Universe    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(); }
 const Def* Var         ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
