@@ -350,15 +350,10 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
 
     if (auto axiom = arity->isa<Axiom>()) {
         auto a = axiom->box().get_u64();
-        switch (a) {
-            case 0:
-                return unit(body->type()->qualifier());
-            case 1:
-                return body->reduce(this->index(0, 1));
-            default:
-                if (body->free_vars().test(0))
-                    return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(i, a)); }), dbg);
-        }
+        if (a == 0) return unit(body->type()->qualifier());
+        if (a == 1) return body->reduce(this->index(0, 1));
+        if (body->free_vars().test(0))
+            return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(i, a)); }), dbg);
     }
 
     auto type = body->type()->reduce(arity);
@@ -373,19 +368,19 @@ const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
 
 const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
     auto type = lub(defs, q);
-    switch (defs.size()) {
-        case 0:
-            return unit(type->qualifier());
-        case 1:
+    if (defs.size() == 0)
+        return unit(type->qualifier());
+
+    if (defs.size() == 1) {
             assertf(defs.front()->type() == type, "type {} and inferred type {} don't match",
                     defs.front()->type(), type);
             return defs.front();
-        default:
-            if (defs.front()->free_vars().none_end(defs.size()-1)
-                    && std::all_of(defs.begin()+1, defs.end(), [&](auto def) { return def == defs.front(); })) {
-                assert(q == nullptr || defs.front()->qualifier() == q);
-                return variadic(arity(defs.size(), dbg), defs.front(), dbg);
-            }
+    }
+
+    if (defs.front()->free_vars().none_end(defs.size()-1)
+            && std::all_of(defs.begin()+1, defs.end(), [&](auto def) { return def == defs.front(); })) {
+        assert(q == nullptr || defs.front()->qualifier() == q);
+        return variadic(arity(defs.size(), dbg), defs.front(), dbg);
     }
 
     return unify<Sigma>(defs.size(), *this, type, defs, dbg);
