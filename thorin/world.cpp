@@ -16,29 +16,26 @@ namespace thorin {
 
 template<bool glb>
 const Def* WorldBase::bound(Defs ops, const Def* q, bool require_qualifier) {
-    const Def* max_type = nullptr;
     const Def* inferred_q = glb ? linear() : unlimited();
+    const Def* max_type = star(inferred_q);
+
     for (auto op : ops) {
         assertf(!op->is_value(), "can't have values as operands here");
-        assert(op->sort() != Def::Sort::Universe && "type universes must not be operands");
+        assertf(op->sort() != Def::Sort::Universe, "type universes must not be operands");
 
         if (glb)
             inferred_q = intersection(qualifier_type(), {inferred_q, op->qualifier()});
         else
             inferred_q = variant(qualifier_type(), {inferred_q, op->qualifier()});
-        auto op_type = op->type();
 
-        if (max_type == nullptr)
-            max_type = op_type;
-        else if (op_type->isa<Star>() && max_type->isa<Star>())
+        if (op->type()->isa<Star>() && max_type->isa<Star>())
             max_type = star(inferred_q);
-        else if (op_type == universe() || max_type != op_type)
+        else if (op->type() == universe() || max_type != op->type()) {
             max_type = universe();
+            break;
+        }
     }
-    if (!max_type) {
-        assert(ops.empty());
-        max_type = star(inferred_q);
-    }
+
     if (max_type->isa<Star>()) {
         if (!require_qualifier)
             return star(q ? q : unlimited());
