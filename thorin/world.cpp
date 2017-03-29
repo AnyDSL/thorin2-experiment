@@ -62,15 +62,9 @@ const Def* WorldBase::bound(Defs ops, const Def* q, bool require_qualifier) {
     return max_type;
 }
 
-bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
+static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
-const Def* single_qualified(Defs defs, const Def* q) {
-    assert(defs.size() == 1);
-    assert(defs.front()->qualifier() == q);
-    return defs.front();
-}
-
-const Def* qualifier_glb_or_lub(WorldBase& w, Defs defs, bool use_meet,
+static const Def* qualifier_glb_or_lub(WorldBase& w, Defs defs, bool use_meet,
                                 std::function<const Def*(Defs)> unify_fn) {
     auto const_elem = use_meet ? Qualifier::Unlimited : Qualifier::Linear;
     auto ident_elem = use_meet ? Qualifier::Linear : Qualifier::Unlimited;
