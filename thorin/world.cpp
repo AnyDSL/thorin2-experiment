@@ -166,7 +166,7 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
 
     auto callee_type = callee->type()->as<Pi>();
     assertf(callee_type->domain()->assignable(args),
-            "Callee with domain {} cannot be called with arguments {}.", callee_type->domain(), args);
+            "callee with domain {} cannot be called with arguments {}", callee_type->domain(), args);
     auto type = callee_type->reduce(args);
     auto app = unify<App>(args.size() + 1, *this, type, callee, args, dbg);
     assert(app->callee() == callee);
@@ -377,8 +377,8 @@ const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
             return defs.front();
     }
 
-    if (defs.front()->free_vars().none_end(defs.size()-1)
-            && std::all_of(defs.begin()+1, defs.end(), [&](auto def) { return def == defs.front(); })) {
+    if (defs.front()->free_vars().none_end(defs.size() - 1)
+            && std::all_of(defs.begin() + 1, defs.end(), [&](auto def) { return def == defs.front(); })) {
         assert(q == nullptr || defs.front()->qualifier() == q);
         return variadic(arity(defs.size(), dbg), defs.front(), dbg);
     }
