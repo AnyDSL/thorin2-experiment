@@ -64,18 +64,18 @@ const Def* WorldBase::bound(Defs ops, const Def* q, bool require_qualifier) {
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
-static const Def* qualifier_glb_or_lub(WorldBase& w, Defs defs, bool use_meet,
-                                std::function<const Def*(Defs)> unify_fn) {
-    auto const_elem = use_meet ? Qualifier::Unlimited : Qualifier::Linear;
-    auto ident_elem = use_meet ? Qualifier::Linear : Qualifier::Unlimited;
+template<bool glb>
+const Def* WorldBase::qualifier_bound(Defs defs, std::function<const Def*(Defs)> unify_fn) {
+    auto const_elem = glb ? Qualifier::Unlimited : Qualifier::Linear;
+    auto ident_elem = glb ? Qualifier::Linear : Qualifier::Unlimited;
     size_t num_defs = defs.size();
     DefArray reduced(num_defs);
     Qualifier accu = Qualifier::Unlimited;
     size_t num_const = 0;
     for (size_t i = 0, e = num_defs; i != e; ++i) {
-        if (auto q = w.isa_const_qualifier(defs[i])) {
+        if (auto q = isa_const_qualifier(defs[i])) {
             auto qual = q->box().get_qualifier();
-            accu = use_meet ? meet(accu, qual) : join(accu, qual);
+            accu = glb ? meet(accu, qual) : join(accu, qual);
             num_const++;
         } else {
             assert(is_qualifier(defs[i]));
@@ -83,14 +83,14 @@ static const Def* qualifier_glb_or_lub(WorldBase& w, Defs defs, bool use_meet,
         }
     }
     if (num_const == num_defs)
-        return w.qualifier(accu);
+        return qualifier(accu);
     if (accu == const_elem) {
         // glb(U, x) = U/lub(L, x) = L
-        return w.qualifier(const_elem);
+        return qualifier(const_elem);
     } else if (accu != ident_elem) {
         // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
         assert(num_const != 0);
-        reduced[num_defs - num_const] = w.qualifier(accu);
+        reduced[num_defs - num_const] = qualifier(accu);
         num_const--;
     }
     reduced.shrink(num_defs - num_const);
@@ -270,7 +270,7 @@ const Def* WorldBase::intersection(const Def* type, Defs defs, Debug dbg) {
     // could possibly be replaced by something subtyping-generic
     if (is_qualifier(defs.front())) {
         assert(type == qualifier_type());
-        return qualifier_glb_or_lub(*this, defs, true, [&] (Defs defs) {
+        return qualifier_glb(defs, [&] (Defs defs) {
             return unify<Intersection>(defs.size(), *this, qualifier_type(), defs, dbg);
         });
     }
@@ -451,7 +451,7 @@ const Def* WorldBase::variant(const Def* type, Defs defs, Debug dbg) {
     // could possibly be replaced by something subtyping-generic
     if (is_qualifier(defs.front())) {
         assert(type == qualifier_type());
-        return qualifier_glb_or_lub(*this, defs, false, [&] (Defs defs) {
+        return qualifier_lub(defs, [&] (Defs defs) {
             return unify<Variant>(defs.size(), *this, qualifier_type(), defs, dbg);
         });
     }
@@ -459,7 +459,7 @@ const Def* WorldBase::variant(const Def* type, Defs defs, Debug dbg) {
     return unify<Variant>(defs.size(), *this, type, defs, dbg);
 }
 
-const Def* build_match_type(WorldBase& w, Defs handlers) {
+static const Def* build_match_type(WorldBase& w, Defs handlers) {
     auto types = DefArray(handlers.size(),
             [&](auto i) { return handlers[i]->type()->template as<Pi>()->body(); });
     // We're not actually building a sum type here, we need uniqueness

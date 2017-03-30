@@ -208,6 +208,11 @@ private:
     const Def* lub(Defs ops, const Def* q, bool require_qualifier = true) { return bound<false>(ops, q, require_qualifier); }
     const Def* glb(Defs ops, const Def* q, bool require_qualifier = true) { return bound<true >(ops, q, require_qualifier); }
 
+    template<bool glb>
+    const Def* qualifier_bound(Defs defs, std::function<const Def*(Defs)> f);
+    const Def* qualifier_lub(Defs defs, std::function<const Def*(Defs)> f) { return qualifier_bound<false>(defs, f); }
+    const Def* qualifier_glb(Defs defs, std::function<const Def*(Defs)> f) { return qualifier_bound<true >(defs, f); }
+
     void fix() { for (auto def : defs_) def->world_ = this; }
 
 protected:
