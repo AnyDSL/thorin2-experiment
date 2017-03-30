@@ -149,17 +149,13 @@ public:
     //@}
 
     //@{ create Pack
-    const Def* pack(const Def* type, const Def* body, Debug dbg = {});
-    //const Def* pack(const Def* arity, const Def* body, Debug dbg = {}) {
-        //return pack(variadic(arity, body->type(), dbg), body, dbg);
-    //}
-    //const Def* pack(Defs arities, const Def* body, Debug dbg = {}) {
-        //return pack(variadic(arities, body->type(), dbg), body, dbg);
-    //}
-    //const Def* pack(size_t a, const Def* body, Debug dbg = {}) { return pack(arity(a, dbg), body, dbg); }
-    //const Def* pack(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
-        //return pack(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
-    //}
+    const Def* pack(const Def* arities, const Def* body, Debug dbg = {});
+    const Def* pack(Defs arities, const Def* body, Debug dbg = {});
+    const Def* pack(size_t a, const Def* body, Debug dbg = {}) { return pack(arity(a, dbg), body, dbg); }
+    const Def* pack(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
+        return pack(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
+    }
+    //const Def* pack_type(const Def* type, const Def* body, Debug dbg = {});
     //@}
 
     //@{ misc factory methods
