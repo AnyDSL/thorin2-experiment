@@ -65,7 +65,7 @@ const SortedDefSet set_flatten(Defs defs) {
 bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
 #ifndef NDEBUG
     auto all = std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); });
-    assertf(all, "Operands must be of the same sort.");
+    assertf(all, "operands must be of the same sort");
 #endif
     return true;
 }
