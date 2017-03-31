@@ -1,6 +1,8 @@
 # coc
 ## building
 ```bash
+mkdir coc
+cd coc
 git clone git@github.com:AnyDSL/thorin.git
 git clone git@github.com:AnyDSL/coc.git
 cd coc/thorin/util/
