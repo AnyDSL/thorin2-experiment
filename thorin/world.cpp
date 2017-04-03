@@ -203,6 +203,12 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
     if (def->isa<Tuple>() || def->isa<Sigma>())
         return def->op(i);
 
+    if (auto variadic = def->isa<Variadic>())
+        return variadic->body()->reduce(index(i, variadic->arity()->as<Axiom>()->box().get_u64()));
+
+    if (auto pack = def->isa<Pack>())
+        return pack->body()->reduce(index(i, pack->arity()->as<Axiom>()->box().get_u64()));
+
     if (auto sigma = def->type()->isa<Sigma>()) {
         auto type = sigma->op(i);
         if (type->free_vars().any_end(i)) {
