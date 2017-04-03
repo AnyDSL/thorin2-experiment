@@ -169,7 +169,7 @@ public:
     }
     const Def* extract(const Def* def, const Def* index, Debug dbg = {});
     const Def* extract(const Def* def, size_t index, Debug dbg = {});
-    const Def* index(size_t index, size_t arity, Location location = {});
+    const Def* index(size_t arity, size_t index, Location location = {});
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
     const Def* dim(const Def* def, Debug dbg = {});
