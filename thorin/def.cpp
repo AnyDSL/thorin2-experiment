@@ -409,7 +409,9 @@ const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
 }
-const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.pack(t, ops[0], debug()); }
+const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
+    return t->is_nominal() ? to.pack_nominal_sigma(t->as<Sigma>(), ops[0], debug()) : to.pack(t, ops[0], debug());
+}
 const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
 const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);

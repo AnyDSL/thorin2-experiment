@@ -343,19 +343,6 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
     if (auto sigma = arity->isa<Sigma>())
         return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
 
-    if (auto v = arity->isa<Variadic>()) {
-        if (auto axiom = v->arity()->isa<Axiom>()) {
-            assert(!v->body()->free_vars().test(0));
-            auto a = axiom->box().get_u64();
-            assert(a != 1);
-            DefArray args(a, [&] (auto i) { return this->index(a, i); });
-            const Def* result = flatten(body, args);
-            for (size_t i = a; i-- != 0;)
-                result = variadic(args[i], result, dbg);
-            return result;
-        }
-    }
-
     if (auto axiom = arity->isa<Axiom>()) {
         auto a = axiom->box().get_u64();
         if (a == 0) return unit(body->type()->qualifier());
@@ -430,22 +417,17 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     return unify<Singleton>(1, *this, def, dbg);
 }
 
+const Def* WorldBase::pack_nominal_sigma(const Sigma* sigma, const Def* body, Debug dbg) {
+    size_t arity = sigma->num_ops();
+    if (body->free_vars().test(0))
+        return tuple(sigma, DefArray(arity, [&](auto i) { return body->reduce(this->index(arity, i)); }), dbg);
+
+    return unify<Pack>(1, *this, sigma, body, dbg);
+}
+
 const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
     if (auto sigma = arity->isa<Sigma>())
         return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
-
-    if (auto p = arity->isa<Pack>()) {
-        if (auto axiom = p->arity()->isa<Axiom>()) {
-            assert(!p->body()->free_vars().test(0));
-            auto a = axiom->box().get_u64();
-            assert(a != 1);
-            DefArray args(a, [&] (auto i) { return this->index(a, i); });
-            const Def* result = flatten(body, args);
-            for (size_t i = a; i-- != 0;)
-                result = pack(args[i], result, dbg);
-            return result;
-        }
-    }
 
     if (auto axiom = arity->isa<Axiom>()) {
         auto a = axiom->box().get_u64();
@@ -468,13 +450,18 @@ const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
 const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
     assertf(type->assignable(defs),
             "can't assign type {} to tuple with type {}", type, sigma(types(defs)));
-    if ((!type->is_nominal() || type == defs.front()->type()) && defs.size() == 1)
+
+    size_t a = defs.size();
+
+    if ((!type->is_nominal() || type == defs.front()->type()) && a == 1)
         return defs.front();
 
-    //if (is_homogeneous(defs))
-        //return pack(type, arity(defs.size(), dbg), defs.front(), dbg);
+    if (a != 0 && is_homogeneous(defs))
+        return type->is_nominal()
+            ? pack_nominal_sigma(type->as<Sigma>(), defs.front(), dbg)
+            : pack(arity(a, dbg), defs.front(), dbg);
 
-    return unify<Tuple>(defs.size(), *this, type->as<SigmaBase>(), defs, dbg);
+    return unify<Tuple>(a, *this, type->as<SigmaBase>(), defs, dbg);
 }
 
 const Def* WorldBase::variant(Defs defs, Debug dbg) {

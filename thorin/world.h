@@ -149,6 +149,7 @@ public:
     //@}
 
     //@{ create Pack
+    const Def* pack_nominal_sigma(const Sigma* sigma, const Def* body, Debug dbg = {});
     const Def* pack(const Def* arities, const Def* body, Debug dbg = {});
     const Def* pack(Defs arities, const Def* body, Debug dbg = {});
     const Def* pack(size_t a, const Def* body, Debug dbg = {}) { return pack(arity(a, dbg), body, dbg); }
