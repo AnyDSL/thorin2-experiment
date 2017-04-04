@@ -155,7 +155,6 @@ public:
     const Def* pack(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
         return pack(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
     }
-    //const Def* pack_type(const Def* type, const Def* body, Debug dbg = {});
     //@}
 
     //@{ misc factory methods

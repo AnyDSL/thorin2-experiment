@@ -14,6 +14,14 @@ namespace thorin {
  * helpers
  */
 
+static bool is_homogeneous(Defs defs) {
+    return std::all_of(defs.begin() + 1, defs.end(), [&](auto def) { return def == defs.front(); });
+}
+
+static bool any_of(const Def* def, Defs defs) {
+    return std::any_of(defs.begin(), defs.end(), [&](auto d){ return d == def; });
+}
+
 template<bool glb>
 const Def* WorldBase::bound(Defs ops, const Def* q, bool require_qualifier) {
     const Def* inferred_q = glb ? linear() : unlimited();
@@ -136,8 +144,7 @@ const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
     }
 
     auto variants = type->ops();
-    assert(std::any_of(variants.begin(), variants.end(), [&](auto t){ return t == def->type(); })
-           && "type must be a part of the variant type");
+    assert(any_of(def->type(), variants) && "type must be a part of the variant type");
 
     return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
 }
@@ -310,9 +317,7 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) 
 
 const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     if (auto def_type = def->type()->isa<Intersection>()) {
-        assert(std::any_of(def_type->ops().begin(), def_type->ops().end(), [&](auto t) { return t == type; })
-               && "picked type must be a part of the intersection type");
-
+        assert(any_of(type,def_type->ops()) && "picked type must be a part of the intersection type");
         return unify<Pick>(1, *this, type, def, dbg);
     }
 
@@ -380,8 +385,7 @@ const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
             return defs.front();
     }
 
-    if (defs.front()->free_vars().none_end(defs.size() - 1)
-            && std::all_of(defs.begin() + 1, defs.end(), [&](auto def) { return def == defs.front(); })) {
+    if (defs.front()->free_vars().none_end(defs.size() - 1) && is_homogeneous(defs)) {
         assert(q == nullptr || defs.front()->qualifier() == q);
         return variadic(arity(defs.size(), dbg), defs.front(), dbg);
     }
@@ -466,6 +470,9 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
             "can't assign type {} to tuple with type {}", type, sigma(types(defs)));
     if ((!type->is_nominal() || type == defs.front()->type()) && defs.size() == 1)
         return defs.front();
+
+    //if (is_homogeneous(defs))
+        //return pack(type, arity(defs.size(), dbg), defs.front(), dbg);
 
     return unify<Tuple>(defs.size(), *this, type->as<SigmaBase>(), defs, dbg);
 }
