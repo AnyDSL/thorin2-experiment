@@ -322,11 +322,8 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
 
 const Lambda* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
     auto p = pi(domains, body->type(), type_qualifier, dbg);
-    size_t n = p->domains().size();
-    if (n != domains.size()) {
-        auto t = tuple(DefArray(n, [&](auto i) { return this->var(p->domains()[i], n-1-i); }));
-        body = body->reduce(t);
-    }
+    if (p->domains().size() != domains.size())
+        body = flatten(body, p->domains());
 
     return unify<Lambda>(1, *this, p, body, dbg);
 }
