@@ -22,6 +22,8 @@ static bool any_of(const Def* def, Defs defs) {
     return std::any_of(defs.begin(), defs.end(), [&](auto d){ return d == def; });
 }
 
+static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
+
 template<bool glb>
 const Def* WorldBase::bound(Defs ops, const Def* q, bool require_qualifier) {
     const Def* inferred_q = glb ? linear() : unlimited();
@@ -69,8 +71,6 @@ const Def* WorldBase::bound(Defs ops, const Def* q, bool require_qualifier) {
     }
     return max_type;
 }
-
-static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
 template<bool glb>
 const Def* WorldBase::qualifier_bound(Defs defs, std::function<const Def*(Defs)> unify_fn) {
