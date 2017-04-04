@@ -317,7 +317,7 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) 
 
 const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     if (auto def_type = def->type()->isa<Intersection>()) {
-        assert(any_of(type,def_type->ops()) && "picked type must be a part of the intersection type");
+        assert(any_of(type, def_type->ops()) && "picked type must be a part of the intersection type");
         return unify<Pick>(1, *this, type, def, dbg);
     }
 
