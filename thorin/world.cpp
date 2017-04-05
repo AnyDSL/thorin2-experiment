@@ -236,7 +236,7 @@ const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
 
     if (auto v = def->type()->isa<Variadic>()) {
         auto a = v->arity()->as<Axiom>()->box().get_u64();
-        assertf(i < a, "index {} not provably in Arity {}", i, a);
+        assertf(i < a, "index {} not provably in arity {}", i, a);
         auto idx = index(a, i, dbg);
         return unify<Extract>(2, *this, v->body()->reduce(idx), def, idx, dbg);
     }
