@@ -51,7 +51,7 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
 
     if (max_type->isa<Star>()) {
         if (!require_qualifier)
-            return star(q ? q : unlimited());
+            return star(q ? q : glb ? linear() : unlimited());
         if (q == nullptr) {
             // no provided qualifier, so we use the inferred one
             assert(!max_type || max_type->op(0) == inferred_q);
