@@ -25,22 +25,25 @@ static bool any_of(const Def* def, Defs defs) {
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
 template<bool glb>
-const Def* WorldBase::bound(Defs ops, const Def* q, bool require_qualifier) {
-    const Def* inferred_q = glb ? linear() : unlimited();
-    const Def* max_type = star(inferred_q);
+const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
+    if (defs.empty())
+        return star(q ? q : glb ? linear() : unlimited());
 
-    for (auto op : ops) {
-        assertf(!op->is_value(), "can't have values as operands here");
-        assertf(op->sort() != Def::Sort::Universe, "type universes must not be operands");
+    auto inferred_q = defs.front()->qualifier();
+    auto max_type = defs.front()->type();
+
+    for (auto def : defs.skip_front()) {
+        assertf(!def->is_value(), "can't have values as operands here");
+        assertf(def->sort() != Def::Sort::Universe, "type universes must not be operands");
 
         if (glb)
-            inferred_q = intersection(qualifier_type(), {inferred_q, op->qualifier()});
+            inferred_q = intersection(qualifier_type(), {inferred_q, def->qualifier()});
         else
-            inferred_q = variant(qualifier_type(), {inferred_q, op->qualifier()});
+            inferred_q = variant(qualifier_type(), {inferred_q, def->qualifier()});
 
-        if (op->type()->isa<Star>() && max_type->isa<Star>())
+        if (def->type()->isa<Star>() && max_type->isa<Star>())
             max_type = star(inferred_q);
-        else if (op->type() == universe() || max_type != op->type()) {
+        else if (def->type() == universe() || max_type != def->type()) {
             max_type = universe();
             break;
         }
