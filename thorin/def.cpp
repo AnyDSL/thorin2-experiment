@@ -326,7 +326,7 @@ const Def* Variant::kind_qualifier() const {
 
 size_t Def::shift(size_t) const { return 0; }
 size_t Lambda::shift(size_t) const { return num_domains(); }
-size_t Pack::shift(size_t i) const { return i; }
+size_t Pack::shift(size_t i) const { assert_unused(i == 0); return 1; }
 size_t Pi::shift(size_t i) const { return i; }
 size_t Sigma::shift(size_t i) const { return i; }
 size_t Variadic::shift(size_t i) const { return i; }
@@ -410,7 +410,7 @@ const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
 }
 const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
-    return t->is_nominal() ? to.pack_nominal_sigma(t->as<Sigma>(), ops[0], debug()) : to.pack(t, ops[0], debug());
+    return t->is_nominal() ? to.pack_nominal_sigma(t->as<Sigma>(), ops[0], debug()) : to.pack(to.dim(t), ops[0], debug());
 }
 const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
 const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {

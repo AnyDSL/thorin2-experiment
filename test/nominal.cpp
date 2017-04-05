@@ -79,7 +79,7 @@ TEST(Nominal, ReduceWithNominals) {
     auto lam = w.lambda(star, w.tuple({sig, sig}));
     auto red = w.app(lam, nat);
     ASSERT_FALSE(red->isa<App>());
-    ASSERT_EQ(red->op(0), red->op(1));
+    ASSERT_EQ(w.extract(red, 0_s), w.extract(red, 1_s));
 
     auto sig2 = w.sigma({sig, sig});
     ASSERT_FALSE(sig2->has_error());

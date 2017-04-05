@@ -479,13 +479,13 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
 
     size_t a = defs.size();
 
-    if ((!type->is_nominal() || type == defs.front()->type()) && a == 1)
+    if (a == 1 && (!type->is_nominal() || type == defs.front()->type()))
         return defs.front();
 
     if (a != 0 && is_homogeneous(defs))
         return type->is_nominal()
-            ? pack_nominal_sigma(type->as<Sigma>(), defs.front(), dbg)
-            : pack(arity(a, dbg), defs.front(), dbg);
+            ? pack_nominal_sigma(type->as<Sigma>(), defs.front()->shift_free_vars(-1), dbg)
+            : pack(arity(a, dbg), defs.front()->shift_free_vars(-1), dbg);
 
     return unify<Tuple>(a, *this, type->as<SigmaBase>(), defs, dbg);
 }
