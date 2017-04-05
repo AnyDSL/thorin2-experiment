@@ -165,9 +165,16 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
         if (auto tuple = single->isa<Tuple>())
             return app(callee, tuple->ops(), dbg);
 
-        if (auto sigma_type = single->type()->isa<SigmaBase>()) {
-            auto extracts = DefArray(sigma_type->num_ops(), [&](auto i) { return this->extract(single, i); });
+        if (auto sigma = single->type()->isa<Sigma>()) {
+            auto extracts = DefArray(sigma->num_ops(), [&](auto i) { return this->extract(single, i); });
             return app(callee, extracts, dbg);
+        }
+
+        if (auto variadic = single->type()->isa<Variadic>()) {
+            if (auto arity = variadic->arity()->isa<Axiom>()) {
+                auto extracts = DefArray(arity->box().get_u64(), [&](auto i) { return this->extract(single, i); });
+                return app(callee, extracts, dbg);
+            }
         }
     }
 
