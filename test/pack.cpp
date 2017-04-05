@@ -45,8 +45,7 @@ TEST(Pack, Nominal) {
     World w;
     auto N = w.type_nat();
     auto S = w.sigma_type(2)->set(0, N)->set(1, N);
-    w.pack_nominal_sigma(S, w.val_nat_32())->dump();
-    //TODO currently broken: WorldBase::lub
-    //auto f = w.axiom(w.pi(w.arity(2), N), {"f"});
-    //w.pack_nominal_sigma(S, w.app(f, w.var(w.arity(2), 0)))->dump();
+    auto f = w.axiom(w.pi(w.arity(2), N), {"f"});
+    ASSERT_EQ(w.pack_nominal_sigma(S, w.app(f, w.var(w.arity(2), 0))),
+              w.tuple(S, {w.app(f, w.index(2, 0)), w.app(f, w.index(2, 1))}));
 }
