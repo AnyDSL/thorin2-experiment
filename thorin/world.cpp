@@ -363,7 +363,7 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
         if (a == 0) return unit(body->type()->qualifier());
         if (a == 1) return body->reduce(this->index(1, 0));
         if (body->free_vars().test(0))
-            return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(a, i)); }), dbg);
+            return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(a, i))->shift_free_vars(-i); }), dbg);
     }
 
     auto type = body->type()->reduce(arity);
