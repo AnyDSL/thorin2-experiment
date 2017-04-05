@@ -109,3 +109,26 @@ TEST(Variadic, InlineSigmaInterOp) {
     auto app = w.app(lam, w.var(pair, 1));
     ASSERT_EQ(app, w.type_nat());
 }
+
+TEST(Variadic, Nested) {
+    World w;
+    auto A = w.arity_kind();
+    auto N = w.type_nat();
+    ASSERT_EQ(w.variadic(w.variadic(3, w.var(A, 1)), N),
+              w.variadic(w.var(A, 0), w.variadic(w.var(A, 1), w.variadic(w.var(A, 2), N))));
+
+    auto f = w.axiom(w.pi(w.variadic(3, w.arity(2)), w.star()), {"f"});
+    auto v = w.variadic(w.variadic(3, w.arity(2)), w.app(f, w.var(w.variadic(3, w.arity(2)), 0)));
+    const Def* outer_sigmas[2];
+    for (int z = 0; z != 2; ++z) {
+        const Def* inner_sigmas[2];
+        for (int y = 0; y != 2; ++y) {
+            const Def* args[2];
+            for (int x = 0; x != 2; ++x)
+                args[x] = w.app(f, {w.index(2, z), w.index(2, y), w.index(2, x)});
+            inner_sigmas[y] = w.sigma(args);
+        }
+        outer_sigmas[z] = w.sigma(inner_sigmas);
+    }
+    ASSERT_EQ(v, w.sigma(outer_sigmas));
+}

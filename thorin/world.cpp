@@ -357,8 +357,7 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
             assert(!v->body()->free_vars().test(0));
             auto a = axiom->box().get_u64();
             assert(a != 1);
-            DefArray args(a, [&] (auto i) { return this->index(a, i); });
-            const Def* result = flatten(body, args)->shift_free_vars(-a+1);
+            auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(1-a)));
             for (size_t i = a; i-- != 0;)
                 result = variadic(v->body()->shift_free_vars(-i+1), result, dbg);
             return result;
