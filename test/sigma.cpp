@@ -57,3 +57,10 @@ TEST(Tuple, Error) {
     auto tuple = w.tuple({w.error(w.star())});
     ASSERT_TRUE(tuple->has_error());
 }
+
+TEST(Sigma, LUB) {
+    World w;
+    auto s = w.sigma({w.arity(2), w.arity(3)});
+    // TODO currently broken
+    ASSERT_EQ(s->type(), w.arity_kind());
+}
