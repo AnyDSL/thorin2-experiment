@@ -61,6 +61,5 @@ TEST(Tuple, Error) {
 TEST(Sigma, LUB) {
     World w;
     auto s = w.sigma({w.arity(2), w.arity(3)});
-    // TODO currently broken
     ASSERT_EQ(s->type(), w.arity_kind());
 }
