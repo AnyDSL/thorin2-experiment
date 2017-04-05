@@ -310,7 +310,6 @@ const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) 
             if (auto arity = v->arity()->isa<Axiom>()) {
                 auto a = arity->box().get_u64();
                 assert(!v->body()->free_vars().test(0));
-                // TODO test this
                 DefArray args(a, [&] (auto i) { return v->body()->shift_free_vars(i); });
                 return pi(args, flatten(body, args), q, dbg);
             }
