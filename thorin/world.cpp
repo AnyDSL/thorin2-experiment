@@ -340,8 +340,10 @@ Lambda* WorldBase::nominal_lambda(Defs domains, const Def* codomain, const Def* 
 }
 
 const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
-    if (auto sigma = arity->isa<Sigma>())
+    if (auto sigma = arity->isa<Sigma>()) {
+        assertf(!sigma->is_nominal(), "can't have nominal sigma arities");
         return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
+    }
 
     if (auto v = arity->isa<Variadic>()) {
         if (auto axiom = v->arity()->isa<Axiom>()) {
@@ -349,9 +351,9 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
             auto a = axiom->box().get_u64();
             assert(a != 1);
             DefArray args(a, [&] (auto i) { return this->index(a, i); });
-            const Def* result = flatten(body, args);
+            const Def* result = flatten(body, args)->shift_free_vars(-a+1);
             for (size_t i = a; i-- != 0;)
-                result = variadic(args[i], result, dbg);
+                result = variadic(v->body()->shift_free_vars(-i+1), result, dbg);
             return result;
         }
     }
@@ -387,7 +389,7 @@ const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && is_homogeneous(defs)) {
         assert(q == nullptr || defs.front()->qualifier() == q);
-        return variadic(arity(defs.size(), dbg), defs.front(), dbg);
+        return variadic(arity(defs.size(), dbg), defs.front()->shift_free_vars(-1), dbg);
     }
 
     return unify<Sigma>(defs.size(), *this, type, defs, dbg);
