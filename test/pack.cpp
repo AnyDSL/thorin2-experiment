@@ -18,3 +18,25 @@ TEST(Pack, Multi) {
     ASSERT_EQ(w.pack({3, 1, 4}, n16), w.pack({3, 4}, n16));
     ASSERT_EQ(w.extract(w.extract(w.extract(p, 1), 2), 3), n16);
 }
+
+TEST(Pack, Nested) {
+    World w;
+    auto A = w.arity_kind();
+    auto N = w.type_nat();
+    ASSERT_EQ(w.pack(w.variadic(3, w.var(A, 1)), N),
+              w.pack(w.var(A, 0), w.pack(w.var(A, 1), w.pack(w.var(A, 2), N))));
+
+    auto p = w.pack(w.variadic(3, w.arity(2)), w.var(w.variadic(3, w.arity(2)), 0));
+    const Def* outer_tuples[2];
+    for (int z = 0; z != 2; ++z) {
+        const Def* inner_tuples[2];
+        for (int y = 0; y != 2; ++y) {
+            const Def* t[2];
+            for (int x = 0; x != 2; ++x)
+                t[x] = w.tuple({w.index(2, z), w.index(2, y), w.index(2, x)});
+            inner_tuples[y] = w.tuple(t);
+        }
+        outer_tuples[z] = w.tuple(inner_tuples);
+    }
+    ASSERT_EQ(p, w.tuple(outer_tuples));
+}

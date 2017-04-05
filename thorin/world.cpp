@@ -450,15 +450,15 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
     if (auto sigma = arity->isa<Sigma>())
         return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
 
-    if (auto p = arity->isa<Pack>()) {
-        if (auto axiom = p->arity()->isa<Axiom>()) {
-            assert(!p->body()->free_vars().test(0));
+
+    if (auto v = arity->isa<Variadic>()) {
+        if (auto axiom = v->arity()->isa<Axiom>()) {
+            assert(!v->body()->free_vars().test(0));
             auto a = axiom->box().get_u64();
             assert(a != 1);
-            DefArray args(a, [&] (auto i) { return this->index(a, i); });
-            const Def* result = flatten(body, args);
+            auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(1-a)));
             for (size_t i = a; i-- != 0;)
-                result = pack(args[i], result, dbg);
+                result = pack(v->body()->shift_free_vars(-i+1), result, dbg);
             return result;
         }
     }
