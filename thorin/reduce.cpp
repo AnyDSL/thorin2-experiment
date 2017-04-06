@@ -84,7 +84,7 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
                 size_t arg_index = shift_amount() - (var->index() - offset) - 1;
                 if (new_type != args_[arg_index]->type())
                     return world().error(new_type); // use the expected type, not the one provided by the arg
-                return args_[arg_index];
+                return args_[arg_index]->shift_free_vars(-offset); // TODO slow
             }
         }
 
