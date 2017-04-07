@@ -154,5 +154,9 @@ TEST(XLA, Misc) {
     auto rhs = w.axiom(a, {"rhs"});
     w.app(w.app(op, {s, N}), {lhs, rhs})->dump();
     w.app(w.app(op, {s, N}), {lhs, rhs})->type()->dump();
+
+    auto reduce = w.axiom(w.pi({A, S},
+                w.pi({w.app(arr, {w.var(A, 1), w.var(S, 0)}), w.var(S, 1), w.pi({w.var(S, 2), w.var(S, 3)}, w.var(S, 4))}, N)));
+    reduce->type()->dump();
 }
 
