@@ -27,7 +27,7 @@ public:
         , shift_(shift)
     {}
 
-    size_t shift_amount() const { return shift_; }
+    size_t shift() const { return shift_; }
     bool is_shift_only() const { return args_.empty(); }
     WorldBase& world() const { return world_; }
     const Def* reduce_structurals(const Def* def, size_t index = 0);
@@ -78,10 +78,10 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
     if (auto var = old_def->isa<Var>()) {
         if (!is_shift_only()) {
             // Is var within our args? - Map index() back into the original argument array.
-            if (offset <= var->index() && var->index() < offset + shift_amount()) {
+            if (offset <= var->index() && var->index() < offset + shift()) {
                 // remember that the lowest index corresponds to the last element in args due to De Bruijn's
                 // way of counting
-                size_t arg_index = shift_amount() - (var->index() - offset) - 1;
+                size_t arg_index = shift() - (var->index() - offset) - 1;
                 if (new_type != args_[arg_index]->type())
                     return world().error(new_type); // use the expected type, not the one provided by the arg
                 return args_[arg_index]->shift_free_vars(-offset); // TODO slow
@@ -92,10 +92,10 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
         if (var->index() < offset)
             return world().var(new_type, var->index(), var->debug());
 
-        // this var is free - shift by shift_amount but inline a sole tuple arg if applicable
-        auto shift = shift_amount() == 1 && !is_shift_only()
-                && args_[0]->isa<Tuple>() ? -args_[0]->num_ops()+1 : shift_amount();
-        return world().var(var->type(), var->index() - shift, var->debug());
+        // this var is free - shift by shift but inline a sole tuple arg if applicable
+        auto total_shift = shift() == 1 && !is_shift_only()
+                && args_[0]->isa<Tuple>() ? -args_[0]->num_ops()+1 : shift();
+        return world().var(var->type(), var->index() - total_shift, var->debug());
     }
 
     // rebuild all other defs
@@ -116,6 +116,9 @@ const Def* reduce(const Def* def, Defs args, size_t index) {
 }
 
 const Def* reduce(const Def* def, Defs args, std::function<void(const Def*)> f, size_t index) {
+    if (def->free_vars().none_begin(index))
+        return def;
+
     Reducer reducer(def->world(), args);
     auto result = reducer.reduce_structurals(def, index);
     f(result);
@@ -130,6 +133,9 @@ const Def* flatten(const Def* body, Defs args) {
 }
 
 const Def* shift_free_vars(const Def* def, size_t shift) {
+    if (shift == 0)
+        return def;
+
     Reducer reducer(def->world(), shift);
     auto result = reducer.reduce_structurals(def, 0);
     reducer.reduce_nominals();
