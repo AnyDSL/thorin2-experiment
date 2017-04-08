@@ -246,9 +246,7 @@ protected:
     template<class T, class... Args>
     T* alloc(size_t num_ops, Args&&... args) {
         static_assert(sizeof(Def) == sizeof(T), "you are not allowed to introduce any additional data in subclasses of Def");
-#ifndef NDEBUG
         assert((alloc_guard_ = !alloc_guard_) && "you are not allowed to recursively invoke alloc");
-#endif
         size_t num_bytes = sizeof(T) + sizeof(const Def*) * num_ops;
         assert(num_bytes < Zone::Size);
 
