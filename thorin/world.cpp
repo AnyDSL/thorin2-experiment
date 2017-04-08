@@ -24,10 +24,10 @@ static bool any_of(const Def* def, Defs defs) {
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
-template<bool glb>
+template<bool use_glb>
 const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
     if (defs.empty())
-        return star(q ? q : glb ? linear() : unlimited());
+        return star(q ? q : use_glb ? linear() : unlimited());
 
     auto inferred_q = defs.front()->qualifier();
     auto max_type = defs.front()->type();
@@ -36,7 +36,7 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
         assertf(!def->is_value(), "can't have values as operands here");
         assertf(def->sort() != Def::Sort::Universe, "type universes must not be operands");
 
-        if (glb)
+        if (use_glb)
             inferred_q = intersection(qualifier_type(), {inferred_q, def->qualifier()});
         else
             inferred_q = variant(qualifier_type(), {inferred_q, def->qualifier()});
@@ -51,7 +51,7 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
 
     if (max_type->isa<Star>()) {
         if (!require_qualifier)
-            return star(q ? q : glb ? linear() : unlimited());
+            return star(q ? q : use_glb ? linear() : unlimited());
         if (q == nullptr) {
             // no provided qualifier, so we use the inferred one
             assert(!max_type || max_type->op(0) == inferred_q);
@@ -62,10 +62,10 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
                 auto box_qual = qual_axiom->box().get_qualifier();
                 if (auto q_axiom = isa_const_qualifier(q)) {
                     auto qual = q_axiom->box().get_qualifier();
-                    auto test = glb ? qual <= box_qual : qual >= box_qual;
+                    auto test = use_glb ? qual <= box_qual : qual >= box_qual;
                     assertf(test, "qualifier must be {} than the {} of the operands' qualifiers",
-                            glb ? "less" : "greater",
-                            glb ? "greatest lower bound" : "least upper bound");
+                            use_glb ? "less" : "greater",
+                            use_glb ? "greatest lower bound" : "least upper bound");
                 }
             }
 #endif
@@ -75,10 +75,10 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
     return max_type;
 }
 
-template<bool glb>
+template<bool use_glb>
 const Def* WorldBase::qualifier_bound(Defs defs, std::function<const Def*(Defs)> unify_fn) {
-    auto const_elem = glb ? Qualifier::Unlimited : Qualifier::Linear;
-    auto ident_elem = glb ? Qualifier::Linear : Qualifier::Unlimited;
+    auto const_elem = use_glb ? Qualifier::Unlimited : Qualifier::Linear;
+    auto ident_elem = use_glb ? Qualifier::Linear : Qualifier::Unlimited;
     size_t num_defs = defs.size();
     DefArray reduced(num_defs);
     Qualifier accu = Qualifier::Unlimited;
@@ -86,7 +86,7 @@ const Def* WorldBase::qualifier_bound(Defs defs, std::function<const Def*(Defs)>
     for (size_t i = 0, e = num_defs; i != e; ++i) {
         if (auto q = isa_const_qualifier(defs[i])) {
             auto qual = q->box().get_qualifier();
-            accu = glb ? meet(accu, qual) : join(accu, qual);
+            accu = use_glb ? meet(accu, qual) : join(accu, qual);
             num_const++;
         } else {
             assert(is_qualifier(defs[i]));
