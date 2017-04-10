@@ -133,7 +133,7 @@ const Def* flatten(const Def* body, Defs args) {
 }
 
 const Def* shift_free_vars(const Def* def, size_t shift) {
-    if (shift == 0)
+    if (shift == 0 || def->free_vars().none())
         return def;
 
     Reducer reducer(def->world(), shift);
