@@ -209,8 +209,11 @@ const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
             dim(def), def, i->type(), i);
     if (auto assume = i->isa<Axiom>())
         return extract(def, assume->box().get_u64(), dbg);
+    if (auto v = def->isa<Variadic>())
+        if (!v->body()->free_vars().test(0))
+            return v->body()->shift_free_vars(1);
     auto type = def->type();
-    if (def->is_term())
+    if (def->is_value())
         type = extract(def->type(), i);
 
     return unify<Extract>(2, *this, type, def, i, dbg);
