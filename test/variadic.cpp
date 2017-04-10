@@ -144,7 +144,7 @@ TEST(XLA, Misc) {
     auto N = w.type_nat();
     auto A = w.arity_kind();
     auto S = w.star();
-    auto a2 = w.arity(2);
+    //auto a2 = w.arity(2);
     auto a3 = w.arity(3);
     auto a4 = w.arity(4);
     auto a5 = w.arity(5);
