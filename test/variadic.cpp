@@ -97,6 +97,7 @@ TEST(Variadic, Multi) {
     auto l = w.lambda({/*a:*/A, arity_tuple(0)},
                       w.variadic(w.variadic(a(1), w.extract(w.var(arity_tuple(2), 1), w.var(a(2), 0))), N));
     ASSERT_EQ(w.app(l, args), w.variadic({3, 4}, N));
+
 }
 
 TEST(Variadic, InlineSigmaInterOp) {
@@ -114,6 +115,10 @@ TEST(Variadic, Nested) {
     World w;
     auto A = w.arity_kind();
     auto N = w.type_nat();
+
+    ASSERT_EQ(w.variadic(w.variadic(w.arity(3), w.arity(2)), w.var(N, 1)),
+              w.variadic(2, w.variadic(2, w.variadic(2, w.var(N, 3)))));
+
     ASSERT_EQ(w.variadic(w.variadic(3, w.var(A, 1)), N),
               w.variadic(w.var(A, 0), w.variadic(w.var(A, 1), w.variadic(w.var(A, 2), N))));
 
