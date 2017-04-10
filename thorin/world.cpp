@@ -374,8 +374,7 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
             return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(a, i))->shift_free_vars(-i); }), dbg);
     }
 
-    auto type = body->type()->reduce(arity);
-    return unify<Variadic>(2, *this, type, arity, body, dbg);
+    return unify<Variadic>(2, *this, body->type()->shift_free_vars(1), arity, body, dbg);
 }
 
 const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
