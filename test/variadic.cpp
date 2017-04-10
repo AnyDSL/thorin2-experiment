@@ -115,15 +115,16 @@ TEST(Variadic, Nested) {
     World w;
     auto A = w.arity_kind();
     auto N = w.type_nat();
+    auto S = w.star();
 
-    ASSERT_EQ(w.variadic(w.sigma({w.arity(3), w.arity(2)}), w.var(N, 1)),
-              w.variadic(3, w.variadic(2, w.var(N, 2))));
-    ASSERT_EQ(w.variadic(w.variadic(w.arity(3), w.arity(2)), w.var(N, 1)),
-              w.variadic(2, w.variadic(2, w.variadic(2, w.var(N, 3)))));
+    ASSERT_EQ(w.variadic(w.sigma({w.arity(3), w.arity(2)}), w.var(S, 1)),
+              w.variadic(3, w.variadic(2, w.var(S, 2))));
+    ASSERT_EQ(w.variadic(w.variadic(w.arity(3), w.arity(2)), w.var(S, 1)),
+              w.variadic(2, w.variadic(2, w.variadic(2, w.var(S, 3)))));
     ASSERT_EQ(w.variadic(w.variadic(3, w.var(A, 1)), N),
               w.variadic(w.var(A, 0), w.variadic(w.var(A, 1), w.variadic(w.var(A, 2), N))));
 
-    auto f = w.axiom(w.pi(w.variadic(3, w.arity(2)), w.star()), {"f"});
+    auto f = w.axiom(w.pi(w.variadic(3, w.arity(2)), S), {"f"});
     auto v = w.variadic(w.variadic(3, w.arity(2)), w.app(f, w.var(w.variadic(3, w.arity(2)), 0)));
     const Def* outer_sigmas[2];
     for (int z = 0; z != 2; ++z) {
