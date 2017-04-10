@@ -337,11 +337,25 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
-const Lambda* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
+const Def* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
     auto p = pi(domains, body->type(), type_qualifier, dbg);
     if (p->domains().size() != domains.size())
-        body = flatten(body, p->domains());
+        return lambda(p->domains(), flatten(body, p->domains()), type_qualifier, dbg);
 
+    if (auto app = body->isa<App>()) {
+        // check for eta-conversion
+        size_t n = app->num_args();
+        if (app->callee()->free_vars().none_range(0, n)) {
+            for (size_t i = 0; i != n; ++i) {
+                if (!app->arg(i)->isa<Var>() || n-1-app->arg(i)->as<Var>()->index() != i)
+                    goto out;
+            }
+
+            return app->callee()->shift_free_vars(n);
+        }
+    }
+
+out:;
     return unify<Lambda>(1, *this, p, body, dbg);
 }
 

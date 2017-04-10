@@ -41,7 +41,7 @@ TEST(Sigma, Unit) {
     auto tuple0 = w.tuple0();
     ASSERT_EQ(tuple0->type(), unit);
 
-    auto lam = w.lambda(unit, tuple0);
+    auto lam = w.lambda(unit, tuple0)->as<Lambda>();
     ASSERT_EQ(lam->domain(), unit);
     ASSERT_TRUE(lam->domains().size() == 0);
     ASSERT_EQ(lam->type()->body(), unit);

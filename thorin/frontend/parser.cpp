@@ -45,7 +45,7 @@ const Def* Parser::parse_sigma() {
     return world_.sigma(defs, tracker.location());
 }
 
-const Lambda* Parser::parse_lambda() {
+const Def* Parser::parse_lambda() {
     Tracker tracker(this);
     eat(Token::Tag::Lambda);
 

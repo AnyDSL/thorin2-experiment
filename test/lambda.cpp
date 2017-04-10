@@ -117,3 +117,19 @@ TEST(Lambda, AppArity) {
     auto r = w.app(l, DefArray(test_num_vars, w.val_nat_64()));
     ASSERT_EQ(r, w.val_nat_32());
 }
+
+TEST(Lambda, EtaConversion) {
+    World w;
+    auto N = w.type_nat();
+
+    auto f = w.axiom(w.pi(N, N), {"f"});
+    ASSERT_EQ(w.lambda(N, w.app(f, w.var(N, 0))), f);
+
+    auto g = w.axiom(w.pi({N, N}, N), {"g"});
+    ASSERT_EQ(w.lambda({N, N}, w.app(g, {w.var(N, 1), w.var(N, 0)})), g);
+    ASSERT_NE(w.lambda({N, N, N}, w.app(g, {w.var(N, 0), w.var(N, 1)})), g);
+
+    auto h = w.axiom(w.pi({N, N, N}, N), {"h"});
+    ASSERT_EQ(w.lambda({N, N, N}, w.app(h, {w.var(N, 2), w.var(N, 1), w.var(N, 0)})), h);
+    ASSERT_NE(w.lambda({N, N, N}, w.app(h, {w.var(N, 2), w.var(N, 0), w.var(N, 1)})), h);
+}

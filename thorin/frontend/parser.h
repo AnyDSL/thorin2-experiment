@@ -23,7 +23,7 @@ public:
     const Def*    parse_def();
     const Pi*     parse_pi();
     const Def*    parse_sigma();
-    const Lambda* parse_lambda();
+    const Def*    parse_lambda();
     const Star*   parse_star();
     const Var*    parse_var();
     const Def*    parse_tuple();
