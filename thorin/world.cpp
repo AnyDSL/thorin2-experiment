@@ -472,8 +472,7 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
             return tuple(DefArray(a, [&](auto i) { return body->reduce(this->index(a, i)); }), dbg);
     }
 
-    auto type = body->type()->reduce(arity);
-    return unify<Pack>(1, *this, variadic(arity, type), body, dbg);
+    return unify<Pack>(1, *this, variadic(arity, body->type()), body, dbg);
 }
 
 const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
