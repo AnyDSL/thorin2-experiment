@@ -209,8 +209,19 @@ const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
             dim(def), def, i->type(), i);
     if (auto assume = i->isa<Axiom>())
         return extract(def, assume->box().get_u64(), dbg);
+
+    if (auto variadic = def->isa<Variadic>()) {
+        if (!variadic->body()->free_vars().test(0))
+            return variadic->body()->shift_free_vars(1);
+    }
+
+    if (auto pack = def->isa<Pack>()) {
+        if (!pack->body()->free_vars().test(0))
+            return pack->body()->shift_free_vars(1);
+    }
+
     auto type = def->type();
-    if (def->is_term())
+    if (def->is_value())
         type = extract(def->type(), i);
 
     return unify<Extract>(2, *this, type, def, i, dbg);
@@ -334,10 +345,25 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
-const Lambda* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
+const Def* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
     auto p = pi(domains, body->type(), type_qualifier, dbg);
     if (p->domains().size() != domains.size())
-        body = flatten(body, p->domains());
+        return lambda(p->domains(), flatten(body, p->domains()), type_qualifier, dbg);
+
+    if (auto app = body->isa<App>()) {
+        size_t n = app->num_args();
+
+        auto eta_property = [&]() {
+            for (size_t i = 0; i != n; ++i) {
+                if (!app->arg(i)->isa<Var>() || n-1-app->arg(i)->as<Var>()->index() != i)
+                    return false;
+            }
+            return true;
+        };
+
+        if (app->callee()->free_vars().none_range(0, n) && eta_property())
+            return app->callee()->shift_free_vars(n);
+    }
 
     return unify<Lambda>(1, *this, p, body, dbg);
 }
@@ -374,8 +400,8 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
             return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(a, i))->shift_free_vars(-i); }), dbg);
     }
 
-    auto type = body->type()->reduce(arity);
-    return unify<Variadic>(2, *this, type, arity, body, dbg);
+    assert(body->type()->is_kind() || body->type()->is_universe());
+    return unify<Variadic>(2, *this, body->type(), arity, body, dbg);
 }
 
 const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
@@ -473,8 +499,14 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
             return tuple(DefArray(a, [&](auto i) { return body->reduce(this->index(a, i)); }), dbg);
     }
 
-    auto type = body->type()->reduce(arity);
-    return unify<Pack>(1, *this, variadic(arity, type), body, dbg);
+    if (auto extract = body->isa<Extract>()) {
+        if (auto var = extract->index()->isa<Var>()) {
+            if (var->index() == 0 && !extract->scrutinee()->free_vars().test(0))
+                return extract->scrutinee()->shift_free_vars(1);
+        }
+    }
+
+    return unify<Pack>(1, *this, variadic(arity, body->type()), body, dbg);
 }
 
 const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
@@ -492,10 +524,33 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
     if (a == 1 && (!type->is_nominal() || type == defs.front()->type()))
         return defs.front();
 
-    if (a != 0 && is_homogeneous(defs))
-        return type->is_nominal()
-            ? pack_nominal_sigma(type->as<Sigma>(), defs.front()->shift_free_vars(-1), dbg)
-            : pack(arity(a, dbg), defs.front()->shift_free_vars(-1), dbg);
+    auto eta_property = [&]() {
+        const Def* same = nullptr;
+        for (size_t i = 0; i != a; ++i) {
+            if (auto extract = defs[i]->isa<Extract>()) {
+                if (same == nullptr)
+                    same = extract->scrutinee();
+
+                if (same == extract->scrutinee()) {
+                    if (auto index = extract->index()->isa<Axiom>()) {
+                        if (index->box().get_u64() == i)
+                            continue;
+                    }
+                }
+            }
+            return (const Def*)nullptr;
+        }
+        return same;
+    };
+
+    if (a != 0) {
+        if (is_homogeneous(defs))
+            return type->is_nominal()
+                ? pack_nominal_sigma(type->as<Sigma>(), defs.front()->shift_free_vars(-1), dbg)
+                : pack(arity(a, dbg), defs.front()->shift_free_vars(-1), dbg);
+        else if (auto same = eta_property())
+            return same;
+    }
 
     return unify<Tuple>(a, *this, type->as<SigmaBase>(), defs, dbg);
 }

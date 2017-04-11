@@ -645,7 +645,7 @@ std::ostream& Dim::stream(std::ostream& os) const { return streamf(os, "dim({})"
 std::ostream& Error::stream(std::ostream& os) const { return os << "<error>"; }
 
 std::ostream& Extract::stream(std::ostream& os) const {
-    return tuple()->name_stream(os) << "." << index();
+    return scrutinee()->name_stream(os) << "." << index();
 }
 
 std::ostream& Intersection::stream(std::ostream& os) const {

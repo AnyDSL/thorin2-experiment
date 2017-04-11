@@ -41,7 +41,7 @@ TEST(Sigma, Unit) {
     auto tuple0 = w.tuple0();
     ASSERT_EQ(tuple0->type(), unit);
 
-    auto lam = w.lambda(unit, tuple0);
+    auto lam = w.lambda(unit, tuple0)->as<Lambda>();
     ASSERT_EQ(lam->domain(), unit);
     ASSERT_TRUE(lam->domains().size() == 0);
     ASSERT_EQ(lam->type()->body(), unit);
@@ -62,4 +62,19 @@ TEST(Sigma, LUB) {
     World w;
     auto s = w.sigma({w.arity(2), w.arity(3)});
     ASSERT_EQ(s->type(), w.arity_kind());
+}
+
+TEST(Sigma, EtaConversion) {
+    World w;
+    auto v = w.val_nat_32();
+    auto N = w.type_nat();
+    auto B = w.type_bool();
+
+    ASSERT_EQ(w.extract(w.tuple({v, v, v}), w.var(w.arity(3), 17)), v);
+    auto v43 = w.var(w.arity_kind(), 43);
+    ASSERT_EQ(w.pack(w.var(w.arity_kind(), 42), w.extract(w.var(w.variadic(v43, N), 23), w.var(v43, 0))),
+              w.var(w.variadic(v43, N), 22));
+
+    auto t = w.axiom(w.sigma({N, B}), {"t"});
+    ASSERT_EQ(w.tuple({w.extract(t, 0_s), w.extract(t, 1_s)}), t);
 }

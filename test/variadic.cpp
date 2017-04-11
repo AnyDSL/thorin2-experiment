@@ -97,6 +97,7 @@ TEST(Variadic, Multi) {
     auto l = w.lambda({/*a:*/A, arity_tuple(0)},
                       w.variadic(w.variadic(a(1), w.extract(w.var(arity_tuple(2), 1), w.var(a(2), 0))), N));
     ASSERT_EQ(w.app(l, args), w.variadic({3, 4}, N));
+
 }
 
 TEST(Variadic, InlineSigmaInterOp) {
@@ -114,10 +115,16 @@ TEST(Variadic, Nested) {
     World w;
     auto A = w.arity_kind();
     auto N = w.type_nat();
+    auto S = w.star();
+
+    ASSERT_EQ(w.variadic(w.sigma({w.arity(3), w.arity(2)}), w.var(S, 1)),
+              w.variadic(3, w.variadic(2, w.var(S, 2))));
+    ASSERT_EQ(w.variadic(w.variadic(w.arity(3), w.arity(2)), w.var(S, 1)),
+              w.variadic(2, w.variadic(2, w.variadic(2, w.var(S, 3)))));
     ASSERT_EQ(w.variadic(w.variadic(3, w.var(A, 1)), N),
               w.variadic(w.var(A, 0), w.variadic(w.var(A, 1), w.variadic(w.var(A, 2), N))));
 
-    auto f = w.axiom(w.pi(w.variadic(3, w.arity(2)), w.star()), {"f"});
+    auto f = w.axiom(w.pi(w.variadic(3, w.arity(2)), S), {"f"});
     auto v = w.variadic(w.variadic(3, w.arity(2)), w.app(f, w.var(w.variadic(3, w.arity(2)), 0)));
     const Def* outer_sigmas[2];
     for (int z = 0; z != 2; ++z) {
@@ -138,7 +145,7 @@ TEST(XLA, Misc) {
     auto N = w.type_nat();
     auto A = w.arity_kind();
     auto S = w.star();
-    auto a2 = w.arity(2);
+    //auto a2 = w.arity(2);
     auto a3 = w.arity(3);
     auto a4 = w.arity(4);
     auto a5 = w.arity(5);

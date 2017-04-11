@@ -538,7 +538,7 @@ private:
     {}
 
 public:
-    const Def* tuple() const { return op(0); }
+    const Def* scrutinee() const { return op(0); }
     const Def* index() const { return op(1); }
     std::ostream& stream(std::ostream&) const override;
 

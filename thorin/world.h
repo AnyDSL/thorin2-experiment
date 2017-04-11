@@ -66,14 +66,14 @@ public:
     //@}
 
     //@{ create Lambda
-    const Lambda* lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg = {});
-    const Lambda* lambda(Defs domains, const Def* body, Debug dbg = {}) {
+    const Def* lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg = {});
+    const Def* lambda(Defs domains, const Def* body, Debug dbg = {}) {
         return lambda(domains, body, unlimited(), dbg);
     }
-    const Lambda* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {}) {
+    const Def* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {}) {
         return lambda(Defs{domain}, body, type_qualifier, dbg);
     }
-    const Lambda* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
+    const Def* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
         return lambda(domain, body, unlimited(), dbg);
     }
     Lambda* nominal_lambda(Defs domains, const Def* codomain, const Def* type_qualifier, Debug dbg = {});
