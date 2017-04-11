@@ -7,6 +7,7 @@ using namespace thorin;
 TEST(Sigma, Assign) {
     World w;
     auto sig = w.sigma({w.star(), w.var(w.star(), 0)})->as<Sigma>();
+    ASSERT_TRUE(sig->is_dependent());
     ASSERT_TRUE(sig->assignable({w.type_nat(), w.val_nat(42)}));
     ASSERT_FALSE(sig->assignable({w.type_nat(), w.val_bool_bot()}));
 }
@@ -22,7 +23,8 @@ TEST(Sigma, ExtractAndSingleton) {
     ASSERT_EQ(w.app(snd, {n23, n42}), w.val_nat(42));
 
     auto poly = w.axiom(w.pi(w.star(), w.star()), {"Poly"});
-    auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))}, {"sig"});
+    auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))}, {"sig"})->as<Sigma>();
+    ASSERT_TRUE(sigma->is_dependent());
     auto sigma_val = w.axiom(sigma,{"val"});
     auto fst_sigma = w.extract(sigma_val, 0_s);
     ASSERT_EQ(fst_sigma->type(), w.star());
@@ -38,6 +40,7 @@ TEST(Sigma, Unit) {
     World w;
 
     auto unit = w.unit();
+    ASSERT_FALSE(unit->is_dependent());
     auto tuple0 = w.tuple0();
     ASSERT_EQ(tuple0->type(), unit);
 
@@ -60,7 +63,8 @@ TEST(Tuple, Error) {
 
 TEST(Sigma, LUB) {
     World w;
-    auto s = w.sigma({w.arity(2), w.arity(3)});
+    auto s = w.sigma({w.arity(2), w.arity(3)})->as<Sigma>();
+    ASSERT_FALSE(s->is_dependent());
     ASSERT_EQ(s->type(), w.arity_kind());
 }
 

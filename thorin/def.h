@@ -458,6 +458,7 @@ public:
     bool has_values() const override;
     bool assignable(Defs defs) const override;
     bool is_unit() const { return ops().empty(); }
+    bool is_dependent() const;
     Sigma* set(size_t i, const Def* def) { return Def::set(i, def)->as<Sigma>(); };
 
     std::ostream& stream(std::ostream&) const override;

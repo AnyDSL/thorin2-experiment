@@ -717,4 +717,18 @@ std::ostream& Variant::stream(std::ostream& os) const {
 
 //------------------------------------------------------------------------------
 
+/*
+ * misc
+ */
+
+bool Sigma::is_dependent() const {
+    for (size_t i = 0, e = num_ops(); i != e; ++i) {
+        if (op(i)->free_vars().any_end(i))
+            return true;
+    }
+    return false;
+}
+
+//------------------------------------------------------------------------------
+
 }

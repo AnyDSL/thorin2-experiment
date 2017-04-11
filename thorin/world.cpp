@@ -228,8 +228,13 @@ const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
 }
 
 const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
-    if (def->isa<Tuple>() || def->isa<Sigma>())
+    if (def->isa<Tuple>())
         return def->op(i);
+
+    if (auto sigma = def->isa<Sigma>()) {
+        assert(!sigma->is_dependent());
+        return sigma->op(i);
+    }
 
     if (auto variadic = def->isa<Variadic>())
         return variadic->body()->reduce(index(variadic->arity()->as<Axiom>()->box().get_u64(), i));
@@ -471,6 +476,7 @@ const Def* WorldBase::pack_nominal_sigma(const Sigma* sigma, const Def* body, De
     if (body->free_vars().test(0))
         return tuple(sigma, DefArray(arity, [&](auto i) { return body->reduce(this->index(arity, i)); }), dbg);
 
+    // TODO type checking
     return unify<Pack>(1, *this, sigma, body, dbg);
 }
 
@@ -506,6 +512,7 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
         }
     }
 
+    // TODO type checking
     return unify<Pack>(1, *this, variadic(arity, body->type()), body, dbg);
 }
 
