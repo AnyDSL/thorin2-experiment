@@ -71,8 +71,11 @@ add_executable(coc
     thorin/util/utility.h
 )
 
-set_property(TARGET coc PROPERTY CXX_STANDARD 14)
-set_property(TARGET coc PROPERTY CXX_STANDARD_REQUIRED on)
+set_target_properties(coc PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+)
 
 target_link_libraries(coc gtest_main)
 add_test(NAME coc_test COMMAND coc)
