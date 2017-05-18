@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "thorin/world.h"
-#include "thorin/primop.h"
+#include "thorin/matchers/ops.h"
 
 using namespace thorin;
 

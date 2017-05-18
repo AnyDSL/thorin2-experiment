@@ -2,9 +2,8 @@
 #include <functional>
 
 #include "thorin/world.h"
-
 #include "thorin/reduce.h"
-#include "thorin/type.h"
+#include "thorin/matchers/types.h"
 
 namespace thorin {
 
@@ -44,6 +43,7 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
         if (def->type()->isa<Star>() && max_type->isa<Star>())
             max_type = star(inferred_q);
         else if (def->type() == universe() || max_type != def->type()) {
+            // XXX may need to forbid some stuff here: sigma(arity_kind(), variadic(var(0), _))
             max_type = universe();
             break;
         }
@@ -193,6 +193,9 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
 }
 
 const Def* WorldBase::dim(const Def* def, Debug dbg) {
+    assert(!def->isa<Universe>());
+
+    // TODO reuse Def::dim once fully implemented
     if (auto tuple    = def->isa<Tuple>())    return arity(tuple->num_ops(), dbg);
     if (auto pack     = def->isa<Pack>())     return pack->arity();
     if (auto sigma    = def->isa<Sigma>())    return arity(sigma->num_ops(), dbg);
@@ -691,6 +694,7 @@ World::World() {
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });
     auto S = star();
+    auto A = arity_kind();
 
     type_i_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
     type_r_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});
@@ -705,11 +709,14 @@ World::World() {
     auto M = type_mem_   = axiom(star(Qualifier::Linear), {"M"});
     auto F = type_frame_ = axiom(S, {"F"});
 
-    /*auto vq0 = var(Q, 0)*/; auto vn0 = var(N, 0); auto vs0 = var(S, 0);
-    /*auto vq1 = var(Q, 1)*/; auto vn1 = var(N, 1); auto vs1 = var(S, 1);
-    auto vq2 = var(Q, 2);     auto vn2 = var(N, 2); auto vs2 = var(S, 2);
-    auto vq3 = var(Q, 3);     auto vn3 = var(N, 3); auto vs3 = var(S, 3);
-    auto vq4 = var(Q, 4);                           auto vs4 = var(S, 4);
+#define VAR(x, X, n)                 \
+    auto T_CAT(v, x, n) = var(X, n); \
+    (void)T_CAT(v, x, n);
+#define CODE(x, X) \
+    VAR(x, X, 0) VAR(x, X, 1) VAR(x, X, 2) VAR(x, X, 3) VAR(x, X, 4) VAR(x, X, 5) VAR(x, X, 6)
+    CODE(a, A) CODE(q, Q) CODE(n, N) CODE(s, S)
+#undef CODE
+#undef VAR
 
     // type_i
 #define CODE(r, x) \
@@ -718,18 +725,18 @@ World::World() {
     T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
 #undef CODE
 
-    // type_i
+    // type_r
 #define CODE(r, x) \
     T_CAT(type_, T_CAT(x), _) = \
         type_r(Qualifier::u, rflags::T_ELEM(0, x), T_ELEM(1, x));
     T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
 #undef CODE
 
-    auto i1 = type_i(vq2, vn1, vn0); auto r1 = type_r(vq2, vn1, vn0);
-    auto i2 = type_i(vq3, vn2, vn1); auto r2 = type_r(vq3, vn2, vn1);
-    auto i3 = type_i(vq4, vn3, vn2); auto r3 = type_r(vq4, vn3, vn2);
-    auto i_type_arithop = pi({Q, N, N}, pi({i1, i2}, i3));
-    auto r_type_arithop = pi({Q, N, N}, pi({r1, r2}, r3));
+    auto i1 = variadic(va3, type_i(vq3, vn2, vn1)); auto r1 = variadic(va3, type_r(vq3, vn2, vn1));
+    auto i2 = variadic(va4, type_i(vq4, vn3, vn2)); auto r2 = variadic(va4, type_r(vq4, vn3, vn2));
+    auto i3 = variadic(va5, type_i(vq5, vn4, vn3)); auto r3 = variadic(va5, type_r(vq5, vn4, vn3));
+    auto i_type_arithop = pi(A, pi({Q, N, N}, pi({i1, i2}, i3)));
+    auto r_type_arithop = pi(A, pi({Q, N, N}, pi({r1, r2}, r3)));
 
     // arithop axioms
 #define CODE(r, ir, x) \
@@ -739,27 +746,29 @@ World::World() {
 #undef CODE
 
     // arithop table
-#define CODE(r, ir, x)                                                                   \
-    for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                    \
-        for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                \
-            auto flags = val_nat(f);                                                 \
-            auto width = val_nat(T_CAT(index2, ir, width)(w));                       \
+#define CODE(r, ir, x)                                                           \
+    for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                \
+        for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {            \
+            auto flags = val_nat(f);                                             \
+            auto width = val_nat(T_CAT(index2, ir, width)(w));                   \
             T_CAT(op_, x, s_)[f][w] = T_CAT(op_, x)(U, flags, width)->as<App>(); \
-        }                                                                            \
+        }                                                                        \
     }
     T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
     T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
 #undef CODE
 
-    auto b = type_i(vq4, val_nat(int64_t(iflags::uo)), val_nat_1());
-    auto i_type_cmp = pi(N, pi({Q, N, N}, pi({i1, i2}, b)));
-    auto r_type_cmp = pi(N, pi({Q, N, N}, pi({r1, r2}, b)));
+    i1 = variadic(va4, type_i(vq3, vn2, vn1)); r1 = variadic(va4, type_r(vq3, vn2, vn1));
+    i2 = variadic(va5, type_i(vq4, vn3, vn2)); r2 = variadic(va5, type_r(vq4, vn3, vn2));
+    auto b = variadic(va6, type_i(vq5, val_nat(int64_t(iflags::uo)), val_nat_1()));
+    auto i_type_cmp = pi(A, pi(N, pi({Q, N, N}, pi({i1, i2}, b))));
+    auto r_type_cmp = pi(A, pi(N, pi({Q, N, N}, pi({r1, r2}, b))));
     op_icmp_ = axiom(i_type_cmp, {"icmp"});
     op_rcmp_ = axiom(r_type_cmp, {"rcmp"});
 
     // all cmp relations
 #define CODE(r, ir, x) \
-    T_CAT(op_, ir, cmp_, x, _) = app(T_CAT(op_, ir, cmp_), val_nat(int64_t(T_CAT(ir, rel)::x)), {T_STR(T_CAT(ir, cmp_, x))})->as<App>();
+    T_CAT(op_, ir, cmp_, x, _) = app(app(T_CAT(op_, ir, cmp_), arity(1)), val_nat(int64_t(T_CAT(ir, rel)::x)), {T_STR(T_CAT(ir, cmp_, x))})->as<App>();
     T_FOR_EACH(CODE, i, THORIN_I_REL)
     T_FOR_EACH(CODE, r, THORIN_R_REL)
 #undef CODE
@@ -814,12 +823,12 @@ const Axiom* World::val_nat(int64_t val, Location location) {
 const App* World::T_CAT(op_, x)(const Def* a, const Def* b) {             \
     T_CAT(ir, Type) t(a->type());                                         \
     auto callee = t.is_const() && t.const_qualifier() == Qualifier::u     \
-        ? T_CAT(op_, x)(               t.const_flags(), t.const_width())  \
-        : T_CAT(op_, x)(t.qualifier(), t.      flags(), t.      width()); \
+        ? T_CAT(op_, x)(             *t.const_flags(), *t.const_width())  \
+        : T_CAT(op_, x)(t.qualifier(), t.     flags(), t.       width()); \
     return app(callee, {a, b})->as<App>();                                \
 }
-T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
-T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
+T_FOR_EACH(CODE, Int, THORIN_I_ARITHOP)
+T_FOR_EACH(CODE, Real, THORIN_R_ARITHOP)
 #undef CODE
 
 const Def* World::op_enter(const Def* mem, Debug dbg) {

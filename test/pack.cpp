@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 
 #include "thorin/world.h"
-#include "thorin/primop.h"
 
 using namespace thorin;
 

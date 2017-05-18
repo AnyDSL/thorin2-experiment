@@ -297,6 +297,26 @@ class World : public WorldBase {
 public:
     World();
 
+    bool is_primitive_type(const Def* type) {
+        if (type == type_bool() || type == type_nat())
+            return true;
+        if (!type->type()->isa<Star>())
+            return false;
+        if (auto app = type->isa<App>())
+            return is_primitive_type_constructor(app->callee());
+        if (auto var = type->isa<Variadic>())
+            return is_primitive_type(var->body());
+        return false;
+    }
+
+    bool is_primitive_type_constructor(const Def* def) {
+        if (!def->type()->isa<Pi>())
+            return false;
+        while (auto app = def->isa<App>())
+            def = app->callee();
+        return def && (def == type_i() || def == type_r());
+    }
+
     //@{ types and type constructors
     const Def* type_bool() { return type_bool_; }
     const Def* type_nat() { return type_nat_; }
@@ -367,7 +387,7 @@ public:
         return T_CAT(op_, x, s_)[size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>(); \
     }                                                                                      \
     const App* T_CAT(op_, x)(const Def* q, const Def* flags, const Def* width) {           \
-        return app(T_CAT(op_, x)(), {q, flags, width})->as<App>();                         \
+        return app(app(T_CAT(op_, x)(), arity(1)), {q, flags, width})->as<App>();          \
     }                                                                                      \
     const App* T_CAT(op_, x)(const Def* a, const Def* b);
     T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
@@ -376,13 +396,13 @@ public:
     //@}
 
     //@{ relational operations
-#define CODE(ir)                                                                                            \
-    const Axiom* T_CAT(op_, ir, cmp)() { return op_icmp_; }                                                 \
-    const App* T_CAT(op_, ir, cmp)(const Def* r, const Def* q, const Def* flags, const Def* width) {        \
-        return app(app(T_CAT(op_, ir, cmp_), r), {q, flags, width})->as<App>();                             \
-    }                                                                                                       \
-    const App* T_CAT(op_, ir, cmp)(T_CAT(ir, rel) rel, T_CAT(ir, flags) flags, int64_t width) {             \
-        return T_CAT(op_, ir, cmps_)[size_t(rel)][size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>(); \
+#define CODE(ir)                                                                                     \
+    const Axiom* T_CAT(op_, ir, cmp)() { return op_icmp_; }                                          \
+    const App* T_CAT(op_, ir, cmp)(const Def* r, const Def* q, const Def* flags, const Def* width) { \
+        return app(app(app(T_CAT(op_, ir, cmp_), arity(1)), r), {q, flags, width})->as<App>(); \
+    }                                                                                                \
+    const App* T_CAT(op_, ir, cmp)(T_CAT(ir, rel) rel, T_CAT(ir, flags) flags, int64_t width) {      \
+        return T_CAT(op_, ir, cmps_)[size_t(rel)][size_t(flags)][T_CAT(ir, width2index)(width)];     \
     }
     CODE(i)
     CODE(r)

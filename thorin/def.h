@@ -223,6 +223,8 @@ public:
     //@}
 
     //@{ misc getters
+    const Def* dim() const;
+    virtual DefArray dims() const;
     const BitSet& free_vars() const { return free_vars_; }
     uint32_t fields() const { return uint32_t(num_ops_) << 8_u32 | uint32_t(tag()); }
     size_t gid() const { return gid_; }
@@ -361,6 +363,7 @@ private:
     Pi(WorldBase& world, const Def* type, Defs domains, const Def* body, Debug dbg);
 
 public:
+    DefArray dims() const override;
     const Def* domain() const;
     Defs domains() const { return ops().skip_back(); }
     size_t num_domains() const { return domains().size(); }
@@ -452,6 +455,7 @@ private:
     {}
 
 public:
+    DefArray dims() const override;
     const Def* kind_qualifier() const override;
     bool has_values() const override;
     bool assignable(Defs defs) const override;
@@ -478,7 +482,9 @@ private:
 public:
     const Def* arity() const { return op(0); }
     const Def* body() const { return op(1); }
+    DefArray dims() const override;
     const Def* kind_qualifier() const override;
+    bool is_homogeneous() const { return !body()->free_vars().test(0); };
     bool has_values() const override;
     bool assignable(Defs defs) const override;
     void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
@@ -589,6 +595,7 @@ private:
     {}
 
 public:
+    DefArray dims() const override;
     Variant* set(size_t i, const Def* def) { return Def::set(i, def)->as<Variant>(); };
     const Def* kind_qualifier() const override;
     bool has_values() const override;
@@ -685,6 +692,7 @@ private:
     Star(WorldBase& world, const Def* qualifier);
 
 public:
+    DefArray dims() const override;
     std::ostream& stream(std::ostream&) const override;
     const Def* kind_qualifier() const override;
 
@@ -701,6 +709,7 @@ private:
     {}
 
 public:
+    DefArray dims() const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -720,6 +729,7 @@ private:
     }
 
 public:
+    DefArray dims() const override;
     size_t index() const { return index_; }
     std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
@@ -752,6 +762,7 @@ private:
 
 public:
     Box box() const { assert(!is_nominal()); return box_; }
+    DefArray dims() const override;
     std::ostream& stream(std::ostream&) const override;
     Axiom* stub(WorldBase&, const Def*, Debug) const override;
     bool has_values() const override;

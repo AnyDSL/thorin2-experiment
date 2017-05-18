@@ -324,6 +324,93 @@ const Def* Variant::kind_qualifier() const {
 //------------------------------------------------------------------------------
 
 /*
+ * dim
+ */
+
+const Def* Def::dim() const {
+    DefArray arities = dims();
+    if (arities.size() == 0)
+        return world().arity(1);
+    return world().sigma(arities);
+}
+
+DefArray Def::dims() const {
+    if (is_value())
+        return type()->dims();
+    THORIN_UNREACHABLE; // must override this
+}
+
+// DefArray All::dim() const { return TODO; }
+
+// DefArray Any::dim() const { return TODO; }
+
+// DefArray App::dim() const { return TODO; }
+
+DefArray Axiom::dims() const {
+    if (is_value())
+        return { world().dim(type()) };
+    return {};
+}
+
+// DefArray Error::dims() const { return TODO; }
+
+// DefArray Extract::dims() const { return TODO; }
+
+// DefArray Intersection::dims() const { return TODO; }
+
+// DefArray Match::dims() const { return TODO; }
+
+// DefArray Pack::dims() const { return TODO; }
+
+DefArray Pi::dims() const { return {}; }
+
+// DefArray Pick::dims() const { return TODO ; }
+
+DefArray Sigma::dims() const {
+    auto size = num_ops();
+    switch (size) {
+    case 0: return { world().arity(0) };
+    case 1: return { ops().front()->dim() }; // conceptually: 1, op->dim
+    default:
+        auto arity = world().arity(size);
+        auto op_arities = world().tuple(DefArray(size, [&](auto i) {
+                    return op(i)->dim()->shift_free_vars(i); }));
+        return { arity, world().extract(op_arities, world().var(arity, 0)) };
+    }
+}
+
+// DefArray Singleton::dims() const {
+
+DefArray Star::dims() const { return {}; }
+
+DefArray Universe::dims() const {
+    THORIN_UNREACHABLE;
+}
+
+DefArray Var::dims() const {
+    if (is_value())
+        return type()->dims();
+    return { world().dim(this) };
+}
+
+DefArray Variadic::dims() const {
+    DefArray body_arities = body()->dims();
+    DefArray arities(body_arities.size() + 1);
+    arities[0] = arity();
+    std::transform(body_arities.begin(), body_arities.end(), arities.begin() + 1,
+                   [](auto arity) { return arity->shift_free_vars(1); });
+    return arities;
+}
+
+DefArray Variant::dims() const {
+    DefArray arities(num_ops(), [&](auto i) { return op(i)->dim(); });
+    return { world().variant(arities) };
+}
+
+
+//------------------------------------------------------------------------------
+
+/*
  * shift
  */
 
@@ -491,6 +578,9 @@ const Def* App::try_reduce() const {
 
             return thorin::reduce(lambda->body(), args, [&] (const Def* def) { cache_ = def; });
         }
+    } else if (auto axiom = callee()->isa<Axiom>()) {
+        // TODO implement constant folding for primops here
+        (void*)axiom;
     }
 
     return cache_ = this;

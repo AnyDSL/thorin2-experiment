@@ -21,6 +21,7 @@ using namespace half_float::literal;
 }
 
 #include "thorin/qualifier.h"
+#include "thorin/util/utility.h"
 
 #define T_STR(x) #x
 
@@ -112,8 +113,8 @@ enum class rwidth {
 };
 #undef CODE
 
-inline size_t iwidth2index(size_t i) { return i == 1 ? 0 : log2(i)-2; }
-inline size_t rwidth2index(size_t i) { return log2(i)-4; }
+inline size_t iwidth2index(size_t i) { assert(is_power_of_2(i)); return i == 1 ? 0 : log2(i)-2; }
+inline size_t rwidth2index(size_t i) { assert(is_power_of_2(i)); return log2(i)-4; }
 inline size_t index2iwidth(size_t i) { return i == 0 ? 1 : 1 << (i+2); }
 inline size_t index2rwidth(size_t i) { return 1 << (i+4); }
 
@@ -171,10 +172,13 @@ public:
     T get_ ## T() const { return T ## _; }
     THORIN_TYPES(CODE)
 #undef CODE
-    s1 get_s1() const { return s1_; }
-    u1 get_u1() const { return u1_; }
     bool operator==(Box other) const { return this->u64_ == other.get_u64(); }
 
+
+    template<typename T>
+    T& get() {
+        return *((T*)this);
+    }
 private:
     s1 s1_;
     u1 u1_;

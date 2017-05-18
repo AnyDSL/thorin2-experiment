@@ -7,6 +7,16 @@ namespace thorin {
 TEST(Primop, Types) {
     World w;
 
+    ASSERT_TRUE(w.is_primitive_type_constructor(w.type_i()));
+    ASSERT_TRUE(w.is_primitive_type_constructor(w.type_r()));
+
+    ASSERT_TRUE(w.is_primitive_type(w.type_bool()));
+    ASSERT_TRUE(w.is_primitive_type(w.type_nat()));
+    ASSERT_TRUE(w.is_primitive_type(w.type_uo16()));
+    ASSERT_TRUE(w.is_primitive_type(w.type_uw32()));
+    ASSERT_TRUE(w.is_primitive_type(w.type_f32()));
+    ASSERT_TRUE(w.is_primitive_type(w.type_p64()));
+
     ASSERT_EQ(w.type_uo16(), w.app(w.type_i(), {w.unlimited(), w.val_nat(int64_t(iflags::uo)), w.val_nat_16()}));
     ASSERT_EQ(w.type_uo16(), w.app(w.type_i(), {w.unlimited(), w.val_nat(int64_t(iflags::uo)), w.val_nat_16()}));
     ASSERT_EQ(w.type_uw64(), w.app(w.type_i(), {w.unlimited(), w.val_nat(int64_t(iflags::uw)), w.val_nat_64()}));
