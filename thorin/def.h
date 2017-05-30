@@ -107,7 +107,6 @@ public:
         Dim,
         Error,
         Extract,
-        Index,
         Intersection,
         Lambda,
         Match,
@@ -303,7 +302,7 @@ protected:
 
     union {
         mutable const Def* cache_;  ///< Used by App.
-        size_t index_;              ///< Used by Index, Var.
+        size_t index_;              ///< Used by Var.
         Box box_;                   ///< Used by Axiom.
         bool normalize_;            ///< Used by nominal Lambda.
     };
