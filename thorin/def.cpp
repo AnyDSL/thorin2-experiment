@@ -309,7 +309,7 @@ const Def* Star::kind_qualifier() const {
 
 const Def* Variadic::kind_qualifier() const {
     assert(is_kind());
-    return body()->has_values() ? body()->qualifier() : world().unlimited();
+    return body()->has_values() ? body()->qualifier()->shift_free_vars(1) : world().unlimited();
 }
 
 const Def* Variant::kind_qualifier() const {

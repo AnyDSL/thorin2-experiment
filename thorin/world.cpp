@@ -402,11 +402,12 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
         if (a == 0) return unit(body->type()->qualifier());
         if (a == 1) return body->reduce(this->index(1, 0));
         if (body->free_vars().test(0))
-            return sigma(DefArray(a, [&](auto i) { return body->reduce(this->index(a, i))->shift_free_vars(-i); }), dbg);
+            return sigma(DefArray(a, [&](auto i) {
+                        return body->reduce(this->index(a, i))->shift_free_vars(-i); }), dbg);
     }
 
     assert(body->type()->is_kind() || body->type()->is_universe());
-    return unify<Variadic>(2, *this, body->type(), arity, body, dbg);
+    return unify<Variadic>(2, *this, body->type()->shift_free_vars(1), arity, body, dbg);
 }
 
 const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {

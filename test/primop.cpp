@@ -17,6 +17,9 @@ TEST(Primop, Types) {
     ASSERT_EQ(w.type_uw64(), w.type_i(Qualifier::u, iflags::uw, 64));
     ASSERT_EQ(w.type_uw64(), w.type_i(Qualifier::u, iflags::uw, 64));
 
+    ASSERT_EQ(w.affine(), w.type_i(Qualifier::a, iflags::uw, 64)->qualifier());
+    ASSERT_EQ(w.linear(), w.type_r(Qualifier::l, rflags::f, 64)->qualifier());
+
     ASSERT_EQ(w.type_f64(), w.app(w.type_r(), {w.unlimited(), w.val_nat(int64_t(rflags::f)), w.val_nat_64()}));
     ASSERT_EQ(w.type_p16(), w.app(w.type_r(), {w.unlimited(), w.val_nat(int64_t(rflags::p)), w.val_nat_16()}));
 
