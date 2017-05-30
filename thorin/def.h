@@ -263,8 +263,7 @@ public:
 
     virtual Def* stub(WorldBase&, const Def*, Debug) const { THORIN_UNREACHABLE; }
     virtual bool assignable(Defs defs) const {
-        assert(defs.size() == 1);
-        return this == defs.front()->type();
+        return defs.size() == 1 && this == defs.front()->type();
     }
     std::ostream& qualifier_stream(std::ostream& os) const {
         if (!has_values())
