@@ -292,8 +292,11 @@ const Def* Intersection::kind_qualifier() const {
 
 const Def* Sigma::kind_qualifier() const {
     assert(is_kind());
+    auto unlimited = this->world().unlimited();
+    if (num_ops() == 0)
+        return unlimited;
     auto qualifiers = DefArray(num_ops(), [&](auto i) {
-            return this->op(i)->has_values() ? this->op(i)->qualifier() : this->world().unlimited(); });
+            return this->op(i)->has_values() ? this->op(i)->qualifier() : unlimited; });
     return world().variant(world().qualifier_type(), qualifiers);
 }
 
@@ -682,6 +685,8 @@ std::ostream& Pick::stream(std::ostream& os) const {
 }
 
 std::ostream& Sigma::stream(std::ostream& os) const {
+    if (num_ops() == 0 && is_kind())
+        return os << "Σ*";
     return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
 }
 
@@ -698,6 +703,8 @@ std::ostream& Universe::stream(std::ostream& os) const {
 }
 
 std::ostream& Tuple::stream(std::ostream& os) const {
+    if (num_ops() == 0 && is_type())
+        return os << "():Σ*";
     return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
 }
 

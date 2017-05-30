@@ -105,6 +105,8 @@ public:
             return unit(cq->box().get_qualifier());
         return unify<Sigma>(0, *this, star(q), Defs(), Debug("Σ()"));
     }
+    const Sigma* unit_kind() { return unit_kind_; }
+
     /// @em structural Sigma types or kinds
     const Def* sigma(Defs defs, Debug dbg = {}) { return sigma(nullptr, defs, dbg); }
     const Def* sigma(const Def* qualifier, Defs, Debug dbg = {});
@@ -283,6 +285,7 @@ protected:
     const Universe* universe_;
     const Axiom* qualifier_kind_;
     const Axiom* qualifier_type_;
+    const Sigma* unit_kind_;
     std::array<const Axiom*, 4> qualifier_;
     std::array<const Star*,  4> star_;
     std::array<const Sigma*, 4> unit_;

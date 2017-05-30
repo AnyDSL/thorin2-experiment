@@ -29,6 +29,7 @@ add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googlete
 include_directories(.)
 
 add_executable(coc 
+    test/arity.cpp
     test/bitset.cpp
     test/lambda.cpp
     test/lexer.cpp

@@ -125,6 +125,7 @@ WorldBase::WorldBase()
     universe_ = insert<Universe>(0, *this);
     qualifier_kind_ = axiom(universe_, {"ℚₖ"});
     qualifier_type_ = axiom(qualifier_kind_, {"ℚ"});
+    unit_kind_ = insert<Sigma>(0, *this, universe_, Defs(), Debug("Σ*"));
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
         qualifier_[i] = assume(qualifier_type(), {q}, {qualifier_cstr(q)});
@@ -399,7 +400,11 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
 
     if (auto axiom = arity->isa<Axiom>()) {
         auto a = axiom->box().get_u64();
-        if (a == 0) return unit(body->type()->qualifier());
+        if (a == 0) {
+            if (body->is_kind())
+                return unit_kind();
+            return unit(body->type()->qualifier());
+        }
         if (a == 1) return body->reduce(this->index(1, 0));
         if (body->free_vars().test(0))
             return sigma(DefArray(a, [&](auto i) {
@@ -416,15 +421,40 @@ const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
     return variadic(arity.skip_back(), variadic(arity.back(), body, dbg), dbg);
 }
 
+DefArray normalize_arities(WorldBase& w, Defs defs) {
+    DefArray new_defs(defs.size());
+    auto a0 = w.arity(0);
+    auto a1 = w.arity(1);
+    size_t last = 0;
+    for (size_t i = 0, end = defs.size(); i != end; ++i) {
+        if (defs[i] == a0)
+            return {a0};
+        if (defs[i] != a1) {
+            new_defs[last] = defs[i];
+            ++last;
+        }
+    }
+    if (last == 0)
+        new_defs[last++] = a1;
+    new_defs.shrink(last);
+    return new_defs;
+}
+
 const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
     auto type = lub(defs, q);
     if (defs.size() == 0)
         return unit(type->qualifier());
 
+    DefArray normalized;
+    if (type == arity_kind()) {
+        normalized = normalize_arities(*this, defs);
+        defs = normalized;
+    }
+
     if (defs.size() == 1) {
-            assertf(defs.front()->type() == type, "type {} and inferred type {} don't match",
-                    defs.front()->type(), type);
-            return defs.front();
+        assertf(defs.front()->type() == type, "type {} and inferred type {} don't match",
+                defs.front()->type(), type);
+        return defs.front();
     }
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && is_homogeneous(defs)) {
@@ -500,7 +530,11 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
 
     if (auto axiom = arity->isa<Axiom>()) {
         auto a = axiom->box().get_u64();
-        if (a == 0) return tuple0(body->type()->qualifier());
+        if (a == 0) {
+            if (body->is_type())
+                return tuple(unit_kind(), {});
+            return tuple0(body->type()->qualifier());
+        }
         if (a == 1) return body->reduce(this->index(1, 0));
         if (body->free_vars().test(0))
             return tuple(DefArray(a, [&](auto i) { return body->reduce(this->index(a, i)); }), dbg);
@@ -513,7 +547,7 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
         }
     }
 
-    // TODO type checking
+    assert(body->is_term() || body->is_type());
     return unify<Pack>(1, *this, variadic(arity, body->type()), body, dbg);
 }
 
@@ -523,18 +557,39 @@ const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
     return pack(arity.skip_back(), pack(arity.back(), body, dbg), dbg);
 }
 
+DefArray normalize_indices(WorldBase& w, Defs defs) {
+    DefArray new_defs(defs.size());
+    auto idx0 = w.index(1, 0);
+    size_t last = 0;
+    for (size_t i = 0, end = defs.size(); i != end; ++i) {
+        if (defs[i] != idx0) {
+            new_defs[last] = defs[i];
+            ++last;
+        }
+    }
+    if (last == 0)
+        new_defs[last++] = idx0;
+    new_defs.shrink(last);
+    return new_defs;
+}
+
+
 const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
+    DefArray normalized;
+    if (type->type() == arity_kind()) {
+        normalized = normalize_indices(*this, defs);
+        defs = normalized;
+    }
     assertf(type->assignable(defs),
             "can't assign type {} to tuple with type {}", type, sigma(types(defs)));
+    size_t size = defs.size();
 
-    size_t a = defs.size();
-
-    if (a == 1 && (!type->is_nominal() || type == defs.front()->type()))
+    if (size == 1 && (!type->is_nominal() || type == defs.front()->type()))
         return defs.front();
 
     auto eta_property = [&]() {
         const Def* same = nullptr;
-        for (size_t i = 0; i != a; ++i) {
+        for (size_t i = 0; i != size; ++i) {
             if (auto extract = defs[i]->isa<Extract>()) {
                 if (same == nullptr)
                     same = extract->scrutinee();
@@ -551,16 +606,16 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
         return same;
     };
 
-    if (a != 0) {
+    if (size != 0) {
         if (is_homogeneous(defs))
             return type->is_nominal()
                 ? pack_nominal_sigma(type->as<Sigma>(), defs.front()->shift_free_vars(-1), dbg)
-                : pack(arity(a, dbg), defs.front()->shift_free_vars(-1), dbg);
+                : pack(arity(size, dbg), defs.front()->shift_free_vars(-1), dbg);
         else if (auto same = eta_property())
             return same;
     }
 
-    return unify<Tuple>(a, *this, type->as<SigmaBase>(), defs, dbg);
+    return unify<Tuple>(size, *this, type->as<SigmaBase>(), defs, dbg);
 }
 
 const Def* WorldBase::variant(Defs defs, Debug dbg) {
