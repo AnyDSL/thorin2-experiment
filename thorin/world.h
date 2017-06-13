@@ -421,9 +421,9 @@ public:
     //@{ memory operations
     const Def* op_alloc(const Def* type, const Def* mem, Debug dbg = {});
     const Def* op_alloc(const Def* type, const Def* mem, const Def* extra, Debug dbg = {});
-    const Def* op_global_const(const Def* init, Debug dbg = {});
     const Def* op_enter(const Def* mem, Debug dbg = {});
     const Def* op_global(const Def* init, Debug dbg = {});
+    const Def* op_global_const(const Def* init, Debug dbg = {});
     const Def* op_load(const Def* mem, const Def* ptr, Debug dbg = {});
     const Def* op_slot(const Def* type, const Def* frame, Debug dbg = {});
     const Def* op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg = {});
