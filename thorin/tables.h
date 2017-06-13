@@ -52,11 +52,11 @@ using namespace half_float::literal;
 #define THORIN_I_WIDTH (1)(8)(16)(32)(64)
 #define THORIN_R_WIDTH       (16)(32)(64)
 
-#define THORIN_I_FLAGS (uo) /* o o */ \
-                       (uw) /* o x */ \
-                       (so) /* x o */ \
-                       (sw) /* x x */
-#define THORIN_R_FLAGS (f)(p) // fast, precise
+#define THORIN_I_FLAGS (uo) /* o o */ /*unsigned overflow   */ \
+                       (uw) /* o x */ /*unsigned wraparound */ \
+                       (so) /* x o */ /*  signed overflow   */ \
+                       (sw) /* x x */ /*  signed wraparound */
+#define THORIN_R_FLAGS (f)(p) // fast, precise - more fine-grained flags are planned in the future
 
 #define THORIN_I_ARITHOP (iadd)(isub)(imul)(idiv)(imod)(ishl)(ishr)(iand)(ior)(ixor)
 #define THORIN_R_ARITHOP (radd)(rsub)(rmul)(rdiv)(rmod)
