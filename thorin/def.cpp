@@ -578,9 +578,8 @@ const Def* App::try_reduce() const {
 
             return thorin::reduce(lambda->body(), args, [&] (const Def* def) { cache_ = def; });
         }
-    } else if (auto axiom = callee()->isa<Axiom>()) {
+    } else if (/*auto axiom =*/ callee()->isa<Axiom>()) {
         // TODO implement constant folding for primops here
-        (void*)axiom;
     }
 
     return cache_ = this;
