@@ -55,7 +55,7 @@ TEST(Arity, Pack) {
     auto a1 = w.arity(1);
     auto a2 = w.arity(2);
     auto N = w.type_nat();
-    auto unit = w.unit();
+    /*auto unit =*/ w.unit();
     auto tuple0t = w.tuple(w.unit_kind(), {});
 
     ASSERT_EQ(tuple0t, w.pack({a0, a1, a2}, N));
