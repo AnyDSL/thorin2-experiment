@@ -16,3 +16,4 @@ TEST(MatchOps, Pointer) {
     // World w;
 }
 
+}
