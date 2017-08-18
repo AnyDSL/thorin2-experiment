@@ -69,6 +69,12 @@ TEST(Variadic, LEA) {
     ASSERT_EQ(lea1.ptr_pointee(), s2);
     ASSERT_EQ(w.insert(w.tuple({w.val_bool_top(), w.val_nat_2()}), 1, w.val_nat_8())->type(), s2);
 
+    auto v3n = w.variadic(w.arity(3), N);
+    auto pv3n = w.axiom(w.type_ptr(v3n, w.val_nat_2()), {"ptr_v3n"});
+    auto lea3 = LEA(w.op_lea(pv3n, 1));
+    ASSERT_EQ(lea3.type(), w.type_ptr(N, w.val_nat_2()));
+    ASSERT_EQ(lea3.ptr_pointee(), v3n);
+
     // TODO allow assignability/conversion from values of nominal type to structural type
     // auto n2 = w.sigma_type(2, {"n2"})->set(0, B)->set(1, N);
     // auto pn2 = w.axiom(w.type_ptr(n2, w.val_nat_4()), {"ptr_n2"});

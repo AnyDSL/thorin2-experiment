@@ -830,19 +830,26 @@ const Def* World::op_enter(const Def* mem, Debug dbg) {
     return app(op_enter_, mem, dbg);
 }
 
+const Def* types_from_tuple_type(World& w, const Def* type) {
+    if (auto sig = type->isa<Sigma>()) {
+        return w.tuple(sig->ops());
+    } else if (auto var = type->isa<Variadic>()) {
+        return w.pack(var->arity(), var->body());
+    }
+    return type;
+}
+
 const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
     PtrType ptr_type(ptr->type());
-    // TODO convert any element type to a tuple of types
-    auto type_tuple = tuple(ptr_type.pointee()->as<Sigma>()->ops());
-    return app(app(op_lea_, {type_tuple->arity(), type_tuple, ptr_type.addr_space()}, dbg), {ptr, index}, dbg);
+    auto types = types_from_tuple_type(*this, ptr_type.pointee());
+    return app(app(op_lea_, {types->arity(), types, ptr_type.addr_space()}, dbg), {ptr, index}, dbg);
 }
 
 const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
     PtrType ptr_type(ptr->type());
-    // TODO convert any element type to a tuple of types
-    auto type_tuple = tuple(ptr_type.pointee()->as<Sigma>()->ops());
-    auto idx = index(type_tuple->arity()->as<Axiom>()->box().get_u64(), i);
-    return app(app(op_lea_, {type_tuple->arity(), type_tuple, ptr_type.addr_space()}, dbg), {ptr, idx}, dbg);
+    auto types = types_from_tuple_type(*this, ptr_type.pointee());
+    auto idx = index(types->arity()->as<Axiom>()->box().get_u64(), i);
+    return app(app(op_lea_, {types->arity(), types, ptr_type.addr_space()}, dbg), {ptr, idx}, dbg);
 }
 
 const Def* World::op_load(const Def* mem, const Def* ptr, Debug dbg) {
