@@ -192,25 +192,11 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
     return app->try_reduce();
 }
 
-const Def* WorldBase::dim(const Def* def, Debug dbg) {
-    assert(!def->isa<Universe>());
-
-    // TODO reuse Def::dim once fully implemented
-    if (auto tuple    = def->isa<Tuple>())    return arity(tuple->num_ops(), dbg);
-    if (auto pack     = def->isa<Pack>())     return pack->arity();
-    if (auto sigma    = def->isa<Sigma>())    return arity(sigma->num_ops(), dbg);
-    if (auto variadic = def->isa<Variadic>()) return variadic->arity();
-    if (auto sigma    = def->type()->isa<Sigma>())    return arity(sigma->num_ops(), dbg);
-    if (auto variadic = def->type()->isa<Variadic>()) return variadic->arity();
-    if (def->isa<Var>()) return unify<Dim>(1, *this, def, dbg);
-    return arity(1, dbg);
-}
-
 const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
     assert(!def->is_universe());
-    auto d = dim(def);
-    assertf(i->type() == d, "dimension {} of {} does not match dimension type {} of index {}",
-            dim(def), def, i->type(), i);
+    auto a = def->arity();
+    assertf(i->type() == a, "arity {} of value {} does not match type {} of index {} for extract",
+            a, def, i->type(), i);
     if (auto assume = i->isa<Axiom>())
         return extract(def, assume->box().get_u64(), dbg);
 
@@ -296,6 +282,16 @@ const Def* WorldBase::index(size_t a, size_t i, Location location) {
     }
 
     return error(arity(a));
+}
+
+const Def* WorldBase::insert(const Def* def, const Def* i, const Def* value, Debug dbg) {
+    // TODO type check insert node
+    return unify<Insert>(2, *this, def->type(), def, i, value, dbg);
+}
+
+const Def* WorldBase::insert(const Def* def, size_t i, const Def* value, Debug dbg) {
+    auto idx = index(def->arity()->as<Axiom>()->box().get_u64(), i);
+    return insert(def, idx, value, dbg);
 }
 
 const Def* WorldBase::intersection(Defs defs, Debug dbg) {
@@ -790,11 +786,10 @@ World::World() {
 #undef CODE
 
     op_enter_ = axiom(pi(M, sigma({M, F})), {"enter"});
-    op_insert_ = axiom(pi(S, pi({vs0, dim(vs1), extract(vs2, var(dim(vs2), 0))}, vs3)), {"insert"});
     {
-        auto p1 = type_ptr(vs1, vn0);
-        auto p2 = type_ptr(extract(vs3, var(dim(vs3), 0)), vn2);
-        op_lea_ = axiom(pi({S, N}, pi({p1, dim(vs2)}, p2)), {"lea"});
+        op_lea_ = axiom(pi({A, variadic(va0, S), N},
+                           pi({type_ptr(variadic(va2, extract(var(variadic(va3, S), 2), var(va3, 0))), vn0), va3},
+                              type_ptr(extract(var(variadic(va4, S), 3), var(va4, 0)), vn2))), {"lea"});
     }
     {
         auto p = type_ptr(vs2, vn1);
@@ -835,24 +830,19 @@ const Def* World::op_enter(const Def* mem, Debug dbg) {
     return app(op_enter_, mem, dbg);
 }
 
-const Def* World::op_insert(const Def* def, const Def* index, const Def* val, Debug dbg) {
-    return app(app(op_insert_, def->type(), dbg), {def, index, val}, dbg);
-}
-
-const Def* World::op_insert(const Def* def, size_t i, const Def* val, Debug dbg) {
-    auto idx = index(dim(def->type())->as<Axiom>()->box().get_u64(), i);
-    return app(app(op_insert_, def->type(), dbg), {def, idx, val}, dbg);
-}
-
 const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
     PtrType ptr_type(ptr->type());
-    return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {ptr, index}, dbg);
+    // TODO convert any element type to a tuple of types
+    auto type_tuple = tuple(ptr_type.pointee()->as<Sigma>()->ops());
+    return app(app(op_lea_, {type_tuple->arity(), type_tuple, ptr_type.addr_space()}, dbg), {ptr, index}, dbg);
 }
 
 const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
     PtrType ptr_type(ptr->type());
-    auto idx = index(dim(ptr_type.pointee())->as<Axiom>()->box().get_u64(), i);
-    return app(app(op_lea_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {ptr, idx}, dbg);
+    // TODO convert any element type to a tuple of types
+    auto type_tuple = tuple(ptr_type.pointee()->as<Sigma>()->ops());
+    auto idx = index(type_tuple->arity()->as<Axiom>()->box().get_u64(), i);
+    return app(app(op_lea_, {type_tuple->arity(), type_tuple, ptr_type.addr_space()}, dbg), {ptr, idx}, dbg);
 }
 
 const Def* World::op_load(const Def* mem, const Def* ptr, Debug dbg) {

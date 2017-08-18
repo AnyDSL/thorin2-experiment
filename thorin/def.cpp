@@ -176,7 +176,6 @@ void Def::unregister_use(size_t i) const {
 std::string Def::unique_name() const { return name() + '_' + std::to_string(gid()); }
 
 const Def* Pi::domain() const { return world().sigma(domains()); }
-const Def* Pack::arity() const { return world().dim(type()); }
 
 //------------------------------------------------------------------------------
 
@@ -188,10 +187,6 @@ Def::~Def() {
     if (on_heap())
         delete[] ops_;
 }
-
-Dim::Dim(WorldBase& world, const Def* def, Debug dbg)
-    : Def(world, Tag::Dim, world.arity_kind(), {def}, dbg)
-{}
 
 Intersection::Intersection(WorldBase& world, const Def* type, Defs ops, Debug dbg)
     : Def(world, Tag::Intersection, type, range(set_flatten<Intersection>(ops)), dbg)
@@ -324,87 +319,52 @@ const Def* Variant::kind_qualifier() const {
 //------------------------------------------------------------------------------
 
 /*
- * dim
+ * arity
  */
 
-const Def* Def::dim() const {
-    DefArray arities = dims();
-    if (arities.size() == 0)
-        return world().arity(1);
-    return world().sigma(arities);
-}
-
-DefArray Def::dims() const {
+const Def* Def::arity() const {
     if (is_value())
-        return type()->dims();
+        return type()->arity();
     THORIN_UNREACHABLE; // must override this
 }
 
-// DefArray All::dim() const { return TODO; }
+// const Def* All::arity() const { return TODO; }
 
-// DefArray Any::dim() const { return TODO; }
+// const Def* Any::arity() const { return TODO; }
 
-// DefArray App::dim() const { return TODO; }
+// const Def* App::arity() const { return TODO; }
 
-DefArray Axiom::dims() const {
+const Def* Axiom::arity() const {
     if (is_value())
-        return { world().dim(type()) };
-    return {};
+        return type()->arity();
+    return world().arity(1); // TODO assumption: every axiom that is not a value has arity 1
 }
 
-// DefArray Error::dims() const { return TODO; }
+// const Def* Error::arity() const { return TODO; }
 
-// DefArray Extract::dims() const { return TODO; }
+// const Def* Extract::arity() const { return TODO; }
 
-// DefArray Intersection::dims() const { return TODO; }
+// const Def* Intersection::arity() const { return TODO; }
 
-// DefArray Match::dims() const { return TODO; }
+// const Def* Match::arity() const { return TODO; }
 
-// DefArray Pack::dims() const { return TODO; }
+// const Def* Pack::arity() const { return TODO; }
 
-DefArray Pi::dims() const { return {}; }
+const Def* Pi::arity() const { return world().arity(1); }
 
-// DefArray Pick::dims() const { return TODO ; }
+// const Def* Pick::arity() const { return TODO ; }
 
-DefArray Sigma::dims() const {
-    auto size = num_ops();
-    switch (size) {
-    case 0: return { world().arity(0) };
-    case 1: return { ops().front()->dim() }; // conceptually: 1, op->dim
-    default:
-        auto arity = world().arity(size);
-        auto op_arities = world().tuple(DefArray(size, [&](auto i) {
-                    return op(i)->dim()->shift_free_vars(i); }));
-        return { arity, world().extract(op_arities, world().var(arity, 0)) };
-    }
-}
+const Def* Sigma::arity() const { return world().arity(num_ops()); }
 
-// DefArray Singleton::dims() const {
+// const Def* Singleton::arity() const {
 
-DefArray Star::dims() const { return {}; }
+const Def* Star::arity() const { return world().arity(1); }
 
-DefArray Universe::dims() const {
-    THORIN_UNREACHABLE;
-}
+const Def* Universe::arity() const { THORIN_UNREACHABLE; }
 
-DefArray Var::dims() const {
-    if (is_value())
-        return type()->dims();
-    return { world().dim(this) };
-}
-
-DefArray Variadic::dims() const {
-    DefArray body_arities = body()->dims();
-    DefArray arities(body_arities.size() + 1);
-    arities[0] = arity();
-    std::transform(body_arities.begin(), body_arities.end(), arities.begin() + 1,
-                   [](auto arity) { return arity->shift_free_vars(1); });
-    return arities;
-}
-
-DefArray Variant::dims() const {
-    DefArray arities(num_ops(), [&](auto i) { return op(i)->dim(); });
-    return { world().variant(arities) };
+const Def* Variant::arity() const {
+    DefArray arities(num_ops(), [&](auto i) { return op(i)->arity(); });
+    return world().variant(arities);
 }
 
 
@@ -486,21 +446,21 @@ bool Var::equal(const Def* other) const {
 
 const Def* Any         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
-const Def* Dim         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.dim(ops[0], debug()); }
-const Def* Extract     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
     return to.assume(t, box(), debug());
 }
 const Def* Error       ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.error(t); }
+const Def* Extract     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
+const Def* Insert      ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
 const Def* Intersection::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
-const Def* Match       ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
 }
+const Def* Match       ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
-    return t->is_nominal() ? to.pack_nominal_sigma(t->as<Sigma>(), ops[0], debug()) : to.pack(to.dim(t), ops[0], debug());
+    return t->is_nominal() ? to.pack_nominal_sigma(t->as<Sigma>(), ops[0], debug()) : to.pack(arity(), ops[0], debug());
 }
 const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
 const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
@@ -600,6 +560,7 @@ bool Sigma::assignable(Defs defs) const {
         return false;
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         auto reduced_type = op(i)->reduce(defs.get_front(i));
+        // TODO allow conversion from nominal -> structural, instead of simple comparison
         if (reduced_type->has_error() || defs[i]->type() != reduced_type)
             return false;
     }
@@ -694,7 +655,7 @@ void Var::typecheck_vars(Environment& types, EnvDefSet& checked) const {
     auto shifted_type = type()->shift_free_vars(index() + 1);
     auto env_type = types[reverse_index];
     assertf(env_type == shifted_type,
-            "The type {} of variable {} does not match the type {} declared by the binder.", shifted_type,
+            "The shifted type {} of variable {} does not match the type {} declared by the binder.", shifted_type,
             index(), types[reverse_index]);
 }
 
@@ -732,12 +693,15 @@ std::ostream& App::stream(std::ostream& os) const {
 }
 
 std::ostream& Axiom::stream(std::ostream& os) const { return qualifier_stream(os) << name(); }
-std::ostream& Dim::stream(std::ostream& os) const { return streamf(os, "dim({})", of()); }
 
 std::ostream& Error::stream(std::ostream& os) const { return os << "<error>"; }
 
 std::ostream& Extract::stream(std::ostream& os) const {
     return scrutinee()->name_stream(os) << "." << index();
+}
+
+std::ostream& Insert::stream(std::ostream& os) const {
+    return scrutinee()->name_stream(os) << "." << index() << "=" << value();
 }
 
 std::ostream& Intersection::stream(std::ostream& os) const {

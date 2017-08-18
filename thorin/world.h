@@ -172,9 +172,10 @@ public:
     const Def* extract(const Def* def, const Def* index, Debug dbg = {});
     const Def* extract(const Def* def, size_t index, Debug dbg = {});
     const Def* index(size_t arity, size_t index, Location location = {});
+    const Def* insert(const Def* def, const Def* index, const Def* value, Debug dbg = {});
+    const Def* insert(const Def* def, size_t index, const Def* value, Debug dbg = {});
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
-    const Def* dim(const Def* def, Debug dbg = {});
     const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
     const Def* pick(const Def* type, const Def* def, Debug dbg = {});
@@ -410,9 +411,6 @@ public:
     //@}
 
     //@{ tuple operations
-    const Axiom* op_insert() { return op_insert_; }
-    const Def* op_insert(const Def* def, const Def* index, const Def* val, Debug dbg = {});
-    const Def* op_insert(const Def* def, size_t index, const Def* val, Debug dbg = {});
     const Axiom* op_lea() { return op_lea_; }
     const Def* op_lea(const Def* ptr, const Def* index, Debug dbg = {});
     const Def* op_lea(const Def* ptr, size_t index, Debug dbg = {});
@@ -441,7 +439,6 @@ private:
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
     const Axiom* op_enter_;
-    const Axiom* op_insert_;
     const Axiom* op_lea_;
     const Axiom* op_load_;
     const Axiom* op_slot_;
