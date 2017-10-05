@@ -7,11 +7,10 @@ using namespace thorin;
 TEST(Pi, Kinds) {
     World w;
     ASSERT_EQ(w.pi(w.star(), w.star())->type(), w.universe());
-    ASSERT_EQ(w.pi(w.star(), w.arity_kind())->type(), w.universe());
+    ASSERT_EQ(w.pi(w.star(), w.arities())->type(), w.universe());
     ASSERT_EQ(w.pi(w.type_nat(), w.type_nat())->type(), w.star());
-    // TODO subkinding -> w.variant(w.star(), w.arity_kind()) or make arity_kind a (defined?) subkind of star, then star
-    // this currently means we can't quantify over functions mapping from one kind (or types within) to (types within) another
-    ASSERT_EQ(w.pi(w.type_nat(), w.arity(2))->type(), w.universe());
+    ASSERT_EQ(w.pi(w.type_nat(), w.arity(2))->type(), w.star());
+    ASSERT_EQ(w.pi(w.type_nat(), w.sigma({w.arity(2), w.arity(3)}))->type(), w.star());
 }
 
 TEST(Lambda, PolyId) {

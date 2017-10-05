@@ -40,12 +40,15 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
         else
             inferred_q = variant(qualifier_type(), {inferred_q, def->qualifier()});
 
-        if (def->type()->isa<Star>() && max_type->isa<Star>())
-            max_type = star(inferred_q);
-        else if (def->type() == universe() || max_type != def->type()) {
-            // XXX may need to forbid some stuff here: sigma(arity_kind(), variadic(var(0), _))
+        if (def->type() == universe() || max_type == universe()) {
             max_type = universe();
             break;
+        }
+        else if (def->type() == arities() && max_type == arities())
+            // found at least two arities, must be a multi-arity
+            max_type = multi_arities();
+        else {
+            max_type = star(inferred_q);
         }
     }
 
@@ -133,7 +136,8 @@ WorldBase::WorldBase()
         unit_     [i] = insert<Sigma>(0, *this, star_[i], Defs(), Debug("Σ()"));
         tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
     }
-    arity_kind_ = axiom(universe(), {"𝔸"});
+    arities_ = insert<Arities>(0, *this);
+    multi_arities_ = insert<MultiArities>(0, *this);
 }
 
 WorldBase::~WorldBase() {
@@ -155,7 +159,7 @@ const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
 
 const Axiom* WorldBase::arity(size_t a, Location location) {
     auto cur = Def::gid_counter();
-    auto result = assume(arity_kind(), {u64(a)}, {location});
+    auto result = assume(arities(), {u64(a)}, {location});
 
     if (result->gid() >= cur)
         result->debug().set(std::to_string(a) + "ₐ");
@@ -420,34 +424,14 @@ const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
     return variadic(arity.skip_back(), variadic(arity.back(), body, dbg), dbg);
 }
 
-DefArray normalize_arities(WorldBase& w, Defs defs) {
-    DefArray new_defs(defs.size());
-    auto a0 = w.arity(0);
-    auto a1 = w.arity(1);
-    size_t last = 0;
-    for (size_t i = 0, end = defs.size(); i != end; ++i) {
-        if (defs[i] == a0)
-            return {a0};
-        if (defs[i] != a1) {
-            new_defs[last] = defs[i];
-            ++last;
-        }
-    }
-    if (last == 0)
-        new_defs[last++] = a1;
-    new_defs.shrink(last);
-    return new_defs;
-}
-
 const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
     auto type = lub(defs, q);
     if (defs.size() == 0)
         return unit(type->qualifier());
 
-    DefArray normalized;
-    if (type == arity_kind()) {
-        normalized = normalize_arities(*this, defs);
-        defs = normalized;
+    if (type == multi_arities()) {
+        if (any_of(arity(0), defs))
+            return arity(0);
     }
 
     if (defs.size() == 1) {
@@ -556,29 +540,7 @@ const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
     return pack(arity.skip_back(), pack(arity.back(), body, dbg), dbg);
 }
 
-DefArray normalize_indices(WorldBase& w, Defs defs) {
-    DefArray new_defs(defs.size());
-    auto idx0 = w.index(1, 0);
-    size_t last = 0;
-    for (size_t i = 0, end = defs.size(); i != end; ++i) {
-        if (defs[i] != idx0) {
-            new_defs[last] = defs[i];
-            ++last;
-        }
-    }
-    if (last == 0)
-        new_defs[last++] = idx0;
-    new_defs.shrink(last);
-    return new_defs;
-}
-
-
 const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
-    DefArray normalized;
-    if (type->type() == arity_kind()) {
-        normalized = normalize_indices(*this, defs);
-        defs = normalized;
-    }
     assertf(type->assignable(defs),
             "can't assign type {} to tuple with type {}", type, sigma(types(defs)));
     size_t size = defs.size();
@@ -690,7 +652,7 @@ World::World() {
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });
     auto S = star();
-    auto A = arity_kind();
+    auto MA = multi_arities();
 
     type_i_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
     type_r_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});
@@ -710,7 +672,7 @@ World::World() {
     (void)T_CAT(v, x, n);
 #define CODE(x, X) \
     VAR(x, X, 0) VAR(x, X, 1) VAR(x, X, 2) VAR(x, X, 3) VAR(x, X, 4) VAR(x, X, 5) VAR(x, X, 6)
-    CODE(a, A) CODE(q, Q) CODE(n, N) CODE(s, S)
+    CODE(a, MA) CODE(q, Q) CODE(n, N) CODE(s, S)
 #undef CODE
 #undef VAR
 
@@ -731,8 +693,8 @@ World::World() {
     auto i1 = variadic(va3, type_i(vq3, vn2, vn1)); auto r1 = variadic(va3, type_r(vq3, vn2, vn1));
     auto i2 = variadic(va4, type_i(vq4, vn3, vn2)); auto r2 = variadic(va4, type_r(vq4, vn3, vn2));
     auto i3 = variadic(va5, type_i(vq5, vn4, vn3)); auto r3 = variadic(va5, type_r(vq5, vn4, vn3));
-    auto i_type_arithop = pi(A, pi({Q, N, N}, pi({i1, i2}, i3)));
-    auto r_type_arithop = pi(A, pi({Q, N, N}, pi({r1, r2}, r3)));
+    auto i_type_arithop = pi(MA, pi({Q, N, N}, pi({i1, i2}, i3)));
+    auto r_type_arithop = pi(MA, pi({Q, N, N}, pi({r1, r2}, r3)));
 
     // arithop axioms
 #define CODE(r, ir, x) \
@@ -757,8 +719,8 @@ World::World() {
     i1 = variadic(va4, type_i(vq3, vn2, vn1)); r1 = variadic(va4, type_r(vq3, vn2, vn1));
     i2 = variadic(va5, type_i(vq4, vn3, vn2)); r2 = variadic(va5, type_r(vq4, vn3, vn2));
     auto b = variadic(va6, type_i(vq5, val_nat(int64_t(iflags::uo)), val_nat_1()));
-    auto i_type_cmp = pi(A, pi(N, pi({Q, N, N}, pi({i1, i2}, b))));
-    auto r_type_cmp = pi(A, pi(N, pi({Q, N, N}, pi({r1, r2}, b))));
+    auto i_type_cmp = pi(MA, pi(N, pi({Q, N, N}, pi({i1, i2}, b))));
+    auto r_type_cmp = pi(MA, pi(N, pi({Q, N, N}, pi({r1, r2}, b))));
     op_icmp_ = axiom(i_type_cmp, {"icmp"});
     op_rcmp_ = axiom(r_type_cmp, {"rcmp"});
 
@@ -787,7 +749,7 @@ World::World() {
 
     op_enter_ = axiom(pi(M, sigma({M, F})), {"enter"});
     {
-        op_lea_ = axiom(pi({A, variadic(va0, S), N},
+        op_lea_ = axiom(pi({MA, variadic(va0, S), N},
                            pi({type_ptr(variadic(va2, extract(var(variadic(va3, S), 2), var(va3, 0))), vn0), va3},
                               type_ptr(extract(var(variadic(va4, S), 3), var(va4, 0)), vn2))), {"lea"});
     }

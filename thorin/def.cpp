@@ -188,6 +188,10 @@ Def::~Def() {
         delete[] ops_;
 }
 
+Arities::Arities(WorldBase& world)
+    : Def(world, Tag::Arities, world.universe(), {}, {"𝔸"})
+{}
+
 Intersection::Intersection(WorldBase& world, const Def* type, Defs ops, Debug dbg)
     : Def(world, Tag::Intersection, type, range(set_flatten<Intersection>(ops)), dbg)
 {
@@ -196,6 +200,10 @@ Intersection::Intersection(WorldBase& world, const Def* type, Defs ops, Debug db
 
 Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
     : Def(world, Tag::Lambda, type, {body}, dbg)
+{}
+
+MultiArities::MultiArities(WorldBase& world)
+    : Def(world, Tag::MultiArities, world.universe(), {}, {"𝔸ₘ"})
 {}
 
 Pack::Pack(WorldBase& world, const Def* type, const Def* body, Debug dbg)
@@ -328,6 +336,8 @@ const Def* Def::arity() const {
     THORIN_UNREACHABLE; // must override this
 }
 
+const Def* Arities::arity() const { return world().arity(1); }
+
 // const Def* All::arity() const { return TODO; }
 
 // const Def* Any::arity() const { return TODO; }
@@ -349,6 +359,8 @@ const Def* Axiom::arity() const {
 // const Def* Match::arity() const { return TODO; }
 
 // const Def* Pack::arity() const { return TODO; }
+
+const Def* MultiArities::arity() const { return world().arity(1); }
 
 const Def* Pi::arity() const { return world().arity(1); }
 
@@ -446,6 +458,7 @@ bool Var::equal(const Def* other) const {
 
 const Def* Any         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
+const Def* Arities     ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arities(); }
 const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
     return to.assume(t, box(), debug());
@@ -459,6 +472,7 @@ const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
 }
 const Def* Match       ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
+const Def* MultiArities::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.multi_arities(); }
 const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     return t->is_nominal() ? to.pack_nominal_sigma(t->as<Sigma>(), ops[0], debug()) : to.pack(arity(), ops[0], debug());
 }
@@ -555,6 +569,10 @@ const Def* Def::shift_free_vars(size_t shift) const {
  * assignable
  */
 
+bool MultiArities::assignable(Defs defs) const {
+    return defs.size() == 1 && (this == defs.front()->type() || defs.front()->type()->isa<Arities>());
+}
+
 bool Sigma::assignable(Defs defs) const {
     if (num_ops() != defs.size())
         return false;
@@ -565,6 +583,14 @@ bool Sigma::assignable(Defs defs) const {
             return false;
     }
     return true;
+}
+
+bool Star::assignable(Defs defs) const {
+    if (defs.size() != 1)
+        return false;
+    auto type = defs.front()->type();
+    return this == type ||
+        (kind_qualifier() == world().unlimited() && (world().multi_arities() == type || world().arities() == type));
 }
 
 bool Variadic::assignable(Defs defs) const {
@@ -692,6 +718,10 @@ std::ostream& App::stream(std::ostream& os) const {
     return stream_list(os, args(), [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
 
+std::ostream& Arities::stream(std::ostream& os) const {
+    return os << name();
+}
+
 std::ostream& Axiom::stream(std::ostream& os) const { return qualifier_stream(os) << name(); }
 
 std::ostream& Error::stream(std::ostream& os) const { return os << "<error>"; }
@@ -714,6 +744,10 @@ std::ostream& Match::stream(std::ostream& os) const {
     destructee()->name_stream(os);
     os << " with ";
     return stream_list(os, handlers(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+}
+
+std::ostream& MultiArities::stream(std::ostream& os) const {
+    return os << name();
 }
 
 std::ostream& Lambda::stream(std::ostream& os) const {

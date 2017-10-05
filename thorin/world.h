@@ -27,7 +27,8 @@ public:
 
     //@{ create universe and kinds
     const Universe* universe() const { return universe_; }
-    const Axiom* arity_kind() const { return arity_kind_; }
+    const Arities* arities() const { return arities_; }
+    const MultiArities* multi_arities() const { return multi_arities_; }
     const Star* star(Qualifier q = Qualifier::Unlimited) const { return star_[size_t(q)]; }
     const Star* star(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
@@ -291,7 +292,8 @@ protected:
     std::array<const Star*,  4> star_;
     std::array<const Sigma*, 4> unit_;
     std::array<const Tuple*, 4> tuple0_;
-    const Axiom* arity_kind_;
+    const Arities* arities_;
+    const MultiArities* multi_arities_;
 };
 
 class World : public WorldBase {

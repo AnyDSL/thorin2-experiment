@@ -14,7 +14,7 @@ TEST(Variadic, Unit) {
 
 TEST(Variadic, Misc) {
     World w;
-    auto A = w.arity_kind();
+    auto A = w.arities();
     auto B = w.type_bool();
     auto N = w.type_nat();
     auto S = w.star();
@@ -99,7 +99,7 @@ TEST(Variadic, Multi) {
     ASSERT_EQ(w.lambda(w.variadic(3, w.variadic(8, w.variadic(5, N))), e3),
               w.lambda({w.variadic({8, 5}, N), w.variadic({8, 5}, N), w.variadic({8, 5}, N)}, f3));
 
-    auto A = w.arity_kind();
+    auto A = w.arities();
     auto arity_tuple = [&](auto i) { return w.variadic(w.var(A, i), A); };
     auto a = [&](auto i) { return w.var(A, i); };
     auto build_variadic = w.variadic(a(1), w.extract(w.var(arity_tuple(2), 1), w.var(a(2), 0)));
@@ -132,7 +132,7 @@ TEST(Variadic, InlineSigmaInterOp) {
 
 TEST(Variadic, Nested) {
     World w;
-    auto A = w.arity_kind();
+    auto A = w.arities();
     auto N = w.type_nat();
     auto S = w.star();
 
@@ -162,7 +162,7 @@ TEST(Variadic, Nested) {
 TEST(XLA, Misc) {
     World w;
     auto N = w.type_nat();
-    auto A = w.arity_kind();
+    auto A = w.arities();
     auto S = w.star();
     //auto a2 = w.arity(2);
     auto a3 = w.arity(3);

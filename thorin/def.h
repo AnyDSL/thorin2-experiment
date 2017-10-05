@@ -103,6 +103,7 @@ public:
         All,
         Any,
         App,
+        Arities,
         Axiom,
         Error,
         Extract,
@@ -110,6 +111,7 @@ public:
         Insert,
         Lambda,
         Match,
+        MultiArities,
         Pack,
         Pi,
         Pick,
@@ -686,12 +688,43 @@ private:
     friend class WorldBase;
 };
 
+class Arities : public Def {
+private:
+    Arities(WorldBase& world);
+
+public:
+    const Def* arity() const override;
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+
+    friend class WorldBase;
+};
+
+class MultiArities : public Def {
+private:
+    MultiArities(WorldBase& world);
+
+public:
+    const Def* arity() const override;
+    bool assignable(Defs defs) const override;
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+
+    friend class WorldBase;
+};
+
+
 class Star : public Def {
 private:
     Star(WorldBase& world, const Def* qualifier);
 
 public:
     const Def* arity() const override;
+    bool assignable(Defs defs) const override;
     std::ostream& stream(std::ostream&) const override;
     const Def* kind_qualifier() const override;
 
