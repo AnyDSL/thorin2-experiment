@@ -196,73 +196,50 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
     return app->try_reduce();
 }
 
-const Def* WorldBase::extract(const Def* def, const Def* i, Debug dbg) {
-    assert(!def->is_universe());
+const Def* WorldBase::extract(const Def* def, const Def* index, Debug dbg) {
+    assertf(def->is_value(), "can only build extracts of values");
     auto a = def->arity();
-    assertf(i->type() == a, "arity {} of value {} does not match type {} of index {} for extract",
-            a, def, i->type(), i);
-    if (auto assume = i->isa<Axiom>())
-        return extract(def, assume->box().get_u64(), dbg);
+    assertf(a->assignable({index}), "index {} with type {} is not assignable to arity {} of value {} for extract",
+            index->type(), index, a, def);
+    if (index->type() == arity(1))
+        return def;
+    if (auto assume = index->isa<Axiom>()) {
+        auto i = assume->box().get_u64();
+        if (def->isa<Tuple>())
+            return def->op(i);
 
-    if (auto variadic = def->isa<Variadic>()) {
-        if (!variadic->body()->free_vars().test(0))
-            return variadic->body()->shift_free_vars(1);
+        if (auto sigma = def->type()->isa<Sigma>()) {
+            auto type = sigma->op(i);
+            if (type->free_vars().any_end(i)) {
+                size_t skipped_shifts = 0;
+                for (size_t delta = 1; delta <= i; ++delta) {
+                    if (type->free_vars().none_begin(skipped_shifts)) {
+                        ++skipped_shifts;
+                        continue;
+                    }
+
+                    // this also shifts any Var with i > skipped_shifts by -1
+                    type = type->reduce(extract(def, i - delta), skipped_shifts);
+                }
+            }
+            return unify<Extract>(2, *this, type, def, index, dbg);
+        }
     }
 
     if (auto pack = def->isa<Pack>()) {
-        if (!pack->body()->free_vars().test(0))
-            return pack->body()->shift_free_vars(1);
+        return pack->body()->reduce(index);
     }
 
-    auto type = def->type();
-    if (def->is_value())
-        type = extract(def->type(), i);
+    // TODO multi-index extracts, also with constants
 
-    return unify<Extract>(2, *this, type, def, i, dbg);
+    assertf(def->type()->isa<Variadic>(), "can only build extracts with variable index on terms of variadic type");
+    auto type = def->type()->as<Variadic>()->body()->reduce(index);
+    return unify<Extract>(2, *this, type, def, index, dbg);
 }
 
 const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
-    if (def->isa<Tuple>())
-        return def->op(i);
-
-    if (auto sigma = def->isa<Sigma>()) {
-        assert(!sigma->is_dependent());
-        return sigma->op(i);
-    }
-
-    if (auto variadic = def->isa<Variadic>())
-        return variadic->body()->reduce(index(variadic->arity()->as<Axiom>()->box().get_u64(), i));
-
-    if (auto pack = def->isa<Pack>())
-        return pack->body()->reduce(index(pack->arity()->as<Axiom>()->box().get_u64(), i));
-
-    if (auto sigma = def->type()->isa<Sigma>()) {
-        auto type = sigma->op(i);
-        if (type->free_vars().any_end(i)) {
-            size_t skipped_shifts = 0;
-            for (size_t delta = 1; delta <= i; ++delta) {
-                if (type->free_vars().none_begin(skipped_shifts)) {
-                    ++skipped_shifts;
-                    continue;
-                }
-
-                // this also shifts any Var with i > skipped_shifts by -1
-                type = type->reduce(extract(def, i - delta), skipped_shifts);
-            }
-        }
-
-        return unify<Extract>(2, *this, type, def, index(sigma->num_ops(), i, dbg), dbg);
-    }
-
-    if (auto v = def->type()->isa<Variadic>()) {
-        auto a = v->arity()->as<Axiom>()->box().get_u64();
-        assertf(i < a, "index {} not provably in arity {}", i, a);
-        auto idx = index(a, i, dbg);
-        return unify<Extract>(2, *this, v->body()->reduce(idx), def, idx, dbg);
-    }
-
-    assert(i == 0);
-    return def;
+    assertf(def->arity()->isa<Axiom>(), "can only extract by size_t on constant arities");
+    return extract(def, index(def->arity()->as<Axiom>()->box().get_u64(), i, dbg), dbg);
 }
 
 const Def* WorldBase::index(size_t a, size_t i, Location location) {

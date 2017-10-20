@@ -599,8 +599,7 @@ bool Variadic::assignable(Defs defs) const {
         return false;
     for (size_t i = 0; i != size; ++i) {
         auto b = body()->reduce(world().index(i, size));
-        assert(!b->has_error());
-        if (defs[i]->type() != b)
+        if (b->has_error() || defs[i]->type() != b)
             return false;
     }
     return true;
