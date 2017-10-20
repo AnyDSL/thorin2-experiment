@@ -43,7 +43,7 @@ bool BitSet::none_range(const size_t begin, const size_t end) const {
     // TODO optimize
     bool result = true;
     for (size_t i = begin; result && i != end; ++i)
-        result &= ~test(i);
+        result &= !test(i);
     return result;
 }
 
