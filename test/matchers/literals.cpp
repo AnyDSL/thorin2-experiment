@@ -7,10 +7,10 @@ namespace thorin {
 TEST(MatchLiterals, Int) {
     World w;
 
-    ASSERT_TRUE(Literal<uw32>(w.val_uw32(2048)).is(2048));
-    ASSERT_TRUE(IntLiteral<sw16>(w.val_sw16(0)).is_zero());
-    ASSERT_TRUE(IntLiteral<uo32>(w.val_uo32(0)).is_zero());
-    ASSERT_TRUE(IntLiteral<sw32>(w.val_sw32(-2048)).is_negative());
+    ASSERT_TRUE(Literal<uw32>(w.val<iflags::uw, iwidth::w32>(2048)).is(2048));
+    ASSERT_TRUE(IntLiteral<sw16>(w.val<iflags::sw, iwidth::w16>(0)).is_zero());
+    ASSERT_TRUE(IntLiteral<uo32>(w.val<iflags::uo, iwidth::w32>(0)).is_zero());
+    ASSERT_TRUE(IntLiteral<sw32>(w.val<iflags::sw, iwidth::w32>(-2048)).is_negative());
 }
 
 TEST(MatchLiterals, Real) {

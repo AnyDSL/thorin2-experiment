@@ -347,14 +347,8 @@ public:
     }
 
 
-    template<iflags f, iwidth w> const App* type() { return nullptr; }
-    template<rflags f, rwidth w> const App* type() { return nullptr; }
-
-#define CODE(r, x) \
-    const App* T_CAT(type_, T_CAT(x))() { return T_CAT(type_, T_CAT(x), _); }
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
-#undef CODE
+    template<iflags f, iwidth w> const App* type() { return itype_f_w_[size_t(f)][size_t(w)]; }
+    template<rflags f, rwidth w> const App* type() { return rtype_f_w_[size_t(f)][size_t(w)]; }
 
     const Axiom* type_mem() { return type_mem_; }
     const Axiom* type_frame() { return type_frame_; }
@@ -380,13 +374,9 @@ public:
     const Axiom* val_bool_bot() { return val_bool_[0]; }
     const Axiom* val_bool_top() { return val_bool_[1]; }
 
-#define CODE(r, x)                                                             \
-    const Axiom* T_CAT(val_, T_CAT(x)) (T_CAT(x) val) {                        \
-        return assume(T_CAT(type_, T_CAT(x))(), {val}, {std::to_string(val)}); \
-    }
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
-#undef CODE
+    // TODO use proper val types here
+    template<iflags f, iwidth w> const Axiom* val(uint64_t val) { return assume(itype_f_w_[size_t(f)][size_t(w)], {val}, {std::to_string(val)}); }
+    template<rflags f, rwidth w> const Axiom* val(double   val) { return assume(itype_f_w_[size_t(f)][size_t(w)], {val}, {std::to_string(val)}); }
     //@}
 
     //@{ arithmetic operations
@@ -448,12 +438,9 @@ private:
     const Axiom* op_slot_;
     const Axiom* op_store_;
 
-    // i/r type
-#define CODE(r, x) \
-    const App* T_CAT(type_, T_CAT(x), _);
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
-#undef CODE
+    // i/r types
+    array<array<const App*, size_t(iwidth::Num)>, size_t(iflags::Num)> itype_f_w_;
+    array<array<const App*, size_t(rwidth::Num)>, size_t(rflags::Num)> rtype_f_w_;
 
     // arithops
     array<const Axiom*, Num_IArithOp> iarithop_;

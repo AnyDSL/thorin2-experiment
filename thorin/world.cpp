@@ -714,19 +714,15 @@ World::World() {
 #undef CODE
 #undef VAR
 
-    // type_i
-#define CODE(r, x) \
-    T_CAT(type_, T_CAT(x), _) = \
-        type_i(Qualifier::u, iflags::T_ELEM(0, x), T_ELEM(1, x));
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
-#undef CODE
-
-    // type_r
-#define CODE(r, x) \
-    T_CAT(type_, T_CAT(x), _) = \
-        type_r(Qualifier::u, rflags::T_ELEM(0, x), T_ELEM(1, x));
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
-#undef CODE
+    // type_i/r
+    for (size_t f = 0; f != size_t(iflags::Num); ++f) {
+        for (size_t w = 0; w != size_t(iwidth::Num); ++w)
+            itype_f_w_[f][w] = type_i(Qualifier::u, iflags(f), index2iwidth(w));
+    }
+    for (size_t f = 0; f != size_t(rflags::Num); ++f) {
+        for (size_t w = 0; w != size_t(rwidth::Num); ++w)
+            rtype_f_w_[f][w] = type_r(Qualifier::u, rflags(f), index2rwidth(w));
+    }
 
     auto i1 = variadic(va3, type_i(vq3, vn2, vn1)); auto r1 = variadic(va3, type_r(vq3, vn2, vn1));
     auto i2 = variadic(va4, type_i(vq4, vn3, vn2)); auto r2 = variadic(va4, type_r(vq4, vn3, vn2));
