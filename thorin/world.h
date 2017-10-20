@@ -296,8 +296,11 @@ protected:
 
 class World : public WorldBase {
 public:
+    template<class T, size_t N> using array = std::array<T, N>;
+
     World();
 
+    // TODO remove this from World
     bool is_primitive_type(const Def* type) {
         if (type == type_bool() || type == type_nat())
             return true;
@@ -310,6 +313,7 @@ public:
         return false;
     }
 
+    // TODO remove this from World
     bool is_primitive_type_constructor(const Def* def) {
         if (!def->type()->isa<Pi>())
             return false;
@@ -341,6 +345,10 @@ public:
     const App* type_r(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
         return app(type_r_, {q, flags, width}, dbg)->as<App>();
     }
+
+
+    template<iflags f, iwidth w> const App* type() { return nullptr; }
+    template<rflags f, rwidth w> const App* type() { return nullptr; }
 
 #define CODE(r, x) \
     const App* T_CAT(type_, T_CAT(x))() { return T_CAT(type_, T_CAT(x), _); }
@@ -382,18 +390,14 @@ public:
     //@}
 
     //@{ arithmetic operations
-#define CODE(r, ir, x)                                                                     \
-    const Axiom* T_CAT(op_, x)() { return T_CAT(op_, x, _); }                              \
-    const App* T_CAT(op_, x)(T_CAT(ir, flags) flags, int64_t width) {                      \
-        return T_CAT(op_, x, s_)[size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>(); \
-    }                                                                                      \
-    const App* T_CAT(op_, x)(const Def* q, const Def* flags, const Def* width) {           \
-        return app(app(T_CAT(op_, x)(), arity(1)), {q, flags, width})->as<App>();          \
-    }                                                                                      \
-    const App* T_CAT(op_, x)(const Def* a, const Def* b);
-    T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
-    T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
-#undef CODE
+    template<IArithOp O> const Axiom* op() { return iarithop_[O]; }
+    template<RArithOp O> const Axiom* op() { return rarithop_[O]; }
+    template<IArithOp O> const App* op(iflags flags, int64_t width) { return iarithop_f_w_[O][size_t(flags)][iwidth2index(width)]->as<App>(); }
+    template<RArithOp O> const App* op(rflags flags, int64_t width) { return rarithop_f_w_[O][size_t(flags)][rwidth2index(width)]->as<App>(); }
+    template<IArithOp O> const App* op(const Def* q, const Def* flags, const Def* width) { return app(app(op<O>(), arity(1)), {q, flags, width})->template as<App>(); }
+    template<RArithOp O> const App* op(const Def* q, const Def* flags, const Def* width) { return app(app(op<O>(), arity(1)), {q, flags, width})->template as<App>(); }
+    template<IArithOp O> const App* op(const Def* a, const Def* b);
+    template<RArithOp O> const App* op(const Def* a, const Def* b);
     //@}
 
     //@{ relational operations
@@ -431,8 +435,8 @@ private:
     const Def* type_bool_;
     const Def* type_nat_;
     const Axiom* val_nat_0_;
-    std::array<const Axiom*, 2> val_bool_;
-    std::array<const Axiom*, 7> val_nat_;
+    array<const Axiom*, 2> val_bool_;
+    array<const Axiom*, 7> val_nat_;
     const Axiom* type_i_;
     const Axiom* type_r_;
     const Axiom* type_mem_;
@@ -452,17 +456,10 @@ private:
 #undef CODE
 
     // arithops
-#define CODE(r, data, x) \
-    const Axiom* T_CAT(op_, x, _);
-    T_FOR_EACH(CODE, _, THORIN_I_ARITHOP)
-    T_FOR_EACH(CODE, _, THORIN_R_ARITHOP)
-#undef CODE
-
-#define CODE(r, ir, x) \
-    const App* T_CAT(op_, x, s_)[size_t(T_CAT(ir, flags)::Num)][size_t(T_CAT(ir, width)::Num)];
-    T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
-    T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
-#undef CODE
+    array<const Axiom*, Num_IArithOp> iarithop_;
+    array<const Axiom*, Num_RArithOp> rarithop_;
+    array<array<array<const App*, size_t(iwidth::Num)>, size_t(iflags::Num)>, Num_IArithOp> iarithop_f_w_;
+    array<array<array<const App*, size_t(rwidth::Num)>, size_t(rflags::Num)>, Num_RArithOp> rarithop_f_w_;
 
     // relops
 #define CODE(r, ir, x) \

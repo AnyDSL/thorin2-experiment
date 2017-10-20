@@ -54,8 +54,7 @@ TEST(Primop, Vals) {
 
 TEST(Primop, Arithop) {
     World w;
-
-    auto a = w.op_iadd(w.val_uo32(23), w.val_uo32(42));
+    auto a = w.op<IAdd>(w.val_uo32(23), w.val_uo32(42));
     ASSERT_EQ(a->type(), w.type_uo32());
 }
 

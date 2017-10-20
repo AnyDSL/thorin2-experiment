@@ -58,8 +58,8 @@ using namespace half_float::literal;
                        (sw) /* x x */ /*  signed wraparound */
 #define THORIN_R_FLAGS (f)(p) // fast, precise - more fine-grained flags are planned in the future
 
-#define THORIN_I_ARITHOP (iadd)(isub)(imul)(idiv)(imod)(ishl)(ishr)(iand)(ior)(ixor)
-#define THORIN_R_ARITHOP (radd)(rsub)(rmul)(rdiv)(rmod)
+#define THORIN_I_ARITHOP(f) f(IAdd) f(ISub) f(IMul) f(IDiv) f(IMod) f(IShl) f(IShr) f(IAnd) f(IOr) f(IXor)
+#define THORIN_R_ARITHOP(f) f(RAdd) f(RSub) f(RMul) f(RDiv) f(RMod)
 
 #define THORIN_I_REL /*     E G L                         */ \
                     (t)  /* o o o - always true           */ \
@@ -118,14 +118,18 @@ inline size_t rwidth2index(size_t i) { assert(is_power_of_2(i)); return log2(i)-
 inline size_t index2iwidth(size_t i) { return i == 0 ? 1 : 1 << (i+2); }
 inline size_t index2rwidth(size_t i) { return 1 << (i+4); }
 
-enum class iarithop {
-    T_ENUM(THORIN_I_ARITHOP),
-    Num
+enum IArithOp : size_t {
+#define CODE(O) O,
+    THORIN_I_ARITHOP(CODE)
+#undef CODE
+    Num_IArithOp
 };
 
-enum class rarithop {
-    T_ENUM(THORIN_R_ARITHOP),
-    Num
+enum RArithOp : size_t {
+#define CODE(O) O,
+    THORIN_R_ARITHOP(CODE)
+#undef CODE
+    Num_RArithOp
 };
 
 enum class irel {
