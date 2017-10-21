@@ -686,7 +686,6 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
 
 World::World() {
     auto Q = qualifier_type();
-    auto U = qualifier(Qualifier::Unlimited);
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });
     auto S = star();
@@ -706,23 +705,13 @@ World::World() {
     auto F = type_frame_ = axiom(S, {"F"});
 
 #define VAR(x, X, n)                 \
-    auto T_CAT(v, x, n) = var(X, n); \
-    (void)T_CAT(v, x, n);
+    auto v ## x ##  n = var(X, n); \
+    (void)v ## x ## n;
 #define CODE(x, X) \
     VAR(x, X, 0) VAR(x, X, 1) VAR(x, X, 2) VAR(x, X, 3) VAR(x, X, 4) VAR(x, X, 5) VAR(x, X, 6)
     CODE(a, A) CODE(q, Q) CODE(n, N) CODE(s, S)
 #undef CODE
 #undef VAR
-
-    // type_i/r
-    for (size_t f = 0; f != size_t(iflags::Num); ++f) {
-        for (size_t w = 0; w != size_t(iwidth::Num); ++w)
-            itype_f_w_[f][w] = type_i(Qualifier::u, iflags(f), index2iwidth(w));
-    }
-    for (size_t f = 0; f != size_t(rflags::Num); ++f) {
-        for (size_t w = 0; w != size_t(rwidth::Num); ++w)
-            rtype_f_w_[f][w] = type_r(Qualifier::u, rflags(f), index2rwidth(w));
-    }
 
     auto i1 = variadic(va3, type_i(vq3, vn2, vn1)); auto r1 = variadic(va3, type_r(vq3, vn2, vn1));
     auto i2 = variadic(va4, type_i(vq4, vn3, vn2)); auto r2 = variadic(va4, type_r(vq4, vn3, vn2));
@@ -731,27 +720,11 @@ World::World() {
     auto r_type_arithop = pi(A, pi({Q, N, N}, pi({r1, r2}, r3)));
 
     // arithop table
-    for (size_t o = 0; o != Num_IArithOp; ++o) {
+    for (size_t o = 0; o != Num_IArithOp; ++o)
         iarithop_[o] = axiom(i_type_arithop, {"TODO"});
-        for (size_t f = 0; f != size_t(iflags::Num); ++f) {
-            for (size_t w = 0; w != size_t(iwidth::Num); ++w) {
-                auto flags = val_nat(f);
-                auto width = val_nat(index2iwidth(w));
-                iarithop_f_w_[o][f][w] = app(app(iarithop_[o], arity(1)), {U, flags, width})->as<App>();
-            }
-        }
-    }
 
-    for (size_t o = 0; o != Num_RArithOp; ++o) {
+    for (size_t o = 0; o != Num_RArithOp; ++o)
         rarithop_[o] = axiom(r_type_arithop, {"TODO"});
-        for (size_t f = 0; f != size_t(rflags::Num); ++f) {
-            for (size_t w = 0; w != size_t(rwidth::Num); ++w) {
-                auto flags = val_nat(f);
-                auto width = val_nat(index2rwidth(w));
-                iarithop_f_w_[o][f][w] = app(app(rarithop_[o], arity(1)), {U, flags, width})->as<App>();
-            }
-        }
-    }
 
     i1 = variadic(va4, type_i(vq3, vn2, vn1)); r1 = variadic(va4, type_r(vq3, vn2, vn1));
     i2 = variadic(va5, type_i(vq4, vn3, vn2)); r2 = variadic(va5, type_r(vq4, vn3, vn2));
@@ -760,29 +733,6 @@ World::World() {
     auto r_type_cmp = pi(A, pi(N, pi({Q, N, N}, pi({r1, r2}, b))));
     op_icmp_ = axiom(i_type_cmp, {"icmp"});
     op_rcmp_ = axiom(r_type_cmp, {"rcmp"});
-
-    // all cmp relations
-#define CODE(r, ir, x) \
-    T_CAT(op_, ir, cmp_, x, _) = app(app(T_CAT(op_, ir, cmp_), arity(1)), val_nat(int64_t(T_CAT(ir, rel)::x)), {T_STR(T_CAT(ir, cmp_, x))})->as<App>();
-    T_FOR_EACH(CODE, i, THORIN_I_REL)
-    T_FOR_EACH(CODE, r, THORIN_R_REL)
-#undef CODE
-
-    // cmp table
-#define CODE(ir)                                                                                       \
-    for (size_t r = 0; r != size_t(T_CAT(ir, rel)::Num); ++r) {                                        \
-        for (size_t f = 0; f != size_t(T_CAT(ir, flags)::Num); ++f) {                                  \
-            for (size_t w = 0; w != size_t(T_CAT(ir, width)::Num); ++w) {                              \
-                auto rel = val_nat(r);                                                                 \
-                auto flags = val_nat(f);                                                               \
-                auto width = val_nat(T_CAT(index2, ir, width)(w));                                     \
-                T_CAT(op_, ir, cmps_)[r][f][w] = T_CAT(op_, ir, cmp)(rel, U, flags, width)->as<App>(); \
-            }                                                                                          \
-        }                                                                                              \
-    }
-    CODE(i)
-    CODE(r)
-#undef CODE
 
     op_enter_ = axiom(pi(M, sigma({M, F})), {"enter"});
     {
@@ -813,29 +763,21 @@ const Axiom* World::val_nat(int64_t val, Location location) {
     return result;
 }
 
-template<IArithOp O>
-const App* World::op(const Def* a, const Def* b) {
-    IntType t(a->type());
-    auto callee = t.is_const() && t.const_qualifier() == Qualifier::u
-        ? op<O>(             *t.const_flags(), *t.const_width())
-        : op<O>(t.qualifier(), t.     flags(),  t.      width());
-    return app(callee, {a, b})->template as<App>();
+#define CODE(ir)                                                              \
+template<ir ## arithop O>                                                     \
+const Def* World::op(const Def* a, const Def* b, Debug dbg) {                 \
+    ir ## Type t(a->type());                                                  \
+    return app(op<O>(t.qualifier(), t.flags(), t.width(), dbg), {a, b}, dbg); \
 }
+CODE(i)
+CODE(r)
+#undef CODE
 
 #define CODE(O) \
-    template const App* World::op<O>(const Def*, const Def*);
+    template const Def* World::op<O>(const Def*, const Def*, Debug);
 THORIN_I_ARITHOP(CODE)
 THORIN_R_ARITHOP(CODE)
 #undef CODE
-
-template<RArithOp O>
-const App* World::op(const Def* a, const Def* b) {
-    RealType t(a->type());
-    auto callee = t.is_const() && t.const_qualifier() == Qualifier::u
-        ? op<O>(             *t.const_flags(), *t.const_width())
-        : op<O>(t.qualifier(), t.     flags(),  t.      width());
-    return app(callee, {a, b})->template as<App>();
-}
 
 const Def* World::op_enter(const Def* mem, Debug dbg) {
     return app(op_enter_, mem, dbg);

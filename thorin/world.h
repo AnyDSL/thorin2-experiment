@@ -326,29 +326,18 @@ public:
     const Def* type_bool() { return type_bool_; }
     const Def* type_nat() { return type_nat_; }
 
-    const Axiom* type_i() { return type_i_; }
-    const App* type_i(Qualifier q, iflags flags, int64_t width) {
-        auto f = val_nat(int64_t(flags));
-        auto w = val_nat(width);
-        return type_i(qualifier(q), f, w);
+#define CODE(ir)                                                                                                         \
+    const Axiom* type_ ## ir() { return type_ ## ir ## _; }                                                              \
+    const App* type_ ## ir(ir ## flags flags, int64_t width) { return type_ ## ir(Qualifier::Unlimited, flags, width); } \
+    const App* type_ ## ir(Qualifier q, ir ## flags flags, int64_t width) {                                              \
+        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return type_ ## ir(qualifier(q), f, w);               \
+    }                                                                                                                    \
+    const App* type_ ## ir(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {                           \
+        return app(type_ ## ir(), {q, flags, width}, dbg)->as<App>();                                                    \
     }
-    const App* type_i(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
-        return app(type_i_, {q, flags, width}, dbg)->as<App>();
-    }
-
-    const Axiom* type_r() { return type_r_; }
-    const App* type_r(Qualifier q, rflags flags, int64_t width) {
-        auto f = val_nat(int64_t(flags));
-        auto w = val_nat(width);
-        return type_r(qualifier(q), f, w);
-    }
-    const App* type_r(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
-        return app(type_r_, {q, flags, width}, dbg)->as<App>();
-    }
-
-
-    template<iflags f, iwidth w> const App* type() { return itype_f_w_[size_t(f)][size_t(w)]; }
-    template<rflags f, rwidth w> const App* type() { return rtype_f_w_[size_t(f)][size_t(w)]; }
+    CODE(i)
+    CODE(r)
+#undef CODE
 
     const Axiom* type_mem() { return type_mem_; }
     const Axiom* type_frame() { return type_frame_; }
@@ -375,33 +364,39 @@ public:
     const Axiom* val_bool_top() { return val_bool_[1]; }
 
     // TODO use proper val types here
-    template<iflags f, iwidth w> const Axiom* val(uint64_t val) { return assume(itype_f_w_[size_t(f)][size_t(w)], {val}, {std::to_string(val)}); }
-    template<rflags f, rwidth w> const Axiom* val(double   val) { return assume(itype_f_w_[size_t(f)][size_t(w)], {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f,  uint8_t val) { return assume(type_i(f,  8), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, uint16_t val) { return assume(type_i(f, 16), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, uint32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, uint64_t val) { return assume(type_i(f, 64), {val}, {std::to_string(val)}); }
+
+    const Axiom* val(iflags f,  int8_t val) { return assume(type_i(f,  8), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, int16_t val) { return assume(type_i(f, 16), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, int32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, int64_t val) { return assume(type_i(f, 64), {val}, {std::to_string(val)}); }
+
+    const Axiom* val(rflags f, half_float::half val) { return assume(type_r(f, 16), {val}, {std::to_string(val)}); }
+    const Axiom* val(rflags f, float  val) { return assume(type_r(f, 32), {val}, {std::to_string(val)}); }
+    const Axiom* val(rflags f, double val) { return assume(type_r(f, 64), {val}, {std::to_string(val)}); }
     //@}
 
     //@{ arithmetic operations
-    template<IArithOp O> const Axiom* op() { return iarithop_[O]; }
-    template<RArithOp O> const Axiom* op() { return rarithop_[O]; }
-    template<IArithOp O> const App* op(iflags flags, int64_t width) { return iarithop_f_w_[O][size_t(flags)][iwidth2index(width)]->as<App>(); }
-    template<RArithOp O> const App* op(rflags flags, int64_t width) { return rarithop_f_w_[O][size_t(flags)][rwidth2index(width)]->as<App>(); }
-    template<IArithOp O> const App* op(const Def* q, const Def* flags, const Def* width) { return app(app(op<O>(), arity(1)), {q, flags, width})->template as<App>(); }
-    template<RArithOp O> const App* op(const Def* q, const Def* flags, const Def* width) { return app(app(op<O>(), arity(1)), {q, flags, width})->template as<App>(); }
-    template<IArithOp O> const App* op(const Def* a, const Def* b);
-    template<RArithOp O> const App* op(const Def* a, const Def* b);
-    //@}
-
-    //@{ relational operations
-#define CODE(ir)                                                                                     \
-    const Axiom* T_CAT(op_, ir, cmp)() { return op_icmp_; }                                          \
-    const App* T_CAT(op_, ir, cmp)(const Def* r, const Def* q, const Def* flags, const Def* width) { \
-        return app(app(app(T_CAT(op_, ir, cmp_), arity(1)), r), {q, flags, width})->as<App>(); \
-    }                                                                                                \
-    const App* T_CAT(op_, ir, cmp)(T_CAT(ir, rel) rel, T_CAT(ir, flags) flags, int64_t width) {      \
-        return T_CAT(op_, ir, cmps_)[size_t(rel)][size_t(flags)][T_CAT(ir, width2index)(width)];     \
-    }
+#define CODE(ir)                                                                                                \
+    template<ir ## arithop O> const Axiom* op() { return iarithop_[O]; }                                        \
+    template<ir ## arithop O> const App* op(ir ## flags flags, int64_t width, Debug dbg = {}) {                 \
+        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return op<O>(f, w, dbg);                     \
+    }                                                                                                           \
+    template<ir ## arithop O> const App* op(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) { \
+        return app(app(op<O>(), arity(1), dbg), {q, flags, width}, dbg)->template as<App>();                    \
+    }                                                                                                           \
+    template<ir ## arithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {});
     CODE(i)
     CODE(r)
 #undef CODE
+    //@}
+
+    //@{ relational operations
+    const Axiom* op_icmp() { return op_icmp_; }
+    const Axiom* op_rcmp() { return op_icmp_; }
     //@}
 
     //@{ tuple operations
@@ -437,30 +432,10 @@ private:
     const Axiom* op_load_;
     const Axiom* op_slot_;
     const Axiom* op_store_;
-
-    // i/r types
-    array<array<const App*, size_t(iwidth::Num)>, size_t(iflags::Num)> itype_f_w_;
-    array<array<const App*, size_t(rwidth::Num)>, size_t(rflags::Num)> rtype_f_w_;
-
-    // arithops
     array<const Axiom*, Num_IArithOp> iarithop_;
     array<const Axiom*, Num_RArithOp> rarithop_;
-    array<array<array<const App*, size_t(iwidth::Num)>, size_t(iflags::Num)>, Num_IArithOp> iarithop_f_w_;
-    array<array<array<const App*, size_t(rwidth::Num)>, size_t(rflags::Num)>, Num_RArithOp> rarithop_f_w_;
-
-    // relops
-#define CODE(r, ir, x) \
-    const App* T_CAT(op_, ir, cmp_, x, _);
-    T_FOR_EACH(CODE, i, THORIN_I_REL)
-    T_FOR_EACH(CODE, r, THORIN_R_REL)
-#undef CODE
-
-#define CODE(ir)                                                                                                                    \
-    const Axiom* T_CAT(op_, ir, cmp_);                                                                                              \
-    const App* T_CAT(op_, ir, cmps_)[size_t(T_CAT(ir, rel)::Num)][size_t(T_CAT(ir, flags)::Num)][size_t(T_CAT(ir, width)::Num)];
-    CODE(i)
-    CODE(r)
-#undef CODE
+    const Axiom* op_icmp_;
+    const Axiom* op_rcmp_;
 };
 
 }
