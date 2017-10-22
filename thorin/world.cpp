@@ -128,7 +128,7 @@ WorldBase::WorldBase()
     unit_kind_ = insert<Sigma>(0, *this, universe_, Defs(), Debug("Σ*"));
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
-        qualifier_[i] = assume(qualifier_type(), {q}, {qualifier_cstr(q)});
+        qualifier_[i] = assume(qualifier_type(), {q}, {qualifier2str(q)});
         star_     [i] = insert<Star >(1, *this, qualifier_[i]);
         unit_     [i] = insert<Sigma>(0, *this, star_[i], Defs(), Debug("Σ()"));
         tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
@@ -721,10 +721,10 @@ World::World() {
 
     // arithop table
     for (size_t o = 0; o != Num_IArithOp; ++o)
-        iarithop_[o] = axiom(i_type_arithop, {"TODO"});
+        iarithop_[o] = axiom(i_type_arithop, {iarithop2str(iarithop(o))});
 
     for (size_t o = 0; o != Num_RArithOp; ++o)
-        rarithop_[o] = axiom(r_type_arithop, {"TODO"});
+        rarithop_[o] = axiom(r_type_arithop, {rarithop2str(rarithop(o))});
 
     i1 = variadic(va4, type_i(vq3, vn2, vn1)); r1 = variadic(va4, type_r(vq3, vn2, vn1));
     i2 = variadic(va5, type_i(vq4, vn3, vn2)); r2 = variadic(va5, type_r(vq4, vn3, vn2));
@@ -763,11 +763,16 @@ const Axiom* World::val_nat(int64_t val, Location location) {
     return result;
 }
 
-#define CODE(ir)                                                              \
-template<ir ## arithop O>                                                     \
-const Def* World::op(const Def* a, const Def* b, Debug dbg) {                 \
-    ir ## Type t(a->type());                                                  \
-    return app(op<O>(t.qualifier(), t.flags(), t.width(), dbg), {a, b}, dbg); \
+#define CODE(ir)                                                                            \
+template<ir ## arithop O>                                                                   \
+const Def* World::op(const Def* a, const Def* b, Debug dbg) {                               \
+    ir ## Type t(a->type());                                                                \
+    return app(app(app(op<O>(), arity(1)), {t.qualifier(), t.flags(), t.width()}), {a, b}, dbg);                 \
+}                                                                                           \
+                                                                                            \
+const Def* World::op_ ## ir ## cmp(const Def* rel, const Def* a, const Def* b, Debug dbg) { \
+    ir ## Type t(a->type());                                                                \
+    return app(app(app(app(op_ ## ir ## cmp(), arity(1)), rel), {t.qualifier(), t.flags(), t.width()}), {a, b}, dbg);                 \
 }
 CODE(i)
 CODE(r)

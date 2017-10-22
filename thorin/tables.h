@@ -88,6 +88,24 @@ enum rarithop : size_t {
     Num_RArithOp
 };
 
+constexpr const char* iarithop2str(iarithop o) {
+    switch (o) {
+#define CODE(O) case O: return #O;
+    THORIN_I_ARITHOP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
+
+constexpr const char* rarithop2str(rarithop o) {
+    switch (o) {
+#define CODE(O) case O: return #O;
+    THORIN_R_ARITHOP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
+
 enum class irel {
 #define CODE(f) f,
     THORIN_I_REL(CODE)

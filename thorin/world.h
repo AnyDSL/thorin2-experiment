@@ -380,26 +380,19 @@ public:
     //@}
 
     //@{ arithmetic operations
-#define CODE(ir)                                                                                                \
-    template<ir ## arithop O> const Axiom* op() { return iarithop_[O]; }                                        \
-    template<ir ## arithop O> const App* op(ir ## flags flags, int64_t width, Debug dbg = {}) {                 \
-        return op<O>(Qualifier::u, flags, width, dbg);                                                          \
-    }                                                                                                           \
-    template<ir ## arithop O> const App* op(Qualifier q, ir ## flags flags, int64_t width, Debug dbg = {}) {    \
-        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return op<O>(qualifier(q), f, w, dbg);       \
-    }                                                                                                           \
-    template<ir ## arithop O> const App* op(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) { \
-        return app(app(op<O>(), arity(1), dbg), {q, flags, width}, dbg)->template as<App>();                    \
-    }                                                                                                           \
-    template<ir ## arithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {});
-    CODE(i)
-    CODE(r)
-#undef CODE
+    template<iarithop O> const Axiom* op() { return iarithop_[O]; }
+    template<rarithop O> const Axiom* op() { return rarithop_[O]; }
+    template<iarithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {});
+    template<rarithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {});
     //@}
 
     //@{ relational operations
     const Axiom* op_icmp() { return op_icmp_; }
-    const Axiom* op_rcmp() { return op_icmp_; }
+    const Axiom* op_rcmp() { return op_rcmp_; }
+    const Def* op_icmp(irel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_icmp(val_nat(int64_t(rel)), a, b, dbg); }
+    const Def* op_rcmp(rrel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_rcmp(val_nat(int64_t(rel)), a, b, dbg); }
+    const Def* op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
+    const Def* op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
     //@}
 
     //@{ tuple operations

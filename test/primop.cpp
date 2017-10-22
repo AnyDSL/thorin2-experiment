@@ -40,11 +40,15 @@ TEST(Primop, Types) {
 TEST(Primop, Arithop) {
     World w;
     auto a = w.op<iadd>(w.val(iflags::uo, 23), w.val(iflags::uo, 42));
+    a->dump();
+    a->type()->dump();
     ASSERT_EQ(a->type(), (w.type_i(iflags::uo, 32)));
 }
 
 TEST(Primop, Cmp) {
     World w;
+    auto x = w.op_icmp(irel::lt, w.val(iflags::so, 23), w.val(iflags::so, 42));
+    x->dump();
 }
 
 TEST(Primop, Ptr) {
