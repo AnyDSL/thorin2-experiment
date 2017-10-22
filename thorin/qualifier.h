@@ -32,15 +32,15 @@ inline bool operator<=(Qualifier lhs, Qualifier rhs) {
     return lhs == rhs || lhs < rhs;
 }
 
-constexpr const char* qualifier_cstr(Qualifier q) {
-    return q == Qualifier::Unlimited ? "" :
+constexpr const char* qualifier2str(Qualifier q) {
+    return q == Qualifier::Unlimited ? "ᵁ" :
         q == Qualifier::Relevant ? "ᴿ" :
         q == Qualifier::Affine ? "ᴬ" :
         "ᴸ";
 }
 
 inline std::ostream& operator<<(std::ostream& ostream, const Qualifier q) {
-    return ostream << qualifier_cstr(q);
+    return ostream << qualifier2str(q);
 }
 
 /// Also known as the least upper bound.

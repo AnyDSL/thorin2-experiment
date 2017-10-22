@@ -298,8 +298,11 @@ protected:
 
 class World : public WorldBase {
 public:
+    template<class T, size_t N> using array = std::array<T, N>;
+
     World();
 
+    // TODO remove this from World
     bool is_primitive_type(const Def* type) {
         if (type == type_bool() || type == type_nat())
             return true;
@@ -312,6 +315,7 @@ public:
         return false;
     }
 
+    // TODO remove this from World
     bool is_primitive_type_constructor(const Def* def) {
         if (!def->type()->isa<Pi>())
             return false;
@@ -324,30 +328,17 @@ public:
     const Def* type_bool() { return type_bool_; }
     const Def* type_nat() { return type_nat_; }
 
-    const Axiom* type_i() { return type_i_; }
-    const App* type_i(Qualifier q, iflags flags, int64_t width) {
-        auto f = val_nat(int64_t(flags));
-        auto w = val_nat(width);
-        return type_i(qualifier(q), f, w);
+#define CODE(ir)                                                                                                         \
+    const Axiom* type_ ## ir() { return type_ ## ir ## _; }                                                              \
+    const App* type_ ## ir(ir ## flags flags, int64_t width) { return type_ ## ir(Qualifier::Unlimited, flags, width); } \
+    const App* type_ ## ir(Qualifier q, ir ## flags flags, int64_t width) {                                              \
+        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return type_ ## ir(qualifier(q), f, w);               \
+    }                                                                                                                    \
+    const App* type_ ## ir(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {                           \
+        return app(type_ ## ir(), {q, flags, width}, dbg)->as<App>();                                                    \
     }
-    const App* type_i(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
-        return app(type_i_, {q, flags, width}, dbg)->as<App>();
-    }
-
-    const Axiom* type_r() { return type_r_; }
-    const App* type_r(Qualifier q, rflags flags, int64_t width) {
-        auto f = val_nat(int64_t(flags));
-        auto w = val_nat(width);
-        return type_r(qualifier(q), f, w);
-    }
-    const App* type_r(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
-        return app(type_r_, {q, flags, width}, dbg)->as<App>();
-    }
-
-#define CODE(r, x) \
-    const App* T_CAT(type_, T_CAT(x))() { return T_CAT(type_, T_CAT(x), _); }
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
+    CODE(i)
+    CODE(r)
 #undef CODE
 
     const Axiom* type_mem() { return type_mem_; }
@@ -374,42 +365,36 @@ public:
     const Axiom* val_bool_bot() { return val_bool_[0]; }
     const Axiom* val_bool_top() { return val_bool_[1]; }
 
-#define CODE(r, x)                                                             \
-    const Axiom* T_CAT(val_, T_CAT(x)) (T_CAT(x) val) {                        \
-        return assume(T_CAT(type_, T_CAT(x))(), {val}, {std::to_string(val)}); \
-    }
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
-#undef CODE
+    // TODO use proper val types here
+    const Axiom* val(iflags f,  uint8_t val) { return assume(type_i(f,  8), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, uint16_t val) { return assume(type_i(f, 16), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, uint32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, uint64_t val) { return assume(type_i(f, 64), {val}, {std::to_string(val)}); }
+
+    const Axiom* val(iflags f,  int8_t val) { return assume(type_i(f,  8), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, int16_t val) { return assume(type_i(f, 16), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, int32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
+    const Axiom* val(iflags f, int64_t val) { return assume(type_i(f, 64), {val}, {std::to_string(val)}); }
+
+    const Axiom* val(rflags f, half_float::half val) { return assume(type_r(f, 16), {val}, {std::to_string(val)}); }
+    const Axiom* val(rflags f, float  val) { return assume(type_r(f, 32), {val}, {std::to_string(val)}); }
+    const Axiom* val(rflags f, double val) { return assume(type_r(f, 64), {val}, {std::to_string(val)}); }
     //@}
 
     //@{ arithmetic operations
-#define CODE(r, ir, x)                                                                     \
-    const Axiom* T_CAT(op_, x)() { return T_CAT(op_, x, _); }                              \
-    const App* T_CAT(op_, x)(T_CAT(ir, flags) flags, int64_t width) {                      \
-        return T_CAT(op_, x, s_)[size_t(flags)][T_CAT(ir, width2index)(width)]->as<App>(); \
-    }                                                                                      \
-    const App* T_CAT(op_, x)(const Def* q, const Def* flags, const Def* width) {           \
-        return app(app(T_CAT(op_, x)(), arity(1)), {q, flags, width})->as<App>();          \
-    }                                                                                      \
-    const App* T_CAT(op_, x)(const Def* a, const Def* b);
-    T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
-    T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
-#undef CODE
+    template<iarithop O> const Axiom* op() { return iarithop_[O]; }
+    template<rarithop O> const Axiom* op() { return rarithop_[O]; }
+    template<iarithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {});
+    template<rarithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {});
     //@}
 
     //@{ relational operations
-#define CODE(ir)                                                                                     \
-    const Axiom* T_CAT(op_, ir, cmp)() { return op_icmp_; }                                          \
-    const App* T_CAT(op_, ir, cmp)(const Def* r, const Def* q, const Def* flags, const Def* width) { \
-        return app(app(app(T_CAT(op_, ir, cmp_), arity(1)), r), {q, flags, width})->as<App>(); \
-    }                                                                                                \
-    const App* T_CAT(op_, ir, cmp)(T_CAT(ir, rel) rel, T_CAT(ir, flags) flags, int64_t width) {      \
-        return T_CAT(op_, ir, cmps_)[size_t(rel)][size_t(flags)][T_CAT(ir, width2index)(width)];     \
-    }
-    CODE(i)
-    CODE(r)
-#undef CODE
+    const Axiom* op_icmp() { return op_icmp_; }
+    const Axiom* op_rcmp() { return op_rcmp_; }
+    const Def* op_icmp(irel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_icmp(val_nat(int64_t(rel)), a, b, dbg); }
+    const Def* op_rcmp(rrel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_rcmp(val_nat(int64_t(rel)), a, b, dbg); }
+    const Def* op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
+    const Def* op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
     //@}
 
     //@{ tuple operations
@@ -433,8 +418,8 @@ private:
     const Def* type_bool_;
     const Def* type_nat_;
     const Axiom* val_nat_0_;
-    std::array<const Axiom*, 2> val_bool_;
-    std::array<const Axiom*, 7> val_nat_;
+    array<const Axiom*, 2> val_bool_;
+    array<const Axiom*, 7> val_nat_;
     const Axiom* type_i_;
     const Axiom* type_r_;
     const Axiom* type_mem_;
@@ -445,40 +430,10 @@ private:
     const Axiom* op_load_;
     const Axiom* op_slot_;
     const Axiom* op_store_;
-
-    // i/r type
-#define CODE(r, x) \
-    const App* T_CAT(type_, T_CAT(x), _);
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_I_FLAGS)(THORIN_I_WIDTH))
-    T_FOR_EACH_PRODUCT(CODE, (THORIN_R_FLAGS)(THORIN_R_WIDTH))
-#undef CODE
-
-    // arithops
-#define CODE(r, data, x) \
-    const Axiom* T_CAT(op_, x, _);
-    T_FOR_EACH(CODE, _, THORIN_I_ARITHOP)
-    T_FOR_EACH(CODE, _, THORIN_R_ARITHOP)
-#undef CODE
-
-#define CODE(r, ir, x) \
-    const App* T_CAT(op_, x, s_)[size_t(T_CAT(ir, flags)::Num)][size_t(T_CAT(ir, width)::Num)];
-    T_FOR_EACH(CODE, i, THORIN_I_ARITHOP)
-    T_FOR_EACH(CODE, r, THORIN_R_ARITHOP)
-#undef CODE
-
-    // relops
-#define CODE(r, ir, x) \
-    const App* T_CAT(op_, ir, cmp_, x, _);
-    T_FOR_EACH(CODE, i, THORIN_I_REL)
-    T_FOR_EACH(CODE, r, THORIN_R_REL)
-#undef CODE
-
-#define CODE(ir)                                                                                                                    \
-    const Axiom* T_CAT(op_, ir, cmp_);                                                                                              \
-    const App* T_CAT(op_, ir, cmps_)[size_t(T_CAT(ir, rel)::Num)][size_t(T_CAT(ir, flags)::Num)][size_t(T_CAT(ir, width)::Num)];
-    CODE(i)
-    CODE(r)
-#undef CODE
+    array<const Axiom*, Num_IArithOp> iarithop_;
+    array<const Axiom*, Num_RArithOp> rarithop_;
+    const Axiom* op_icmp_;
+    const Axiom* op_rcmp_;
 };
 
 }

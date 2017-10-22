@@ -97,7 +97,7 @@ DefArray unique_gid_sorted(Defs defs);
 //------------------------------------------------------------------------------
 
 /// Base class for all Def%s.
-class Def : public MagicCast<Def>, public Streamable  {
+class Def : public RuntimeCast<Def>, public Streamable  {
 public:
     enum class Tag {
         All,

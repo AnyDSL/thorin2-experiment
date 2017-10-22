@@ -7,21 +7,22 @@ namespace thorin {
 TEST(MatchTypes, Array) {
     World w;
 
-    ASSERT_TRUE(ArrayType(w.type_uo16()).matches());
-    ASSERT_TRUE(ArrayType(w.type_sw32()));
+    ASSERT_TRUE(ArrayType(w.type_i(iflags::uo, 16)).matches());
+    ASSERT_TRUE(ArrayType(w.type_i(iflags::sw, 32)));
 
-    ASSERT_TRUE(ArrayType(w.type_f16()).matches());
-    ASSERT_TRUE(ArrayType(w.type_p32()));
+    ASSERT_TRUE(ArrayType(w.type_r(rflags::f, 16)).matches());
+    ASSERT_TRUE(ArrayType(w.type_r(rflags::p, 32)));
 
-    ASSERT_TRUE(ArrayType(w.variadic(4, w.type_f64())).matches());
-    ASSERT_TRUE(ArrayType(w.variadic(4, w.type_f64())).is_variadic());
-    ASSERT_TRUE(ArrayType(w.variadic(4, w.type_f64())).is_const());
-    ASSERT_EQ(w.arity(4), ArrayType(w.variadic(4, w.type_f64())).arity());
-    ASSERT_EQ(w.type_f64(), ArrayType(w.variadic(4, w.type_f64())).elem_type());
-    ASSERT_EQ(w.sigma({w.arity(4), w.arity(3)}), ArrayType(w.variadic(4, w.variadic(3, w.type_f64()))).arity());
-    ASSERT_EQ(w.type_p32(), ArrayType(w.variadic(4, w.variadic(3, w.type_p32()))).elem_type());
+    auto tf64 = w.type_r(rflags::f, 64);
+    ASSERT_TRUE(ArrayType(w.variadic(4, tf64)).matches());
+    ASSERT_TRUE(ArrayType(w.variadic(4, tf64)).is_variadic());
+    ASSERT_TRUE(ArrayType(w.variadic(4, tf64)).is_const());
+    ASSERT_EQ(w.arity(4), ArrayType(w.variadic(4, tf64)).arity());
+    ASSERT_EQ(tf64, ArrayType(w.variadic(4, tf64)).elem_type());
+    ASSERT_EQ(w.sigma({w.arity(4), w.arity(3)}), ArrayType(w.variadic(4, w.variadic(3, tf64))).arity());
+    ASSERT_EQ(w.type_r(rflags::p, 32), ArrayType(w.variadic(4, w.variadic(3, w.type_r(rflags::p, 32)))).elem_type());
     // TODO test with free variables
-    ASSERT_TRUE(ArrayType(w.type_p32()));
+    ASSERT_TRUE(ArrayType(w.type_r(rflags::p, 32)));
 }
 
 // TEST(Primop, Types) {

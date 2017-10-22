@@ -111,21 +111,21 @@ public:
 //     }
 // };
 
-#define CODE(T, ir)                                                    \
-class T_CAT(T, Type) : public ArrayType {                              \
+#define CODE(ir)                                                       \
+class ir ## Type : public ArrayType {                                  \
 public:                                                                \
-    T_CAT(T, Type)(const Def* def)                                     \
+    ir ## Type(const Def* def)                                         \
         : ArrayType(def)                                               \
     {                                                                  \
         auto elem_t = elem_type();                                     \
         auto app = elem_t->isa<App>();                                 \
-        matches_ &= app && app->callee() == world().T_CAT(type_,ir)(); \
+        matches_ &= app && app->callee() == world().type_ ## ir();     \
     }                                                                  \
     const Def* flags() const { return op(2); }                         \
     const Def* width() const { return op(3); }                         \
-    std::experimental::optional<T_CAT(ir,flags)> const_flags() const { \
+    std::experimental::optional<ir ## flags> const_flags() const {     \
         if (auto f = flags()->template isa<Axiom>())                   \
-            return (T_CAT(ir,flags)) (f->box().get_s64());             \
+            return (ir ## flags) (f->box().get_s64());                 \
         else return {};                                                \
     }                                                                  \
     std::experimental::optional<int64_t> const_width() const {         \
@@ -135,8 +135,8 @@ public:                                                                \
     }                                                                  \
 };
 
-CODE(Int, i)
-CODE(Real, r)
+CODE(i)
+CODE(r)
 #undef CODE
 
 }
