@@ -165,4 +165,10 @@ void Parser::expect(Token::Tag tag) {
     next();
 }
 
+const Def* parse(WorldBase& world, const std::string& str) {
+    std::istringstream is(str);
+    Lexer lexer(is, "stdin");
+    return Parser(world, lexer).parse_def();
+}
+
 }

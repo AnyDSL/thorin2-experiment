@@ -92,6 +92,8 @@ private:
     size_t     depth_;
 };
 
+const Def* parse(WorldBase& world, const std::string& str);
+
 }
 
 #endif
