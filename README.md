@@ -1,7 +1,6 @@
 # coc
 ## building
 
-You need ```boost/preprocessor``` in your system's include path.
 Then, just do this:
 ```bash
 mkdir coc
