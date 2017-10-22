@@ -383,7 +383,10 @@ public:
 #define CODE(ir)                                                                                                \
     template<ir ## arithop O> const Axiom* op() { return iarithop_[O]; }                                        \
     template<ir ## arithop O> const App* op(ir ## flags flags, int64_t width, Debug dbg = {}) {                 \
-        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return op<O>(f, w, dbg);                     \
+        return op<O>(Qualifier::u, flags, width, dbg);                                                          \
+    }                                                                                                           \
+    template<ir ## arithop O> const App* op(Qualifier q, ir ## flags flags, int64_t width, Debug dbg = {}) {    \
+        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return op<O>(qualifier(q), f, w, dbg);       \
     }                                                                                                           \
     template<ir ## arithop O> const App* op(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) { \
         return app(app(op<O>(), arity(1), dbg), {q, flags, width}, dbg)->template as<App>();                    \
