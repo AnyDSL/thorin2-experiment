@@ -82,7 +82,7 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
                 // remember that the lowest index corresponds to the last element in args due to De Bruijn's
                 // way of counting
                 size_t arg_index = shift() - (var->index() - offset) - 1;
-                if (new_type != args_[arg_index]->type())
+                if (!new_type->assignable(args_[arg_index]))
                     return world().error(new_type); // use the expected type, not the one provided by the arg
                 return args_[arg_index]->shift_free_vars(-offset);
             }

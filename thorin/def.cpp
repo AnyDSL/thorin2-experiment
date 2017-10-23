@@ -366,6 +366,12 @@ const Def* Star::arity() const { return world().arity(1); }
 
 const Def* Universe::arity() const { THORIN_UNREACHABLE; }
 
+const Def* Var::arity() const {
+    if (is_value())
+        return type()->arity();
+    return nullptr; // unknown arity
+}
+
 const Def* Variant::arity() const {
     DefArray arities(num_ops(), [&](auto i) { return op(i)->arity(); });
     return world().variant(arities);
@@ -561,40 +567,64 @@ const Def* Def::shift_free_vars(size_t shift) const {
  * assignable
  */
 
-bool MultiArityKind::assignable(Defs defs) const {
-    return defs.size() == 1 && (this == defs.front()->type() || defs.front()->type()->isa<ArityKind>());
+bool MultiArityKind::assignable(const Def* def) const {
+    return this == def->type() || def->type()->isa<ArityKind>();
 }
 
-bool Sigma::assignable(Defs defs) const {
-    if (num_ops() != defs.size())
+bool Sigma::assignable(const Def* def) const {
+    if (def->type() == this)
+        return true;
+    if (is_nominal() && num_ops() == 1 && def->type() == op(0))
+        return true;
+    Defs defs = def->ops(); // only correct when def is a tuple
+    if (auto pack = def->isa<Pack>()) {
+        if (auto arity = pack->arity(); auto assume = arity->isa<Axiom>()) {
+            if (num_ops() != assume->box().get_u64())
+                return false;
+            defs = DefArray(num_ops(), [&](auto i) { return world().extract(def, i); });
+        } else
+            return false;
+    } else if (!def->isa<Tuple>())
         return false;
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         auto reduced_type = op(i)->reduce(defs.get_front(i));
         // TODO allow conversion from nominal -> structural, instead of simple comparison
-        if (reduced_type->has_error() || defs[i]->type() != reduced_type)
+        if (reduced_type->has_error() || !reduced_type->assignable(defs[i]))
             return false;
     }
     return true;
 }
 
-bool Star::assignable(Defs defs) const {
-    if (defs.size() != 1)
-        return false;
-    auto type = defs.front()->type();
+bool Star::assignable(const Def* def) const {
+    auto type = def->type();
     return this == type ||
         (kind_qualifier() == world().unlimited() && (world().multi_arity_kind() == type || world().arity_kind() == type));
 }
 
-bool Variadic::assignable(Defs defs) const {
-    auto size = defs.size();
-    if (arity() != world().arity(size))
-        return false;
-    for (size_t i = 0; i != size; ++i) {
-        auto b = body()->reduce(world().index(i, size));
-        if (b->has_error() || defs[i]->type() != b)
+bool Variadic::assignable(const Def* def) const {
+    if (def->type() == this)
+        return true;
+    if (auto pack = def->isa<Pack>()) {
+        if (arity() != pack->arity())
             return false;
+        return body()->assignable(pack->body());
     }
-    return true;
+    // only need this because we don't normalize every variadic of constant arity to a sigma
+    if (def->isa<Tuple>()) {
+        if (const Axiom* assume = arity()->isa<Axiom>()) {
+            auto size = assume->box().get_u64();
+            if (size != def->num_ops())
+                return false;
+            for (size_t i = 0; i != size; ++i) {
+                // body should actually not depend on index, but implemented for completeness
+                auto reduced_type = body()->reduce(world().index(i, size));
+                if (reduced_type->has_error() || !reduced_type->assignable(def->op(i)))
+                    return false;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 //------------------------------------------------------------------------------

@@ -129,6 +129,7 @@ WorldBase::WorldBase()
     universe_ = insert<Universe>(0, *this);
     qualifier_kind_ = axiom(universe_, {"ℚₖ"});
     qualifier_type_ = axiom(qualifier_kind_, {"ℚ"});
+    // TODO think hard about unit_kind and qualifiers, they are inferred for other sigma kinds, this one is always unrestricted, doe that imply subtyping on qualifiers?
     unit_kind_ = insert<Sigma>(0, *this, universe_, Defs(), Debug("Σ*"));
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
@@ -188,7 +189,7 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
     }
 
     auto callee_type = callee->type()->as<Pi>();
-    assertf(callee_type->domain()->assignable(args),
+    assertf(callee_type->domain()->assignable(tuple(args)),
             "callee with domain {} cannot be called with arguments {}", callee_type->domain(), args);
     auto type = callee_type->reduce(args);
     auto app = unify<App>(args.size() + 1, *this, type, callee, args, dbg);
@@ -198,41 +199,62 @@ const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
 }
 
 const Def* WorldBase::extract(const Def* def, const Def* index, Debug dbg) {
-    assertf(def->is_value(), "can only build extracts of values");
-    auto a = def->arity();
-    assertf(a->assignable({index}), "index {} with type {} is not assignable to arity {} of value {} for extract",
-            index->type(), index, a, def);
     if (index->type() == arity(1))
         return def;
-    if (auto assume = index->isa<Axiom>()) {
-        auto i = assume->box().get_u64();
-        if (def->isa<Tuple>())
-            return def->op(i);
-
-        if (auto sigma = def->type()->isa<Sigma>()) {
-            auto type = sigma->op(i);
-            if (type->free_vars().any_end(i)) {
-                size_t skipped_shifts = 0;
-                for (size_t delta = 1; delta <= i; ++delta) {
-                    if (type->free_vars().none_begin(skipped_shifts)) {
-                        ++skipped_shifts;
-                        continue;
-                    }
-
-                    // this also shifts any Var with i > skipped_shifts by -1
-                    type = type->reduce(extract(def, i - delta), skipped_shifts);
-                }
+    // need to allow the above, as types are also a 1-tuple of a type
+    assertf(def->is_value(), "can only build extracts of values");
+    auto arity = def->arity();
+    if (arity->assignable(index)) {
+        if (auto assume = index->isa<Axiom>()) {
+            auto i = assume->box().get_u64();
+            if (def->isa<Tuple>()) {
+                return def->op(i);
             }
-            return unify<Extract>(2, *this, type, def, index, dbg);
+
+            if (auto sigma = def->type()->isa<Sigma>()) {
+                auto type = sigma->op(i);
+                if (type->free_vars().any_end(i)) {
+                    size_t skipped_shifts = 0;
+                    for (size_t delta = 1; delta <= i; ++delta) {
+                        if (type->free_vars().none_begin(skipped_shifts)) {
+                            ++skipped_shifts;
+                            continue;
+                        }
+
+                        // this also shifts any Var with i > skipped_shifts by -1
+                        type = type->reduce(extract(def, i - delta), skipped_shifts);
+                    }
+                }
+                return unify<Extract>(2, *this, type, def, index, dbg);
+            }
+        }
+        // tuples <v, v, ..., v> are normalized to packs, so this also optimizes extracts from them to v
+        if (auto pack = def->isa<Pack>()) {
+            return pack->body()->reduce(index);
+        }
+    }
+    if (index->type()->type() == multi_arity_kind()) {
+        // not exactly the same arity
+        // can only extract if we can iteratively extract with each index in the multi-index
+        // can only do that if we know how many indices there are
+        if (auto i_arity = index->arity(); auto assume = i_arity->isa<Axiom>()) {
+            auto a = assume->box().get_u64();
+            auto extracted = def;
+            for (size_t i = 0; i <= a; ++i) {
+                auto idx = extract(index, i, dbg);
+                extracted = extract(extracted, idx, dbg);
+            }
+            return extracted;
         }
     }
 
-    if (auto pack = def->isa<Pack>()) {
-        return pack->body()->reduce(index);
-    }
 
     // TODO multi-index extracts, also with constants
 
+    // assertf(arity->assignable(index), "index {} with type {} is not assignable to arity {} of value {} for extract",
+    // index->type(), index, arity, def);
+    // assertf(arity == assume->type(), "can't extract with index {} of type {} from tuple {} of arity {}",
+    //         index, index->type(), def, arity);
     assertf(def->type()->isa<Variadic>(), "can only build extracts with variable index on terms of variadic type");
     auto type = def->type()->as<Variadic>()->body()->reduce(index);
     return unify<Extract>(2, *this, type, def, index, dbg);
@@ -519,7 +541,7 @@ const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
 }
 
 const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
-    assertf(type->assignable(defs),
+    assertf(type == sigma(types(defs)) || type->assignable(tuple(defs)),
             "can't assign type {} to tuple with type {}", type, sigma(types(defs)));
     size_t size = defs.size();
 

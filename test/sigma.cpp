@@ -8,8 +8,8 @@ TEST(Sigma, Assign) {
     World w;
     auto sig = w.sigma({w.star(), w.var(w.star(), 0)})->as<Sigma>();
     ASSERT_TRUE(sig->is_dependent());
-    ASSERT_TRUE(sig->assignable({w.type_nat(), w.val_nat(42)}));
-    ASSERT_FALSE(sig->assignable({w.type_nat(), w.val_bool_bot()}));
+    ASSERT_TRUE(sig->assignable(w.tuple({w.type_nat(), w.val_nat(42)})));
+    ASSERT_FALSE(sig->assignable(w.tuple({w.type_nat(), w.val_bool_bot()})));
 }
 
 TEST(Sigma, ExtractAndSingleton) {

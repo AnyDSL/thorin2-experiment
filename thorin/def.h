@@ -265,8 +265,8 @@ public:
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
 
     virtual Def* stub(WorldBase&, const Def*, Debug) const { THORIN_UNREACHABLE; }
-    virtual bool assignable(Defs defs) const {
-        return defs.size() == 1 && this == defs.front()->type();
+    virtual bool assignable(const Def* def) const {
+        return this == def->type();
     }
     std::ostream& qualifier_stream(std::ostream& os) const {
         if (!has_values())
@@ -459,7 +459,7 @@ public:
     const Def* arity() const override;
     const Def* kind_qualifier() const override;
     bool has_values() const override;
-    bool assignable(Defs defs) const override;
+    bool assignable(const Def* def) const override;
     bool is_unit() const { return ops().empty(); }
     bool is_dependent() const;
     Sigma* set(size_t i, const Def* def) { return Def::set(i, def)->as<Sigma>(); };
@@ -486,7 +486,7 @@ public:
     const Def* kind_qualifier() const override;
     bool is_homogeneous() const { return !body()->free_vars().test(0); };
     bool has_values() const override;
-    bool assignable(Defs defs) const override;
+    bool assignable(const Def* def) const override;
     void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
     std::ostream& stream(std::ostream&) const override;
 
@@ -708,7 +708,7 @@ private:
 
 public:
     const Def* arity() const override;
-    bool assignable(Defs defs) const override;
+    bool assignable(const Def* def) const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -724,7 +724,7 @@ private:
 
 public:
     const Def* arity() const override;
-    bool assignable(Defs defs) const override;
+    bool assignable(const Def* def) const override;
     std::ostream& stream(std::ostream&) const override;
     const Def* kind_qualifier() const override;
 
@@ -761,6 +761,7 @@ private:
     }
 
 public:
+    const Def* arity() const override;
     size_t index() const { return index_; }
     std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
