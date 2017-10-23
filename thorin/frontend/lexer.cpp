@@ -63,8 +63,8 @@ Token Lexer::next() {
     if (accept(0x0003bb)) return Token(make_loc(), Token::Tag::Lambda);
     if (accept(0x0003a3)) return Token(make_loc(), Token::Tag::Sigma);
     if (accept(0x0003a0)) return Token(make_loc(), Token::Tag::Pi);
-    if (accept(0x01D538)) return Token(make_loc(), Token::Tag::Arities);
-    if (accept(0x01D544)) return Token(make_loc(), Token::Tag::Multi_Arities);
+    if (accept(0x01D538)) return Token(make_loc(), Token::Tag::Arity_Kind);
+    if (accept(0x01D544)) return Token(make_loc(), Token::Tag::Multi_Arity_Kind);
     if (accept(0x00211A)) {
         if (accept(0x2096))
             return Token(make_loc(), Token::Tag::Qualifier_Kind);

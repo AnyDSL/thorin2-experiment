@@ -106,8 +106,8 @@ TEST(Lexer, Utf8) {
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Lambda));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Qualifier_Type));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Qualifier_Kind));
-    ASSERT_TRUE(lexer.next().isa(Token::Tag::Arities));
-    ASSERT_TRUE(lexer.next().isa(Token::Tag::Multi_Arities));
+    ASSERT_TRUE(lexer.next().isa(Token::Tag::Arity_Kind));
+    ASSERT_TRUE(lexer.next().isa(Token::Tag::Multi_Arity_Kind));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Eof));
 }
 

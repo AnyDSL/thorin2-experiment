@@ -20,10 +20,10 @@ const Def* Parser::parse_def() {
         def = parse_def();
         expect(Token::Tag::R_Paren);
     }
-    else if (accept(Token::Tag::Qualifier_Type)) def = world_.qualifier_type();
-    else if (accept(Token::Tag::Qualifier_Kind)) def = world_.qualifier_kind();
-    else if (accept(Token::Tag::Arities))        def = world_.arities();
-    else if (accept(Token::Tag::Multi_Arities))  def = world_.multi_arities();
+    else if (accept(Token::Tag::Qualifier_Type))   def = world_.qualifier_type();
+    else if (accept(Token::Tag::Qualifier_Kind))   def = world_.qualifier_kind();
+    else if (accept(Token::Tag::Arity_Kind))       def = world_.arity_kind();
+    else if (accept(Token::Tag::Multi_Arity_Kind)) def = world_.multi_arity_kind();
 
     switch (ahead_[0].tag()) {
         case Token::Tag::Pi:
@@ -37,8 +37,8 @@ const Def* Parser::parse_def() {
         case Token::Tag::L_Paren:
         case Token::Tag::Qualifier_Type:
         case Token::Tag::Qualifier_Kind:
-        case Token::Tag::Arities:
-        case Token::Tag::Multi_Arities: {
+        case Token::Tag::Arity_Kind:
+        case Token::Tag::Multi_Arity_Kind: {
             auto arg = parse_def();
             return world_.app(def, arg, tracker.location());
         }
