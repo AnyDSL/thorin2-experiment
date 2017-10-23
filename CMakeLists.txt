@@ -52,6 +52,8 @@ add_executable(coc
     thorin/reduce.cpp
     thorin/reduce.h
     thorin/tables.h
+    thorin/traits.cpp
+    thorin/traits.h
     thorin/world.cpp
     thorin/world.h
     thorin/frontend/lexer.cpp

@@ -6,6 +6,7 @@
 
 #include "thorin/def.h"
 #include "thorin/tables.h"
+#include "thorin/traits.h"
 
 namespace thorin {
 
@@ -45,12 +46,7 @@ public:
     const Axiom* affine() const { return qualifier(Qualifier::Affine); }
     const Axiom* linear() const { return qualifier(Qualifier::Linear); }
     const Axiom* relevant() const { return qualifier(Qualifier::Relevant); }
-    const Axiom* isa_const_qualifier(const Def* def) const {
-        assert(def != nullptr);
-        for (auto q : qualifier_)
-            if (q == def) return q;
-        return nullptr;
-    }
+    const std::array<const Axiom*, 4>& qualifiers() const { return qualifier_; }
     //@}
 
     //@{ create Pi
@@ -302,28 +298,6 @@ public:
 
     World();
 
-    // TODO remove this from World
-    bool is_primitive_type(const Def* type) {
-        if (type == type_bool() || type == type_nat())
-            return true;
-        if (!type->type()->isa<Star>())
-            return false;
-        if (auto app = type->isa<App>())
-            return is_primitive_type_constructor(app->callee());
-        if (auto var = type->isa<Variadic>())
-            return is_primitive_type(var->body());
-        return false;
-    }
-
-    // TODO remove this from World
-    bool is_primitive_type_constructor(const Def* def) {
-        if (!def->type()->isa<Pi>())
-            return false;
-        while (auto app = def->isa<App>())
-            def = app->callee();
-        return def && (def == type_i() || def == type_r());
-    }
-
     //@{ types and type constructors
     const Def* type_bool() { return type_bool_; }
     const Def* type_nat() { return type_nat_; }
@@ -365,7 +339,6 @@ public:
     const Axiom* val_bool_bot() { return val_bool_[0]; }
     const Axiom* val_bool_top() { return val_bool_[1]; }
 
-    // TODO use proper val types here
     const Axiom* val(iflags f,  uint8_t val) { return assume(type_i(f,  8), {val}, {std::to_string(val)}); }
     const Axiom* val(iflags f, uint16_t val) { return assume(type_i(f, 16), {val}, {std::to_string(val)}); }
     const Axiom* val(iflags f, uint32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
@@ -376,7 +349,7 @@ public:
     const Axiom* val(iflags f, int32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
     const Axiom* val(iflags f, int64_t val) { return assume(type_i(f, 64), {val}, {std::to_string(val)}); }
 
-    const Axiom* val(rflags f, half_float::half val) { return assume(type_r(f, 16), {val}, {std::to_string(val)}); }
+    const Axiom* val(rflags f, half   val) { return assume(type_r(f, 16), {val}, {std::to_string(val)}); }
     const Axiom* val(rflags f, float  val) { return assume(type_r(f, 32), {val}, {std::to_string(val)}); }
     const Axiom* val(rflags f, double val) { return assume(type_r(f, 64), {val}, {std::to_string(val)}); }
     //@}

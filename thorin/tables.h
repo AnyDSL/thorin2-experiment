@@ -15,6 +15,7 @@
 namespace thorin {
 
 using namespace half_float::literal;
+using half_float::half;
 
 }
 

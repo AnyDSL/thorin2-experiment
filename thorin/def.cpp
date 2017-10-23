@@ -97,7 +97,7 @@ bool Def::maybe_affine() const {
         return false;
     const Def* q = qualifier();
     assert(q != nullptr);
-    if (auto qu = world().isa_const_qualifier(q)) {
+    if (auto qu = isa_const_qualifier(q)) {
         return qu->box().get_qualifier() >= Qualifier::Affine;
     }
     return true;
