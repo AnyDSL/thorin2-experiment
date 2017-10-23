@@ -202,7 +202,7 @@ const Def* WorldBase::extract(const Def* def, const Def* index, Debug dbg) {
     if (index->type() == arity(1))
         return def;
     // need to allow the above, as types are also a 1-tuple of a type
-    assertf(def->is_value(), "can only build extracts of values");
+    assertf(def->is_value(), "can only build extracts of values, {} is not a value", def);
     auto arity = def->arity();
     if (arity->assignable(index)) {
         if (auto assume = index->isa<Axiom>()) {
