@@ -88,9 +88,10 @@ TEST(Variadic, Multi) {
     auto N = w.type_nat();
 
     auto v = w.variadic({3, 8, 5}, N);
+    auto x = w.var(v, 0);
     ASSERT_EQ(v, w.variadic(3, w.variadic(8, w.variadic(5, N))));
-    ASSERT_EQ(w.extract(w.extract(w.extract(v, 1), 2), 3), N);
-    auto e1 = w.extract(w.var(w.variadic({3, 8, 5}, N), 0), 2);
+    ASSERT_EQ(w.extract(w.extract(w.extract(x, 1), 2), 3)->type(), N);
+    auto e1 = w.extract(x, 2);
     auto e2 = w.extract(e1, 2);
     auto e3 = w.extract(e2, 3);
     auto f1 = w.var(w.variadic({8, 5}, N), 0);
