@@ -71,6 +71,7 @@ private:
     void next();
     void eat(Token::Tag);
     void expect(Token::Tag);
+    bool accept(Token::Tag);
     void pop_identifiers() {
         while (!id_stack_.empty()) {
             std::string ident;

@@ -18,6 +18,11 @@ const Def* Parser::parse_def() {
         return def;
     }
 
+    if (accept(Token::Tag::Qualifier_Type)) return world_.qualifier_type();
+    if (accept(Token::Tag::Qualifier_Kind)) return world_.qualifier_kind();
+    if (accept(Token::Tag::Arities))        return world_.arities();
+    if (accept(Token::Tag::Multi_Arities))  return world_.multi_arities();
+
     assertf(false, "definition expected in {}", ahead_.location());
 }
 
@@ -25,14 +30,21 @@ const Pi* Parser::parse_pi() {
     Tracker tracker(this);
     eat(Token::Tag::Pi);
 
-    expect(Token::Tag::L_Paren);
-    auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); });
+    if (accept(Token::Tag::L_Paren)) {
+        auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); });
+        expect(Token::Tag::Dot);
+        auto body = parse_def();
+
+        pop_identifiers();
+
+        return world_.pi(domains, body, tracker.location());
+    }
+
+    auto domain = parse_param();
     expect(Token::Tag::Dot);
     auto body = parse_def();
-
     pop_identifiers();
-
-    return world_.pi(domains, body, tracker.location());
+    return world_.pi(domain, body, tracker.location());
 }
 
 const Def* Parser::parse_sigma() {
@@ -160,9 +172,16 @@ void Parser::eat(Token::Tag tag) {
 
 void Parser::expect(Token::Tag tag) {
     if (!ahead_.isa(tag))
-        ELOG_LOC(ahead_.location(), "'{}' expected in {}", Token::tag_to_string(tag));
+        ELOG_LOC(ahead_.location(), "'{}' expected", Token::tag_to_string(tag));
 
     next();
+}
+
+bool Parser::accept(Token::Tag tag) {
+    if (!ahead_.isa(tag))
+        return false;
+    next();
+    return true;
 }
 
 const Def* parse(WorldBase& world, const std::string& str) {

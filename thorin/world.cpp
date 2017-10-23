@@ -4,6 +4,7 @@
 #include "thorin/world.h"
 #include "thorin/reduce.h"
 #include "thorin/matchers/types.h"
+#include "thorin/frontend/parser.h"
 
 namespace thorin {
 
@@ -655,6 +656,9 @@ World::World() {
     auto i1 = variadic(va3, type_i(vq3, vn2, vn1)); auto r1 = variadic(va3, type_r(vq3, vn2, vn1));
     auto i2 = variadic(va4, type_i(vq4, vn3, vn2)); auto r2 = variadic(va4, type_r(vq4, vn3, vn2));
     auto i3 = variadic(va5, type_i(vq5, vn4, vn3)); auto r3 = variadic(va5, type_r(vq5, vn4, vn3));
+    //auto xxx = parse(*this, "Πs:𝕄.Π(q:ℚ,f:Nat,w:Nat).Π(int(q,f,w),int(q,f,w)).int(q,f,w)");
+    //xxx->dump();
+    //auto xxx = parse(this, "Πs: Σ λ ℚ ℚpi(MA, pi({Q, N, N}, pi({i1, i2}, i3)));
     auto i_type_arithop = pi(MA, pi({Q, N, N}, pi({i1, i2}, i3)));
     auto r_type_arithop = pi(MA, pi({Q, N, N}, pi({r1, r2}, r3)));
 

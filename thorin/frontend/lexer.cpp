@@ -53,6 +53,9 @@ Token Lexer::next() {
         if (accept("lambda")) return Token(make_loc(), Token::Tag::Lambda);
         if (accept("sigma"))  return Token(make_loc(), Token::Tag::Sigma);
         if (accept("pi"))     return Token(make_loc(), Token::Tag::Pi);
+        if (accept("true"))  return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(true)));
+        if (accept("false")) return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(false)));
+
         return Token(make_loc(), Token::Tag::Sharp);
     }
 
@@ -67,9 +70,6 @@ Token Lexer::next() {
             return Token(make_loc(), Token::Tag::Qualifier_Kind);
         return Token(make_loc(), Token::Tag::Qualifier_Type);
     }
-
-    if (accept("true"))  return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(true)));
-    if (accept("false")) return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(false)));
 
     if (std::isdigit(peek()) || peek() == '+' || peek() == '-') {
         auto lit = parse_literal();
@@ -88,7 +88,7 @@ Token Lexer::next() {
 
     std::string invalid;
     utf8::append(peek(), std::back_inserter(invalid));
-    ELOG_LOC(make_loc(), "{}: invalid character '{}'", invalid);
+    ELOG_LOC(make_loc(), "invalid character '{}'", invalid);
 }
 
 void Lexer::eat() {
@@ -199,6 +199,9 @@ bool Lexer::accept(uint32_t c) {
     return false;
 }
 
+// TODO this method is basically broken because mathcing "ac" won't work:
+// if (accept("ab")) ...
+// if (accept("ac")) ..
 bool Lexer::accept(const std::string& str) {
     auto it = str.begin();
     while (it != str.end() && accept(*(it++))) ;

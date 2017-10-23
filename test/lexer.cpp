@@ -97,7 +97,7 @@ TEST(Lexer, Literals) {
 }
 
 TEST(Lexer, Utf8) {
-    std::string str ="Π Σ λ ℚ ℚₖ";
+    std::string str ="Π Σ λ ℚ ℚₖ 𝔸 𝕄";
     std::istringstream is(str);
 
     Lexer lexer(is, "stdin");
@@ -106,6 +106,8 @@ TEST(Lexer, Utf8) {
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Lambda));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Qualifier_Type));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Qualifier_Kind));
+    ASSERT_TRUE(lexer.next().isa(Token::Tag::Arities));
+    ASSERT_TRUE(lexer.next().isa(Token::Tag::Multi_Arities));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Eof));
 }
 
