@@ -10,25 +10,29 @@
 namespace thorin {
 
 #define THORIN_TOKENS(f) \
-    f(L_Brace,    "{") \
-    f(R_Brace,    "}") \
-    f(L_Paren,    ")") \
-    f(R_Paren,    "(") \
-    f(L_Bracket,  "]") \
-    f(R_Bracket,  "[") \
-    f(L_Angle,    "<") \
-    f(R_Angle,    ">") \
-    f(Colon,      ":") \
-    f(Comma,      ",") \
-    f(Dot,        ".") \
-    f(Star,       "*") \
-    f(Sharp,      "#") \
-    f(Pi,         "#pi") \
-    f(Sigma,      "#sigma") \
-    f(Lambda,     "#lambda") \
-    f(Identifier, "identifier") \
-    f(Literal,    "literal") \
-    f(Eof,        "eof")
+    f(L_Brace,        "{") \
+    f(R_Brace,        "}") \
+    f(L_Paren,        ")") \
+    f(R_Paren,        "(") \
+    f(L_Bracket,      "]") \
+    f(R_Bracket,      "[") \
+    f(L_Angle,        "<") \
+    f(R_Angle,        ">") \
+    f(Colon,          ":") \
+    f(Comma,          ",") \
+    f(Dot,            ".") \
+    f(Star,           "*") \
+    f(Sharp,          "#") \
+    f(Pi,             "#pi") \
+    f(Sigma,          "#sigma") \
+    f(Lambda,         "#lambda") \
+    f(Qualifier_Type, "#qualifier_type") \
+    f(Qualifier_Kind, "#qualifier_kind") \
+    f(Arities,        "#arities") \
+    f(Multi_Arities,  "#multi_arities") \
+    f(Identifier,     "identifier") \
+    f(Literal,        "literal") \
+    f(Eof,            "eof")
 
 struct Literal {
     enum class Tag {
@@ -60,7 +64,7 @@ public:
         , location_(loc)
         , literal_(lit)
     {}
-    
+
     Token(Location loc, const std::string& ident)
         : tag_(Tag::Identifier)
         , location_(loc)
