@@ -103,7 +103,7 @@ public:
         All,
         Any,
         App,
-        Arities,
+        ArityKind,
         Axiom,
         Error,
         Extract,
@@ -111,7 +111,7 @@ public:
         Insert,
         Lambda,
         Match,
-        MultiArities,
+        MultiArityKind,
         Pack,
         Pi,
         Pick,
@@ -688,9 +688,9 @@ private:
     friend class WorldBase;
 };
 
-class Arities : public Def {
+class ArityKind : public Def {
 private:
-    Arities(WorldBase& world);
+    ArityKind(WorldBase& world);
 
 public:
     const Def* arity() const override;
@@ -702,9 +702,9 @@ private:
     friend class WorldBase;
 };
 
-class MultiArities : public Def {
+class MultiArityKind : public Def {
 private:
-    MultiArities(WorldBase& world);
+    MultiArityKind(WorldBase& world);
 
 public:
     const Def* arity() const override;

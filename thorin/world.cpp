@@ -45,9 +45,9 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
             max_type = universe();
             break;
         }
-        else if (def->type() == arities() && max_type == arities())
+        else if (def->type() == arity_kind() && max_type == arity_kind())
             // found at least two arities, must be a multi-arity
-            max_type = multi_arities();
+            max_type = multi_arity_kind();
         else {
             max_type = star(inferred_q);
         }
@@ -137,8 +137,8 @@ WorldBase::WorldBase()
         unit_     [i] = insert<Sigma>(0, *this, star_[i], Defs(), Debug("Σ()"));
         tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
     }
-    arities_ = insert<Arities>(0, *this);
-    multi_arities_ = insert<MultiArities>(0, *this);
+    arity_kind_ = insert<ArityKind>(0, *this);
+    multi_arity_kind_ = insert<MultiArityKind>(0, *this);
 }
 
 WorldBase::~WorldBase() {
@@ -160,7 +160,7 @@ const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
 
 const Axiom* WorldBase::arity(size_t a, Location location) {
     auto cur = Def::gid_counter();
-    auto result = assume(arities(), {u64(a)}, {location});
+    auto result = assume(arity_kind(), {u64(a)}, {location});
 
     if (result->gid() >= cur)
         result->debug().set(std::to_string(a) + "ₐ");
@@ -407,7 +407,7 @@ const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
     if (defs.size() == 0)
         return unit(type->qualifier());
 
-    if (type == multi_arities()) {
+    if (type == multi_arity_kind()) {
         if (any_of(arity(0), defs))
             return arity(0);
     }
@@ -629,7 +629,7 @@ World::World() {
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });
     auto S = star();
-    auto MA = multi_arities();
+    auto MA = multi_arity_kind();
 
     type_i_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
     type_r_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});

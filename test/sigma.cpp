@@ -61,13 +61,6 @@ TEST(Tuple, Error) {
     ASSERT_TRUE(tuple->has_error());
 }
 
-TEST(Sigma, LUB) {
-    World w;
-    auto s = w.sigma({w.arity(2), w.arity(3)})->as<Sigma>();
-    ASSERT_FALSE(s->is_dependent());
-    ASSERT_EQ(s->type(), w.arities());
-}
-
 TEST(Sigma, EtaConversion) {
     World w;
     auto v = w.val_nat_32();
@@ -75,8 +68,8 @@ TEST(Sigma, EtaConversion) {
     auto B = w.type_bool();
 
     ASSERT_EQ(w.extract(w.tuple({v, v, v}), w.var(w.arity(3), 17)), v);
-    auto v43 = w.var(w.arities(), 43);
-    ASSERT_EQ(w.pack(w.var(w.arities(), 42), w.extract(w.var(w.variadic(v43, N), 23), w.var(v43, 0))),
+    auto v43 = w.var(w.arity_kind(), 43);
+    ASSERT_EQ(w.pack(w.var(w.arity_kind(), 42), w.extract(w.var(w.variadic(v43, N), 23), w.var(v43, 0))),
               w.var(w.variadic(v43, N), 22));
 
     auto t = w.axiom(w.sigma({N, B}), {"t"});

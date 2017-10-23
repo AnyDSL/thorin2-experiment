@@ -7,7 +7,7 @@ using namespace thorin;
 TEST(Pi, Kinds) {
     World w;
     ASSERT_EQ(w.pi(w.star(), w.star())->type(), w.universe());
-    ASSERT_EQ(w.pi(w.star(), w.arities())->type(), w.universe());
+    ASSERT_EQ(w.pi(w.star(), w.arity_kind())->type(), w.universe());
     ASSERT_EQ(w.pi(w.type_nat(), w.type_nat())->type(), w.star());
     ASSERT_EQ(w.pi(w.type_nat(), w.arity(2))->type(), w.star());
     ASSERT_EQ(w.pi(w.type_nat(), w.sigma({w.arity(2), w.arity(3)}))->type(), w.star());

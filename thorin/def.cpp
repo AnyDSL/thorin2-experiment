@@ -188,8 +188,8 @@ Def::~Def() {
         delete[] ops_;
 }
 
-Arities::Arities(WorldBase& world)
-    : Def(world, Tag::Arities, world.universe(), {}, {"𝔸"})
+ArityKind::ArityKind(WorldBase& world)
+    : Def(world, Tag::ArityKind, world.universe(), {}, {"𝔸"})
 {}
 
 Intersection::Intersection(WorldBase& world, const Def* type, Defs ops, Debug dbg)
@@ -202,8 +202,8 @@ Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
     : Def(world, Tag::Lambda, type, {body}, dbg)
 {}
 
-MultiArities::MultiArities(WorldBase& world)
-    : Def(world, Tag::MultiArities, world.universe(), {}, {"𝔸ₘ"})
+MultiArityKind::MultiArityKind(WorldBase& world)
+    : Def(world, Tag::MultiArityKind, world.universe(), {}, {"𝔸ₘ"})
 {}
 
 Pack::Pack(WorldBase& world, const Def* type, const Def* body, Debug dbg)
@@ -336,7 +336,7 @@ const Def* Def::arity() const {
     THORIN_UNREACHABLE; // must override this
 }
 
-const Def* Arities::arity() const { return world().arity(1); }
+const Def* ArityKind::arity() const { return world().arity(1); }
 
 // const Def* All::arity() const { return TODO; }
 
@@ -352,19 +352,11 @@ const Def* Axiom::arity() const {
 
 // const Def* Error::arity() const { return TODO; }
 
-// const Def* Extract::arity() const { return TODO; }
-
 // const Def* Intersection::arity() const { return TODO; }
 
-// const Def* Match::arity() const { return TODO; }
-
-// const Def* Pack::arity() const { return TODO; }
-
-const Def* MultiArities::arity() const { return world().arity(1); }
+const Def* MultiArityKind::arity() const { return world().arity(1); }
 
 const Def* Pi::arity() const { return world().arity(1); }
-
-// const Def* Pick::arity() const { return TODO ; }
 
 const Def* Sigma::arity() const { return world().arity(num_ops()); }
 
@@ -456,42 +448,42 @@ bool Var::equal(const Def* other) const {
  * rebuild
  */
 
-const Def* Any         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
-const Def* App         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
-const Def* Arities     ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arities(); }
-const Def* Axiom       ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
+const Def* Any           ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
+const Def* App           ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
+const Def* ArityKind     ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity_kind(); }
+const Def* Axiom         ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
     return to.assume(t, box(), debug());
 }
-const Def* Error       ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.error(t); }
-const Def* Extract     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
-const Def* Insert      ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
-const Def* Intersection::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
-const Def* Lambda      ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
+const Def* Error         ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.error(t); }
+const Def* Extract       ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
+const Def* Insert        ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
+const Def* Intersection  ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
+const Def* Lambda        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
 }
-const Def* Match       ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
-const Def* MultiArities::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.multi_arities(); }
-const Def* Pack        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
+const Def* Match         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
+const Def* MultiArityKind::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.multi_arity_kind(); }
+const Def* Pack          ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     return t->is_nominal() ? to.pack_nominal_sigma(t->as<Sigma>(), ops[0], debug()) : to.pack(arity(), ops[0], debug());
 }
-const Def* Pi          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
-const Def* Pick        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
+const Def* Pi            ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
+const Def* Pick          ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* Sigma       ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
+const Def* Sigma         ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
     assert(!is_nominal());
     return to.sigma(qualifier(), ops, debug());
 }
-const Def* Singleton   ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops[0]); }
-const Def* Star        ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.star(ops[0]); }
-const Def* Tuple       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
-const Def* Universe    ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(); }
-const Def* Var         ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
-const Def* Variant     ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.variant(t, ops, debug()); }
-const Def* Variadic    ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic(ops[0], ops[1], debug()); }
+const Def* Singleton     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops[0]); }
+const Def* Star          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.star(ops[0]); }
+const Def* Tuple         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
+const Def* Universe      ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(); }
+const Def* Var           ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
+const Def* Variant       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.variant(t, ops, debug()); }
+const Def* Variadic      ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.variadic(ops[0], ops[1], debug()); }
 
 //------------------------------------------------------------------------------
 
@@ -569,8 +561,8 @@ const Def* Def::shift_free_vars(size_t shift) const {
  * assignable
  */
 
-bool MultiArities::assignable(Defs defs) const {
-    return defs.size() == 1 && (this == defs.front()->type() || defs.front()->type()->isa<Arities>());
+bool MultiArityKind::assignable(Defs defs) const {
+    return defs.size() == 1 && (this == defs.front()->type() || defs.front()->type()->isa<ArityKind>());
 }
 
 bool Sigma::assignable(Defs defs) const {
@@ -590,7 +582,7 @@ bool Star::assignable(Defs defs) const {
         return false;
     auto type = defs.front()->type();
     return this == type ||
-        (kind_qualifier() == world().unlimited() && (world().multi_arities() == type || world().arities() == type));
+        (kind_qualifier() == world().unlimited() && (world().multi_arity_kind() == type || world().arity_kind() == type));
 }
 
 bool Variadic::assignable(Defs defs) const {
@@ -717,7 +709,7 @@ std::ostream& App::stream(std::ostream& os) const {
     return stream_list(os, args(), [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
 
-std::ostream& Arities::stream(std::ostream& os) const {
+std::ostream& ArityKind::stream(std::ostream& os) const {
     return os << name();
 }
 
@@ -745,7 +737,7 @@ std::ostream& Match::stream(std::ostream& os) const {
     return stream_list(os, handlers(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
 }
 
-std::ostream& MultiArities::stream(std::ostream& os) const {
+std::ostream& MultiArityKind::stream(std::ostream& os) const {
     return os << name();
 }
 

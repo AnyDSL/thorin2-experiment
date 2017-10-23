@@ -45,8 +45,8 @@ TEST(Arity, Variadic) {
 
     ASSERT_EQ(unit, w.variadic({a0, a1, a2}, N));
     ASSERT_EQ(unit, w.variadic({a1, a0}, N));
-    ASSERT_EQ(w.unit_kind(), w.variadic({a0, a2}, w.arities()));
-    ASSERT_EQ(w.variadic(a2, w.unit_kind()), w.variadic({a2, a0, a2}, w.arities()));
+    ASSERT_EQ(w.unit_kind(), w.variadic({a0, a2}, w.arity_kind()));
+    ASSERT_EQ(w.variadic(a2, w.unit_kind()), w.variadic({a2, a0, a2}, w.arity_kind()));
 }
 
 TEST(Arity, Pack) {
