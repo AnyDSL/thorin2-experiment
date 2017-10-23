@@ -653,14 +653,13 @@ World::World() {
 #undef CODE
 #undef VAR
 
-    auto i1 = variadic(va3, type_i(vq3, vn2, vn1)); auto r1 = variadic(va3, type_r(vq3, vn2, vn1));
-    auto i2 = variadic(va4, type_i(vq4, vn3, vn2)); auto r2 = variadic(va4, type_r(vq4, vn3, vn2));
-    auto i3 = variadic(va5, type_i(vq5, vn4, vn3)); auto r3 = variadic(va5, type_r(vq5, vn4, vn3));
-    //auto xxx = parse(*this, "Πs:𝕄.Π(q:ℚ,f:Nat,w:Nat).Π(int(q,f,w),int(q,f,w)).int(q,f,w)");
-    //xxx->dump();
-    //auto xxx = parse(this, "Πs: Σ λ ℚ ℚpi(MA, pi({Q, N, N}, pi({i1, i2}, i3)));
-    auto i_type_arithop = pi(MA, pi({Q, N, N}, pi({i1, i2}, i3)));
-    auto r_type_arithop = pi(MA, pi({Q, N, N}, pi({r1, r2}, r3)));
+    Env env;
+    env["nat"] = type_nat();
+    env["bool"] = type_bool();
+    env["int"] = type_i();
+    env["real"] = type_r();
+    auto i_type_arithop = parse(*this, "Πs:𝕄. Π(q:ℚ,f:nat,w:nat). Π( int[q,f,w], int[q,f,w]).  int[q,f,w]", env);
+    auto r_type_arithop = parse(*this, "Πs:𝕄. Π(q:ℚ,f:nat,w:nat). Π(real[q,f,w],real[q,f,w]). real[q,f,w]", env);
 
     // arithop table
     for (size_t o = 0; o != Num_IArithOp; ++o)
@@ -669,11 +668,8 @@ World::World() {
     for (size_t o = 0; o != Num_RArithOp; ++o)
         rarithop_[o] = axiom(r_type_arithop, {rarithop2str(rarithop(o))});
 
-    i1 = variadic(va4, type_i(vq3, vn2, vn1)); r1 = variadic(va4, type_r(vq3, vn2, vn1));
-    i2 = variadic(va5, type_i(vq4, vn3, vn2)); r2 = variadic(va5, type_r(vq4, vn3, vn2));
-    auto b = variadic(va6, type_i(vq5, val_nat(int64_t(iflags::uo)), val_nat_1()));
-    auto i_type_cmp = pi(MA, pi(N, pi({Q, N, N}, pi({i1, i2}, b))));
-    auto r_type_cmp = pi(MA, pi(N, pi({Q, N, N}, pi({r1, r2}, b))));
+    auto i_type_cmp = parse(*this, "Πs:𝕄. Πnat. Π(q:ℚ,f:nat,w:nat). Π( int[q,f,w], int[q,f,w]). bool", env);
+    auto r_type_cmp = parse(*this, "Πs:𝕄. Πnat. Π(q:ℚ,f:nat,w:nat). Π(real[q,f,w],real[q,f,w]). bool", env);
     op_icmp_ = axiom(i_type_cmp, {"icmp"});
     op_rcmp_ = axiom(r_type_cmp, {"rcmp"});
 

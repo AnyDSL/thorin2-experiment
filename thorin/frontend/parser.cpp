@@ -3,27 +3,51 @@
 namespace thorin {
 
 const Def* Parser::parse_def() {
-    if (ahead_.isa(Token::Tag::Pi))         return parse_pi();
-    if (ahead_.isa(Token::Tag::Sigma))      return parse_sigma();
-    if (ahead_.isa(Token::Tag::Lambda))     return parse_lambda();
-    if (ahead_.isa(Token::Tag::Star))       return parse_star();
-    if (ahead_.isa(Token::Tag::Sharp) ||
-        ahead_.isa(Token::Tag::Identifier)) return parse_var();
-    if (ahead_.isa(Token::Tag::L_Angle))    return parse_tuple();
-    if (ahead_.isa(Token::Tag::L_Brace))    return parse_assume();
-    if (ahead_.isa(Token::Tag::L_Paren)) {
+    Tracker tracker(this);
+    const Def* def = nullptr;
+
+    if (false) {}
+    else if (ahead_[0].isa(Token::Tag::Pi))         def = parse_pi();
+    else if (ahead_[0].isa(Token::Tag::Sigma))      def = parse_sigma();
+    else if (ahead_[0].isa(Token::Tag::Lambda))     def = parse_lambda();
+    else if (ahead_[0].isa(Token::Tag::Star))       def = parse_star();
+    else if (ahead_[0].isa(Token::Tag::Sharp) ||
+             ahead_[0].isa(Token::Tag::Identifier)) def = parse_var();
+    else if (ahead_[0].isa(Token::Tag::L_Bracket))  def = parse_tuple();
+    else if (ahead_[0].isa(Token::Tag::L_Brace))    def = parse_assume();
+    else if (ahead_[0].isa(Token::Tag::L_Paren)) {
         eat(Token::Tag::L_Paren);
-        auto def = parse_def();
+        def = parse_def();
         expect(Token::Tag::R_Paren);
-        return def;
+    }
+    else if (accept(Token::Tag::Qualifier_Type)) def = world_.qualifier_type();
+    else if (accept(Token::Tag::Qualifier_Kind)) def = world_.qualifier_kind();
+    else if (accept(Token::Tag::Arities))        def = world_.arities();
+    else if (accept(Token::Tag::Multi_Arities))  def = world_.multi_arities();
+
+    switch (ahead_[0].tag()) {
+        case Token::Tag::Pi:
+        case Token::Tag::Sigma:
+        case Token::Tag::Lambda:
+        case Token::Tag::Star:
+        case Token::Tag::Sharp:
+        case Token::Tag::Identifier:
+        case Token::Tag::L_Bracket:
+        case Token::Tag::L_Brace:
+        case Token::Tag::L_Paren:
+        case Token::Tag::Qualifier_Type:
+        case Token::Tag::Qualifier_Kind:
+        case Token::Tag::Arities:
+        case Token::Tag::Multi_Arities: {
+            auto arg = parse_def();
+            return world_.app(def, arg, tracker.location());
+        }
     }
 
-    if (accept(Token::Tag::Qualifier_Type)) return world_.qualifier_type();
-    if (accept(Token::Tag::Qualifier_Kind)) return world_.qualifier_kind();
-    if (accept(Token::Tag::Arities))        return world_.arities();
-    if (accept(Token::Tag::Multi_Arities))  return world_.multi_arities();
+    if (def != nullptr)
+        return def;
 
-    assertf(false, "definition expected in {}", ahead_.location());
+    assertf(false, "definition expected in {}", ahead_[0].location());
 }
 
 const Pi* Parser::parse_pi() {
@@ -76,56 +100,65 @@ const Star* Parser::parse_star() {
     return world_.star();
 }
 
-const Var* Parser::parse_var() {
+const Def* Parser::parse_var() {
     Tracker tracker(this);
 
     const Def* def = nullptr;
     size_t index = 0;
-    if (ahead_.isa(Token::Tag::Sharp)) {
+    if (ahead_[0].isa(Token::Tag::Sharp)) {
         eat(Token::Tag::Sharp);
-        if (!ahead_.isa(Token::Tag::Literal) ||
-            ahead_.literal().tag != Literal::Tag::Lit_untyped)
-            assertf(false, "DeBruijn index expected in {}", ahead_.location());
+        if (!ahead_[0].isa(Token::Tag::Literal) ||
+            ahead_[0].literal().tag != Literal::Tag::Lit_untyped)
+            assertf(false, "DeBruijn index expected in {}", ahead_[0].location());
 
-        index = ahead_.literal().box.get_u64();
+        index = ahead_[0].literal().box.get_u64();
         eat(Token::Tag::Literal);
 
         expect(Token::Tag::Colon);
         def = parse_def();
-    } else if (ahead_.isa(Token::Tag::Identifier)) {
-        auto it = id_map_.find(ahead_.identifier());
-        if (it == id_map_.end())
-            assertf(false, "unknown identifier '{}' in {}", ahead_.identifier(), ahead_.location());
+    } else if (ahead_[0].isa(Token::Tag::Identifier)) {
+        auto it = id_map_.find(ahead_[0].identifier());
+        if (it != id_map_.end()) {
+            std::tie(std::ignore, def, index) = id_stack_[it->second];
+            def = shift_def(def, depth_ - index);
+            index = depth_ - index - 1;
 
-        std::tie(std::ignore, def, index) = id_stack_[it->second];
-        def = shift_def(def, depth_ - index);
-        index = depth_ - index - 1;
-
-        eat(Token::Tag::Identifier);
+            eat(Token::Tag::Identifier);
+            return world_.var(def, index, tracker.location());
+        } else {
+            auto it = env_.find(ahead_[0].identifier());
+            if (it != env_.end()) {
+                eat(Token::Tag::Identifier);
+                return it->second;
+            }
+        }
     }
 
-    return world_.var(def, index, tracker.location());
+    assertf(false, "unknown identifier '{}' in {}", ahead_[0].identifier(), ahead_[0].location());
 }
 
 const Def* Parser::parse_tuple() {
     Tracker tracker(this);
-    eat(Token::Tag::L_Angle);
+    eat(Token::Tag::L_Bracket);
 
-    auto defs = parse_list(Token::Tag::R_Angle, Token::Tag::Comma, [&] { return parse_def(); });
-    expect(Token::Tag::Colon);
-    auto type = parse_def();
+    auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] { return parse_def(); });
 
-    return world_.tuple(type, defs, tracker.location());
+    if (accept(Token::Tag::Colon)) {
+        auto type = parse_def();
+        return world_.tuple(type, defs, tracker.location());
+    }
+
+    return world_.tuple(defs, tracker.location());
 }
 
 const Axiom* Parser::parse_assume() {
     Tracker tracker(this);
 
     eat(Token::Tag::L_Brace);
-    if (!ahead_.isa(Token::Tag::Literal))
-        ELOG_LOC(ahead_.location(), "literal expected in {}");
+    if (!ahead_[0].isa(Token::Tag::Literal))
+        ELOG_LOC(ahead_[0].location(), "literal expected in {}");
 
-    auto box = ahead_.literal().box;
+    auto box = ahead_[0].literal().box;
     eat(Token::Tag::Literal);
     expect(Token::Tag::R_Brace);
 
@@ -137,10 +170,10 @@ const Axiom* Parser::parse_assume() {
 
 const Def* Parser::parse_param() {
     const Def* def;
-    if (ahead_.isa(Token::Tag::Identifier)) {
-        std::string ident = ahead_.identifier();
+    if (ahead_[0].isa(Token::Tag::Identifier) && ahead_[1].isa(Token::Tag::Colon)) {
+        std::string ident = ahead_[0].identifier();
         eat(Token::Tag::Identifier);
-        expect(Token::Tag::Colon);
+        eat(Token::Tag::Colon);
         def = parse_def();
 
         id_map_.emplace(ident, id_stack_.size());
@@ -161,33 +194,36 @@ const Def* Parser::shift_def(const Def* def, size_t shift) {
     return def->rebuild(shift_def(def->type(), shift), ops);
 }
 
-void Parser::next() {
-    ahead_ = lexer_.next();
+Token Parser::next() {
+    auto result = ahead_[0];
+    ahead_[0] = ahead_[1];
+    ahead_[1] = lexer_.next();
+    return result;
 }
 
 void Parser::eat(Token::Tag tag) {
-    assert(ahead_.isa(tag));
+    assert(ahead_[0].isa(tag));
     next();
 }
 
 void Parser::expect(Token::Tag tag) {
-    if (!ahead_.isa(tag))
-        ELOG_LOC(ahead_.location(), "'{}' expected", Token::tag_to_string(tag));
+    if (!ahead_[0].isa(tag))
+        ELOG_LOC(ahead_[0].location(), "'{}' expected", Token::tag_to_string(tag));
 
     next();
 }
 
 bool Parser::accept(Token::Tag tag) {
-    if (!ahead_.isa(tag))
+    if (!ahead_[0].isa(tag))
         return false;
     next();
     return true;
 }
 
-const Def* parse(WorldBase& world, const std::string& str) {
+const Def* parse(WorldBase& world, const std::string& str, Env env) {
     std::istringstream is(str);
     Lexer lexer(is, "stdin");
-    return Parser(world, lexer).parse_def();
+    return Parser(world, lexer, env).parse_def();
 }
 
 }

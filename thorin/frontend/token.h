@@ -59,6 +59,7 @@ public:
 #undef CODE
     };
 
+    Token() {}
     Token(Location loc, Literal lit)
         : tag_(Tag::Literal)
         , location_(loc)
