@@ -68,8 +68,8 @@ TEST(Primop, Ptr) {
     auto l1 = w.op_load(s1, p1);
     auto l2 = w.op_load(s1, p1);
     ASSERT_NE(l1, l2);
-    ASSERT_EQ(w.extract(l1->type(), 0_s), w.type_mem());
-    ASSERT_EQ(w.extract(l1->type(), 1_s), w.type_r(rflags::p, 32));
+    ASSERT_EQ(w.extract(l1, 0_s)->type(), w.type_mem());
+    ASSERT_EQ(w.extract(l1, 1_s)->type(), w.type_r(rflags::p, 32));
 }
 
 }
