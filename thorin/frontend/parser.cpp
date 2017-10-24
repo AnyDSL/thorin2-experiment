@@ -76,7 +76,7 @@ const Def* Parser::parse_sigma() {
     eat(Token::Tag::Sigma);
 
     expect(Token::Tag::L_Paren);
-    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); });
+    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); });
 
     return world_.sigma(defs, tracker.location());
 }
