@@ -163,18 +163,18 @@ TEST(Variadic, Nested) {
 TEST(XLA, Misc) {
     World w;
     auto N = w.type_nat();
-    auto A = w.arity_kind();
+    auto M = w.multi_arity_kind();
     auto S = w.star();
     //auto a2 = w.arity(2);
     auto a3 = w.arity(3);
     auto a4 = w.arity(4);
     auto a5 = w.arity(5);
 
-    auto arr = w.lambda({A, S}, w.variadic(w.var(A, 1), w.var(S, 1)));
+    auto arr = w.lambda({M, S}, w.variadic(w.var(M, 1), w.var(S, 1)));
 
-    auto op = w.axiom(w.pi({A, S},
-                w.pi({w.app(arr, {w.var(A, 1), w.var(S, 0)}), w.app(arr, {w.var(A, 2), w.var(S, 1)})},
-                    w.app(arr, {w.var(A, 3), w.var(S, 2)}))), {"op"});
+    auto op = w.axiom(w.pi({M, S},
+                w.pi({w.app(arr, {w.var(M, 1), w.var(S, 0)}), w.app(arr, {w.var(M, 2), w.var(S, 1)})},
+                    w.app(arr, {w.var(M, 3), w.var(S, 2)}))), {"op"});
     auto s = w.sigma({a4, a3, a5});
     auto a = w.app(arr, {s, N});
     auto lhs = w.axiom(a, {"lhs"});
@@ -182,8 +182,8 @@ TEST(XLA, Misc) {
     w.app(w.app(op, {s, N}), {lhs, rhs})->dump();
     w.app(w.app(op, {s, N}), {lhs, rhs})->type()->dump();
 
-    auto reduce = w.axiom(w.pi({A, S},
-                w.pi({w.app(arr, {w.var(A, 1), w.var(S, 0)}), w.var(S, 1), w.pi({w.var(S, 2), w.var(S, 3)}, w.var(S, 4))}, N)));
+    auto reduce = w.axiom(w.pi({M, S},
+                w.pi({w.app(arr, {w.var(M, 1), w.var(S, 0)}), w.var(S, 1), w.pi({w.var(S, 2), w.var(S, 3)}, w.var(S, 4))}, N)));
     reduce->type()->dump();
 }
 

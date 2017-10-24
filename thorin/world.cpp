@@ -45,7 +45,7 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
             max_type = universe();
             break;
         }
-        else if (def->type() == arity_kind() && max_type == arity_kind())
+        else if (def->type() == arity_kind() && (max_type == arity_kind() || max_type == multi_arity_kind()))
             // found at least two arities, must be a multi-arity
             max_type = multi_arity_kind();
         else {
