@@ -78,3 +78,24 @@ TEST(Arity, Subkinding) {
     auto sig = w.sigma({M, w.variadic(w.var(M, 0), w.star())});
     EXPECT_TRUE(sig->assignable(w.tuple({a0, w.tuple(w.unit_kind(), {})})));
 }
+
+TEST(Arity, PrefixExtract) {
+    World w;
+    auto a0 = w.arity(0);
+    auto a1 = w.arity(1);
+    auto i0_1 = w.index(1, 0);
+    auto a2 = w.arity(2);
+    auto i1_2 = w.index(2, 1);
+    auto a3 = w.arity(3);
+    auto i2_3 = w.index(3, 2);
+
+    auto N = w.type_nat();
+    auto ma = w.sigma({a2, a3, a2});
+    auto marray = w.variadic(ma, N);
+    auto v_marray = w.var(marray, 0);
+
+    EXPECT_EQ(N, w.extract(v_marray, w.tuple({i1_2, i2_3, i1_2}))->type());
+    EXPECT_EQ(w.variadic(a2, N), w.extract(v_marray, w.tuple({i1_2, i2_3}))->type());
+    EXPECT_EQ(w.variadic(a3, w.variadic(a2, N)), w.extract(v_marray, i1_2)->type());
+    EXPECT_EQ(w.variadic(w.sigma({a3, a2}), N), w.extract(v_marray, i1_2)->type());
+}

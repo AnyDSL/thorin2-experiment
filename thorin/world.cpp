@@ -204,6 +204,8 @@ const Def* WorldBase::extract(const Def* def, const Def* index, Debug dbg) {
     // need to allow the above, as types are also a 1-tuple of a type
     assertf(def->is_value(), "can only build extracts of values, {} is not a value", def);
     auto arity = def->arity();
+    auto type = def->type();
+    assertf(arity, "arity unknown for {} of type {}, can only extract when arity is known", def, type);
     if (arity->assignable(index)) {
         if (auto assume = index->isa<Axiom>()) {
             auto i = assume->box().get_u64();
@@ -211,7 +213,7 @@ const Def* WorldBase::extract(const Def* def, const Def* index, Debug dbg) {
                 return def->op(i);
             }
 
-            if (auto sigma = def->type()->isa<Sigma>()) {
+            if (auto sigma = type->isa<Sigma>()) {
                 auto type = sigma->op(i);
                 if (type->free_vars().any_end(i)) {
                     size_t skipped_shifts = 0;
@@ -228,36 +230,39 @@ const Def* WorldBase::extract(const Def* def, const Def* index, Debug dbg) {
                 return unify<Extract>(2, *this, type, def, index, dbg);
             }
         }
-        // tuples <v, v, ..., v> are normalized to packs, so this also optimizes extracts from them to v
+        // homogeneous tuples <v,...,v> are normalized to packs, so this also optimizes to v
         if (auto pack = def->isa<Pack>()) {
             return pack->body()->reduce(index);
         }
+        // here: index is const => type is variadic, index is var => type may be variadic/sigma, must not be dependent sigma
+        assert(!index->isa<Axiom>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
+        const Def* result_type = nullptr;
+        if (auto sigma = type->isa<Sigma>()) {
+            assertf(!sigma->is_dependent(), "can't extract at {} from {} : {}, type is dependent", index, def, sigma);
+            assertf(sigma->type() != universe(), "can't extract at {} from {} : {}, type is a kind (not reflectable)", index,
+                   def, sigma);
+            result_type = extract(tuple(sigma->ops(), dbg), index);
+        } else
+            result_type = type->as<Variadic>()->body()->reduce(index);
+
+        return unify<Extract>(2, *this, result_type, def, index, dbg);
     }
     if (index->type()->type() == multi_arity_kind()) {
-        // not exactly the same arity
+        // not the same exact arity
         // can only extract if we can iteratively extract with each index in the multi-index
         // can only do that if we know how many indices there are
         if (auto i_arity = index->arity(); auto assume = i_arity->isa<Axiom>()) {
             auto a = assume->box().get_u64();
             auto extracted = def;
-            for (size_t i = 0; i <= a; ++i) {
+            for (size_t i = 0; i < a; ++i) {
                 auto idx = extract(index, i, dbg);
                 extracted = extract(extracted, idx, dbg);
             }
             return extracted;
         }
     }
-
-
-    // TODO multi-index extracts, also with constants
-
-    // assertf(arity->assignable(index), "index {} with type {} is not assignable to arity {} of value {} for extract",
-    // index->type(), index, arity, def);
-    // assertf(arity == assume->type(), "can't extract with index {} of type {} from tuple {} of arity {}",
-    //         index, index->type(), def, arity);
-    assertf(def->type()->isa<Variadic>(), "can only build extracts with variable index on terms of variadic type");
-    auto type = def->type()->as<Variadic>()->body()->reduce(index);
-    return unify<Extract>(2, *this, type, def, index, dbg);
+    assertf(false, "can't extract at {} from {} : {}, index type {} not compatible",
+            index, index->type(), def, type);
 }
 
 const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
