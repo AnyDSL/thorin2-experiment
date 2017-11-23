@@ -79,17 +79,18 @@ bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
 size_t Def::gid_counter_ = 1;
 
 Def::Sort Def::sort() const {
-    if (!type()) {
-        assert(isa<Universe>());
-        return Sort::Universe;
-    } else if (!type()->type())
+    if (auto t = type()) {
+        if (auto tt = t->type()) {
+            if (auto ttt = tt->type()) {
+                assert(!ttt->type());
+                return Sort::Term;
+            }
+            return Sort::Type;
+        }
         return Sort::Kind;
-    else if (!type()->type()->type())
-        return Sort::Type;
-    else {
-        assert(!type()->type()->type()->type());
-        return Sort::Term;
     }
+    assert(isa<Universe>());
+    return Sort::Universe;
 }
 
 bool Def::maybe_affine() const {
