@@ -55,9 +55,9 @@ TEST(Arity, Pack) {
     /*auto unit =*/ w.unit();
     auto tuple0t = w.tuple(w.unit_kind(), {});
 
-    ASSERT_EQ(tuple0t, w.pack({a0, a1, a2}, N));
-    ASSERT_EQ(tuple0t, w.pack({a1, a0}, N));
-    ASSERT_EQ(w.pack(a2, tuple0t), w.pack({a2, a0, a2}, N));
+    EXPECT_EQ(tuple0t, w.pack({a0, a1, a2}, N));
+    EXPECT_EQ(tuple0t, w.pack({a1, a0}, N));
+    EXPECT_EQ(w.pack(a2, tuple0t), w.pack({a2, a0, a2}, N));
 }
 
 TEST(Arity, Subkinding) {
@@ -68,13 +68,13 @@ TEST(Arity, Subkinding) {
     auto vA = w.var(A, 0);
     auto M = w.multi_arity_kind();
 
-    ASSERT_TRUE(A->assignable(a0));
-    ASSERT_TRUE(M->assignable(a0));
-    ASSERT_TRUE(A->assignable(a3));
-    ASSERT_TRUE(M->assignable(a3));
-    ASSERT_TRUE(A->assignable(vA));
-    ASSERT_TRUE(M->assignable(vA));
+    EXPECT_TRUE(A->assignable(a0));
+    EXPECT_TRUE(M->assignable(a0));
+    EXPECT_TRUE(A->assignable(a3));
+    EXPECT_TRUE(M->assignable(a3));
+    EXPECT_TRUE(A->assignable(vA));
+    EXPECT_TRUE(M->assignable(vA));
 
     auto sig = w.sigma({M, w.variadic(w.var(M, 0), w.star())});
-    ASSERT_TRUE(sig->assignable(w.tuple({a0, w.tuple(w.unit_kind(), {})})));
+    EXPECT_TRUE(sig->assignable(w.tuple({a0, w.tuple(w.unit_kind(), {})})));
 }
