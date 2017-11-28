@@ -100,7 +100,7 @@ public:
     const Sigma* unit(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
             return unit(cq->box().get_qualifier());
-        return unify<Sigma>(0, *this, star(q), Defs(), Debug("Σ()"));
+        return unify<Sigma>(0, *this, star(q), Defs(), Debug("[]"));
     }
     const Sigma* unit_kind() { return unit_kind_; }
 

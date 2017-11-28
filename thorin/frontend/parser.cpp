@@ -8,41 +8,35 @@ const Def* Parser::parse_def() {
 
     if (false) {}
     else if (ahead_[0].isa(Token::Tag::Pi))         def = parse_pi();
-    else if (ahead_[0].isa(Token::Tag::Sigma))      def = parse_sigma();
+    else if (ahead_[0].isa(Token::Tag::L_Bracket))  def = parse_sigma();
     else if (ahead_[0].isa(Token::Tag::Lambda))     def = parse_lambda();
     else if (ahead_[0].isa(Token::Tag::Star))       def = parse_star();
     else if (ahead_[0].isa(Token::Tag::Sharp) ||
              ahead_[0].isa(Token::Tag::Identifier)) def = parse_var();
-    else if (ahead_[0].isa(Token::Tag::L_Bracket))  def = parse_tuple();
+    else if (ahead_[0].isa(Token::Tag::L_Paren))    def = parse_tuple();
     else if (ahead_[0].isa(Token::Tag::L_Brace))    def = parse_assume();
-    else if (ahead_[0].isa(Token::Tag::L_Paren)) {
-        eat(Token::Tag::L_Paren);
-        def = parse_def();
-        expect(Token::Tag::R_Paren);
-    }
     else if (accept(Token::Tag::Qualifier_Type))   def = world_.qualifier_type();
     else if (accept(Token::Tag::Qualifier_Kind))   def = world_.qualifier_kind();
     else if (accept(Token::Tag::Arity_Kind))       def = world_.arity_kind();
     else if (accept(Token::Tag::Multi_Arity_Kind)) def = world_.multi_arity_kind();
 
-    switch (ahead_[0].tag()) {
-        case Token::Tag::Pi:
-        case Token::Tag::Sigma:
-        case Token::Tag::Lambda:
-        case Token::Tag::Star:
-        case Token::Tag::Sharp:
-        case Token::Tag::Identifier:
-        case Token::Tag::L_Bracket:
-        case Token::Tag::L_Brace:
-        case Token::Tag::L_Paren:
-        case Token::Tag::Qualifier_Type:
-        case Token::Tag::Qualifier_Kind:
-        case Token::Tag::Arity_Kind:
-        case Token::Tag::Multi_Arity_Kind: {
-            auto arg = parse_def();
-            return world_.app(def, arg, tracker.location());
-        }
-    }
+    // if another expression follows - we build an app
+    auto tag = ahead_[0].tag();
+    if (   tag == Token::Tag::Pi
+        || tag == Token::Tag::Lambda
+        || tag == Token::Tag::Star
+        || tag == Token::Tag::Sharp
+        || tag == Token::Tag::Identifier
+        || tag == Token::Tag::L_Bracket
+        || tag == Token::Tag::L_Brace
+        || tag == Token::Tag::L_Paren
+        || tag == Token::Tag::Qualifier_Type
+        || tag == Token::Tag::Qualifier_Kind
+        || tag == Token::Tag::Arity_Kind
+        || tag == Token::Tag::Multi_Arity_Kind) {
+        auto arg = parse_def();
+        return world_.app(def, arg, tracker.location());
+     }
 
     if (def != nullptr)
         return def;
@@ -73,10 +67,8 @@ const Pi* Parser::parse_pi() {
 
 const Def* Parser::parse_sigma() {
     Tracker tracker(this);
-    eat(Token::Tag::Sigma);
-
-    expect(Token::Tag::L_Paren);
-    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); });
+    eat(Token::Tag::L_Bracket);
+    auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] { return parse_param(); });
 
     return world_.sigma(defs, tracker.location());
 }
@@ -139,9 +131,9 @@ const Def* Parser::parse_var() {
 
 const Def* Parser::parse_tuple() {
     Tracker tracker(this);
-    eat(Token::Tag::L_Bracket);
 
-    auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] { return parse_def(); });
+    eat(Token::Tag::L_Paren);
+    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); });
 
     if (accept(Token::Tag::Colon)) {
         auto type = parse_def();

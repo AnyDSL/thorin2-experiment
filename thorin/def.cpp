@@ -795,8 +795,8 @@ std::ostream& Pick::stream(std::ostream& os) const {
 
 std::ostream& Sigma::stream(std::ostream& os) const {
     if (num_ops() == 0 && is_kind())
-        return os << "Σ*";
-    return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "Σ(", ")");
+        return os << "[]*";
+    return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "[", "]");
 }
 
 std::ostream& Singleton::stream(std::ostream& os) const {
@@ -813,7 +813,7 @@ std::ostream& Universe::stream(std::ostream& os) const {
 
 std::ostream& Tuple::stream(std::ostream& os) const {
     if (num_ops() == 0 && is_type())
-        return os << "():Σ*";
+        return os << "():[]*";
     return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
 }
 

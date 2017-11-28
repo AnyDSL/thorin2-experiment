@@ -51,7 +51,6 @@ Token Lexer::next() {
 
     if (accept('#')) {
         if (accept("lambda")) return Token(make_loc(), Token::Tag::Lambda);
-        if (accept("sigma"))  return Token(make_loc(), Token::Tag::Sigma);
         if (accept("pi"))     return Token(make_loc(), Token::Tag::Pi);
         if (accept("true"))  return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(true)));
         if (accept("false")) return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(false)));
@@ -61,7 +60,6 @@ Token Lexer::next() {
 
     // greek letters
     if (accept(0x0003bb)) return Token(make_loc(), Token::Tag::Lambda);
-    if (accept(0x0003a3)) return Token(make_loc(), Token::Tag::Sigma);
     if (accept(0x0003a0)) return Token(make_loc(), Token::Tag::Pi);
     if (accept(0x01D538)) return Token(make_loc(), Token::Tag::Arity_Kind);
     if (accept(0x01D544)) return Token(make_loc(), Token::Tag::Multi_Arity_Kind);

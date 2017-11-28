@@ -8,7 +8,7 @@
 using namespace thorin;
 
 TEST(Lexer, Tokens) {
-    std::string str ="{ } ( ) < > [ ] : , . * #pi #sigma #lambda";
+    std::string str ="{ } ( ) < > [ ] : , . * #pi #lambda";
     std::istringstream is(str);
 
     Lexer lexer(is, "stdin");
@@ -25,7 +25,6 @@ TEST(Lexer, Tokens) {
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Dot));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Star));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Pi));
-    ASSERT_TRUE(lexer.next().isa(Token::Tag::Sigma));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Lambda));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Eof));
 }
@@ -97,12 +96,11 @@ TEST(Lexer, Literals) {
 }
 
 TEST(Lexer, Utf8) {
-    std::string str ="Π Σ λ ℚ ℚₖ 𝔸 𝕄";
+    std::string str ="Π λ ℚ ℚₖ 𝔸 𝕄";
     std::istringstream is(str);
 
     Lexer lexer(is, "stdin");
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Pi));
-    ASSERT_TRUE(lexer.next().isa(Token::Tag::Sigma));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Lambda));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Qualifier_Type));
     ASSERT_TRUE(lexer.next().isa(Token::Tag::Qualifier_Kind));

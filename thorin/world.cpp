@@ -130,12 +130,12 @@ WorldBase::WorldBase()
     qualifier_kind_ = axiom(universe_, {"ℚₖ"});
     qualifier_type_ = axiom(qualifier_kind_, {"ℚ"});
     // TODO think hard about unit_kind and qualifiers, they are inferred for other sigma kinds, this one is always unrestricted, doe that imply subtyping on qualifiers?
-    unit_kind_ = insert<Sigma>(0, *this, universe_, Defs(), Debug("Σ*"));
+    unit_kind_ = insert<Sigma>(0, *this, universe_, Defs(), Debug("[]*"));
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
         qualifier_[i] = assume(qualifier_type(), {q}, {qualifier2str(q)});
         star_     [i] = insert<Star >(1, *this, qualifier_[i]);
-        unit_     [i] = insert<Sigma>(0, *this, star_[i], Defs(), Debug("Σ()"));
+        unit_     [i] = insert<Sigma>(0, *this, star_[i], Defs(), Debug("[])"));
         tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
     }
     arity_kind_ = insert<ArityKind>(0, *this);
@@ -685,8 +685,8 @@ World::World() {
 
     env["int"] = type_i();
     env["real"] = type_r();
-    auto i_type_arithop = parse(*this, "Πs: 𝕄. Π(q: ℚ, f: nat, w: nat). Π( int[q, f, w],  int[q, f, w]).  int[q, f, w]", env);
-    auto r_type_arithop = parse(*this, "Πs: 𝕄. Π(q: ℚ, f: nat, w: nat). Π(real[q, f, w], real[q, f, w]). real[q, f, w]", env);
+    auto i_type_arithop = parse(*this, "Πs: 𝕄. Π(q: ℚ, f: nat, w: nat). Π( int(q, f, w),  int(q, f, w)).  int(q, f, w)", env);
+    auto r_type_arithop = parse(*this, "Πs: 𝕄. Π(q: ℚ, f: nat, w: nat). Π(real(q, f, w), real(q, f, w)). real(q, f, w)", env);
 
     // arithop table
     for (size_t o = 0; o != Num_IArithOp; ++o)
@@ -695,8 +695,8 @@ World::World() {
     for (size_t o = 0; o != Num_RArithOp; ++o)
         rarithop_[o] = axiom(r_type_arithop, {rarithop2str(rarithop(o))});
 
-    auto i_type_cmp = parse(*this, "Πs: 𝕄. Πnat. Π(q: ℚ, f: nat, w: nat). Π( int[q, f, w],  int[q, f, w]). bool", env);
-    auto r_type_cmp = parse(*this, "Πs: 𝕄. Πnat. Π(q: ℚ, f: nat, w: nat). Π(real[q, f, w], real[q, f, w]). bool", env);
+    auto i_type_cmp = parse(*this, "Πs: 𝕄. Πnat. Π(q: ℚ, f: nat, w: nat). Π( int(q, f, w),  int(q, f, w)). bool", env);
+    auto r_type_cmp = parse(*this, "Πs: 𝕄. Πnat. Π(q: ℚ, f: nat, w: nat). Π(real(q, f, w), real(q, f, w)). bool", env);
     op_icmp_ = axiom(i_type_cmp, {"icmp"});
     op_rcmp_ = axiom(r_type_cmp, {"rcmp"});
 
@@ -705,10 +705,10 @@ World::World() {
                            pi({type_ptr(variadic(va2, extract(var(variadic(va3, S), 2), var(va3, 0))), vn0), va3},
                               type_ptr(extract(var(variadic(va4, S), 3), var(va4, 0)), vn2))), {"lea"});
     }
-    op_load_  = axiom(parse(*this, "Π(T: *, a: nat). Π(M, ptr[T, a]). Σ(M, T)", env), {"load"});
-    op_store_ = axiom(parse(*this, "Π(T: *, a: nat). Π(M, ptr[T, a], T). M",    env), {"store"});
-    op_enter_ = axiom(parse(*this, "ΠM. Σ(M, F)",                               env), {"enter"});
-    op_slot_  = axiom(parse(*this, "Π(T: *, a: nat). Π(F, nat). ptr[T, a]",     env), {"slot"});
+    op_load_  = axiom(parse(*this, "Π(T: *, a: nat). Π(M, ptr(T, a)). [M, T]", env), {"load"});
+    op_store_ = axiom(parse(*this, "Π(T: *, a: nat). Π(M, ptr(T, a), T). M",    env), {"store"});
+    op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
+    op_slot_  = axiom(parse(*this, "Π(T: *, a: nat). Π(F, nat). ptr(T, a)",     env), {"slot"});
 }
 
 const Axiom* World::val_nat(int64_t val, Location location) {
