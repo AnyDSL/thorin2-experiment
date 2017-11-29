@@ -11,6 +11,7 @@
 
 namespace thorin {
 
+// TODO use thorin::HashMap
 typedef std::unordered_map<std::string, const Def*> Env;
 
 class Parser {
@@ -53,16 +54,13 @@ private:
         uint32_t col;
     };
 
-    template <typename F>
-    std::vector<typename std::result_of<F()>::type>
-    parse_list(Token::Tag end, Token::Tag sep, F f) {
-        typedef typename std::result_of<F()>::type T;
+    DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f) {
         if (ahead_[0].isa(end)) {
             eat(end);
-            return std::vector<T>();
+            return DefVector();
         }
 
-        std::vector<T> elems;
+        DefVector elems;
         elems.emplace_back(f());
         while (ahead_[0].isa(sep)) {
             eat(sep);

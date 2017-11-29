@@ -76,6 +76,7 @@ using SortedDefSet = std::set<const Def*, GIDLt<const Def*>>;
 
 typedef Array<const Def*> DefArray;
 typedef ArrayRef<const Def*> Defs;
+typedef std::vector<const Def*> DefVector;
 
 typedef std::pair<DefArray, const Def*> EnvDef;
 
@@ -240,11 +241,11 @@ public:
 
     void typecheck() const {
         assert(free_vars().none());
-        std::vector<const Def*> types;
+        DefVector types;
         EnvDefSet checked;
         typecheck_vars(types, checked);
     }
-    virtual void typecheck_vars(std::vector<const Def*>& types, EnvDefSet& checked) const;
+    virtual void typecheck_vars(DefVector& types, EnvDefSet& checked) const;
 
     /**
      * Substitutes Var%s beginning from @p index with @p args and shifts free Var%s by the number of @p args.
@@ -371,7 +372,7 @@ public:
     const Def* body() const { return ops().back(); }
     const Def* reduce(Defs) const;
     bool has_values() const override;
-    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
+    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 
     std::ostream& stream(std::ostream&) const override;
 
@@ -399,7 +400,7 @@ public:
     Lambda* set(const Def* def);
     const Pi* type() const { return Def::type()->as<Pi>(); }
     Lambda* stub(WorldBase&, const Def*, Debug) const override;
-    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
+    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 
     std::ostream& stream(std::ostream&) const override;
 
@@ -466,7 +467,7 @@ public:
 
     std::ostream& stream(std::ostream&) const override;
     Sigma* stub(WorldBase&, const Def*, Debug) const override;
-    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
+    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 
 private:
     static const Def* max_type(WorldBase& world, Defs ops, const Def* qualifier);
@@ -487,7 +488,7 @@ public:
     bool is_homogeneous() const { return !body()->free_vars().test(0); };
     bool has_values() const override;
     bool assignable(const Def* def) const override;
-    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
+    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -525,7 +526,7 @@ private:
 
 public:
     const Def* body() const { return op(0); }
-    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
+    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:
@@ -766,7 +767,7 @@ public:
     std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
     std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
-    void typecheck_vars(std::vector<const Def*>&, EnvDefSet& checked) const override;
+    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 
 private:
     uint64_t vhash() const override;
