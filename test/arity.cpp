@@ -81,9 +81,6 @@ TEST(Arity, Subkinding) {
 
 TEST(Arity, PrefixExtract) {
     World w;
-    auto a0 = w.arity(0);
-    auto a1 = w.arity(1);
-    auto i0_1 = w.index(1, 0);
     auto a2 = w.arity(2);
     auto i1_2 = w.index(2, 1);
     auto a3 = w.arity(3);
