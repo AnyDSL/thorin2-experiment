@@ -11,8 +11,10 @@ Lexer::Lexer(std::istream& is, const std::string& name)
     : stream_(is)
     , iterator_(is)
     , filename_(name)
-    , line_(1), col_(0)
-    , cur_(0), eof_(false)
+    , line_(1)
+    , col_(0)
+    , cur_(0)
+    , eof_(false)
 {
     char bytes[3];
     std::fill_n(bytes, 3, std::char_traits<char>::eof());
@@ -47,6 +49,7 @@ Token Lexer::next() {
     if (accept(':')) return Token(make_loc(), Token::Tag::Colon);
     if (accept(',')) return Token(make_loc(), Token::Tag::Comma);
     if (accept('.')) return Token(make_loc(), Token::Tag::Dot);
+    if (accept(';')) return Token(make_loc(), Token::Tag::Semicolon);
     if (accept('*')) return Token(make_loc(), Token::Tag::Star);
 
     if (accept('#')) {

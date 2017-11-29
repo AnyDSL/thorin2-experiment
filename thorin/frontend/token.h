@@ -21,6 +21,7 @@ namespace thorin {
     f(Colon,            ":") \
     f(Comma,            ",") \
     f(Dot,              ".") \
+    f(Semicolon,        ";") \
     f(Star,             "*") \
     f(Sharp,            "#") \
     f(Pi,               "#pi") \

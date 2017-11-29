@@ -8,7 +8,7 @@ const Def* Parser::parse_def() {
 
     if (false) {}
     else if (ahead_[0].isa(Token::Tag::Pi))         def = parse_pi();
-    else if (ahead_[0].isa(Token::Tag::L_Bracket))  def = parse_sigma();
+    else if (ahead_[0].isa(Token::Tag::L_Bracket))  def = parse_sigma_or_variadic();
     else if (ahead_[0].isa(Token::Tag::Lambda))     def = parse_lambda();
     else if (ahead_[0].isa(Token::Tag::Star))       def = parse_star();
     else if (ahead_[0].isa(Token::Tag::Sharp) ||
@@ -65,11 +65,21 @@ const Pi* Parser::parse_pi() {
     return world_.pi(domain, body, tracker.location());
 }
 
-const Def* Parser::parse_sigma() {
+const Def* Parser::parse_sigma_or_variadic() {
     Tracker tracker(this);
     eat(Token::Tag::L_Bracket);
-    auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] { return parse_param(); });
 
+    if (accept(Token::Tag::R_Bracket))
+        return world_.unit();
+
+    auto first = parse_param();
+
+    if (accept(Token::Tag::Semicolon)) {
+        auto body = parse_def();
+        return world_.variadic(first, body, tracker.location());
+    }
+
+    auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] { return parse_param(); }, first);
     return world_.sigma(defs, tracker.location());
 }
 

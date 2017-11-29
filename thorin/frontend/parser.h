@@ -27,7 +27,7 @@ public:
 
     const Def*    parse_def();
     const Pi*     parse_pi();
-    const Def*    parse_sigma();
+    const Def*    parse_sigma_or_variadic();
     const Def*    parse_lambda();
     const Star*   parse_star();
     const Def*    parse_var();
@@ -54,13 +54,20 @@ private:
         uint32_t col;
     };
 
-    DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f) {
+    DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const Def* first = nullptr) {
+        DefVector elems;
+
+        if (first != nullptr)
+            elems.emplace_back(first);
+
         if (ahead_[0].isa(end)) {
             eat(end);
-            return DefVector();
+            return elems;
         }
 
-        DefVector elems;
+        if (first != nullptr)
+            eat(sep);
+
         elems.emplace_back(f());
         while (ahead_[0].isa(sep)) {
             eat(sep);
