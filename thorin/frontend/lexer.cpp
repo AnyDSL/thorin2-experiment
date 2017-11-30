@@ -1,33 +1,43 @@
 #include <cctype>
 
-#include <utf8.h>
+#include <stdexcept>
 
 #include "thorin/util/log.h"
 #include "thorin/frontend/lexer.h"
 
 namespace thorin {
 
-Lexer::Lexer(std::istream& is, const std::string& name)
+Lexer::Lexer(std::istream& is, const char* filename)
     : stream_(is)
-    , iterator_(is)
-    , filename_(name)
-    , line_(1)
-    , col_(0)
-    , cur_(0)
-    , eof_(false)
+    , filename_(filename)
 {
-    char bytes[3];
-    std::fill_n(bytes, 3, std::char_traits<char>::eof());
-    stream_.read(bytes, 3);
-    if (!utf8::starts_with_bom(bytes, bytes + 3)) {
-        stream_.unget();
-        stream_.unget();
-        stream_.unget();
-    }
-    eat();
+    if (!stream_)
+        throw std::runtime_error("stream is bad");
 }
 
-Token Lexer::next() {
+uint32_t Lexer::next() {
+    int c = stream_.get();
+
+    // see https://en.wikipedia.org/wiki/UTF-8
+    if ((~c & ~0b10000000) != 0) {                                    // 1-byte: 0xxxxxxx
+        back_line_ = peek_line_;
+        back_col_  = peek_col_;
+
+        if (c == '\n') {
+            ++peek_line_;
+            peek_col_ = 1;
+        } else if (c != std::istream::traits_type::eof())
+            ++peek_col_;
+
+        return c;
+    } else if (((c & 0b11000000) != 0) && ((~c & 0b00100000) != 0)) { // 2-bytes: 110xxxxx 10xxxxxx
+    } else if (((c & 0b11100000) != 0) && ((~c & 0b00010000) != 0)) { // 3 bytes: 1110xxxx 10xxxxxx 10xxxxxx
+    } else if (((c & 0b11110000) != 0) && ((~c & 0b00001000) != 0)) { // 4 bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+    } else {
+    }
+}
+
+Token Lexer::lex() {
     eat_spaces();
 
     auto front_line = line_;
@@ -55,8 +65,8 @@ Token Lexer::next() {
     if (accept('#')) {
         if (accept("lambda")) return Token(make_loc(), Token::Tag::Lambda);
         if (accept("pi"))     return Token(make_loc(), Token::Tag::Pi);
-        if (accept("true"))  return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(true)));
-        if (accept("false")) return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(false)));
+        if (accept("true"))   return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(true)));
+        if (accept("false"))  return Token(make_loc(), Literal(Literal::Tag::Lit_bool, Box(false)));
 
         return Token(make_loc(), Token::Tag::Sharp);
     }

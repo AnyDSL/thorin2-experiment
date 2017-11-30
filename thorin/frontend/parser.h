@@ -21,8 +21,8 @@ public:
         , lexer_(lexer)
         , env_(env)
     {
-        ahead_[0] = lexer_.next();
-        ahead_[1] = lexer_.next();
+        ahead_[0] = lexer_.lex();
+        ahead_[1] = lexer_.lex();
     }
 
     const Def*    parse_def();
@@ -46,7 +46,7 @@ private:
         Location location() const {
             auto back_line = parser.ahead_[0].location().back_line();
             auto back_col  = parser.ahead_[0].location().back_col();
-            return Location(parser.lexer_.filename().c_str(), line, col, back_line, back_col);
+            return Location(parser.lexer_.filename(), line, col, back_line, back_col);
         }
 
         const Parser& parser;

@@ -199,7 +199,7 @@ const Def* Parser::shift_def(const Def* def, size_t shift) {
 Token Parser::next() {
     auto result = ahead_[0];
     ahead_[0] = ahead_[1];
-    ahead_[1] = lexer_.next();
+    ahead_[1] = lexer_.lex();
     return result;
 }
 
