@@ -18,7 +18,7 @@ private:
     Literal parse_literal();
 
     bool accept(uint32_t);
-    bool accept(const std::string&);
+    //bool accept(const std::string&);
     bool accept(int (*pred)(int)) {
         if (pred(peek())) {
             next();

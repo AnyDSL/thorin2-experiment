@@ -27,22 +27,34 @@ Lexer::Lexer(std::istream& is, const char* filename)
 uint32_t Lexer::next() {
     uint32_t result = peek_;
 
-    int c = stream_.get();
-
+    uint32_t b1 = stream_.get();
     // see https://en.wikipedia.org/wiki/UTF-8
-    if ((~c & ~0b10000000) != 0) {                                    // 1-byte: 0xxxxxxx
+    // 10xxxxxx
+    auto check_utf8 = [&] (int b) { return ((b & 0b10000000_u32) && (~b & 0b01000000_u32)) ? b & 0b00111111_u32 : 0xffffffff_u32; };
+
+    if ((~b1 & ~0b10000000) != 0) {                                    // 1-byte: 0xxxxxxx
         back_line_ = peek_line_;
         back_col_  = peek_col_;
 
-        if (c == '\n') {
+        if (b1 == '\n') {
             ++peek_line_;
             peek_col_ = 1;
-        } else if (c != std::istream::traits_type::eof())
+        } else if (b1 != (uint32_t) std::istream::traits_type::eof())
             ++peek_col_;
-        peek_ = c;
-    } else if (((c & 0b11000000) != 0) && ((~c & 0b00100000) != 0)) { // 2-bytes: 110xxxxx 10xxxxxx
-    } else if (((c & 0b11100000) != 0) && ((~c & 0b00010000) != 0)) { // 3 bytes: 1110xxxx 10xxxxxx 10xxxxxx
-    } else if (((c & 0b11110000) != 0) && ((~c & 0b00001000) != 0)) { // 4 bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+        peek_ = b1;
+    } else if (b1 & 0b11000000) {     // 2-bytes: 110xxxxx 10xxxxxx
+        auto b2 = check_utf8(stream_.get());
+        if (b2 != 0xffffffffu) {
+            peek_ = ((b1 & 0b00011111) << 6) | b2;
+        } else {
+        c = stream_.get();
+        if (~c & 0b00100000) {
+        } else {
+            ELOG_LOC(location(), "invalid utf-8 character");
+            next();
+        }
+    } else if ((c & 0b11100000u) && (~c & 0b00010000u)) { // 3 bytes: 1110xxxx 10xxxxxx 10xxxxxx
+    } else if ((c & 0b11110000u) && (~c & 0b00001000u)) { // 4 bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
     } else {
     }
 
