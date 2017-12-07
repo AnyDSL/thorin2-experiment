@@ -223,7 +223,7 @@ bool Parser::accept(Token::Tag tag) {
 }
 
 const Def* parse(WorldBase& world, const std::string& str, Env env) {
-    std::istringstream is(str);
+    std::istringstream is(str, std::ios::binary);
     Lexer lexer(is, "stdin");
     return Parser(world, lexer, env).parse_def();
 }

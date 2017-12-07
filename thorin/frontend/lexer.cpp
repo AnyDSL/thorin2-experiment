@@ -24,41 +24,73 @@ Lexer::Lexer(std::istream& is, const char* filename)
     next();
 }
 
+inline bool is_bit_set(uint32_t val, uint32_t n) { return bool((val >> n) & 1_u32); }
+inline bool is_bit_clear(uint32_t val, uint32_t n) { return !is_bit_set(val, n); }
+
+// see https://en.wikipedia.org/wiki/UTF-8
 uint32_t Lexer::next() {
     uint32_t result = peek_;
-
     uint32_t b1 = stream_.get();
-    // see https://en.wikipedia.org/wiki/UTF-8
-    // 10xxxxxx
-    auto check_utf8 = [&] (int b) { return ((b & 0b10000000_u32) && (~b & 0b01000000_u32)) ? b & 0b00111111_u32 : 0xffffffff_u32; };
 
-    if ((~b1 & ~0b10000000) != 0) {                                    // 1-byte: 0xxxxxxx
+    if (b1 == (uint32_t) std::istream::traits_type::eof()) {
+        peek_ = b1;
+        return result;
+    }
+
+    auto check_utf8 = [&] (uint32_t b) {
+        if (is_bit_clear(b, 7) || is_bit_set(b, 6)) {
+            ELOG_LOC(location(), "invalid utf-8 character");
+        }
+    };
+
+    auto update_peek = [&] (uint32_t peek) {
+        back_line_ = peek_line_;
+        back_col_  = peek_col_;
+        ++peek_col_;
+        peek_ = peek;
+        return result;
+    };
+
+    if (is_bit_clear(b1, 7)) {
+        // 1-byte: 0xxxxxxx
         back_line_ = peek_line_;
         back_col_  = peek_col_;
 
         if (b1 == '\n') {
             ++peek_line_;
             peek_col_ = 1;
-        } else if (b1 != (uint32_t) std::istream::traits_type::eof())
+        } else
             ++peek_col_;
         peek_ = b1;
-    } else if (b1 & 0b11000000) {     // 2-bytes: 110xxxxx 10xxxxxx
-        auto b2 = check_utf8(stream_.get());
-        if (b2 != 0xffffffffu) {
-            peek_ = ((b1 & 0b00011111) << 6) | b2;
-        } else {
-        c = stream_.get();
-        if (~c & 0b00100000) {
-        } else {
-            ELOG_LOC(location(), "invalid utf-8 character");
-            next();
-        }
-    } else if ((c & 0b11100000u) && (~c & 0b00010000u)) { // 3 bytes: 1110xxxx 10xxxxxx 10xxxxxx
-    } else if ((c & 0b11110000u) && (~c & 0b00001000u)) { // 4 bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+        return result;
     } else {
+        if (is_bit_set(b1, 6)) {
+            if (is_bit_clear(b1, 5)) {
+                // 2-bytes: 110xxxxx 10xxxxxx
+                uint32_t b2 = stream_.get();
+                check_utf8(b2);
+                return update_peek(((b1 & 0b00011111_u32) << 6_u32) | (b2 & 0b00111111_u32));
+            } else if (is_bit_clear(b1, 4)) {
+                // 3 bytes: 1110xxxx 10xxxxxx 10xxxxxx
+                uint32_t b2 = stream_.get();
+                check_utf8(b2);
+                uint32_t b3 = stream_.get();
+                check_utf8(b3);
+                return update_peek(((b1 & 0b00001111_u32) << 12_u32) | ((b2 & 0b00111111_u32) << 6_u32) | (b3 & 0b00111111_u32));
+            } else if (is_bit_clear(b1, 3)) {
+                // 4 bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+                uint32_t b2 = stream_.get();
+                check_utf8(b2);
+                uint32_t b3 = stream_.get();
+                check_utf8(b3);
+                uint32_t b4 = stream_.get();
+                check_utf8(b4);
+                return update_peek(((b1 & 0b00000111_u32) << 18_u32) | ((b2 & 0b00111111_u32) << 12_u32) | ((b3 & 0b00111111_u32) << 6_u32) | (b4 & 0b00111111_u32));
+            }
+        }
     }
-
-    return result;
+    ELOG_LOC(location(), "invalid utf-8 character");
+    return 0;
 }
 
 Token Lexer::lex() {
@@ -177,24 +209,24 @@ Literal Lexer::parse_literal() {
     // suffix
     if (!exp && !fract) {
         if (accept('s')) {
-            if (accept("8"))  return Literal(Literal::Tag::Lit_s8,   s8( strtol(lit.c_str(), nullptr, base)));
-            if (accept("16")) return Literal(Literal::Tag::Lit_s16, s16( strtol(lit.c_str(), nullptr, base)));
-            if (accept("32")) return Literal(Literal::Tag::Lit_s32, s32( strtol(lit.c_str(), nullptr, base)));
-            if (accept("64")) return Literal(Literal::Tag::Lit_s64, s64(strtoll(lit.c_str(), nullptr, base)));
+            if (accept("8"))  return {Literal::Tag::Lit_s8,   s8( strtol(lit.c_str(), nullptr, base))};
+            if (accept("16")) return {Literal::Tag::Lit_s16, s16( strtol(lit.c_str(), nullptr, base))};
+            if (accept("32")) return {Literal::Tag::Lit_s32, s32( strtol(lit.c_str(), nullptr, base))};
+            if (accept("64")) return {Literal::Tag::Lit_s64, s64(strtoll(lit.c_str(), nullptr, base))};
         }
 
         if (!sign && accept('u')) {
-            if (accept("8"))  return Literal(Literal::Tag::Lit_u8,   u8( strtoul(lit.c_str(), nullptr, base)));
-            if (accept("16")) return Literal(Literal::Tag::Lit_u16, u16( strtoul(lit.c_str(), nullptr, base)));
-            if (accept("32")) return Literal(Literal::Tag::Lit_u32, u32( strtoul(lit.c_str(), nullptr, base)));
-            if (accept("64")) return Literal(Literal::Tag::Lit_u64, u64(strtoull(lit.c_str(), nullptr, base)));
+            if (accept("8"))  return {Literal::Tag::Lit_u8,   u8( strtoul(lit.c_str(), nullptr, base))};
+            if (accept("16")) return {Literal::Tag::Lit_u16, u16( strtoul(lit.c_str(), nullptr, base))};
+            if (accept("32")) return {Literal::Tag::Lit_u32, u32( strtoul(lit.c_str(), nullptr, base))};
+            if (accept("64")) return {Literal::Tag::Lit_u64, u64(strtoull(lit.c_str(), nullptr, base))};
         }
     }
 
     if (base == 10 && accept('r')) {
-        if (accept("16")) return Literal(Literal::Tag::Lit_r16, r16(strtof(lit.c_str(), nullptr)));
-        if (accept("32")) return Literal(Literal::Tag::Lit_r32, r32(strtof(lit.c_str(), nullptr)));
-        if (accept("64")) return Literal(Literal::Tag::Lit_r64, r64(strtod(lit.c_str(), nullptr)));
+        if (accept("16")) return {Literal::Tag::Lit_r16, r16(strtof(lit.c_str(), nullptr))};
+        if (accept("32")) return {Literal::Tag::Lit_r32, r32(strtof(lit.c_str(), nullptr))};
+        if (accept("64")) return {Literal::Tag::Lit_r64, r64(strtod(lit.c_str(), nullptr))};
     }
 
     // untyped literals
@@ -207,18 +239,17 @@ Literal Lexer::parse_literal() {
 
 bool Lexer::accept(uint32_t c) {
     if (peek() == c) {
-        eat();
+        next();
         return true;
     }
     return false;
 }
 
-/*
-bool Lexer::accept(const std::string& str) {
-    auto it = str.begin();
-    while (it != str.end() && accept(*(it++))) ;
-    return it == str.end() && (eof() || !(peek() == '_' || std::isalnum(peek())));
+bool Lexer::accept(const char* p) {
+    while (*p != '\0') {
+        if (!accept(*p++)) return false;
+    }
+    return true;
 }
-*/
 
 }

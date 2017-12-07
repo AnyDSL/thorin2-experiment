@@ -14,11 +14,10 @@ public:
     const char* filename() const { return filename_; }
 
 private:
-    void eat();
     Literal parse_literal();
 
     bool accept(uint32_t);
-    //bool accept(const std::string&);
+    bool accept(const char*);
     bool accept(int (*pred)(int)) {
         if (pred(peek())) {
             next();
@@ -40,7 +39,7 @@ private:
     Location curr() const { return location().back(); }
 
     std::istream& stream_;
-    uint32_t peek_;
+    uint32_t peek_ = 0;
     const char* filename_;
     uint32_t front_line_ = 1, front_col_ = 1, back_line_ = 1, back_col_ = 1, peek_line_ = 1, peek_col_ = 1;
 };

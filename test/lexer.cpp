@@ -9,7 +9,7 @@ using namespace thorin;
 
 TEST(Lexer, Tokens) {
     std::string str ="{ } ( ) < > [ ] : , . * #pi #lambda";
-    std::istringstream is(str);
+    std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::L_Brace));
@@ -31,7 +31,7 @@ TEST(Lexer, Tokens) {
 
 TEST(Lexer, Literals) {
     std::string str = "1s8 1s16 1s32 1s64 1u8 1u16 1u32 1u64 1.0r16 1.0r32 1.0r64 +1s32 -1s32 0xFFs32 -0xFFs32 0o10s32 -0o10s32 0b10s32 -0b10s32";
-    std::istringstream is(str);
+    std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
 
@@ -97,7 +97,7 @@ TEST(Lexer, Literals) {
 
 TEST(Lexer, Utf8) {
     std::string str ="Π λ ℚ ℚₖ 𝔸 𝕄";
-    std::istringstream is(str);
+    std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Pi));
@@ -110,7 +110,7 @@ TEST(Lexer, Utf8) {
 }
 
 TEST(Lexer, Eof) {
-    std::istringstream is("");
+    std::istringstream is("", std::ios::binary);
 
     Lexer lexer(is, "stdin");
     for (int i = 0; i < 100; i++) {
