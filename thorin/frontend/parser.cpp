@@ -77,11 +77,13 @@ const Def* Parser::parse_sigma_or_variadic() {
     if (accept(Token::Tag::Semicolon)) {
         auto body = parse_def();
         expect(Token::Tag::R_Bracket, "variadic");
+        depth_--;
         pop_identifiers();
         return world_.variadic(first, body, tracker.location());
     }
 
     auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] { return parse_param(); }, "elements of sigma type", first);
+    pop_identifiers();
     return world_.sigma(defs, tracker.location());
 }
 
