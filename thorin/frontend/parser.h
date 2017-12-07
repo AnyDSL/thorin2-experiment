@@ -31,7 +31,7 @@ public:
     const Def*    parse_lambda();
     const Star*   parse_star();
     const Def*    parse_var();
-    const Def*    parse_tuple();
+    const Def*    parse_tuple_or_pack();
     const Axiom*  parse_assume();
     const Def*    parse_param();
 
@@ -92,6 +92,7 @@ private:
         }
     }
     const Def* shift_def(const Def*, size_t);
+    bool is_param() const { return ahead_[0].isa(Token::Tag::Identifier) && ahead_[1].isa(Token::Tag::Colon); }
 
     WorldBase& world_;
     Lexer& lexer_;

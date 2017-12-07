@@ -13,7 +13,7 @@ const Def* Parser::parse_def() {
     else if (ahead_[0].isa(Token::Tag::Star))       def = parse_star();
     else if (ahead_[0].isa(Token::Tag::Sharp) ||
              ahead_[0].isa(Token::Tag::Identifier)) def = parse_var();
-    else if (ahead_[0].isa(Token::Tag::L_Paren))    def = parse_tuple();
+    else if (ahead_[0].isa(Token::Tag::L_Paren))    def = parse_tuple_or_pack();
     else if (ahead_[0].isa(Token::Tag::L_Brace))    def = parse_assume();
     else if (accept(Token::Tag::Qualifier_Type))   def = world_.qualifier_type();
     else if (accept(Token::Tag::Qualifier_Kind))   def = world_.qualifier_kind();
@@ -143,17 +143,44 @@ const Def* Parser::parse_var() {
     assertf(false, "unknown identifier '{}' in {}", ahead_[0].identifier(), ahead_[0].location());
 }
 
-const Def* Parser::parse_tuple() {
+const Def* Parser::parse_tuple_or_pack() {
+    auto ascribed_type = [&] { return accept(Token::Tag::Colon) ? parse_def() : nullptr; };
+
     Tracker tracker(this);
-
     eat(Token::Tag::L_Paren);
-    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); }, "elements of tuple");
 
-    if (accept(Token::Tag::Colon)) {
-        auto type = parse_def();
-        return world_.tuple(type, defs, tracker.location());
+    if (accept(Token::Tag::R_Paren))
+        return world_.tuple0();
+
+    if (is_param()) { // must be a pack
+        auto param = parse_param();
+        expect(Token::Tag::Semicolon, "pack");
+        auto body = parse_def();
+        depth_--;
+        pop_identifiers();
+
+        //if (auto type = ascribed_type())
+            //return world_.pack_nominal_sigma(type->as<Sigma>(), param, body, tracker.location());
+        return world_.pack(param, body, tracker.location());
     }
 
+    auto first = parse_def();
+
+    if (accept(Token::Tag::Semicolon)) {
+        auto body = parse_def();
+        expect(Token::Tag::R_Bracket, "pack");
+        depth_--;
+        pop_identifiers();
+
+        //if (auto type = ascribed_type())
+            //return world_.pack(type->as<Sigma>(), first, body, tracker.location());
+        return world_.pack(first, body, tracker.location());
+    }
+
+    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); }, "elements of tuple", first);
+
+    if (auto type = ascribed_type())
+        return world_.tuple(type, defs, tracker.location());
     return world_.tuple(defs, tracker.location());
 }
 
@@ -176,7 +203,7 @@ const Axiom* Parser::parse_assume() {
 
 const Def* Parser::parse_param() {
     const Def* def;
-    if (ahead_[0].isa(Token::Tag::Identifier) && ahead_[1].isa(Token::Tag::Colon)) {
+    if (is_param()) {
         std::string ident = ahead_[0].identifier();
         eat(Token::Tag::Identifier);
         eat(Token::Tag::Colon);

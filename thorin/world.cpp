@@ -490,6 +490,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     return unify<Singleton>(1, *this, def, dbg);
 }
 
+// TODO do we need this thing?
 const Def* WorldBase::pack_nominal_sigma(const Sigma* sigma, const Def* body, Debug dbg) {
     size_t arity = sigma->num_ops();
     if (body->free_vars().test(0))
