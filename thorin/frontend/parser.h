@@ -54,7 +54,7 @@ private:
         uint32_t col;
     };
 
-    DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const Def* first = nullptr) {
+    DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const char* context, const Def* first = nullptr) {
         DefVector elems;
 
         if (first != nullptr)
@@ -73,7 +73,7 @@ private:
             eat(sep);
             elems.emplace_back(f());
         }
-        expect(end, "paremeter list");
+        expect(end, context);
         return elems;
     }
 

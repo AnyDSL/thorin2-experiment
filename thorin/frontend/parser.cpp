@@ -49,7 +49,7 @@ const Pi* Parser::parse_pi() {
     eat(Token::Tag::Pi);
 
     if (accept(Token::Tag::L_Paren)) {
-        auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); });
+        auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); }, "parameter list of Π type");
         expect(Token::Tag::Dot, "Π type");
         auto body = parse_def();
 
@@ -77,10 +77,11 @@ const Def* Parser::parse_sigma_or_variadic() {
     if (accept(Token::Tag::Semicolon)) {
         auto body = parse_def();
         expect(Token::Tag::R_Bracket, "variadic");
+        pop_identifiers();
         return world_.variadic(first, body, tracker.location());
     }
 
-    auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] { return parse_param(); }, first);
+    auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] { return parse_param(); }, "elements of sigma type", first);
     return world_.sigma(defs, tracker.location());
 }
 
@@ -89,7 +90,7 @@ const Def* Parser::parse_lambda() {
     eat(Token::Tag::Lambda);
 
     expect(Token::Tag::L_Paren, "λ abstraction");
-    auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); });
+    auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); }, "parameter list of λ abstraction");
     expect(Token::Tag::Dot, "λ abstraction");
     auto body = parse_def();
 
@@ -144,7 +145,7 @@ const Def* Parser::parse_tuple() {
     Tracker tracker(this);
 
     eat(Token::Tag::L_Paren);
-    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); });
+    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); }, "elements of tuple");
 
     if (accept(Token::Tag::Colon)) {
         auto type = parse_def();
