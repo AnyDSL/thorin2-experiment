@@ -135,7 +135,7 @@ Token Lexer::lex() {
             return {location(), Token::Tag::Qualifier_Type};
         }
 
-        if (std::isdigit(peek()) || peek() == '+' || peek() == '-') {
+        if (std::isdigit(peek()) || sgn(peek())) {
             auto lit = parse_literal();
             return {location(), lit};
         }
