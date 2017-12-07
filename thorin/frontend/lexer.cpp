@@ -1,5 +1,3 @@
-#include <cctype>
-
 #include <stdexcept>
 
 #include "thorin/util/log.h"
@@ -7,11 +5,15 @@
 
 namespace thorin {
 
-static inline int sym(int c) { return std::isalpha(c) || c == '_'; }
-static inline int bin(int c) { return '0' <= c && c <= '1'; }
-static inline int oct(int c) { return '0' <= c && c <= '7'; }
-static inline int eE(int c) { return c == 'e' || c == 'E'; }
-static inline int sgn(int c){ return c == '+' || c == '-'; }
+// character classes
+inline bool sp(uint32_t c)  { return c == ' ' || c == '\t' || c == '\n'; }
+inline bool dig(uint32_t c) { return c >= '0' && c <= '9'; }
+inline bool hex(uint32_t c) { return dig(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
+inline bool sym(uint32_t c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
+inline bool bin(uint32_t c) { return '0' <= c && c <= '1'; }
+inline bool oct(uint32_t c) { return '0' <= c && c <= '7'; }
+inline bool eE(uint32_t c)  { return c == 'e' || c == 'E'; }
+inline bool sgn(uint32_t c) { return c == '+' || c == '-'; }
 
 Lexer::Lexer(std::istream& is, const char* filename)
     : stream_(is)
@@ -89,8 +91,8 @@ uint32_t Lexer::next() {
 Token Lexer::lex() {
     while (true) {
         // skip whitespace
-        if (accept(std::isspace)) {
-            while (accept(std::isspace)) {}
+        if (accept_if(sp)) {
+            while (accept_if(sp)) {}
             continue;
         }
 
@@ -135,14 +137,14 @@ Token Lexer::lex() {
             return {location(), Token::Tag::Qualifier_Type};
         }
 
-        if (std::isdigit(peek()) || sgn(peek())) {
+        if (dig(peek()) || sgn(peek())) {
             auto lit = parse_literal();
             return {location(), lit};
         }
 
         // identifier
-        if (accept(str, sym)) {
-            while (accept(str, sym) || accept(str, std::isdigit)) {}
+        if (accept_if(str, sym)) {
+            while (accept_if(str, sym) || accept_if(str, dig)) {}
             return {location(), str};
         }
 
@@ -156,10 +158,10 @@ Literal Lexer::parse_literal() {
 
     auto parse_digits = [&] () {
         switch (base) {
-            case  2: while (accept(lit, bin)) {} break;
-            case  8: while (accept(lit, oct)) {} break;
-            case 10: while (accept(lit, std::isdigit)) {} break;
-            case 16: while (accept(lit, std::isxdigit)) {} break;
+            case  2: while (accept_if(lit, bin)) {} break;
+            case  8: while (accept_if(lit, oct)) {} break;
+            case 10: while (accept_if(lit, dig)) {} break;
+            case 16: while (accept_if(lit, hex)) {} break;
         }
     };
 
@@ -187,9 +189,9 @@ Literal Lexer::parse_literal() {
         }
 
         // parse exponent
-        if (accept(lit, eE)) {
+        if (accept_if(lit, eE)) {
             exp = true;
-            if (accept(lit, sgn)) {}
+            if (accept_if(lit, sgn)) {}
             parse_digits();
         }
     }
@@ -223,21 +225,6 @@ Literal Lexer::parse_literal() {
     }
 
     ELOG_LOC(location(), "invalid literal in {}");
-}
-
-bool Lexer::accept(uint32_t c) {
-    if (peek() == c) {
-        next();
-        return true;
-    }
-    return false;
-}
-
-bool Lexer::accept(const char* p) {
-    while (*p != '\0') {
-        if (!accept(*p++)) return false;
-    }
-    return true;
 }
 
 }

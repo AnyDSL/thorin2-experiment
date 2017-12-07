@@ -16,7 +16,19 @@ public:
 private:
     Literal parse_literal();
 
-    bool accept(uint32_t);
+    bool accept(uint32_t val) {
+        if (peek() == val) {
+            next();
+            return true;
+        }
+        return false;
+    }
+    bool accept(const char* p) {
+        while (*p != '\0') {
+            if (!accept(*p++)) return false;
+        }
+        return true;
+    }
     bool accept(std::string& str, uint32_t val) {
         if (peek() == val) {
             str += next();
@@ -24,21 +36,22 @@ private:
         }
         return false;
     }
-    bool accept(int (*pred)(int)) {
+    template <typename Pred>
+    bool accept_if(Pred pred) {
         if (pred(peek())) {
             next();
             return true;
         }
         return false;
     }
-    bool accept(std::string& str, int (*pred)(int)) {
+    template <typename Pred>
+    bool accept_if(std::string& str, Pred pred) {
         if (pred(peek())) {
             str += next();
             return true;
         }
         return false;
     }
-    bool accept(const char*);
 
     uint32_t next();
     uint32_t peek() const { return peek_; }
