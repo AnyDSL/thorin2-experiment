@@ -17,7 +17,13 @@ private:
     Literal parse_literal();
 
     bool accept(uint32_t);
-    bool accept(const char*);
+    bool accept(std::string& str, uint32_t val) {
+        if (peek() == val) {
+            str += next();
+            return true;
+        }
+        return false;
+    }
     bool accept(int (*pred)(int)) {
         if (pred(peek())) {
             next();
@@ -32,6 +38,7 @@ private:
         }
         return false;
     }
+    bool accept(const char*);
 
     uint32_t next();
     uint32_t peek() const { return peek_; }

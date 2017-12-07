@@ -8,10 +8,8 @@
 namespace thorin {
 
 static inline int sym(int c) { return std::isalpha(c) || c == '_'; }
-static inline int dec_nonzero(int c) { return c >= '1' && c <= '9'; }
 static inline int bin(int c) { return '0' <= c && c <= '1'; }
 static inline int oct(int c) { return '0' <= c && c <= '7'; }
-//static inline bool hex(int c) { return std::isxdigit(c) != 0; }
 static inline int eE(int c) { return c == 'e' || c == 'E'; }
 static inline int sgn(int c){ return c == '+' || c == '-'; }
 
@@ -162,21 +160,18 @@ Literal Lexer::parse_literal() {
     int base = 10;
 
     auto parse_digits = [&] () {
-        while (std::isdigit(peek()) ||
-               (base == 16 && peek() >= 'a' && peek() <= 'f') ||
-               (base == 16 && peek() >= 'A' && peek() <= 'F')) {
-            lit += peek();
-            next();
+        switch (base) {
+            case  2: while (accept(lit, bin)) {} break;
+            case  8: while (accept(lit, oct)) {} break;
+            case 10: while (accept(lit, std::isdigit)) {} break;
+            case 16: while (accept(lit, std::isxdigit)) {} break;
         }
     };
 
     // sign
     bool sign = false;
-    if (accept('+')) lit += '+';
-    else if (accept('-')) {
-        sign = true;
-        lit += '-';
-    }
+    if (accept(lit, '+')) {}
+    else if (accept(lit, '-')) { sign = true; }
 
     // prefix starting with '0'
     if (accept('0')) {
@@ -197,11 +192,9 @@ Literal Lexer::parse_literal() {
         }
 
         // parse exponent
-        if (accept('e')) {
+        if (accept(lit, eE)) {
             exp = true;
-            lit += 'e';
-            if (accept('+')) lit += '+';
-            if (accept('-')) lit += '-';
+            if (accept(lit, sgn)) {}
             parse_digits();
         }
     }
