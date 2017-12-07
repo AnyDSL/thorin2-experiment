@@ -50,7 +50,7 @@ const Pi* Parser::parse_pi() {
 
     if (accept(Token::Tag::L_Paren)) {
         auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); });
-        expect(Token::Tag::Dot);
+        expect(Token::Tag::Dot, "Π type");
         auto body = parse_def();
 
         pop_identifiers();
@@ -59,7 +59,7 @@ const Pi* Parser::parse_pi() {
     }
 
     auto domain = parse_param();
-    expect(Token::Tag::Dot);
+    expect(Token::Tag::Dot, "Π type");
     auto body = parse_def();
     pop_identifiers();
     return world_.pi(domain, body, tracker.location());
@@ -76,6 +76,7 @@ const Def* Parser::parse_sigma_or_variadic() {
 
     if (accept(Token::Tag::Semicolon)) {
         auto body = parse_def();
+        expect(Token::Tag::R_Bracket, "variadic");
         return world_.variadic(first, body, tracker.location());
     }
 
@@ -87,9 +88,9 @@ const Def* Parser::parse_lambda() {
     Tracker tracker(this);
     eat(Token::Tag::Lambda);
 
-    expect(Token::Tag::L_Paren);
+    expect(Token::Tag::L_Paren, "λ abstraction");
     auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); });
-    expect(Token::Tag::Dot);
+    expect(Token::Tag::Dot, "λ abstraction");
     auto body = parse_def();
 
     pop_identifiers();
@@ -116,7 +117,7 @@ const Def* Parser::parse_var() {
         index = ahead_[0].literal().box.get_u64();
         eat(Token::Tag::Literal);
 
-        expect(Token::Tag::Colon);
+        expect(Token::Tag::Colon, "variable");
         def = parse_def();
     } else if (ahead_[0].isa(Token::Tag::Identifier)) {
         auto it = id_map_.find(ahead_[0].identifier());
@@ -162,9 +163,9 @@ const Axiom* Parser::parse_assume() {
 
     auto box = ahead_[0].literal().box;
     eat(Token::Tag::Literal);
-    expect(Token::Tag::R_Brace);
+    expect(Token::Tag::R_Brace, "assumption");
 
-    expect(Token::Tag::Colon);
+    expect(Token::Tag::Colon, "assumption");
     auto type = parse_def();
 
     return world_.assume(type, box, tracker.location());
@@ -208,10 +209,11 @@ void Parser::eat(Token::Tag tag) {
     next();
 }
 
-void Parser::expect(Token::Tag tag) {
-    if (!ahead_[0].isa(tag))
-        ELOG_LOC(ahead_[0].location(), "'{}' expected", Token::tag_to_string(tag));
-
+void Parser::expect(Token::Tag tag, const char* context) {
+    if (!ahead_[0].isa(tag)) {
+        ELOG_LOC(ahead_[0].location(), "expected '{}', got '{}' while parsing {}",
+                Token::tag_to_string(tag), Token::tag_to_string(ahead_[0].tag()), context);
+    }
     next();
 }
 

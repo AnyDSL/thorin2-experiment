@@ -12,10 +12,10 @@ namespace thorin {
 #define THORIN_TOKENS(f) \
     f(L_Brace,          "{") \
     f(R_Brace,          "}") \
-    f(L_Paren,          ")") \
-    f(R_Paren,          "(") \
-    f(L_Bracket,        "]") \
-    f(R_Bracket,        "[") \
+    f(L_Paren,          "(") \
+    f(R_Paren,          ")") \
+    f(L_Bracket,        "[") \
+    f(R_Bracket,        "]") \
     f(L_Angle,          "<") \
     f(R_Angle,          ">") \
     f(Colon,            ":") \

@@ -73,13 +73,13 @@ private:
             eat(sep);
             elems.emplace_back(f());
         }
-        expect(end);
+        expect(end, "paremeter list");
         return elems;
     }
 
     Token next();
     void eat(Token::Tag);
-    void expect(Token::Tag);
+    void expect(Token::Tag, const char* context);
     bool accept(Token::Tag);
     void pop_identifiers() {
         while (!id_stack_.empty()) {
