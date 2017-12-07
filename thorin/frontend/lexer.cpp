@@ -35,10 +35,11 @@ uint32_t Lexer::next() {
         return result;
     }
 
-    auto check_utf8 = [&] (uint32_t b) {
-        if (is_bit_clear(b, 7) || is_bit_set(b, 6)) {
+    auto get_next_utf8_byte = [&] () {
+        uint32_t b = stream_.get();
+        if (is_bit_clear(b, 7) || is_bit_set(b, 6))
             ELOG_LOC(location(), "invalid utf-8 character");
-        }
+        return b & 0b00111111_u32;
     };
 
     auto update_peek = [&] (uint32_t peek) {
@@ -65,25 +66,19 @@ uint32_t Lexer::next() {
         if (is_bit_set(b1, 6)) {
             if (is_bit_clear(b1, 5)) {
                 // 2-bytes: 110xxxxx 10xxxxxx
-                uint32_t b2 = stream_.get();
-                check_utf8(b2);
-                return update_peek(((b1 & 0b00011111_u32) << 6_u32) | (b2 & 0b00111111_u32));
+                uint32_t b2 = get_next_utf8_byte();
+                return update_peek((b1 & 0b00011111_u32) << 6_u32 | b2);
             } else if (is_bit_clear(b1, 4)) {
                 // 3 bytes: 1110xxxx 10xxxxxx 10xxxxxx
-                uint32_t b2 = stream_.get();
-                check_utf8(b2);
-                uint32_t b3 = stream_.get();
-                check_utf8(b3);
-                return update_peek(((b1 & 0b00001111_u32) << 12_u32) | ((b2 & 0b00111111_u32) << 6_u32) | (b3 & 0b00111111_u32));
+                uint32_t b2 = get_next_utf8_byte();
+                uint32_t b3 = get_next_utf8_byte();
+                return update_peek((b1 & 0b00001111_u32) << 12_u32 | b2 << 6_u32 | b3);
             } else if (is_bit_clear(b1, 3)) {
                 // 4 bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-                uint32_t b2 = stream_.get();
-                check_utf8(b2);
-                uint32_t b3 = stream_.get();
-                check_utf8(b3);
-                uint32_t b4 = stream_.get();
-                check_utf8(b4);
-                return update_peek(((b1 & 0b00000111_u32) << 18_u32) | ((b2 & 0b00111111_u32) << 12_u32) | ((b3 & 0b00111111_u32) << 6_u32) | (b4 & 0b00111111_u32));
+                uint32_t b2 = get_next_utf8_byte();
+                uint32_t b3 = get_next_utf8_byte();
+                uint32_t b4 = get_next_utf8_byte();
+                return update_peek((b1 & 0b00000111_u32) << 18_u32 | b2 << 12_u32 | b3 << 6_u32 | b4);
             }
         }
     }
