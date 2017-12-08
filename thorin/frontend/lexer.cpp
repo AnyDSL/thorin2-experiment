@@ -6,7 +6,7 @@
 namespace thorin {
 
 // character classes
-inline bool sp(uint32_t c)  { return c == ' ' || c == '\t' || c == '\n'; }
+inline bool sp(uint32_t c)  { return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v'; }
 inline bool dig(uint32_t c) { return c >= '0' && c <= '9'; }
 inline bool hex(uint32_t c) { return dig(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
 inline bool sym(uint32_t c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
