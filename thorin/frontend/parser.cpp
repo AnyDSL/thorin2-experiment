@@ -3,15 +3,17 @@
 namespace thorin {
 
 // current syntax
-// e ::=    x : e       (binder)
-//     |    x           (identifier)
+// b ::=    x : e       (binder)
+//     |    e           (expr)
+//
+// e ::=    x           (identifier)
 //     |    \n          (DeBruijn index)
-//     |    Πe.e        (pi type)
-//     |    λe.e        (lambda abstraction)
-//     |    [e,...]     (sigma type)
-//     |    [e; e]      (variadic)
+//     |    Πb.e        (pi type)
+//     |    λb.e        (lambda abstraction)
+//     |    [b,...]     (sigma type)
+//     |    [b; e]      (variadic)
 //     |    (e,...)     (tuple)
-//     |    (e; e)      (pack)
+//     |    (b; e)      (pack)
 //     |    e#e         (extract)
 //     |    e#e <- e    (insert)
 
