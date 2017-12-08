@@ -472,9 +472,7 @@ const Def* Lambda        ::rebuild(WorldBase& to, const Def* t, Defs ops) const 
 }
 const Def* Match         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* MultiArityKind::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.multi_arity_kind(); }
-const Def* Pack          ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
-    return t->is_nominal() ? to.pack_nominal_sigma(t->as<Sigma>(), ops[0], debug()) : to.pack(arity(), ops[0], debug());
-}
+const Def* Pack          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pack(arity(), ops[0], debug()); }
 const Def* Pi            ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
 const Def* Pick          ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
@@ -486,7 +484,7 @@ const Def* Sigma         ::rebuild(WorldBase& to, const Def*  , Defs ops) const 
 }
 const Def* Singleton     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops[0]); }
 const Def* Star          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.star(ops[0]); }
-const Def* Tuple         ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.tuple(t, ops, debug()); }
+const Def* Tuple         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.tuple(ops, debug()); }
 const Def* Universe      ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.universe(); }
 const Def* Var           ::rebuild(WorldBase& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
 const Def* Variant       ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.variant(t, ops, debug()); }

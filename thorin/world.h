@@ -135,10 +135,8 @@ public:
     //@}
 
     //@{ create Tuple
-    const Def* tuple(const Def* type, Defs defs, Debug dbg = {});
-    const Def* tuple(Defs defs, Debug dbg = {}) {
-        return tuple(sigma(types(defs), dbg), defs, dbg);
-    }
+    const Def* tuple(Defs defs, Debug dbg = {});
+    const Tuple* tuple0_of_types() const { return tuple0_of_types_; }
     const Tuple* tuple0(Qualifier q = Qualifier::Unlimited) { return tuple0_[size_t(q)]; }
     const Tuple* tuple0(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
@@ -148,7 +146,6 @@ public:
     //@}
 
     //@{ create Pack
-    const Def* pack_nominal_sigma(const Sigma* sigma, const Def* body, Debug dbg = {});
     const Def* pack(const Def* arities, const Def* body, Debug dbg = {});
     const Def* pack(Defs arities, const Def* body, Debug dbg = {});
     const Def* pack(size_t a, const Def* body, Debug dbg = {}) { return pack(arity(a, dbg), body, dbg); }
@@ -284,6 +281,7 @@ protected:
     const Axiom* qualifier_kind_;
     const Axiom* qualifier_type_;
     const Sigma* unit_kind_;
+    const Tuple* tuple0_of_types_;
     std::array<const Axiom*, 4> qualifier_;
     std::array<const Star*,  4> star_;
     std::array<const Sigma*, 4> unit_;
