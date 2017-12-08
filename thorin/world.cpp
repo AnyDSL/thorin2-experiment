@@ -138,6 +138,7 @@ WorldBase::WorldBase()
         unit_     [i] = insert<Sigma>(0, *this, star_[i], Defs(), Debug("[])"));
         tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
     }
+    tuple0_of_types_ = insert<Tuple>(0, *this, unit_kind_, Defs(), Debug("()*"));
     arity_kind_ = insert<ArityKind>(0, *this);
     multi_arity_kind_ = insert<MultiArityKind>(0, *this);
 }
@@ -490,15 +491,6 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     return unify<Singleton>(1, *this, def, dbg);
 }
 
-const Def* WorldBase::pack_nominal_sigma(const Sigma* sigma, const Def* body, Debug dbg) {
-    size_t arity = sigma->num_ops();
-    if (body->free_vars().test(0))
-        return tuple(sigma, DefArray(arity, [&](auto i) { return body->reduce(this->index(arity, i)); }), dbg);
-
-    // TODO type checking
-    return unify<Pack>(1, *this, sigma, body, dbg);
-}
-
 const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
     if (auto sigma = arity->isa<Sigma>())
         return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
@@ -520,7 +512,7 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
         auto a = axiom->box().get_u64();
         if (a == 0) {
             if (body->is_type())
-                return tuple(unit_kind(), {});
+                return tuple0_of_types();
             return tuple0(body->type()->qualifier());
         }
         if (a == 1) return body->reduce(this->index(1, 0));
@@ -545,12 +537,11 @@ const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
     return pack(arity.skip_back(), pack(arity.back(), body, dbg), dbg);
 }
 
-const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
-    assertf(type == sigma(types(defs)) || type->assignable(tuple(defs)),
-            "can't assign type {} to tuple with type {}", type, sigma(types(defs)));
+const Def* WorldBase::tuple(Defs defs, Debug dbg) {
+    auto type = sigma(types(defs), dbg);
     size_t size = defs.size();
 
-    if (size == 1 && (!type->is_nominal() || type == defs.front()->type()))
+    if (size == 1 && type == defs.front()->type())
         return defs.front();
 
     auto eta_property = [&]() {
@@ -574,9 +565,7 @@ const Def* WorldBase::tuple(const Def* type, Defs defs, Debug dbg) {
 
     if (size != 0) {
         if (is_homogeneous(defs))
-            return type->is_nominal()
-                ? pack_nominal_sigma(type->as<Sigma>(), defs.front()->shift_free_vars(-1), dbg)
-                : pack(arity(size, dbg), defs.front()->shift_free_vars(-1), dbg);
+            return pack(arity(size, dbg), defs.front()->shift_free_vars(-1), dbg);
         else if (auto same = eta_property())
             return same;
     }

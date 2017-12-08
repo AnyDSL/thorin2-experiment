@@ -44,12 +44,3 @@ TEST(Pack, Nested) {
     }
     ASSERT_EQ(p, w.tuple(outer_tuples));
 }
-
-TEST(Pack, Nominal) {
-    World w;
-    auto N = w.type_nat();
-    auto S = w.sigma_type(2)->set(0, N)->set(1, N);
-    auto f = w.axiom(w.pi(w.arity(2), N), {"f"});
-    ASSERT_EQ(w.pack_nominal_sigma(S, w.app(f, w.var(w.arity(2), 0))),
-              w.tuple(S, {w.app(f, w.index(2, 0)), w.app(f, w.index(2, 1))}));
-}
