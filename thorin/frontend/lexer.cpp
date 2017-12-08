@@ -22,6 +22,9 @@ Lexer::Lexer(std::istream& is, const char* filename)
     if (!stream_)
         throw std::runtime_error("stream is bad");
     next();
+
+    // eat utf-8 BOM if present
+    accept(0xefbbbf);
 }
 
 inline bool is_bit_set(uint32_t val, uint32_t n) { return bool((val >> n) & 1_u32); }
