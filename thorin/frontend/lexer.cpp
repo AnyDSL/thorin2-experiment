@@ -135,7 +135,7 @@ Token Lexer::lex() {
         if (accept(0x01D538)) return {location(), Token::Tag::Arity_Kind};
         if (accept(0x01D544)) return {location(), Token::Tag::Multi_Arity_Kind};
         if (accept(0x00211A)) {
-            if (accept(0x2096))
+            if (accept(0x002096))
                 return {location(), Token::Tag::Qualifier_Kind};
             return {location(), Token::Tag::Qualifier_Type};
         }
