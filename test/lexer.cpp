@@ -96,7 +96,7 @@ TEST(Lexer, Literals) {
 }
 
 TEST(Lexer, Utf8) {
-    std::string str = u8"\U0000feffΠ λ ℚ ℚₖ 𝔸 𝕄";
+    std::string str = u8"\ufeffΠ λ ℚ ℚₖ 𝔸 𝕄";
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
