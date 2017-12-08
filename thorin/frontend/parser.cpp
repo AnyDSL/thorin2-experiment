@@ -2,6 +2,19 @@
 
 namespace thorin {
 
+// current syntax
+// e ::=    x : e       (binder)
+//     |    x           (identifier)
+//     |    \n          (DeBruijn index)
+//     |    Πe.e        (pi type)
+//     |    λe.e        (lambda abstraction)
+//     |    [e,...]     (sigma type)
+//     |    [e; e]      (variadic)
+//     |    (e,...)     (tuple)
+//     |    (e; e)      (pack)
+//     |    e#e         (extract)
+//     |    e#e <- e    (insert)
+
 const Def* Parser::parse_def() {
     Tracker tracker(this);
     const Def* def = nullptr;
