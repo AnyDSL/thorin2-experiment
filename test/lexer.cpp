@@ -8,7 +8,7 @@
 using namespace thorin;
 
 TEST(Lexer, Tokens) {
-    std::string str ="{ } ( ) < > [ ] : , . * #pi #lambda";
+    std::string str ="{ } ( ) < > [ ] : , . * \\pi \\lambda";
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");

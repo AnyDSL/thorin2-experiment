@@ -16,52 +16,41 @@ public:
 private:
     Literal parse_literal();
 
-    bool accept(uint32_t val) {
-        if (peek() == val) {
+    template <typename Pred>
+    bool accept_if(Pred pred, bool append = true) {
+        if (pred(peek())) {
+            if (append) str_.append(peek_bytes_);
             next();
             return true;
         }
         return false;
     }
-    bool accept(const char* p) {
+    bool accept(uint32_t val, bool append = true) {
+        return accept_if([val] (uint32_t p) { return p == val; }, append);
+    }
+    bool accept(const char* p, bool append = true) {
         while (*p != '\0') {
-            if (!accept(*p++)) return false;
+            if (!accept(*p++, append)) return false;
         }
         return true;
-    }
-    bool accept(std::string& str, uint32_t val) {
-        if (peek() == val) {
-            str += next();
-            return true;
-        }
-        return false;
-    }
-    template <typename Pred>
-    bool accept_if(Pred pred) {
-        if (pred(peek())) {
-            next();
-            return true;
-        }
-        return false;
-    }
-    template <typename Pred>
-    bool accept_if(std::string& str, Pred pred) {
-        if (pred(peek())) {
-            str += next();
-            return true;
-        }
-        return false;
     }
 
     uint32_t next();
     uint32_t peek() const { return peek_; }
+    const std::string& str() const { return str_; }
     Location location() const { return {filename_, front_line_, front_col_, back_line_, back_col_}; }
-    Location curr() const { return location().back(); }
 
     std::istream& stream_;
     uint32_t peek_ = 0;
+    char peek_bytes_[5] = {0, 0, 0, 0, 0};
     const char* filename_;
-    uint32_t front_line_ = 1, front_col_ = 1, back_line_ = 1, back_col_ = 1, peek_line_ = 1, peek_col_ = 1;
+    std::string str_;
+    uint32_t front_line_ = 1,
+             front_col_  = 1,
+             back_line_  = 1,
+             back_col_   = 1,
+             peek_line_  = 1,
+             peek_col_   = 1;
 };
 
 }

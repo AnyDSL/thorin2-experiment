@@ -30,10 +30,10 @@ const Def* Parser::parse_def() {
              ahead_[0].isa(Token::Tag::Identifier)) def = parse_var();
     else if (ahead_[0].isa(Token::Tag::L_Paren))    def = parse_tuple_or_pack();
     else if (ahead_[0].isa(Token::Tag::L_Brace))    def = parse_assume();
-    else if (accept(Token::Tag::Qualifier_Type))   def = world_.qualifier_type();
-    else if (accept(Token::Tag::Qualifier_Kind))   def = world_.qualifier_kind();
-    else if (accept(Token::Tag::Arity_Kind))       def = world_.arity_kind();
-    else if (accept(Token::Tag::Multi_Arity_Kind)) def = world_.multi_arity_kind();
+    else if (accept(Token::Tag::Qualifier_Type))    def = world_.qualifier_type();
+    else if (accept(Token::Tag::Qualifier_Kind))    def = world_.qualifier_kind();
+    else if (accept(Token::Tag::Arity_Kind))        def = world_.arity_kind();
+    else if (accept(Token::Tag::Multi_Arity_Kind))  def = world_.multi_arity_kind();
 
     // if another expression follows - we build an app
     auto tag = ahead_[0].tag();

@@ -7,8 +7,8 @@ namespace thorin {
 
 // character classes
 inline bool sp(uint32_t c)  { return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v'; }
-inline bool dig(uint32_t c) { return c >= '0' && c <= '9'; }
-inline bool hex(uint32_t c) { return dig(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
+inline bool dec(uint32_t c) { return c >= '0' && c <= '9'; }
+inline bool hex(uint32_t c) { return dec(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
 inline bool sym(uint32_t c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
 inline bool bin(uint32_t c) { return '0' <= c && c <= '1'; }
 inline bool oct(uint32_t c) { return '0' <= c && c <= '7'; }
@@ -24,7 +24,7 @@ Lexer::Lexer(std::istream& is, const char* filename)
     next();
 
     // eat utf-8 BOM if present
-    accept(0xfeff);
+    accept(0xfeff, false);
 }
 
 inline bool is_bit_set(uint32_t val, uint32_t n) { return bool((val >> n) & 1_u32); }
@@ -34,14 +34,18 @@ inline bool is_bit_clear(uint32_t val, uint32_t n) { return !is_bit_set(val, n);
 uint32_t Lexer::next() {
     uint32_t result = peek_;
     uint32_t b1 = stream_.get();
+    std::fill(peek_bytes_, peek_bytes_ + 4, 0);
+    peek_bytes_[0] = b1;
 
     if (b1 == (uint32_t) std::istream::traits_type::eof()) {
         peek_ = b1;
         return result;
     }
 
+    int n_bytes = 1;
     auto get_next_utf8_byte = [&] () {
         uint32_t b = stream_.get();
+        peek_bytes_[n_bytes++] = b;
         if (is_bit_clear(b, 7) || is_bit_set(b, 6))
             ELOG_LOC(location(), "invalid utf-8 character");
         return b & 0b00111111_u32;
@@ -94,12 +98,12 @@ uint32_t Lexer::next() {
 Token Lexer::lex() {
     while (true) {
         // skip whitespace
-        if (accept_if(sp)) {
-            while (accept_if(sp)) {}
+        if (accept_if(sp, false)) {
+            while (accept_if(sp, false)) {}
             continue;
         }
 
-        std::string str; // the token string is concatenated here
+        str_ = "";
         front_line_ = peek_line_;
         front_col_ = peek_col_;
 
@@ -120,14 +124,15 @@ Token Lexer::lex() {
         if (accept(';')) return {location(), Token::Tag::Semicolon};
         if (accept('*')) return {location(), Token::Tag::Star};
 
-        if (accept('#')) {
+        if (accept('\\')) {
             if (accept("lambda")) return {location(), Token::Tag::Lambda};
             if (accept("pi"))     return {location(), Token::Tag::Pi};
             if (accept("true"))   return {location(), Literal(Literal::Tag::Lit_bool, Box(true))};
             if (accept("false"))  return {location(), Literal(Literal::Tag::Lit_bool, Box(false))};
-
-            return {location(), Token::Tag::Sharp};
+            goto err;
         }
+
+        if (accept('#')) return {location(), Token::Tag::Sharp};
 
         // greek letters
         if (accept(0x0003bb)) return {location(), Token::Tag::Lambda};
@@ -140,44 +145,44 @@ Token Lexer::lex() {
             return {location(), Token::Tag::Qualifier_Type};
         }
 
-        if (dig(peek()) || sgn(peek())) {
+        if (dec(peek()) || sgn(peek())) {
             auto lit = parse_literal();
             return {location(), lit};
         }
 
         // identifier
-        if (accept_if(str, sym)) {
-            while (accept_if(str, sym) || accept_if(str, dig)) {}
-            return {location(), str};
+        if (accept_if(sym)) {
+            while (accept_if(sym) || accept_if(dec)) {}
+            return {location(), str()};
         }
 
+err:
         ELOG_LOC(location(), "invalid character '{}'", (char) next());
     }
 }
 
 Literal Lexer::parse_literal() {
-    std::string lit;
     int base = 10;
 
     auto parse_digits = [&] () {
         switch (base) {
-            case  2: while (accept_if(lit, bin)) {} break;
-            case  8: while (accept_if(lit, oct)) {} break;
-            case 10: while (accept_if(lit, dig)) {} break;
-            case 16: while (accept_if(lit, hex)) {} break;
+            case  2: while (accept_if(bin)) {} break;
+            case  8: while (accept_if(oct)) {} break;
+            case 10: while (accept_if(dec)) {} break;
+            case 16: while (accept_if(hex)) {} break;
         }
     };
 
     // sign
     bool sign = false;
-    if (accept(lit, '+')) {}
-    else if (accept(lit, '-')) { sign = true; }
+    if (accept('+')) {}
+    else if (accept('-')) { sign = true; }
 
     // prefix starting with '0'
-    if (accept('0')) {
-        if (accept('b')) base = 2;
-        else if (accept('x')) base = 16;
-        else if (accept('o')) base = 8;
+    if (accept('0', false)) {
+        if      (accept('b', false)) base = 2;
+        else if (accept('x', false)) base = 16;
+        else if (accept('o', false)) base = 8;
     }
 
     parse_digits();
@@ -187,44 +192,43 @@ Literal Lexer::parse_literal() {
         // parse fractional part
         if (accept('.')) {
             fract = true;
-            lit += '.';
             parse_digits();
         }
 
         // parse exponent
-        if (accept_if(lit, eE)) {
+        if (accept_if(eE)) {
             exp = true;
-            if (accept_if(lit, sgn)) {}
+            if (accept_if(sgn)) {}
             parse_digits();
         }
     }
 
     // suffix
     if (!exp && !fract) {
-        if (accept('s')) {
-            if (accept("8"))  return {Literal::Tag::Lit_s8,   s8( strtol(lit.c_str(), nullptr, base))};
-            if (accept("16")) return {Literal::Tag::Lit_s16, s16( strtol(lit.c_str(), nullptr, base))};
-            if (accept("32")) return {Literal::Tag::Lit_s32, s32( strtol(lit.c_str(), nullptr, base))};
-            if (accept("64")) return {Literal::Tag::Lit_s64, s64(strtoll(lit.c_str(), nullptr, base))};
+        if (accept('s', false)) {
+            if (accept("8",  false)) return {Literal::Tag::Lit_s8,   s8( strtol(str().c_str(), nullptr, base))};
+            if (accept("16", false)) return {Literal::Tag::Lit_s16, s16( strtol(str().c_str(), nullptr, base))};
+            if (accept("32", false)) return {Literal::Tag::Lit_s32, s32( strtol(str().c_str(), nullptr, base))};
+            if (accept("64", false)) return {Literal::Tag::Lit_s64, s64(strtoll(str().c_str(), nullptr, base))};
         }
 
-        if (!sign && accept('u')) {
-            if (accept("8"))  return {Literal::Tag::Lit_u8,   u8( strtoul(lit.c_str(), nullptr, base))};
-            if (accept("16")) return {Literal::Tag::Lit_u16, u16( strtoul(lit.c_str(), nullptr, base))};
-            if (accept("32")) return {Literal::Tag::Lit_u32, u32( strtoul(lit.c_str(), nullptr, base))};
-            if (accept("64")) return {Literal::Tag::Lit_u64, u64(strtoull(lit.c_str(), nullptr, base))};
+        if (!sign && accept('u', false)) {
+            if (accept("8", false))  return {Literal::Tag::Lit_u8,   u8( strtoul(str().c_str(), nullptr, base))};
+            if (accept("16", false)) return {Literal::Tag::Lit_u16, u16( strtoul(str().c_str(), nullptr, base))};
+            if (accept("32", false)) return {Literal::Tag::Lit_u32, u32( strtoul(str().c_str(), nullptr, base))};
+            if (accept("64", false)) return {Literal::Tag::Lit_u64, u64(strtoull(str().c_str(), nullptr, base))};
         }
     }
 
-    if (base == 10 && accept('r')) {
-        if (accept("16")) return {Literal::Tag::Lit_r16, r16(strtof(lit.c_str(), nullptr))};
-        if (accept("32")) return {Literal::Tag::Lit_r32, r32(strtof(lit.c_str(), nullptr))};
-        if (accept("64")) return {Literal::Tag::Lit_r64, r64(strtod(lit.c_str(), nullptr))};
+    if (base == 10 && accept('r', false)) {
+        if (accept("16", false)) return {Literal::Tag::Lit_r16, r16(strtof(str().c_str(), nullptr))};
+        if (accept("32", false)) return {Literal::Tag::Lit_r32, r32(strtof(str().c_str(), nullptr))};
+        if (accept("64", false)) return {Literal::Tag::Lit_r64, r64(strtod(str().c_str(), nullptr))};
     }
 
     // untyped literals
     if (base == 10 && !fract && !exp) {
-        return Literal(Literal::Tag::Lit_untyped, u64(strtoull(lit.c_str(), nullptr, 10)));
+        return Literal(Literal::Tag::Lit_untyped, u64(strtoull(str().c_str(), nullptr, 10)));
     }
 
     ELOG_LOC(location(), "invalid literal in {}");
