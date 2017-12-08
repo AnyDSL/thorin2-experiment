@@ -129,7 +129,9 @@ Token Lexer::lex() {
             if (accept("pi"))     return {location(), Token::Tag::Pi};
             if (accept("true"))   return {location(), Literal(Literal::Tag::Lit_bool, Box(true))};
             if (accept("false"))  return {location(), Literal(Literal::Tag::Lit_bool, Box(false))};
-            goto err;
+
+            ELOG_LOC(location(), "invalid escape sequence");
+            continue;
         }
 
         if (accept('#')) return {location(), Token::Tag::Sharp};
@@ -156,8 +158,8 @@ Token Lexer::lex() {
             return {location(), str()};
         }
 
-err:
-        ELOG_LOC(location(), "invalid character '{}'", (char) next());
+        ELOG_LOC(location(), "invalid character '{}'", peek_bytes_);
+        next();
     }
 }
 
@@ -231,7 +233,7 @@ Literal Lexer::parse_literal() {
         return Literal(Literal::Tag::Lit_untyped, u64(strtoull(str().c_str(), nullptr, 10)));
     }
 
-    ELOG_LOC(location(), "invalid literal in {}");
+    ELOG_LOC(location(), "invalid literal");
 }
 
 }
