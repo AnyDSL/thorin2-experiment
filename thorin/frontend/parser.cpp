@@ -159,8 +159,8 @@ const Def* Parser::parse_tuple_or_pack() {
         depth_--;
         pop_identifiers();
 
-        //if (auto type = ascribed_type())
-            //return world_.pack_nominal_sigma(type->as<Sigma>(), param, body, tracker.location());
+        if (auto type = ascribed_type())
+            return world_.pack_nominal_sigma(type->as<Sigma>(), body, tracker.location());
         return world_.pack(param, body, tracker.location());
     }
 
@@ -172,8 +172,8 @@ const Def* Parser::parse_tuple_or_pack() {
         depth_--;
         pop_identifiers();
 
-        //if (auto type = ascribed_type())
-            //return world_.pack(type->as<Sigma>(), first, body, tracker.location());
+        if (auto type = ascribed_type())
+            return world_.pack(type->as<Sigma>(), body, tracker.location());
         return world_.pack(first, body, tracker.location());
     }
 
