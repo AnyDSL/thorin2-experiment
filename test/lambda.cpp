@@ -54,9 +54,9 @@ TEST(Lambda, PolyIdPredicative) {
     auto T_1 = w.var(w.star(), 0, {"T"});
     auto T_2 = w.var(w.star(), 1, {"T"});
     auto x = w.var(T_2, 0, {"x"});
-    auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
+    auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x))->as<Lambda>();
 
-    ASSERT_DEATH(w.app(poly_id, poly_id->type()), ".*");
+    ASSERT_FALSE(poly_id->domain()->assignable(poly_id->type()));
 }
 
 TEST(Lambda, Normalization) {
