@@ -390,6 +390,8 @@ Lambda* WorldBase::nominal_lambda(Defs domains, const Def* codomain, const Def* 
 }
 
 const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
+    assertf(multi_arity_kind()->assignable(arity), "({} : {}) provided to variadic constructor is not a (multi-) arity",
+            arity, arity-> type());
     if (auto sigma = arity->isa<Sigma>()) {
         assertf(!sigma->is_nominal(), "can't have nominal sigma arities");
         return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
@@ -693,9 +695,8 @@ World::World() {
     op_rcmp_ = axiom(r_type_cmp, {"rcmp"});
 
     {
-        op_lea_ = axiom(pi({MA, variadic(va0, S), N},
-                           pi({type_ptr(variadic(va2, extract(var(variadic(va3, S), 2), var(va3, 0))), vn0), va3},
-                              type_ptr(extract(var(variadic(va4, S), 3), var(va4, 0)), vn2))), {"lea"});
+        auto lea_type = parse(*this, "Π[S: 𝕄, ts: [S; *], as: nat]. Π[ptr([j: S; ts#j], as), i: S]. ptr(ts#i, as)", env);
+        op_lea_ = axiom(lea_type, {"lea"});
     }
     op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]", env), {"load"});
     op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});

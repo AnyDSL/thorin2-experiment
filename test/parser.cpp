@@ -20,16 +20,34 @@ TEST(Parser, SimpleLambda) {
     ASSERT_EQ(parse(w, "λT:*. λx:T. x"), def);
 }
 
-TEST(Parser, SigmaVariadic) {
+TEST(Parser, SimpleSigma) {
     WorldBase w;
 
     ASSERT_EQ(parse(w, "[]"), w.unit());
 
     auto s = w.sigma({w.star(), w.var(w.star(), 0)});
     ASSERT_EQ(parse(w, "[T:*, T]"), s);
+}
 
-    auto v = w.variadic(w.multi_arity_kind(), w.var(w.multi_arity_kind(), 0));
-    ASSERT_EQ(parse(w, "[x:𝕄; x]"), v);
+TEST(Parser, SimpleVariadic) {
+    WorldBase w;
+    auto S = w.star();
+    auto M = w.multi_arity_kind();
+
+    // TODO simplify further once we can parse arity literals
+    auto v = w.pi(M, w.pi(w.variadic(w.var(M, 0), S), S));
+    ASSERT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. *"), v);
+}
+
+TEST(Parser, ComplexVariadics) {
+    WorldBase w;
+    auto S = w.star();
+    auto M = w.multi_arity_kind();
+
+    auto v = w.pi(M, w.pi(w.variadic(w.var(M, 0), S),
+                          w.variadic(w.var(M, 1),
+                                     w.extract(w.var(w.variadic(w.var(M, 2), S), 1), w.var(w.var(M, 2), 0)))));
+    ASSERT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. [i:a; x#i]"), v);
 }
 
 TEST(Parser, NestedBinders) {
