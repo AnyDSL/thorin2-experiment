@@ -75,8 +75,9 @@ const Def* Parser::parse_var_or_binder() {
         next();
         if (accept(Token::Tag::Colon)) {
             // binder
+            auto def = parse_def();
             binders_.emplace_back(id, depth_);
-            return parse_def();
+            return def;
         } else {
             // use
             auto it = std::find_if(binders_.rbegin(), binders_.rend(), [&] (auto& binder) {
