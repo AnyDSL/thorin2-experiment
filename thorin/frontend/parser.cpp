@@ -22,25 +22,25 @@ const Def* Parser::parse_def() {
     const Def* def = nullptr;
 
     if (false) {}
-    else if (ahead_[0].isa(Token::Tag::Pi))         def = parse_pi();
-    else if (ahead_[0].isa(Token::Tag::L_Bracket))  def = parse_sigma_or_variadic();
-    else if (ahead_[0].isa(Token::Tag::Lambda))     def = parse_lambda();
-    else if (ahead_[0].isa(Token::Tag::Star))       def = parse_star();
-    else if (ahead_[0].isa(Token::Tag::Sharp) ||
-             ahead_[0].isa(Token::Tag::Identifier)) def = parse_var();
-    else if (ahead_[0].isa(Token::Tag::L_Paren))    def = parse_tuple_or_pack();
-    else if (ahead_[0].isa(Token::Tag::L_Brace))    def = parse_assume();
+    else if (ahead().isa(Token::Tag::Pi))         def = parse_pi();
+    else if (ahead().isa(Token::Tag::L_Bracket))  def = parse_sigma_or_variadic();
+    else if (ahead().isa(Token::Tag::Lambda))     def = parse_lambda();
+    else if (ahead().isa(Token::Tag::Star))       def = parse_star();
+    else if (ahead().isa(Token::Tag::Backslash) ||
+             ahead().isa(Token::Tag::Identifier)) def = parse_var_or_binder();
+    else if (ahead().isa(Token::Tag::L_Paren))    def = parse_tuple_or_pack();
+    else if (ahead().isa(Token::Tag::L_Brace))    def = parse_assume();
     else if (accept(Token::Tag::Qualifier_Type))    def = world_.qualifier_type();
     else if (accept(Token::Tag::Qualifier_Kind))    def = world_.qualifier_kind();
     else if (accept(Token::Tag::Arity_Kind))        def = world_.arity_kind();
     else if (accept(Token::Tag::Multi_Arity_Kind))  def = world_.multi_arity_kind();
 
     // if another expression follows - we build an app
-    auto tag = ahead_[0].tag();
+    auto tag = ahead().tag();
     if (   tag == Token::Tag::Pi
         || tag == Token::Tag::Lambda
         || tag == Token::Tag::Star
-        || tag == Token::Tag::Sharp
+        || tag == Token::Tag::Backslash
         || tag == Token::Tag::Identifier
         || tag == Token::Tag::L_Bracket
         || tag == Token::Tag::L_Brace
@@ -51,29 +51,74 @@ const Def* Parser::parse_def() {
         || tag == Token::Tag::Multi_Arity_Kind) {
         auto arg = parse_def();
         return world_.app(def, arg, tracker.location());
-     }
+    }
 
     if (def != nullptr)
         return def;
 
-    assertf(false, "definition expected in {}", ahead_[0].location());
+    assertf(false, "definition expected in {}", ahead().location());
+}
+
+inline const Def* shift_def(WorldBase& world, const Def* def, size_t shift) {
+    if (def->is_nominal()) return def;
+    if (auto var = def->isa<Var>())
+        return world.var(shift_def(world, var->type(), shift), var->index() + shift);
+    Array<const Def*> ops(def->num_ops());
+    for (size_t i = 0; i < def->num_ops(); i++) ops[i] = shift_def(world, def->op(i), shift);
+    return def->rebuild(shift_def(world, def->type(), shift), ops);
+}
+
+const Def* Parser::parse_var_or_binder() {
+    Tracker tracker(this);
+    if (ahead().isa(Token::Tag::Identifier)) {
+        auto id = ahead().identifier();
+        next();
+        if (accept(Token::Tag::Colon)) {
+            // binder
+            binders_.emplace_back(id, depth_);
+            return parse_def();
+        } else {
+            // use
+            auto it = std::find_if(binders_.rbegin(), binders_.rend(), [&] (auto& binder) {
+                return binder.name == id;
+            });
+            if (it != binders_.rend()) {
+                auto index = depth_ - it->depth;
+                auto type = shift_def(world_, bruijn_[it->depth], index);
+                const Def* var = world_.var(type, index - 1, tracker.location());
+                for (auto i : it->ids)
+                    var = world_.extract(var, i, tracker.location());
+                return var;
+            } else if (env_.count(id)) {
+                return env_[id];
+            } else {
+                assertf(false, "unknown identifier '{}'", id);
+            }
+        }
+    } else {
+        // De Bruijn index
+        eat(Token::Tag::Backslash);
+        if (ahead().isa(Token::Tag::Literal)) {
+            auto lit = ahead().literal();
+            eat(Token::Tag::Literal);
+            if (lit.tag == Literal::Tag::Lit_untyped) {
+                auto index = lit.box.get_u64();
+                return world_.var(bruijn_[bruijn_.size() - index - 1], index, tracker.location());
+            } else {
+                assertf(false, "untyped literal expected after '#'");
+            }
+        } else {
+            assertf(false, "number expected after '#'");
+        }
+    }
+    return nullptr;
 }
 
 const Pi* Parser::parse_pi() {
     Tracker tracker(this);
     eat(Token::Tag::Pi);
-
-    if (accept(Token::Tag::L_Paren)) {
-        auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); }, "parameter list of Π type");
-        expect(Token::Tag::Dot, "Π type");
-        auto body = parse_def();
-
-        pop_identifiers();
-
-        return world_.pi(domains, body, tracker.location());
-    }
-
-    auto domain = parse_param();
+    auto domain = parse_def();
+    push_identifiers(domain);
     expect(Token::Tag::Dot, "Π type");
     auto body = parse_def();
     pop_identifiers();
@@ -87,75 +132,41 @@ const Def* Parser::parse_sigma_or_variadic() {
     if (accept(Token::Tag::R_Bracket))
         return world_.unit();
 
-    auto first = parse_param();
+    auto first = parse_def();
+    push_identifiers(first);
 
     if (accept(Token::Tag::Semicolon)) {
         auto body = parse_def();
         expect(Token::Tag::R_Bracket, "variadic");
-        depth_--;
         pop_identifiers();
         return world_.variadic(first, body, tracker.location());
     }
 
-    auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] { return parse_param(); }, "elements of sigma type", first);
-    pop_identifiers();
-    return world_.sigma(defs, tracker.location());
+    auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma,
+        [&] {
+            auto elem = parse_def();
+            push_identifiers(elem);
+            return elem;
+        }, "elements of sigma type", first);
+    auto sigma = world_.sigma(defs, tracker.location());
+    shift_identifiers(defs.size());
+    return sigma;
 }
 
 const Def* Parser::parse_lambda() {
     Tracker tracker(this);
     eat(Token::Tag::Lambda);
-
-    expect(Token::Tag::L_Paren, "λ abstraction");
-    auto domains = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_param(); }, "parameter list of λ abstraction");
+    auto domain = parse_def();
+    push_identifiers(domain);
     expect(Token::Tag::Dot, "λ abstraction");
     auto body = parse_def();
-
     pop_identifiers();
-
-    return world_.lambda(domains, body, tracker.location());
+    return world_.lambda(domain, body, tracker.location());
 }
 
 const Star* Parser::parse_star() {
     eat(Token::Tag::Star);
     return world_.star();
-}
-
-const Def* Parser::parse_var() {
-    Tracker tracker(this);
-
-    const Def* def = nullptr;
-    size_t index = 0;
-    if (ahead_[0].isa(Token::Tag::Sharp)) {
-        eat(Token::Tag::Sharp);
-        if (!ahead_[0].isa(Token::Tag::Literal) ||
-            ahead_[0].literal().tag != Literal::Tag::Lit_untyped)
-            assertf(false, "DeBruijn index expected in {}", ahead_[0].location());
-
-        index = ahead_[0].literal().box.get_u64();
-        eat(Token::Tag::Literal);
-
-        expect(Token::Tag::Colon, "variable");
-        def = parse_def();
-    } else if (ahead_[0].isa(Token::Tag::Identifier)) {
-        auto it = id_map_.find(ahead_[0].identifier());
-        if (it != id_map_.end()) {
-            std::tie(std::ignore, def, index) = id_stack_[it->second];
-            def = shift_def(def, depth_ - index);
-            index = depth_ - index - 1;
-
-            eat(Token::Tag::Identifier);
-            return world_.var(def, index, tracker.location());
-        } else {
-            auto it = env_.find(ahead_[0].identifier());
-            if (it != env_.end()) {
-                eat(Token::Tag::Identifier);
-                return it->second;
-            }
-        }
-    }
-
-    assertf(false, "unknown identifier '{}' in {}", ahead_[0].identifier(), ahead_[0].location());
 }
 
 const Def* Parser::parse_tuple_or_pack() {
@@ -165,23 +176,12 @@ const Def* Parser::parse_tuple_or_pack() {
     if (accept(Token::Tag::R_Paren))
         return world_.tuple0();
 
-    if (is_param()) { // must be a pack
-        auto param = parse_param();
-        expect(Token::Tag::Semicolon, "pack");
-        auto body = parse_def();
-        depth_--;
-        pop_identifiers();
-        return world_.pack(param, body, tracker.location());
-    }
-
     auto first = parse_def();
-
     if (accept(Token::Tag::Semicolon)) {
+        push_identifiers(first);
         auto body = parse_def();
-        expect(Token::Tag::R_Bracket, "pack");
-        depth_--;
+        expect(Token::Tag::R_Paren, "pack");
         pop_identifiers();
-
         return world_.pack(first, body, tracker.location());
     }
 
@@ -204,32 +204,6 @@ const Axiom* Parser::parse_assume() {
     auto type = parse_def();
 
     return world_.assume(type, box, tracker.location());
-}
-
-const Def* Parser::parse_param() {
-    const Def* def;
-    if (is_param()) {
-        std::string ident = ahead_[0].identifier();
-        eat(Token::Tag::Identifier);
-        eat(Token::Tag::Colon);
-        def = parse_def();
-
-        id_map_.emplace(ident, id_stack_.size());
-        id_stack_.emplace_back(ident, def, depth_);
-    } else
-        def = parse_def();
-
-    depth_++;
-    return def;
-}
-
-const Def* Parser::shift_def(const Def* def, size_t shift) {
-    if (def->is_nominal()) return def;
-    if (auto var = def->isa<Var>())
-        return world_.var(shift_def(var->type(), shift), var->index() + shift);
-    Array<const Def*> ops(def->num_ops());
-    for (size_t i = 0; i < def->num_ops(); i++) ops[i] = shift_def(def->op(i), shift);
-    return def->rebuild(shift_def(def->type(), shift), ops);
 }
 
 Token Parser::next() {

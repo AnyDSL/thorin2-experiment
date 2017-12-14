@@ -26,11 +26,12 @@ public:
     }
 
     const Def*    parse_def();
+    const Def*    parse_var_or_binder();
+
     const Pi*     parse_pi();
     const Def*    parse_sigma_or_variadic();
     const Def*    parse_lambda();
     const Star*   parse_star();
-    const Def*    parse_var();
     const Def*    parse_tuple_or_pack();
     const Axiom*  parse_assume();
     const Def*    parse_param();
@@ -52,6 +53,16 @@ private:
         const Parser& parser;
         uint32_t line;
         uint32_t col;
+    };
+
+    struct Binder {
+        std::string name;
+        size_t depth;
+        std::vector<size_t> ids;
+
+        Binder(std::string name = "", size_t depth = 0)
+            : name(name), depth(depth)
+        {}
     };
 
     DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const char* context, const Def* first = nullptr) {
@@ -78,28 +89,47 @@ private:
     }
 
     Token next();
+    const Token& ahead(int i = 0) { return ahead_[i]; }
     void eat(Token::Tag);
     void expect(Token::Tag, const char* context);
     bool accept(Token::Tag);
-    void pop_identifiers() {
-        while (!id_stack_.empty()) {
-            std::string ident;
-            size_t index;
-            std::tie(ident, std::ignore, index) = id_stack_.back();
-            if (index < depth_) break;
-            id_stack_.pop_back();
-            id_map_.erase(ident);
-        }
+    void push_identifiers(const Def* bruijn) {
+        depth_++;
+        bruijn_.push_back(bruijn);
     }
-    const Def* shift_def(const Def*, size_t);
-    bool is_param() const { return ahead_[0].isa(Token::Tag::Identifier) && ahead_[1].isa(Token::Tag::Colon); }
+    void pop_identifiers() {
+        while (!binders_.empty()) {
+            if (binders_.back().depth < depth_) break;
+            binders_.pop_back();
+        }
+        bruijn_.pop_back();
+        depth_--;
+    }
+    void shift_identifiers(size_t count) {
+        std::vector<Binder> shifted;
+        size_t new_depth = depth_ - count;
+        while (!binders_.empty()) {
+            auto& binder = binders_.back();
+            if (binder.depth < new_depth) break;
+            Binder new_binder;
+            new_binder.ids.push_back(binder.depth - new_depth);
+            new_binder.ids.insert(new_binder.ids.end(), binder.ids.begin(), binder.ids.end());
+            new_binder.depth = new_depth;
+            new_binder.name  = binder.name;
+            shifted.emplace_back(std::move(new_binder));
+            binders_.pop_back();
+        }
+        binders_.insert(binders_.end(), shifted.begin(), shifted.end());
+        bruijn_.resize(bruijn_.size() - count);
+        depth_ = new_depth;
+    }
 
     WorldBase& world_;
     Lexer& lexer_;
-    // TODO use thorin::HashMap
-    std::unordered_map<std::string, size_t> id_map_;
     Env env_;
-    std::vector<std::tuple<std::string, const Def*, size_t>> id_stack_;
+
+    std::vector<const Def*> bruijn_;
+    std::vector<Binder> binders_;
     Token ahead_[2];
     size_t depth_ = 0;
 };

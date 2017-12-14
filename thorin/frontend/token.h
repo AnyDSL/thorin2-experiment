@@ -24,13 +24,14 @@ namespace thorin {
     f(Semicolon,        ";") \
     f(Star,             "*") \
     f(Sharp,            "#") \
-    f(Pi,               "#pi") \
-    f(Sigma,            "#sigma") \
-    f(Lambda,           "#lambda") \
-    f(Qualifier_Type,   "#qualifier_type") \
-    f(Qualifier_Kind,   "#qualifier_kind") \
-    f(Arity_Kind,       "#arity_kind") \
-    f(Multi_Arity_Kind, "#multi_arity_kind") \
+    f(Backslash,        "\\") \
+    f(Pi,               "\\pi") \
+    f(Sigma,            "\\sigma") \
+    f(Lambda,           "\\lambda") \
+    f(Qualifier_Type,   "\\qualifier_type") \
+    f(Qualifier_Kind,   "\\qualifier_kind") \
+    f(Arity_Kind,       "\\arity_kind") \
+    f(Multi_Arity_Kind, "\\multi_arity_kind") \
     f(Identifier,       "identifier") \
     f(Literal,          "literal") \
     f(Eof,              "eof")

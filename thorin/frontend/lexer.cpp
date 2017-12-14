@@ -130,8 +130,7 @@ Token Lexer::lex() {
             if (accept("true"))   return {location(), Literal(Literal::Tag::Lit_bool, Box(true))};
             if (accept("false"))  return {location(), Literal(Literal::Tag::Lit_bool, Box(false))};
 
-            ELOG_LOC(location(), "invalid escape sequence");
-            continue;
+            return {location(), Token::Tag::Backslash};
         }
 
         if (accept('#')) return {location(), Token::Tag::Sharp};
