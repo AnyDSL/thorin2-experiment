@@ -538,11 +538,14 @@ const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
 }
 
 const Def* WorldBase::tuple(Defs defs, Debug dbg) {
-    auto type = sigma(types(defs), dbg);
     size_t size = defs.size();
-
-    if (size == 1 && type == defs.front()->type())
+    if (size == 1)
         return defs.front();
+    auto types = DefArray(size);
+    for (size_t i = 0; i != size; ++i) {
+        types[i] = defs[i]->type()->shift_free_vars(-i);
+    };
+    auto type = sigma(types, dbg);
 
     auto eta_property = [&]() {
         const Def* same = nullptr;

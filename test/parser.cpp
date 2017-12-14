@@ -32,7 +32,7 @@ TEST(Parser, SigmaVariadic) {
     ASSERT_EQ(parse(w, "[x:𝕄; x]"), v);
 }
 
-TEST(Parser, TypeAxiom) {
+TEST(Parser, NestedBinders) {
     WorldBase w;
     auto S = w.star();
     auto N = w.axiom(S, {"nat"});
@@ -46,6 +46,38 @@ TEST(Parser, TypeAxiom) {
     auto def = w.pi(sig, w.pi(w.app(typ, w.tuple({w.extract(w.var(sig, 0), (size_t)1), w.extract(w.var(sig, 0), (size_t)0)})),
                               w.app(typ2, w.var(sig, 1))));
     ASSERT_EQ(parse(w, "Πp:[n: nat, m: nat]. Πtyp(m, n). typ2(p)", env), def);
+}
+
+TEST(Parser, NestedBinders2) {
+    WorldBase w;
+    auto S = w.star();
+    auto N = w.axiom(S, {"nat"});
+    auto sig = w.sigma({N, w.sigma({N, N})});
+    auto typ = w.axiom(w.pi(w.sigma({N, N, w.sigma({N, N})}), S), {"typ"});
+    Env env;
+    env["nat"] = N;
+    env["typ"] = typ;
+    auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), (size_t)1), (size_t)1),
+                                             w.extract(w.extract(w.var(sig, 0), (size_t)1), (size_t)0),
+                                             w.extract(w.var(sig, 0), (size_t)1)})));
+    ASSERT_EQ(parse(w, "Π[m: nat, n: [n0 : nat, n1: nat]]. typ(n1, n0, n)", env), def);
+}
+
+TEST(Parser, NestedDependentBinders) {
+    WorldBase w;
+    auto S = w.star();
+    auto N = w.axiom(S, {"nat"});
+    auto dtyp = w.axiom(w.pi(N, S), {"dt"});
+    auto npair = w.sigma({N, N});
+    auto sig = w.sigma({npair, w.app(dtyp, w.extract(w.var(npair, 0), (size_t)1))});
+    auto typ = w.axiom(w.pi(w.sigma({N, w.app(dtyp, w.var(N, 0))}), S), {"typ"});
+    Env env;
+    env["nat"] = N;
+    env["dt"] = dtyp;
+    env["typ"] = typ;
+    auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), (size_t)0), (size_t)1),
+                                             w.extract(w.var(sig, 0), (size_t)1)})));
+    ASSERT_EQ(parse(w, "Π[[n0 : nat, n1: nat], d: dt(n1)]. typ(n1, d)", env), def);
 }
 
 TEST(Parser, IntArithOp) {
