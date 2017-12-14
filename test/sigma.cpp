@@ -46,7 +46,6 @@ TEST(Sigma, Unit) {
 
     auto lam = w.lambda(unit, tuple0)->as<Lambda>();
     ASSERT_EQ(lam->domain(), unit);
-    ASSERT_TRUE(lam->domains().size() == 0);
     ASSERT_EQ(lam->type()->body(), unit);
     auto pi = w.pi(Defs({}), unit);
     ASSERT_EQ(pi, lam->type());

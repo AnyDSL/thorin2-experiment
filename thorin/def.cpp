@@ -129,7 +129,7 @@ Def* Def::set(size_t i, const Def* def) {
 }
 
 Lambda* Lambda::set(const Def* body) {
-    return Def::set(0, normalize_ ? flatten(body, type()->domains()) : body)->as<Lambda>();
+    return Def::set(0, body)->as<Lambda>();
 };
 
 void Def::finalize() {
@@ -176,8 +176,6 @@ void Def::unregister_use(size_t i) const {
 
 std::string Def::unique_name() const { return name() + '_' + std::to_string(gid()); }
 
-const Def* Pi::domain() const { return world().sigma(domains()); }
-
 //------------------------------------------------------------------------------
 
 /*
@@ -211,8 +209,8 @@ Pack::Pack(WorldBase& world, const Def* type, const Def* body, Debug dbg)
     : TupleBase(world, Tag::Pack, type, {body}, dbg)
 {}
 
-Pi::Pi(WorldBase& world, const Def* type, Defs domains, const Def* body, Debug dbg)
-    : Def(world, Tag::Pi, type, concat(domains, body), dbg)
+Pi::Pi(WorldBase& world, const Def* type, const Def* domain, const Def* body, Debug dbg)
+    : Def(world, Tag::Pi, type, {domain, body}, dbg)
 {}
 
 Sigma::Sigma(WorldBase& world, size_t num_ops, Debug dbg)
@@ -343,7 +341,11 @@ const Def* ArityKind::arity() const { return world().arity(1); }
 
 // const Def* Any::arity() const { return TODO; }
 
-// const Def* App::arity() const { return TODO; }
+const Def* App::arity() const {
+    if (is_value())
+        return type()->arity();
+    return world().arity(1); // TODO assumption: all callees of non-folded apps that yield a type are (originally) axioms
+}
 
 const Def* Axiom::arity() const {
     if (is_value())
@@ -386,7 +388,7 @@ const Def* Variant::arity() const {
  */
 
 size_t Def::shift(size_t) const { return 0; }
-size_t Lambda::shift(size_t) const { return num_domains(); }
+size_t Lambda::shift(size_t i) const { assert_unused(i == 0); return 1; }
 size_t Pack::shift(size_t i) const { assert_unused(i == 0); return 1; }
 size_t Pi::shift(size_t i) const { return i; }
 size_t Sigma::shift(size_t i) const { return i; }
@@ -456,7 +458,7 @@ bool Var::equal(const Def* other) const {
  */
 
 const Def* Any           ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
-const Def* App           ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops.skip_front(), debug()); }
+const Def* App           ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops[1], debug()); }
 const Def* ArityKind     ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity_kind(); }
 const Def* Axiom         ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
@@ -468,7 +470,7 @@ const Def* Insert        ::rebuild(WorldBase& to, const Def*  , Defs ops) const 
 const Def* Intersection  ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
 const Def* Lambda        ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
-    return to.lambda(t->as<Pi>()->domains(), ops.front(), debug());
+    return to.lambda(t->as<Pi>()->domain(), ops.front(), debug());
 }
 const Def* Match         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* MultiArityKind::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.multi_arity_kind(); }
@@ -503,7 +505,7 @@ Axiom* Axiom::stub(WorldBase& to, const Def*, Debug) const {
 }
 Lambda* Lambda::stub(WorldBase& to, const Def* type, Debug dbg) const {
     auto pi = type->as<Pi>();
-    return to.nominal_lambda(pi->domains(), pi->body(), pi->qualifier(), dbg);
+    return to.nominal_lambda(pi->domain(), pi->body(), pi->qualifier(), dbg);
 }
 Sigma* Sigma::stub(WorldBase& to, const Def* type, Debug dbg) const {
     return to.sigma(type, num_ops(), dbg);
@@ -522,14 +524,18 @@ const Def* Def::reduce(Defs args, size_t index) const {
     return thorin::reduce(this, args, index);
 }
 
+// TODO convert to single arg
 const Def* Pi::reduce(Defs args) const {
-    assert(args.size() == num_domains());
+    auto t = world().tuple(args);
+    assert(domain()->assignable(t));
     return body()->reduce(args);
 }
 
+// TODO convert to single arg
 const Def* Lambda::reduce(Defs args) const {
-    assert(args.size() == num_domains());
-    return world().app(this, args);
+    auto t = world().tuple(args);
+    assert(domain()->assignable(t));
+    return world().app(this, t);
 }
 
 const Def* App::try_reduce() const {
@@ -540,14 +546,12 @@ const Def* App::try_reduce() const {
 
     if (auto lambda = callee()->isa<Lambda>()) {
         // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
-        auto args = ops().skip_front();
         if (!pi_type->maybe_affine() && !pi_type->body()->maybe_affine() &&
-            (!lambda->is_nominal() ||
-             std::all_of(args.begin(), args.end(), [](auto def) { return def->free_vars().none(); }))) {
+            (!lambda->is_nominal() || arg()->free_vars().none())) {
             if  (!lambda->is_closed()) // don't set cache as long lambda is unclosed
                 return this;
 
-            return thorin::reduce(lambda->body(), args, [&] (const Def* def) { cache_ = def; });
+            return thorin::reduce(lambda->body(), {arg()}, [&] (const Def* def) { cache_ = def; });
         }
     } else if (/*auto axiom =*/ callee()->isa<Axiom>()) {
         // TODO implement constant folding for primops here
@@ -675,7 +679,7 @@ void Lambda::typecheck_vars(Environment& types, EnvDefSet& checked) const {
         return;
     // do Pi type check inline to reuse built up environment
     check(type()->type(), types, checked);
-    dependent_check(domains(), types, checked, {type()->body(), body()});
+    dependent_check({domain()}, types, checked, {type()->body(), body()});
 }
 
 void Pack::typecheck_vars(Environment& types, EnvDefSet& checked) const {
@@ -685,7 +689,7 @@ void Pack::typecheck_vars(Environment& types, EnvDefSet& checked) const {
 
 void Pi::typecheck_vars(Environment& types, EnvDefSet& checked) const {
     check(type(), types, checked);
-    dependent_check(domains(), types, checked, {body()});
+    dependent_check({domain()}, types, checked, {body()});
 }
 
 void Sigma::typecheck_vars(Environment& types, EnvDefSet& checked) const {
@@ -726,10 +730,12 @@ std::ostream& Any::stream(std::ostream& os) const {
 }
 
 std::ostream& App::stream(std::ostream& os) const {
-    auto begin = "(";
-    auto end = ")";
-    callee()->name_stream(os);
-    return stream_list(os, args(), [&](const Def* def) { def->name_stream(os); }, begin, end);
+    auto domain = callee()->type()->as<Pi>()->domain();
+    if (domain->is_kind()) {
+        qualifier_stream(os);
+    }
+    callee()->name_stream(os) << "(";
+    return arg()->name_stream(os) << ")";
 }
 
 std::ostream& ArityKind::stream(std::ostream& os) const {
@@ -765,7 +771,8 @@ std::ostream& MultiArityKind::stream(std::ostream& os) const {
 }
 
 std::ostream& Lambda::stream(std::ostream& os) const {
-    stream_list(qualifier_stream(os) << "λ", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    qualifier_stream(os) << "λ";
+    domain()->name_stream(os);
     return body()->name_stream(os << ".");
 }
 
@@ -774,7 +781,8 @@ std::ostream& Pack::stream(std::ostream& os) const {
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
-    stream_list(qualifier_stream(os) << "Π", domains(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    qualifier_stream(os) << "Π";
+    domain()->name_stream(os);
     return body()->name_stream(os << ".");
 }
 

@@ -19,6 +19,9 @@ const Def* reduce(const Def* def, Defs args, std::function<void(const Def*)> f, 
 /// Flattens the use of Var @c 0 and Extract%s in @p body to directly use @p args instead.
 const Def* flatten(const Def* body, Defs args);
 
+/// Unflattens the use of Vars @c 0, ..., n and uses Extract%s in @p body instead.
+const Def* unflatten(const Def* body, const Def* arg);
+
 /// Adds @p shift to all free variables in @p def.
 const Def* shift_free_vars(const Def* def, size_t shift);
 }

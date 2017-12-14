@@ -362,14 +362,12 @@ uint64_t EnvDefHash::hash(const EnvDef& p) {
 
 class Pi : public Def {
 private:
-    Pi(WorldBase& world, const Def* type, Defs domains, const Def* body, Debug dbg);
+    Pi(WorldBase& world, const Def* type, const Def* domain, const Def* body, Debug dbg);
 
 public:
     const Def* arity() const override;
-    const Def* domain() const;
-    Defs domains() const { return ops().skip_back(); }
-    size_t num_domains() const { return domains().size(); }
-    const Def* body() const { return ops().back(); }
+    const Def* domain() const { return op(0); }
+    const Def* body() const { return op(1); }
     const Def* reduce(Defs) const;
     bool has_values() const override;
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
@@ -393,8 +391,6 @@ private:
 
 public:
     const Def* domain() const { return type()->domain(); }
-    Defs domains() const { return type()->domains(); }
-    size_t num_domains() const { return domains().size(); }
     const Def* body() const { return op(0); }
     const Def* reduce(Defs) const;
     Lambda* set(const Def* def);
@@ -413,17 +409,16 @@ private:
 
 class App : public Def {
 private:
-    App(WorldBase& world, const Def* type, const Def* callee, Defs args, Debug dbg)
-        : Def(world, Tag::App, type, concat(callee, args), dbg)
+    App(WorldBase& world, const Def* type, const Def* callee, const Def* arg, Debug dbg)
+        : Def(world, Tag::App, type, {callee, arg}, dbg)
     {
         cache_ = nullptr;
     }
 
 public:
+    const Def* arity() const;
     const Def* callee() const { return op(0); }
-    Defs args() const { return ops().skip_front(); }
-    size_t num_args() const { return args().size(); }
-    const Def* arg(size_t i) const { return args()[i]; }
+    const Def* arg() const { return op(1); }
 
     std::ostream& stream(std::ostream&) const override;
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;

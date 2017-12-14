@@ -51,45 +51,42 @@ public:
 
     //@{ create Pi
     const Pi* pi(const Def* domain, const Def* body, Debug dbg = {}) {
-        return pi(Defs({domain}), body, dbg);
+        return pi(domain, body, unlimited(), dbg);
     }
     const Pi* pi(Defs domains, const Def* body, Debug dbg = {}) {
         return pi(domains, body, unlimited(), dbg);
     }
-    const Pi* pi(const Def* domain, const Def* body, const Def* qualifier, Debug dbg = {}) {
-        return pi(Defs({domain}), body, qualifier, dbg);
-    }
+    const Pi* pi(const Def* domain, const Def* body, const Def* qualifier, Debug dbg = {});
     const Pi* pi(Defs domains, const Def* body, const Def* qualifier, Debug dbg = {});
     //@}
 
     //@{ create Lambda
-    const Def* lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg = {});
     const Def* lambda(Defs domains, const Def* body, Debug dbg = {}) {
         return lambda(domains, body, unlimited(), dbg);
     }
-    const Def* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {}) {
-        return lambda(Defs{domain}, body, type_qualifier, dbg);
-    }
+    const Def* lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg = {});
     const Def* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
         return lambda(domain, body, unlimited(), dbg);
     }
-    Lambda* nominal_lambda(Defs domains, const Def* codomain, const Def* type_qualifier, Debug dbg = {});
+    const Def* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {});
+    Lambda* nominal_lambda(Defs domains, const Def* codomain, const Def* type_qualifier, Debug dbg = {}) {
+        return nominal_lambda(sigma(domains), codomain, type_qualifier, dbg);
+    }
     Lambda* nominal_lambda(Defs domains, const Def* codomain, Debug dbg = {}) {
         return nominal_lambda(domains, codomain, unlimited(), dbg);
     }
-    Lambda* nominal_lambda(const Def* domain, const Def* codomain, const Def* type_qualifier, Debug dbg = {}) {
-        return nominal_lambda(Defs{domain}, codomain, type_qualifier, dbg);
-    }
     Lambda* nominal_lambda(const Def* domain, const Def* codomain, Debug dbg = {}) {
-        return nominal_lambda(Defs{domain}, codomain, unlimited(), dbg);
+        return nominal_lambda(domain, codomain, unlimited(), dbg);
     }
+    Lambda* nominal_lambda(const Def* domain, const Def* codomain, const Def* type_qualifier, Debug dbg = {});
     //@}
 
     //@{ create App
-    const Def* app(const Def* callee, Defs args, Debug dbg = {});
-    const Def* app(const Def* callee, const Def* arg, Debug dbg = {}) {
-        return app(callee, Defs({arg}), dbg);
+    const Def* app(const Def* callee, Defs args, Debug dbg = {}) {
+        return app(callee, tuple(args, dbg), dbg);
     }
+    const Def* app(const Def* callee, const Def* arg, Debug dbg = {});
+    // TODO think about removing this:
     const Def* app(const Def* callee, Debug dbg = {}) {
         return app(callee, tuple0(), dbg);
     }

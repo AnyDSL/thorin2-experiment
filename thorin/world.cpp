@@ -32,14 +32,21 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
     auto inferred_q = defs.front()->qualifier();
     auto max_type = defs.front()->type();
 
-    for (auto def : defs.skip_front()) {
-        assertf(!def->is_value(), "can't have values as operands here");
+    for (size_t i = 1, e = defs.size(); i != e; ++i) {
+        auto def = defs[i];
+        assertf(!def->is_value(), "can't have value {} as operand of bound operator", def);
         assertf(def->sort() != Def::Sort::Universe, "type universes must not be operands");
 
-        if (use_glb)
-            inferred_q = intersection(qualifier_type(), {inferred_q, def->qualifier()});
-        else
-            inferred_q = variant(qualifier_type(), {inferred_q, def->qualifier()});
+        if (def->qualifier()->free_vars().any_range(0, i)) {
+            // qualifier is dependent within this type/kind, go to top directly
+            // TODO might want to assert that this will always be a kind?
+            inferred_q = use_glb ? linear() : unlimited();
+        } else {
+            auto qualifier = def->qualifier()->shift_free_vars(i);
+
+            inferred_q = use_glb ? intersection(qualifier_type(), {inferred_q, qualifier})
+                : variant(qualifier_type(), {inferred_q, qualifier});
+        }
 
         if (def->type() == universe() || max_type == universe()) {
             max_type = universe();
@@ -170,30 +177,12 @@ const Axiom* WorldBase::arity(size_t a, Location location) {
     return result;
 }
 
-const Def* WorldBase::app(const Def* callee, Defs args, Debug dbg) {
-    if (args.size() == 1) {
-        auto single = args.front();
-        if (auto tuple = single->isa<Tuple>())
-            return app(callee, tuple->ops(), dbg);
-
-        if (auto sigma = single->type()->isa<Sigma>()) {
-            auto extracts = DefArray(sigma->num_ops(), [&](auto i) { return this->extract(single, i); });
-            return app(callee, extracts, dbg);
-        }
-
-        if (auto variadic = single->type()->isa<Variadic>()) {
-            if (auto arity = variadic->arity()->isa<Axiom>()) {
-                auto extracts = DefArray(arity->box().get_u64(), [&](auto i) { return this->extract(single, i); });
-                return app(callee, extracts, dbg);
-            }
-        }
-    }
-
+const Def* WorldBase::app(const Def* callee, const Def* arg, Debug dbg) {
     auto callee_type = callee->type()->as<Pi>();
-    assertf(callee_type->domain()->assignable(tuple(args)),
-            "callee with domain {} cannot be called with arguments {}", callee_type->domain(), args);
-    auto type = callee_type->reduce(args);
-    auto app = unify<App>(args.size() + 1, *this, type, callee, args, dbg);
+    assertf(callee_type->domain()->assignable(arg),
+            "callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
+    auto type = callee_type->reduce({arg});
+    auto app = unify<App>(2, *this, type, callee, arg, dbg);
     assert(app->callee() == callee);
 
     return app->try_reduce();
@@ -326,26 +315,23 @@ const Def* WorldBase::intersection(const Def* type, Defs defs, Debug dbg) {
     return unify<Intersection>(defs.size(), *this, type, defs, dbg);
 }
 
-const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* q, Debug dbg) {
-    if (domains.size() == 1 && !domains.front()->is_nominal()) {
-        auto domain = domains.front();
+const Pi* WorldBase::pi(const Def* domain, const Def* body, const Def* q, Debug dbg) {
+    assertf(!body->is_value(), "body {} : {} of function type cannot be a value", body, body->type());
+    auto type = lub({domain, body}, q, false);
+    return unify<Pi>(2, *this, type, domain, body, dbg);
+}
 
-        if (auto sigma = domain->isa<Sigma>())
-            return pi(sigma->ops(), flatten(body, sigma->ops()), q, dbg);
-
-        if (auto v = domain->isa<Variadic>()) {
-            if (auto arity = v->arity()->isa<Axiom>()) {
-                auto a = arity->box().get_u64();
-                assert(!v->body()->free_vars().test(0));
-                DefArray args(a, [&] (auto i) { return v->body()->shift_free_vars(i); });
-                return pi(args, flatten(body, args), q, dbg);
-            }
-        }
+const Def* maybe_unflatten(WorldBase& w, const Def* domain, const Def* body) {
+    auto arity = domain->arity()->as<Axiom>();
+    if (arity != nullptr && arity->box().get_u64() > 1) {
+        return unflatten(body, w.var(domain, 0));
     }
+    return body;
+}
 
-    auto type = lub(concat(domains, body), q, false);
-
-    return unify<Pi>(domains.size() + 1, *this, type, domains, body, dbg);
+const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* qualifier, Debug dbg) {
+    auto domain = sigma(domains);
+    return pi(domain, maybe_unflatten(*this, domain, body), qualifier, dbg);
 }
 
 const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
@@ -358,33 +344,33 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
-const Def* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
-    auto p = pi(domains, body->type(), type_qualifier, dbg);
-    if (p->domains().size() != domains.size())
-        return lambda(p->domains(), flatten(body, p->domains()), type_qualifier, dbg);
+const Def* WorldBase::lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg) {
+    auto p = pi(domain, body->type(), type_qualifier, dbg);
 
     if (auto app = body->isa<App>()) {
-        size_t n = app->num_args();
-
         auto eta_property = [&]() {
-            for (size_t i = 0; i != n; ++i) {
-                if (!app->arg(i)->isa<Var>() || n-1-app->arg(i)->as<Var>()->index() != i)
-                    return false;
-            }
-            return true;
+            return app->arg()->isa<Var>() && app->arg()->as<Var>()->index() == 0;
         };
 
-        if (app->callee()->free_vars().none_range(0, n) && eta_property())
-            return app->callee()->shift_free_vars(n);
+        if (!app->callee()->free_vars().test(0) && eta_property())
+            return app->callee()->shift_free_vars(1);
     }
 
     return unify<Lambda>(1, *this, p, body, dbg);
 }
 
-Lambda* WorldBase::nominal_lambda(Defs domains, const Def* codomain, const Def* type_qualifier, Debug dbg) {
-    auto l = insert<Lambda>(1, *this, pi(domains, codomain, type_qualifier, dbg), dbg);
-    l->normalize_ = l->type()->domains().size() != domains.size();
-    return l;
+const Def* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
+    switch (domains.size()) {
+        case 0: return lambda(unit(), body, type_qualifier, dbg);
+        case 1: return lambda(domains.front(), body, type_qualifier, dbg);
+        default:
+            auto p = pi(domains, body->type(), type_qualifier, dbg);
+            return lambda(p->domain(), maybe_unflatten(*this, p->domain(), body), type_qualifier, dbg);
+    }
+}
+
+Lambda* WorldBase::nominal_lambda(const Def* domain, const Def* codomain, const Def* type_qualifier, Debug dbg) {
+    return insert<Lambda>(1, *this, pi(domain, codomain, type_qualifier, dbg), dbg);
 }
 
 const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
@@ -455,7 +441,7 @@ const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
 }
 
 const Def* WorldBase::singleton(const Def* def, Debug dbg) {
-    assert(def->type() && "can't create singletons of universes");
+    assert(def->sort() != Def::Sort::Universe && "can't create singletons of universes");
 
     if (def->type()->isa<Singleton>())
         return def->type();
@@ -480,12 +466,9 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
 
     if (auto pi_type = def->type()->isa<Pi>()) {
         // See Harper PFPL 43.13c
-        auto domains = pi_type->domains();
-        auto num_domains = pi_type->num_domains();
-        auto new_pi_vars = DefArray(num_domains,
-                [&](auto i) { return this->var(domains[i], num_domains - i - 1); });
-        auto applied = app(def, new_pi_vars);
-        return pi(domains, singleton(applied), pi_type->qualifier(), dbg);
+        auto domain = pi_type->domain();
+        auto applied = app(def, var(domain, 0));
+        return pi(domain, singleton(applied), pi_type->qualifier(), dbg);
     }
 
     return unify<Singleton>(1, *this, def, dbg);

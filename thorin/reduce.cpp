@@ -101,8 +101,7 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
     // rebuild all other defs
     DefArray new_ops(old_def->num_ops());
     for (size_t i = 0, e = old_def->num_ops(); i != e; ++i) {
-        auto new_op = reduce_structurals(old_def->op(i), offset + old_def->shift(i));
-        new_ops[i] = new_op;
+        new_ops[i] = reduce_structurals(old_def->op(i), offset + old_def->shift(i));
     }
 
     auto new_def = old_def->rebuild(world(), new_type, new_ops);
@@ -124,6 +123,15 @@ const Def* reduce(const Def* def, Defs args, std::function<void(const Def*)> f, 
     f(result);
     reducer.reduce_nominals();
     return result;
+}
+
+const Def* unflatten(const Def* body, const Def* arg) {
+    auto& w = body->world();
+    auto arity = arg->arity()->as<Axiom>();
+    assert(arity != nullptr);
+    auto length = arity->box().get_u64();
+    auto extracts = DefArray(length, [&](auto i) { return w.extract(arg, i); });
+    return reduce(body, extracts);
 }
 
 const Def* flatten(const Def* body, Defs args) {
