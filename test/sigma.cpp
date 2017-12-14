@@ -74,3 +74,22 @@ TEST(Sigma, EtaConversion) {
     auto t = w.axiom(w.sigma({N, B}), {"t"});
     ASSERT_EQ(w.tuple({w.extract(t, 0_s), w.extract(t, 1_s)}), t);
 }
+
+// TODO add a test for passing around dependent sigma types, e.g. like the following
+// TEST(Parser, NestedDependentBinders) {
+//     WorldBase w;
+//     auto S = w.star();
+//     auto N = w.axiom(S, {"nat"});
+//     auto dtyp = w.axiom(w.pi(N, S), {"dt"});
+//     auto npair = w.sigma({N, N});
+//     auto sig = w.sigma({npair, w.app(dtyp, w.extract(w.var(npair, 0), (size_t)1))});
+//     auto typ = w.axiom(w.pi(w.sigma({N, w.app(dtyp, w.var(N, 0))}), S), {"typ"});
+//     Env env;
+//     env["nat"] = N;
+//     env["dt"] = dtyp;
+//     env["typ"] = typ;
+//     // passing d : dt(..) to typ(n1, d) is broken, as the variables in the type of d don't refer to n1 in the body of the pi and thus the app of typ doesn't type... do we need casting/ascribing here?
+//     auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), (size_t)0), (size_t)1),
+//                         w.extract(w.var(sig, 0), (size_t)1)})));
+//     ASSERT_EQ(parse(w, "Π[[n0 : nat, n1: nat], d: dt(n1)]. typ(n1, d)", env), def);
+// }
