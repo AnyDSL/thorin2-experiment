@@ -97,10 +97,10 @@ const Def* Parser::parse_var_or_binder() {
                 auto index = lit.box.get_u64();
                 return world_.var(bruijn_[bruijn_.size() - index - 1], index, tracker.location());
             } else {
-                assertf(false, "untyped literal expected after '#'");
+                assertf(false, "untyped literal expected after '\'");
             }
         } else {
-            assertf(false, "number expected after '#'");
+            assertf(false, "number expected after '\'");
         }
     }
     return nullptr;
