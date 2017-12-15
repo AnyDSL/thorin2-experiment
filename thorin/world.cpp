@@ -553,8 +553,11 @@ const Def* WorldBase::tuple(Defs defs, Debug dbg) {
         const Def* same = nullptr;
         for (size_t i = 0; i != size; ++i) {
             if (auto extract = defs[i]->isa<Extract>()) {
-                if (same == nullptr)
+                if (same == nullptr) {
                     same = extract->scrutinee();
+                    if (same->arity() != arity(size))
+                        return (const Def*)nullptr;
+                }
 
                 if (same == extract->scrutinee()) {
                     if (auto index = extract->index()->isa<Axiom>()) {
