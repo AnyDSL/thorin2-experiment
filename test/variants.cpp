@@ -11,7 +11,7 @@ TEST(Variants, negative_test) {
     auto variant = w.variant(w.star(), {nat, boolean});
     auto any_nat23 = w.any(variant, w.val_nat(23));
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
-    auto handle_bool_bool = w.lambda({boolean, boolean}, w.val_nat(0));
+    auto handle_bool_bool = w.lambda(w.sigma({boolean, boolean}), w.val_nat(0));
     ASSERT_DEATH(w.match(any_nat23, {handle_bool_bool, handle_nat}), ".*");
 }
 

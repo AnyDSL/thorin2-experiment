@@ -2,6 +2,7 @@
 
 #include "thorin/world.h"
 #include "thorin/matchers/ops.h"
+#include "thorin/frontend/parser.h"
 
 using namespace thorin;
 
@@ -21,40 +22,40 @@ TEST(Variadic, Misc) {
 
     auto p2_4 = w.index(2, 4);
     auto p2_4b = w.index(2, 4);
-    ASSERT_EQ(p2_4, p2_4b);
+    EXPECT_EQ(p2_4, p2_4b);
     auto v = w.variadic(5, N);
-    ASSERT_TRUE(v->arity() == w.arity(5));
+    EXPECT_TRUE(v->arity() == w.arity(5));
 
     auto t = w.tuple({w.val_nat_2(), w.val_nat_4()});
-    ASSERT_TRUE(t->type()->isa<Variadic>());
+    EXPECT_TRUE(t->type()->isa<Variadic>());
 
-    ASSERT_EQ(w.variadic(1, N), N);
-    ASSERT_EQ(w.variadic({3, 1, 4}, N), w.variadic({3, 4}, N));
+    EXPECT_EQ(w.variadic(1, N), N);
+    EXPECT_EQ(w.variadic({3, 1, 4}, N), w.variadic({3, 4}, N));
 
     auto sbn = w.sigma({B, N});
     auto list = w.axiom(w.pi(S, S), {"list"});
     auto lb = w.axiom(w.app(list, B), {"lb"});
     auto ln = w.axiom(w.app(list, N ), {"ln"});
 
-    // Πa: A,Ts: [    a; *].Π[    a; list[            Ts#i        ]]. list[[    a;             Ts#i        ]]
-    // Π   A,    [<0:A>; *].Π[<1:A>; list[<1:[<2:A>; *]>#<0:<2:A>>]]. list[[<2:A>; <2:[<3:A>; *]>#<0:<3:A>>]]
+    // Πa: A.ΠTs: [    a; *].Π[    a; list[            Ts#i        ]]. list[[    a;             Ts#i        ]]
+    // Π   A.Π    [<0:A>; *].Π[<1:A>; list[<1:[<2:A>; *]>#<0:<2:A>>]]. list[[<2:A>; <2:[<3:A>; *]>#<0:<3:A>>]]
     auto ts_var = [&](auto i) { return w.var(w.variadic(w.var(A, i+1), S), i); };
-    auto zip = w.axiom(w.pi({A, w.variadic(w.var(A, 0), S)},
+    auto zip = w.axiom(w.pi(A, w.pi(w.variadic(w.var(A, 0), S),
                             w.pi(w.variadic(w.var(A, 1), w.app(list, w.extract(ts_var(1), w.var(w.var(A, 2), 0)))),
-                                 w.app(list, w.variadic(w.var(A, 2), w.extract(ts_var(2), w.var(w.var(A, 3), 0)))))), {"zip"});
+                                 w.app(list, w.variadic(w.var(A, 2), w.extract(ts_var(2), w.var(w.var(A, 3), 0))))))), {"zip"});
 
-    ASSERT_EQ(w.app(w.app(zip, {w.arity(2), w.tuple({B, N})}), {lb, ln})->type(), w.app(list, sbn));
-    ASSERT_EQ(w.app(w.app(zip, {w.arity(1), B}), lb)->type(), w.app(list, B));
+    EXPECT_EQ(w.app(w.app(w.app(zip, w.arity(2)), w.tuple({B, N})), {lb, ln})->type(), w.app(list, sbn));
+    EXPECT_EQ(w.app(w.app(w.app(zip, w.arity(1)), B), lb)->type(), w.app(list, B));
 
     // Πa: A,Ts: [    a; *].Πlist[[    a;             Ts#i        ]]. [a; list[                Ts#i        ]]
     // Π   A,    [<0:A>; *].Πlist[[<1:A>; <1:[<2:A>; *]>#<0:<2:A>>]]. [<2:A>; list[<2:[<3:A>; *]>#<0:<3:A>>]]
-    auto unzip = w.axiom(w.pi({A, w.variadic(w.var(A, 0), S)},
+    auto unzip = w.axiom(w.pi(A, w.pi(w.variadic(w.var(A, 0), S),
                               w.pi(w.app(list, w.variadic(w.var(A, 1), w.extract(ts_var(1), w.var(w.var(A, 2), 0)))),
-                                   w.variadic(w.var(A, 2), w.app(list, w.extract(ts_var(2), w.var(w.var(A, 3), 0)))))), {"unzip"});
+                                   w.variadic(w.var(A, 2), w.app(list, w.extract(ts_var(2), w.var(w.var(A, 3), 0))))))), {"unzip"});
     auto l = w.axiom(w.app(list, sbn), {"l"});
-    ASSERT_EQ(w.app(w.app(unzip, {w.arity(2), w.tuple({B, N})}), l)->type(), w.sigma({lb->type(), ln->type()}));
+    EXPECT_EQ(w.app(w.app(w.app(unzip, w.arity(2)), w.tuple({B, N})), l)->type(), w.sigma({lb->type(), ln->type()}));
 
-    ASSERT_EQ(w.pi(w.variadic(3, N), B), w.pi({N, N, N}, B));
+    EXPECT_EQ(w.pi(w.variadic(3, N), B), w.pi(w.sigma({N, N, N}), B));
 }
 
 TEST(Variadic, LEA) {
@@ -98,7 +99,7 @@ TEST(Variadic, Multi) {
     auto f2 = w.extract(f1, 2);
     auto f3 = w.extract(f2, 3);
     ASSERT_EQ(w.lambda(w.variadic(3, w.variadic(8, w.variadic(5, N))), e3),
-              w.lambda({w.variadic({8, 5}, N), w.variadic({8, 5}, N), w.variadic({8, 5}, N)}, f3));
+              w.lambda(w.sigma({w.variadic({8, 5}, N), w.variadic({8, 5}, N), w.variadic({8, 5}, N)}), f3));
 
     auto A = w.arity_kind();
     auto arity_tuple = [&](auto i) { return w.variadic(w.var(A, i), A); };
@@ -107,16 +108,16 @@ TEST(Variadic, Multi) {
     ASSERT_TRUE(build_variadic->free_vars().test(0));
     ASSERT_TRUE(build_variadic->free_vars().test(1));
     ASSERT_TRUE(build_variadic->free_vars().none_begin(2));
-    auto arity_tuple_to_type = w.lambda({/*a:*/A, arity_tuple(0)}, build_variadic);
+    auto arity_tuple_to_type = w.lambda(A, w.lambda(arity_tuple(0), build_variadic));
     ASSERT_TRUE(arity_tuple_to_type->free_vars().none());
     ASSERT_TRUE(arity_tuple_to_type->type()->free_vars().none());
 
-    auto args = w.tuple({w.arity(2), w.tuple({w.arity(3), w.arity(4)})});
-    ASSERT_EQ(w.app(arity_tuple_to_type, args), w.sigma({w.arity(3), w.arity(4)}));
+    auto args = w.tuple({w.arity(3), w.arity(4)});
+    ASSERT_EQ(w.app(w.app(arity_tuple_to_type, w.arity(2)), args), w.sigma({w.arity(3), w.arity(4)}));
 
-    auto l = w.lambda({/*a:*/A, arity_tuple(0)},
-                      w.variadic(w.variadic(a(1), w.extract(w.var(arity_tuple(2), 1), w.var(a(2), 0))), N));
-    ASSERT_EQ(w.app(l, args), w.variadic({3, 4}, N));
+    auto l = w.lambda(A, w.lambda(arity_tuple(0),
+                                  w.variadic(w.variadic(a(1), w.extract(w.var(arity_tuple(2), 1), w.var(a(2), 0))), N)));
+    ASSERT_EQ(w.app(w.app(l, w.arity(2)), args), w.variadic({3, 4}, N));
 
 }
 
@@ -163,18 +164,14 @@ TEST(Variadic, Nested) {
 TEST(XLA, Misc) {
     World w;
     auto N = w.type_nat();
-    auto M = w.multi_arity_kind();
-    auto S = w.star();
-    //auto a2 = w.arity(2);
     auto a3 = w.arity(3);
     auto a4 = w.arity(4);
     auto a5 = w.arity(5);
 
-    auto arr = w.lambda({M, S}, w.variadic(w.var(M, 1), w.var(S, 1)));
-
-    auto op = w.axiom(w.pi({M, S},
-                w.pi({w.app(arr, {w.var(M, 1), w.var(S, 0)}), w.app(arr, {w.var(M, 2), w.var(S, 1)})},
-                    w.app(arr, {w.var(M, 3), w.var(S, 2)}))), {"op"});
+    Env env;
+    auto arr = parse(w, "λ[s:𝕄, t:*]. [s;t]");
+    env["arr"] = arr;
+    auto op = w.axiom(parse(w, "Π[s:𝕄, t:*]. Π[x: arr(s, t), y: arr(s, t)]. arr(s, t).", env), {"op"});
     auto s = w.sigma({a4, a3, a5});
     auto a = w.app(arr, {s, N});
     auto lhs = w.axiom(a, {"lhs"});
@@ -182,8 +179,7 @@ TEST(XLA, Misc) {
     w.app(w.app(op, {s, N}), {lhs, rhs})->dump();
     w.app(w.app(op, {s, N}), {lhs, rhs})->type()->dump();
 
-    auto reduce = w.axiom(w.pi({M, S},
-                w.pi({w.app(arr, {w.var(M, 1), w.var(S, 0)}), w.var(S, 1), w.pi({w.var(S, 2), w.var(S, 3)}, w.var(S, 4))}, N)));
+    auto reduce = w.axiom(parse(w, "Π[s:𝕄, t:*, Π[t, t].t]. Π[x: arr(s, t), t]. t"), {"reduce"});
     reduce->type()->dump();
 }
 

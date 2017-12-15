@@ -475,7 +475,7 @@ const Def* Lambda        ::rebuild(WorldBase& to, const Def* t, Defs ops) const 
 const Def* Match         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* MultiArityKind::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.multi_arity_kind(); }
 const Def* Pack          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pack(arity(), ops[0], debug()); }
-const Def* Pi            ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops.skip_back(), ops.back(), debug()); }
+const Def* Pi            ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops[0], ops[1], debug()); }
 const Def* Pick          ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());

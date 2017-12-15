@@ -6,11 +6,11 @@ using namespace thorin;
 
 TEST(Pi, Kinds) {
     World w;
-    ASSERT_EQ(w.pi(w.star(), w.star())->type(), w.universe());
-    ASSERT_EQ(w.pi(w.star(), w.arity_kind())->type(), w.universe());
-    ASSERT_EQ(w.pi(w.type_nat(), w.type_nat())->type(), w.star());
-    ASSERT_EQ(w.pi(w.type_nat(), w.arity(2))->type(), w.star());
-    ASSERT_EQ(w.pi(w.type_nat(), w.sigma({w.arity(2), w.arity(3)}))->type(), w.star());
+    EXPECT_EQ(w.pi(w.star(), w.star())->type(), w.universe());
+    EXPECT_EQ(w.pi(w.star(), w.arity_kind())->type(), w.universe());
+    EXPECT_EQ(w.pi(w.type_nat(), w.type_nat())->type(), w.star());
+    EXPECT_EQ(w.pi(w.type_nat(), w.arity(2))->type(), w.star());
+    EXPECT_EQ(w.pi(w.type_nat(), w.sigma({w.arity(2), w.arity(3)}))->type(), w.star());
 }
 
 TEST(Lambda, PolyId) {
@@ -19,33 +19,33 @@ TEST(Lambda, PolyId) {
     auto n23 = w.val_nat(23);
     auto n42 = w.val_nat(42);
 
-    ASSERT_EQ(n16, w.val_nat(16));
-    ASSERT_EQ(n23, w.val_nat(23));
-    ASSERT_EQ(n42, w.val_nat(42));
+    EXPECT_EQ(n16, w.val_nat(16));
+    EXPECT_EQ(n23, w.val_nat(23));
+    EXPECT_EQ(n42, w.val_nat(42));
 
     auto bb = w.var(w.type_nat(), 0);
-    ASSERT_TRUE(bb->free_vars().test(0));
-    ASSERT_TRUE(w.lambda(w.type_nat(), bb)->free_vars().none());
-    ASSERT_TRUE(w.pi({w.star(), w.var(w.star(), 0)}, w.var(w.star(), 1))->free_vars().none());
+    EXPECT_TRUE(bb->free_vars().test(0));
+    EXPECT_TRUE(w.lambda(w.type_nat(), bb)->free_vars().none());
+    EXPECT_TRUE(w.pi(w.star(), w.pi(w.var(w.star(), 0), w.var(w.star(), 1)))->free_vars().none());
 
     // λT:*.λx:T.x
     auto T_1 = w.var(w.star(), 0, {"T"});
-    ASSERT_TRUE(T_1->free_vars().test(0));
-    ASSERT_FALSE(T_1->free_vars().test(1));
+    EXPECT_TRUE(T_1->free_vars().test(0));
+    EXPECT_FALSE(T_1->free_vars().test(1));
     auto T_2 = w.var(w.star(), 1, {"T"});
-    ASSERT_TRUE(T_2->free_vars().test(1));
-    ASSERT_TRUE(T_2->free_vars().any_begin(1));
+    EXPECT_TRUE(T_2->free_vars().test(1));
+    EXPECT_TRUE(T_2->free_vars().any_begin(1));
     auto x = w.var(T_2, 0, {"x"});
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x));
-    ASSERT_FALSE(poly_id->free_vars().test(0));
-    ASSERT_FALSE(poly_id->free_vars().test(1));
-    ASSERT_FALSE(poly_id->free_vars().any_end(2));
-    ASSERT_FALSE(poly_id->free_vars().any_begin(0));
+    EXPECT_FALSE(poly_id->free_vars().test(0));
+    EXPECT_FALSE(poly_id->free_vars().test(1));
+    EXPECT_FALSE(poly_id->free_vars().any_end(2));
+    EXPECT_FALSE(poly_id->free_vars().any_begin(0));
 
     // λx:w.type_nat().x
     auto int_id = w.app(poly_id, w.type_nat());
-    ASSERT_EQ(int_id, w.lambda(w.type_nat(), w.var(w.type_nat(), 0)));
-    ASSERT_EQ(w.app(int_id, n23), n23);
+    EXPECT_EQ(int_id, w.lambda(w.type_nat(), w.var(w.type_nat(), 0)));
+    EXPECT_EQ(w.app(int_id, n23), n23);
 }
 
 TEST(Lambda, PolyIdPredicative) {
@@ -56,44 +56,7 @@ TEST(Lambda, PolyIdPredicative) {
     auto x = w.var(T_2, 0, {"x"});
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x))->as<Lambda>();
 
-    ASSERT_FALSE(poly_id->domain()->assignable(poly_id->type()));
-}
-
-TEST(Lambda, Normalization) {
-    World w;
-    auto B = w.type_bool();
-    auto N = w.type_nat();
-    auto I = w.lambda(N, w.var(N, 0));
-    auto fNNBNI = w.axiom(w.pi({N, N, B, N, w.pi(N, N)}, w.star()), {"fNNBNI"});
-    auto fNNNNI = w.axiom(w.pi({N, N, N, N, w.pi(N, N)}, w.star()), {"fNNNNI"});
-    auto gNNBNI = w.axiom(w.pi({N, N, B, N, w.pi(N, N)}, N), {"gNNBNI"});
-    auto gNNNNI = w.axiom(w.pi({N, N, N, N, w.pi(N, N)}, N), {"gNNNNI"});
-    auto sNNB = w.sigma({N, N, B});
-    auto sNNN = w.sigma({N, N, N});
-    auto vNNB = w.var(sNNB, 0);
-    auto vNNN = w.var(sNNN, 0);
-
-    ASSERT_EQ(w.pi(sNNB,      w.app(fNNBNI, {w.extract(vNNB, 0_s), w.extract(vNNB, 1), w.extract(vNNB, 2), w.var(N, 7), I})),
-              w.pi({N, N, B}, w.app(fNNBNI, {w.var(N, 2),          w.var(N, 1),        w.var(B, 0),        w.var(N, 9), I})));
-    ASSERT_EQ(w.pi(sNNN,      w.app(fNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I})),
-              w.pi({N, N, N}, w.app(fNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 9), I})));
-
-    ASSERT_EQ(w.lambda(sNNB,      w.app(gNNBNI, {w.extract(vNNB, 0_s), w.extract(vNNB, 1), w.extract(vNNB, 2), w.var(N, 7), I})),
-              w.lambda({N, N, B}, w.app(gNNBNI, {w.var(N, 2),          w.var(N, 1),        w.var(B, 0),        w.var(N, 9), I})));
-    ASSERT_EQ(w.lambda(sNNN,      w.app(gNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I})),
-              w.lambda({N, N, N}, w.app(gNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 9), I})));
-
-    auto l1a = w.nominal_lambda(sNNB, N)     ->set(w.app(gNNBNI, {w.extract(vNNB, 0_s), w.extract(vNNB, 1), w.extract(vNNB, 2), w.var(N, 7), I}));
-    auto l1b = w.nominal_lambda({N, N, B}, N)->set(w.app(gNNBNI, {w.var(N, 2),          w.var(N, 1),        w.var(B, 0),        w.var(N, 9), I}));
-    ASSERT_EQ(l1a->type(), l1b->type());
-    ASSERT_EQ(l1a->body(), l1b->body());
-    ASSERT_NE(l1a, l1b);
-
-    auto l2a = w.nominal_lambda(sNNN, N)     ->set(w.app(gNNNNI, {w.extract(vNNN, 0_s), w.extract(vNNN, 1), w.extract(vNNN, 2), w.var(N, 7), I}));
-    auto l2b = w.nominal_lambda({N, N, N}, N)->set(w.app(gNNNNI, {w.var(N, 2),          w.var(N, 1),        w.var(N, 0),        w.var(N, 9), I}));
-    ASSERT_EQ(l2a->type(), l2b->type());
-    ASSERT_EQ(l2a->body(), l2b->body());
-    ASSERT_NE(l2a, l2b);
+    EXPECT_FALSE(poly_id->domain()->assignable(poly_id->type()));
 }
 
 static const int test_num_vars = 1000;
@@ -107,14 +70,14 @@ TEST(Lambda, AppCurry) {
     for (int i = 0; i < test_num_vars; ++i)
         cur = w.app(cur, w.val_nat_64());
 
-    ASSERT_EQ(cur, w.val_nat_32());
+    EXPECT_EQ(cur, w.val_nat_32());
 }
 
 TEST(Lambda, AppArity) {
     World w;
-    auto l = w.lambda(DefArray(test_num_vars, w.type_nat()), w.val_nat_32());
+    auto l = w.lambda(w.sigma(DefArray{test_num_vars, w.type_nat()}), w.val_nat_32());
     auto r = w.app(l, DefArray(test_num_vars, w.val_nat_64()));
-    ASSERT_EQ(r, w.val_nat_32());
+    EXPECT_EQ(r, w.val_nat_32());
 }
 
 TEST(Lambda, EtaConversion) {
@@ -122,13 +85,16 @@ TEST(Lambda, EtaConversion) {
     auto N = w.type_nat();
 
     auto f = w.axiom(w.pi(N, N), {"f"});
-    ASSERT_EQ(w.lambda(N, w.app(f, w.var(N, 0))), f);
+    EXPECT_EQ(w.lambda(N, w.app(f, w.var(N, 0))), f);
 
-    auto g = w.axiom(w.pi({N, N}, N), {"g"});
-    ASSERT_EQ(w.lambda({N, N}, w.app(g, {w.var(N, 1), w.var(N, 0)})), g);
-    ASSERT_NE(w.lambda({N, N, N}, w.app(g, {w.var(N, 0), w.var(N, 1)})), g);
+    auto g = w.axiom(w.pi(w.sigma({N, N}), N), {"g"});
+    auto NxN = w.sigma({N, N});
+    auto NxNxN = w.sigma({N, N, N});
+    EXPECT_EQ(w.lambda(NxN, w.app(g, w.tuple({w.extract(w.var(NxN, 0), 0), w.extract(w.var(NxN, 0), 1)}))), g);
+    EXPECT_NE(w.lambda(NxN, w.app(g, w.tuple({w.extract(w.var(NxN, 0), 1), w.extract(w.var(NxN, 0), 0)}))), g);
+    EXPECT_NE(w.lambda(NxNxN, w.app(g, w.tuple({w.extract(w.var(NxNxN, 0), 0), w.extract(w.var(NxNxN, 0), 1)}))), g);
 
-    auto h = w.axiom(w.pi({N, N, N}, N), {"h"});
-    ASSERT_EQ(w.lambda({N, N, N}, w.app(h, {w.var(N, 2), w.var(N, 1), w.var(N, 0)})), h);
-    ASSERT_NE(w.lambda({N, N, N}, w.app(h, {w.var(N, 2), w.var(N, 0), w.var(N, 1)})), h);
+    auto h = w.axiom(w.pi(w.sigma({N, N, N}), N), {"h"});
+    EXPECT_EQ(w.lambda(NxNxN, w.app(h, w.tuple({w.extract(w.var(NxNxN, 0), 0), w.extract(w.var(NxNxN, 0), 1), w.extract(w.var(NxNxN, 0), 2)}))), h);
+    EXPECT_NE(w.lambda(NxNxN, w.app(h, w.tuple({w.extract(w.var(NxNxN, 0), 2), w.extract(w.var(NxNxN, 0), 1), w.extract(w.var(NxNxN, 0), 0)}))), h);
 }

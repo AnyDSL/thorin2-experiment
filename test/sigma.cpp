@@ -1,24 +1,26 @@
 #include "gtest/gtest.h"
 
 #include "thorin/world.h"
+#include "thorin/frontend/parser.h"
 
 using namespace thorin;
 
 TEST(Sigma, Assign) {
     World w;
     auto sig = w.sigma({w.star(), w.var(w.star(), 0)})->as<Sigma>();
-    ASSERT_TRUE(sig->is_dependent());
-    ASSERT_TRUE(sig->assignable(w.tuple({w.type_nat(), w.val_nat(42)})));
-    ASSERT_FALSE(sig->assignable(w.tuple({w.type_nat(), w.val_bool_bot()})));
+    EXPECT_TRUE(sig->is_dependent());
+    EXPECT_TRUE(sig->assignable(w.tuple({w.type_nat(), w.val_nat(42)})));
+    EXPECT_FALSE(sig->assignable(w.tuple({w.type_nat(), w.val_bool_bot()})));
 }
 
 TEST(Sigma, ExtractAndSingleton) {
     World w;
     auto n23 = w.val_nat(23);
     auto n42 = w.val_nat(42);
+    auto NxN = w.sigma({w.type_nat(), w.type_nat()});
 
-    auto fst = w.lambda({w.type_nat(), w.type_nat()}, w.var(w.type_nat(), 1));
-    auto snd = w.lambda({w.type_nat(), w.type_nat()}, w.var(w.type_nat(), 0));
+    auto fst = w.lambda(NxN, w.extract(w.var(NxN, 0), 0));
+    auto snd = w.lambda(NxN, w.extract(w.var(NxN, 0), 1));
     ASSERT_EQ(w.app(fst, {n23, n42}), w.val_nat(23));
     ASSERT_EQ(w.app(snd, {n23, n42}), w.val_nat(42));
 
@@ -47,7 +49,7 @@ TEST(Sigma, Unit) {
     auto lam = w.lambda(unit, tuple0)->as<Lambda>();
     ASSERT_EQ(lam->domain(), unit);
     ASSERT_EQ(lam->type()->body(), unit);
-    auto pi = w.pi(Defs({}), unit);
+    auto pi = w.pi(w.sigma({}), unit);
     ASSERT_EQ(pi, lam->type());
     auto apped = w.app(lam, tuple0);
     ASSERT_EQ(tuple0, apped);

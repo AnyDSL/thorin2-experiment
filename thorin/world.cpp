@@ -321,19 +321,6 @@ const Pi* WorldBase::pi(const Def* domain, const Def* body, const Def* q, Debug 
     return unify<Pi>(2, *this, type, domain, body, dbg);
 }
 
-const Def* maybe_unflatten(WorldBase& w, const Def* domain, const Def* body) {
-    auto arity = domain->arity()->as<Axiom>();
-    if (arity != nullptr && arity->box().get_u64() > 1) {
-        return unflatten(body, w.var(domain, 0));
-    }
-    return body;
-}
-
-const Pi* WorldBase::pi(Defs domains, const Def* body, const Def* qualifier, Debug dbg) {
-    auto domain = sigma(domains);
-    return pi(domain, maybe_unflatten(*this, domain, body), qualifier, dbg);
-}
-
 const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     if (auto def_type = def->type()->isa<Intersection>()) {
         assert(any_of(type, def_type->ops()) && "picked type must be a part of the intersection type");
@@ -357,16 +344,6 @@ const Def* WorldBase::lambda(const Def* domain, const Def* body, const Def* type
     }
 
     return unify<Lambda>(1, *this, p, body, dbg);
-}
-
-const Def* WorldBase::lambda(Defs domains, const Def* body, const Def* type_qualifier, Debug dbg) {
-    switch (domains.size()) {
-        case 0: return lambda(unit(), body, type_qualifier, dbg);
-        case 1: return lambda(domains.front(), body, type_qualifier, dbg);
-        default:
-            auto p = pi(domains, body->type(), type_qualifier, dbg);
-            return lambda(p->domain(), maybe_unflatten(*this, p->domain(), body), type_qualifier, dbg);
-    }
 }
 
 Lambda* WorldBase::nominal_lambda(const Def* domain, const Def* codomain, const Def* type_qualifier, Debug dbg) {
@@ -631,8 +608,9 @@ World::World() {
     auto N = type_nat_  = axiom(star(), {"nat" });
     auto S = star();
 
-    type_i_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
-    type_r_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});
+    auto sigQNN = sigma({Q, N, N});
+    type_i_ = axiom(pi(sigQNN, star(extract(var(sigQNN, 0), 0))), {"int" });
+    type_r_ = axiom(pi(sigQNN, star(extract(var(sigQNN, 0), 0))), {"real"});
 
     val_bool_[0] = assume(B, {false}, {"⊥"});
     val_bool_[1] = assume(B, {true }, {"⊤"});
@@ -684,7 +662,7 @@ static std::tuple<const Def*, const Def*> shape_and_flags(const Def* def) {
         app = def->as<App>();
         shape = def->world().arity(1);
     }
-    return {shape, def->world().tuple(app->args())};
+    return {shape, app->arg()};
 }
 
 #define CODE(ir)                                                                            \

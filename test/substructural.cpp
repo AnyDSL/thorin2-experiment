@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "thorin/world.h"
+#include "thorin/frontend/parser.h"
 
 using namespace thorin;
 
@@ -8,7 +9,7 @@ using namespace thorin;
 #define print_value_type(x) do{ std::cout << "<" << x->gid() << "> " << (x->name() == "" ? #x : x->name()) << " = " << x << ": " << x->type() << endl; }while(0)
 
 TEST(Qualifiers, Lattice) {
-    World w;
+    WorldBase w;
     auto U = Qualifier::Unlimited;
     auto R = Qualifier::Relevant;
     auto A = Qualifier::Affine;
@@ -36,7 +37,7 @@ TEST(Qualifiers, Lattice) {
 }
 
 TEST(Qualifiers, Variants) {
-    World w;
+    WorldBase w;
     auto u = w.unlimited();
     auto r = w.relevant();
     auto a = w.affine();
@@ -74,7 +75,7 @@ TEST(Qualifiers, Variants) {
 }
 
 TEST(Qualifiers, Kinds) {
-    World w;
+    WorldBase w;
     auto u = w.unlimited();
     auto r = w.relevant();
     auto a = w.affine();
@@ -96,7 +97,7 @@ TEST(Qualifiers, Kinds) {
 
 #if 0
 TEST(Substructural, Misc) {
-    World w;
+    WorldBase w;
     //auto R = Qualifier::Relevant;
     auto A = Qualifier::Affine;
     auto L = Qualifier::Linear;
@@ -152,90 +153,76 @@ TEST(Substructural, Misc) {
 #endif
 
 TEST(Substructural, UnlimitedRefs) {
-    World w;
+    WorldBase w;
+    Env env;
     auto Star = w.star();
-    auto Unit = w.unit();
-    //auto Nat = w.type_nat();
-    //auto n42 = w.val_nat(42);
-    //auto n0 = w.val_nat_0();
-    auto T = [&](int i){ return w.var(Star, i, {"T"}); };
+    auto Nat = w.axiom(Star, {"Nat"});
+    env["Nat"] = Nat;
+    auto n42 = w.assume(Nat, 42);
+    env["n42"] = n42;
 
     auto Ref = w.axiom(w.pi(Star, Star), {"Ref"});
-    print_value_type(Ref);
-    auto app_Ref_T0 = w.app(Ref, T(0));
-    auto NewRef = w.axiom(w.pi({Star, T(0)}, w.app(Ref, T(1))), {"NewRef"});
-    print_value_type(NewRef);
-    auto ReadRef = w.axiom(w.pi({Star, w.app(Ref, T(0))}, T(1)), {"ReadRef"});
-    print_value_type(ReadRef);
-    auto WriteRef = w.axiom(w.pi({Star, app_Ref_T0, T(1)}, Unit), {"WriteRef"});
-    print_value_type(WriteRef);
-    auto FreeRef = w.axiom(w.pi({Star, app_Ref_T0}, Unit), {"FreeRef"});
-    print_value_type(FreeRef);
-    // TODO example use with reductions, etc
+    env["Ref"] = Ref;
+    auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. Ref(T)", env), {"NewRef"});
+    env["NewRef"] = NewRef;
+    auto ReadRef = w.axiom(parse(w, "ΠT: *. ΠRef(T). T", env), {"ReadRef"});
+    env["ReadRef"] = ReadRef;
+    auto WriteRef = w.axiom(parse(w, "ΠT: *. Π[Ref(T), T]. []", env), {"WriteRef"});
+    env["WriteRef"] = WriteRef;
+    auto FreeRef = w.axiom(parse(w, "ΠT: *. ΠRef(T). []", env), {"FreeRef"});
+    env["FreeRef"] = FreeRef;
+    auto ref42 = parse(w, "(NewRef(Nat))(n42)", env);
+    EXPECT_EQ(ref42->type(), parse(w, "Ref(Nat)", env));
+    auto read42 = w.app(w.app(ReadRef, Nat), ref42);
+    EXPECT_EQ(read42->type(), Nat);
+    // TODO tests for write/free
 }
 
 TEST(Substructural, AffineRefs) {
-    World w;
+    WorldBase w;
+    Env env;
     auto a = w.affine();
     auto Star = w.star();
-    auto Unit = w.unit();
-    //auto Nat = w.type_nat();
-    //auto n42 = w.val_nat(42);
-    //auto n0 = w.val_nat_0();
-    //auto ANat = w.type_nat(a);
-    auto T = [&](int i){ return w.var(Star, i, {"T"}); };
 
     auto Ref = w.axiom(w.pi(Star, w.star(a)), {"ARef"});
-    print_value_type(Ref);
-    auto app_Ref_T0 = w.app(Ref, T(0));
-    ASSERT_EQ(app_Ref_T0->qualifier(), a);
-    auto NewRef = w.axiom(w.pi({Star, T(0)}, w.app(Ref, T(1))), {"NewARef"});
-    print_value_type(NewRef);
-    // ReadRef : Π(*).Π(ARef[<0:*>]).Σ(<1:*>, ARef[<2:*>])
-    auto ReadRef = w.axiom(w.pi({Star, app_Ref_T0}, w.sigma({T(1), w.app(Ref, T(2))})), {"ReadARef"});
-    print_value_type(ReadRef);
-    auto WriteRef = w.axiom(w.pi({Star, app_Ref_T0, T(1)}, Unit), {"WriteARef"});
-    print_value_type(WriteRef);
-    auto FreeRef = w.axiom(w.pi({Star, app_Ref_T0}, Unit), {"FreeARef"});
-    print_value_type(FreeRef);
+    env["ARef"] = Ref;
+
+    auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. ARef(T)", env), {"NewARef"});
+    env["NewARef"] = NewRef;
+    auto ReadRef = w.axiom(parse(w, "ΠT: *. ΠARef(T). [T, ARef(T)]", env), {"ReadARef"});
+    env["ReadARef"] = ReadRef;
+    auto WriteRef = w.axiom(parse(w, "ΠT: *. Π[ARef(T), T]. ARef(T)", env), {"WriteARef"});
+    env["WriteARef"] = WriteRef;
+    auto FreeRef = w.axiom(parse(w, "ΠT: *. ΠARef(T). []", env), {"FreeARef"});
+    env["FreeARef"] = FreeRef;
+
     // TODO example use with reductions, etc
 }
 
 TEST(Substructural, AffineCapabilityRefs) {
-    World w;
+    WorldBase w;
+    Env env;
     auto a = w.affine();
     auto Star = w.star();
-    auto Unit = w.unit();
-    auto Nat = w.type_nat();
-    auto n42 = w.val_nat(42);
-    //auto n0 = w.val_nat_0();
-    //auto ANat = w.type_nat(a);
-    auto T = [&](int i){ return w.var(Star, i, {"T"}); };
+    auto Nat = w.axiom(Star, {"Nat"});
+    auto n42 = w.assume(Nat, 42);
 
-    auto Ref = w.axiom(w.pi({Star, Star}, Star), {"CRef"});
+    auto Ref = w.axiom(w.pi(w.sigma({Star, Star}), w.star(a)), {"CRef"});
+    env["CRef"] = Ref;
     auto Cap = w.axiom(w.pi(Star, w.star(a)), {"ACap"});
-    print_value_type(Ref);
-    print_value_type(Cap);
-    auto C = [&](int i){ return w.var(Star, i, {"C"}); };
-    auto NewRef = w.axiom(w.pi(Star, w.pi(T(0), w.sigma({Star, w.app(Ref, {T(2), C(0)}), w.app(Cap, C(1))}))),
-                          {"NewCRef"});
-    print_value_type(NewRef);
-    // ReadRef : Π(T:*).Π(C:*, CRef[T, C], ᴬACap[C]).ᴬΣ(T, ᴬACap[C])
-    auto ReadRef = w.axiom(w.pi(Star, w.pi({Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))},
-                                                w.sigma({T(3), w.app(Cap, C(3))}))), {"ReadCRef"});
-    print_value_type(ReadRef);
-    // AliasReadRef : Π(T:*, C:*, CRef[T, C]).T
-    auto AliasReadRef = w.axiom(w.pi({Star, Star, w.app(Ref, {T(1), C(0)})}, T(2)),
-                                {"AliasReadCRef"});
-    print_value_type(AliasReadRef);
-    // WriteRef : Π(T:*, C:*, CRef[T, C], ᴬACap[C], T).ᴬACap[C]
-    auto WriteRef = w.axiom(w.pi({Star, Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1)), T(3)},
-                                  w.app(Cap, C(3))), {"WriteCRef"});
-    print_value_type(WriteRef);
-    // FreeRef : Π(T:*, C:*, CRef[T, C], ᴬACap[C]).()
-    auto FreeRef = w.axiom(w.pi({Star, Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, C(1))},
-                                  Unit), {"FreeCRef"});
-    print_value_type(FreeRef);
+    env["ACap"] = Cap;
+
+    auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C:*, CRef(T, C), ACap(C)]", env), {"NewCRef"});
+    env["NewCRef"] = NewRef;
+    auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, CRef(T, C), ACap(C)]. [T, ACap(C)]", env), {"ReadCRef"});
+    env["ReadCRef"] = ReadRef;
+    auto AliasReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, CRef(T, C)]. T", env), {"AliasReadCRef"});
+    env["AliasReadCRef"] = AliasReadRef;
+    auto WriteRef = w.axiom(parse(w, "ΠT: *. Π[C: *, CRef(T, C), ACap(C), T]. ACap(C)", env), {"WriteCRef"});
+    env["WriteCRef"] = WriteRef;
+    auto FreeRef = w.axiom(parse(w, "ΠT: *. Π[C: *, CRef(T, C), ACap(C)]. []", env), {"FreeCRef"});
+    env["FreeCRef"] = FreeRef;
+
     auto ref42 = w.app(w.app(NewRef, Nat), n42, {"&42"});
     auto phantom = w.extract(ref42, 0_s);
     print_value_type(ref42);
@@ -249,53 +236,40 @@ TEST(Substructural, AffineCapabilityRefs) {
 }
 
 TEST(Substructural, AffineFractionalCapabilityRefs) {
-    World w;
+    WorldBase w;
+    Env env;
     auto a = w.affine();
     auto Star = w.star();
-    auto Unit = w.unit();
-    auto Nat = w.type_nat();
-    auto n42 = w.val_nat(42);
-    auto n0 = w.val_nat_0();
-    //auto ANat = w.type_nat(a);
-    auto T = [&](int i){ return w.var(Star, i, {"T"}); };
+    auto Nat = w.axiom(Star, {"Nat"});
+    auto n42 = w.assume(Nat, 42);
+    auto n0 = w.assume(Nat, 0);
 
-    auto Ref = w.axiom(w.pi({Star, Star}, Star), {"FRef"});
-    // TODO Replace Star below by a more precise kind allowing only Wr/Rd
+    auto Ref = w.axiom(w.pi(w.sigma({Star, Star}), Star), {"FRef"});
+    env["FRef"] = Ref;
     auto Write = w.sigma_type(0, {"Wr"});
+    env["Wr"] = Write;
+    // TODO Replace Star by a more precise kind allowing only Wr/Rd
     auto Read = w.axiom(w.pi(Star, Star), {"Rd"});
-    print_value_type(Write);
-    print_value_type(Read);
-    auto Cap = w.axiom(w.pi({Star, Star}, w.star(a)), {"FCap"});
-    print_value_type(Cap);
-    auto C = [&](int i){ return w.var(Star, i, {"C"}); };
-    auto F = [&](int i){ return w.var(Star, i, {"F"}); };
-    auto new_ref_ret = w.sigma({Star, w.app(Ref, {T(2), C(0)}), w.app(Cap, {C(1), Write})});
-    auto NewRef = w.axiom(w.pi(Star, w.pi(T(0), new_ref_ret), {"NewFRef"}));
-    print_value_type(NewRef);
-    // ReadRef : Π(T:*).Π(C:*, F:*, FRef[T, C], ᴬFCap[C, F]).ᴬΣ(T, ᴬFCap[C, F])
-    auto ReadRef = w.axiom(w.pi(Star,
-                                w.pi({Star, Star, w.app(Ref, {T(2), C(1)}), w.app(Cap, {C(2), F(1)})},
-                                     w.sigma({T(4), w.app(Cap, {C(4), F(3)})}))), {"ReadFRef"});
+    env["Rd"] = Read;
+    auto Cap = w.axiom(w.pi(w.sigma({Star, Star}), w.star(a)), {"FCap"});
+    env["FCap"] = Cap;
+
+    auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C:*, FRef(T, C), FCap(C, Wr)]", env), {"NewFRef"});
+    env["NewFRef"] = NewRef;
+    auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, F:*, FRef(T, C), FCap(C, F)]. [T, FCap(C, F)]", env), {"ReadFRef"});
+    env["ReadFRef"] = ReadRef;
     print_value_type(ReadRef);
-    // WriteRef : Π(T:*).Π(C:*, FRef[T, C], ᴬFCap[C, Wr], T).ᴬFCap[C, Wr]
-    auto WriteRef = w.axiom(w.pi(Star,
-                                 w.pi({Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, {C(1), Write}), T(3)},
-                                     w.app(Cap, {C(3), Write})), {"WriteFRef"}));
+    auto WriteRef = w.axiom(parse(w, "ΠT: *. Π[C: *, FRef(T, C), FCap(C, Wr), T]. FCap(C, Wr)", env), {"WriteFRef"});
+    env["WriteFRef"] = WriteRef;
     print_value_type(WriteRef);
-    // // FreeRef : Π(T:*).Π(C:*, FRef[T, C], ᴬFCap[C, Wr]).()
-    auto FreeRef = w.axiom(w.pi(Star, w.pi({Star, w.app(Ref, {T(1), C(0)}), w.app(Cap, {C(1), Write})},
-                                           Unit)), {"FreeFRef"});
+    auto FreeRef = w.axiom(parse(w, "ΠT: *. Π[C: *, FRef(T, C), FCap(C, Wr)]. []", env), {"FreeFRef"});
+    env["FreeFRef"] = FreeRef;
     print_value_type(FreeRef);
-    // SplitFCap : Π(C:*, F:*, ᴬFCap[C, F]).Σ(ᴬFCap[C, Rd(F)], ᴬFCap[C, Rd(F)])
-    auto SplitFCap = w.axiom(w.pi({Star, Star, w.app(Cap, {C(1), F(0)})},
-                                  w.sigma({w.app(Cap, {C(2), w.app(Read, F(1))}),
-                                  w.app(Cap, {C(3), w.app(Read, F(2))})})));
-    print_value_type(SplitFCap);
-    // JoinFCap : Π(C:*, F:*, ᴬFCap[C, Rd(F)], ᴬFCap[C, Rd(F)]).ᴬFCap[C, F]
-    auto JoinFCap = w.axiom(w.pi({Star, Star, w.app(Cap, {C(1), w.app(Read, F(0))}),
-                                  w.app(Cap, {C(2), w.app(Read, F(1))})},
-                                 w.app(Cap, {C(3), F(2)})));
-    print_value_type(JoinFCap);
+    auto SplitFCap = w.axiom(parse(w, "Π[C:*, F:*, FCap(C, F)]. [FCap(C, Rd(F)), FCap(C, Rd(F))]", env), {"SplitFCap"});
+    env["SplitFCap"] = SplitFCap;
+    auto JoinFCap = w.axiom(parse(w, "Π[C:*, F:*, FCap(C, Rd(F)), FCap(C, Rd(F))]. FCap(C, F)", env), {"JoinFCap"});
+    env["JoinFCap"] = JoinFCap;
+
     auto ref42 = w.app(w.app(NewRef, Nat), n42, {"&42"});
     auto phantom = w.extract(ref42, 0_s);
     print_value_type(ref42);
