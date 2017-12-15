@@ -61,6 +61,7 @@ add_executable(coc
     thorin/frontend/parser.cpp
     thorin/frontend/parser.h
     thorin/frontend/token.h
+    thorin/frontend/token.cpp
     thorin/matchers/types.h
     thorin/matchers/literals.h
     thorin/matchers/ops.h
