@@ -543,11 +543,7 @@ const Def* WorldBase::tuple(Defs defs, Debug dbg) {
     size_t size = defs.size();
     if (size == 1)
         return defs.front();
-    auto types = DefArray(size);
-    for (size_t i = 0; i != size; ++i) {
-        types[i] = defs[i]->type()->shift_free_vars(-i);
-    };
-    auto type = sigma(types, dbg);
+    auto type = sigma(types(defs), dbg);
 
     auto eta_property = [&]() {
         const Def* same = nullptr;
@@ -671,7 +667,7 @@ World::World() {
     env["F"]    = type_frame_ = axiom(S, {"F"});
     env["int"]  = type_i();
     env["real"] = type_r();
-    
+
     auto i_type_arithop = parse(*this, "Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s;  int(q, f, w)]", env);
     auto r_type_arithop = parse(*this, "Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; real(q, f, w)]", env);
 

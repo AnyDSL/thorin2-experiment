@@ -334,7 +334,7 @@ const Def* Variant::kind_qualifier() const {
 const Def* Def::arity() const {
     if (is_value())
         return type()->arity();
-    THORIN_UNREACHABLE; // must override this
+    return nullptr;
 }
 
 const Def* ArityKind::arity() const { return world().arity(1); }
