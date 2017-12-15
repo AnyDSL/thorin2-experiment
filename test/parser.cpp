@@ -61,7 +61,7 @@ TEST(Parser, NestedBinders) {
     env["nat"] = N;
     env["typ"] = typ;
     env["typ2"] = typ2;
-    auto def = w.pi(sig, w.pi(w.app(typ, w.tuple({w.extract(w.var(sig, 0), (size_t)1), w.extract(w.var(sig, 0), (size_t)0)})),
+    auto def = w.pi(sig, w.pi(w.app(typ, w.tuple({w.extract(w.var(sig, 0), 1), w.extract(w.var(sig, 0), 0)})),
                               w.app(typ2, w.var(sig, 1))));
     ASSERT_EQ(parse(w, "Πp:[n: nat, m: nat]. Πtyp(m, n). typ2(p)", env), def);
 }
@@ -75,9 +75,9 @@ TEST(Parser, NestedBinders2) {
     Env env;
     env["nat"] = N;
     env["typ"] = typ;
-    auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), (size_t)1), (size_t)1),
-                                             w.extract(w.extract(w.var(sig, 0), (size_t)1), (size_t)0),
-                                             w.extract(w.var(sig, 0), (size_t)1)})));
+    auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), 1), 1),
+                                             w.extract(w.extract(w.var(sig, 0), 1), 0),
+                                             w.extract(w.var(sig, 0), 1)})));
     ASSERT_EQ(parse(w, "Π[m: nat, n: [n0 : nat, n1: nat]]. typ(n1, n0, n)", env), def);
 }
 
@@ -87,14 +87,14 @@ TEST(Parser, NestedDependentBinders) {
     auto N = w.axiom(S, {"nat"});
     auto dtyp = w.axiom(w.pi(N, S), {"dt"});
     auto npair = w.sigma({N, N});
-    auto sig = w.sigma({npair, w.app(dtyp, w.extract(w.var(npair, 0), (size_t)1))});
+    auto sig = w.sigma({npair, w.app(dtyp, w.extract(w.var(npair, 0), 1))});
     auto typ = w.axiom(w.pi(w.sigma({N, w.app(dtyp, w.var(N, 0))}), S), {"typ"});
     Env env;
     env["nat"] = N;
     env["dt"] = dtyp;
     env["typ"] = typ;
-    auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), (size_t)0), (size_t)1),
-                                             w.extract(w.var(sig, 0), (size_t)1)})));
+    auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), 0), 1),
+                                             w.extract(w.var(sig, 0), 1)})));
     ASSERT_EQ(parse(w, "Π[[n0 : nat, n1: nat], d: dt(n1)]. typ(n1, d)", env), def);
 }
 
@@ -105,7 +105,7 @@ TEST(Parser, IntArithOp) {
     auto N = w.axiom(S, {"nat" });
     auto MA = w.multi_arity_kind();
     auto sig = w.sigma({Q, N, N});
-    auto type_i = w.axiom(w.pi(sig, w.star(w.extract(w.var(sig, 0), (size_t)0))), {"int"});
+    auto type_i = w.axiom(w.pi(sig, w.star(w.extract(w.var(sig, 0), 0))), {"int"});
     Env env;
     env["nat"]  = N;
     env["int"]  = type_i;

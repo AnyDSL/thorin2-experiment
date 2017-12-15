@@ -164,9 +164,15 @@ public:
         return unify<Axiom>(0, *this, type, box, dbg);
     }
     const Def* extract(const Def* def, const Def* index, Debug dbg = {});
+    const Def* extract(const Def* def, int index, Debug dbg = {}) {
+        return extract(def, size_t(index), dbg);
+    }
     const Def* extract(const Def* def, size_t index, Debug dbg = {});
     const Def* index(size_t arity, size_t index, Location location = {});
     const Def* insert(const Def* def, const Def* index, const Def* value, Debug dbg = {});
+    const Def* insert(const Def* def, int index, const Def* value, Debug dbg = {}) {
+        return insert(def, size_t(index), value, dbg);
+    }
     const Def* insert(const Def* def, size_t index, const Def* value, Debug dbg = {});
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
