@@ -103,6 +103,8 @@ private:
     std::string identifier_;
 };
 
+std::ostream& operator<<(std::ostream& os, const Token& t);
+
 }
 
 #endif // TOKEN_H

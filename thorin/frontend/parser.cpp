@@ -56,7 +56,7 @@ const Def* Parser::parse_def() {
     if (def != nullptr)
         return def;
 
-    assertf(false, "definition expected in {}", ahead().location());
+    assertf(false, "definition expected at {}", ahead());
 }
 
 const Def* Parser::parse_var_or_binder() {
