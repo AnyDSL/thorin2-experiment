@@ -59,15 +59,6 @@ const Def* Parser::parse_def() {
     assertf(false, "definition expected in {}", ahead().location());
 }
 
-inline const Def* shift_def(WorldBase& world, const Def* def, size_t shift) {
-    if (def->is_nominal()) return def;
-    if (auto var = def->isa<Var>())
-        return world.var(shift_def(world, var->type(), shift), var->index() + shift);
-    Array<const Def*> ops(def->num_ops());
-    for (size_t i = 0; i < def->num_ops(); i++) ops[i] = shift_def(world, def->op(i), shift);
-    return def->rebuild(shift_def(world, def->type(), shift), ops);
-}
-
 const Def* Parser::parse_var_or_binder() {
     Tracker tracker(this);
     if (ahead().isa(Token::Tag::Identifier)) {
@@ -85,7 +76,7 @@ const Def* Parser::parse_var_or_binder() {
             });
             if (it != binders_.rend()) {
                 auto index = depth_ - it->depth;
-                auto type = shift_def(world_, bruijn_[it->depth], index);
+                auto type = bruijn_[it->depth]->shift_free_vars(-index);
                 const Def* var = world_.var(type, index - 1, tracker.location());
                 for (auto i : it->ids)
                     var = world_.extract(var, i, tracker.location());
