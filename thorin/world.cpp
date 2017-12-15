@@ -668,14 +668,15 @@ World::World() {
     env["F"]    = type_frame_ = axiom(S, {"F"});
     env["int"]  = type_i();
     env["real"] = type_r();
-    auto i_type_arithop = parse(*this, "Π[s: 𝕄, q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s;  int(q, f, w)]", env);
-    auto r_type_arithop = parse(*this, "Π[s: 𝕄, q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; real(q, f, w)]", env);
+    
+    auto i_type_arithop = parse(*this, "Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s;  int(q, f, w)]", env);
+    auto r_type_arithop = parse(*this, "Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; real(q, f, w)]", env);
 
     for (size_t o = 0; o != Num_IArithOp; ++o) iarithop_[o] = axiom(i_type_arithop, {iarithop2str(iarithop(o))});
     for (size_t o = 0; o != Num_RArithOp; ++o) rarithop_[o] = axiom(r_type_arithop, {rarithop2str(rarithop(o))});
 
-    auto i_type_cmp = parse(*this, "Π[s: 𝕄, rel: nat, q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s; bool]", env);
-    auto r_type_cmp = parse(*this, "Π[s: 𝕄, rel: nat, q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; bool]", env);
+    auto i_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s; bool]", env);
+    auto r_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; bool]", env);
     op_icmp_  = axiom(i_type_cmp, {"icmp"});
     op_rcmp_  = axiom(r_type_cmp, {"rcmp"});
     op_lea_   = axiom(parse(*this, "Π[s: 𝕄, ts: [s; *], as: nat]. Π[ptr([j: s; (ts#j)], as), i: s]. ptr((ts#i), as)", env), {"lea"});
@@ -693,16 +694,29 @@ const Axiom* World::val_nat(int64_t val, Location location) {
     return result;
 }
 
+static std::tuple<const Def*, const Def*> shape_and_flags(const Def* def) {
+    const Def* shape;
+    const App* app;
+    if (auto variadic = def->isa<Variadic>()) {
+        app = variadic->body()->as<App>();
+        shape = variadic->arity();
+    } else {
+        app = def->as<App>();
+        shape = def->world().arity(1);
+    }
+    return {shape, def->world().tuple(app->args())};
+}
+
 #define CODE(ir)                                                                            \
 template<ir ## arithop O>                                                                   \
 const Def* World::op(const Def* a, const Def* b, Debug dbg) {                               \
-    ir ## Type t(a->type());                                                                \
-    return app(app(op<O>(), {arity(1), t.qualifier(), t.flags(), t.width()}), {a, b}, dbg);                 \
+    auto [shape, flags] = shape_and_flags(a->type());                                       \
+    return app(app(app(op<O>(), shape), flags), {a, b}, dbg);                               \
 }                                                                                           \
                                                                                             \
 const Def* World::op_ ## ir ## cmp(const Def* rel, const Def* a, const Def* b, Debug dbg) { \
-    ir ## Type t(a->type());                                                                \
-    return app(app(op_ ## ir ## cmp(), {arity(1), rel, t.qualifier(), t.flags(), t.width()}), {a, b}, dbg);                 \
+    auto [shape, flags] = shape_and_flags(a->type());                                       \
+    return app(app(app(app(op_ ## ir ## cmp(), rel), shape), flags), {a, b}, dbg);          \
 }
 CODE(i)
 CODE(r)
