@@ -24,6 +24,7 @@ namespace thorin {
     f(Semicolon,        ";") \
     f(Star,             "*") \
     f(Sharp,            "#") \
+    f(Arrow,            "<-") \
     f(Backslash,        "\\") \
     f(Pi,               "\\pi") \
     f(Sigma,            "\\sigma") \

@@ -35,6 +35,9 @@ const Def* Parser::parse_def() {
     else if (accept(Token::Tag::Arity_Kind))        def = world_.arity_kind();
     else if (accept(Token::Tag::Multi_Arity_Kind))  def = world_.multi_arity_kind();
 
+    if (def != nullptr && accept(Token::Tag::Sharp))
+        def = parse_extract_or_insert(tracker, def);
+
     // if another expression follows - we build an app
     auto tag = ahead().tag();
     if (   tag == Token::Tag::Pi
@@ -196,6 +199,16 @@ const Axiom* Parser::parse_assume() {
     auto type = parse_def();
 
     return world_.assume(type, box, tracker.location());
+}
+
+const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {
+    auto b = parse_def();
+    if (accept(Token::Tag::Arrow)) {
+        auto c = parse_def();
+        return world_.insert(a, b, c, tracker.location());
+    }
+
+    return world_.extract(a, b, tracker.location());
 }
 
 Token Parser::next() {

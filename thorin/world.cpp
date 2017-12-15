@@ -650,7 +650,6 @@ World::World() {
     auto B = type_bool_ = axiom(star(), {"bool"});
     auto N = type_nat_  = axiom(star(), {"nat" });
     auto S = star();
-    auto MA = multi_arity_kind();
 
     type_i_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"int" });
     type_r_ = axiom(pi({Q, N, N}, star(var(Q, 2))), {"real"});
@@ -667,37 +666,19 @@ World::World() {
     env["ptr"]  = type_ptr_   = axiom(parse(*this, "Π[*, nat]. *", env), {"ptr"});
     env["M"]    = type_mem_   = axiom(star(Qualifier::Linear), {"M"});
     env["F"]    = type_frame_ = axiom(S, {"F"});
-
-#define VAR(x, X, n)                 \
-    auto v ## x ##  n = var(X, n); \
-    (void)v ## x ## n;
-#define CODE(x, X) \
-    VAR(x, X, 0) VAR(x, X, 1) VAR(x, X, 2) VAR(x, X, 3) VAR(x, X, 4) VAR(x, X, 5) VAR(x, X, 6)
-    CODE(a, MA) CODE(q, Q) CODE(n, N) CODE(s, S)
-#undef CODE
-#undef VAR
-
-    env["int"] = type_i();
+    env["int"]  = type_i();
     env["real"] = type_r();
     auto i_type_arithop = parse(*this, "Π[s: 𝕄, q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s;  int(q, f, w)]", env);
     auto r_type_arithop = parse(*this, "Π[s: 𝕄, q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; real(q, f, w)]", env);
 
-    // arithop table
-    for (size_t o = 0; o != Num_IArithOp; ++o)
-        iarithop_[o] = axiom(i_type_arithop, {iarithop2str(iarithop(o))});
-
-    for (size_t o = 0; o != Num_RArithOp; ++o)
-        rarithop_[o] = axiom(r_type_arithop, {rarithop2str(rarithop(o))});
+    for (size_t o = 0; o != Num_IArithOp; ++o) iarithop_[o] = axiom(i_type_arithop, {iarithop2str(iarithop(o))});
+    for (size_t o = 0; o != Num_RArithOp; ++o) rarithop_[o] = axiom(r_type_arithop, {rarithop2str(rarithop(o))});
 
     auto i_type_cmp = parse(*this, "Π[s: 𝕄, rel: nat, q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s; bool]", env);
     auto r_type_cmp = parse(*this, "Π[s: 𝕄, rel: nat, q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; bool]", env);
-    op_icmp_ = axiom(i_type_cmp, {"icmp"});
-    op_rcmp_ = axiom(r_type_cmp, {"rcmp"});
-
-    {
-        auto lea_type = parse(*this, "Π[S: 𝕄, ts: [S; *], as: nat]. Π[ptr([j: S; ts#j], as), i: S]. ptr(ts#i, as)", env);
-        op_lea_ = axiom(lea_type, {"lea"});
-    }
+    op_icmp_  = axiom(i_type_cmp, {"icmp"});
+    op_rcmp_  = axiom(r_type_cmp, {"rcmp"});
+    op_lea_   = axiom(parse(*this, "Π[s: 𝕄, ts: [s; *], as: nat]. Π[ptr([j: s; (ts#j)], as), i: s]. ptr((ts#i), as)", env), {"lea"});
     op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]", env), {"load"});
     op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});
     op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});

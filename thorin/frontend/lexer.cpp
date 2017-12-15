@@ -116,7 +116,10 @@ Token Lexer::lex() {
         if (accept(')')) return {location(), Token::Tag::R_Paren};
         if (accept('[')) return {location(), Token::Tag::L_Bracket};
         if (accept(']')) return {location(), Token::Tag::R_Bracket};
-        if (accept('<')) return {location(), Token::Tag::L_Angle};
+        if (accept('<')) {
+            if (accept('-')) return {location(), Token::Tag::Arrow};
+            return {location(), Token::Tag::L_Angle};
+        }
         if (accept('>')) return {location(), Token::Tag::R_Angle};
         if (accept(':')) return {location(), Token::Tag::Colon};
         if (accept(',')) return {location(), Token::Tag::Comma};
