@@ -39,6 +39,16 @@ TEST(Parser, SimpleVariadic) {
     ASSERT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. *"), v);
 }
 
+TEST(Parser, Star) {
+    WorldBase w;
+    EXPECT_EQ(parse(w, "*"), w.star());
+    EXPECT_EQ(parse(w, "*ᵁ"), w.star());
+    EXPECT_EQ(parse(w, "*ᴿ"), w.star(Qualifier::Relevant));
+    EXPECT_EQ(parse(w, "*ᴬ"), w.star(Qualifier::Affine));
+    EXPECT_EQ(parse(w, "*ᴸ"), w.star(Qualifier::Linear));
+    EXPECT_EQ(parse(w, "Πq:ℚ.*q"), w.pi(w.qualifier_type(), w.star(w.var(w.qualifier_type(), 0))));
+}
+
 TEST(Parser, ComplexVariadics) {
     WorldBase w;
     auto S = w.star();

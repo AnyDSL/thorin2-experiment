@@ -32,6 +32,10 @@ const Def* Parser::parse_def() {
     else if (ahead().isa(Token::Tag::L_Brace))    def = parse_assume();
     else if (accept(Token::Tag::Qualifier_Type))    def = world_.qualifier_type();
     else if (accept(Token::Tag::Qualifier_Kind))    def = world_.qualifier_kind();
+    else if (accept(Token::Tag::QualifierU))        def = world_.unlimited();
+    else if (accept(Token::Tag::QualifierR))        def = world_.relevant();
+    else if (accept(Token::Tag::QualifierA))        def = world_.affine();
+    else if (accept(Token::Tag::QualifierL))        def = world_.linear();
     else if (accept(Token::Tag::Arity_Kind))        def = world_.arity_kind();
     else if (accept(Token::Tag::Multi_Arity_Kind))  def = world_.multi_arity_kind();
 
@@ -161,6 +165,17 @@ const Def* Parser::parse_lambda() {
 
 const Star* Parser::parse_star() {
     eat(Token::Tag::Star);
+    auto tag = ahead().tag();
+    if (tag == Token::Tag::Backslash
+        || tag == Token::Tag::Identifier
+        || tag == Token::Tag::L_Paren
+        || tag == Token::Tag::QualifierU
+        || tag == Token::Tag::QualifierR
+        || tag == Token::Tag::QualifierA
+        || tag == Token::Tag::QualifierL) {
+        auto qualifier = parse_def();
+        return world_.star(qualifier);
+    }
     return world_.star();
 }
 

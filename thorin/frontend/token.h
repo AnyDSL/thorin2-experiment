@@ -25,6 +25,10 @@ namespace thorin {
     f(Star,             "*") \
     f(Sharp,            "#") \
     f(Arrow,            "<-") \
+    f(QualifierU,       "ᵁ") \
+    f(QualifierR,       "ᴿ") \
+    f(QualifierA,       "ᴬ") \
+    f(QualifierL,       "ᴸ") \
     f(Backslash,        "\\") \
     f(Pi,               "\\pi") \
     f(Sigma,            "\\sigma") \

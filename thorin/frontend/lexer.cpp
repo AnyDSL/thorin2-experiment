@@ -148,6 +148,10 @@ Token Lexer::lex() {
                 return {location(), Token::Tag::Qualifier_Kind};
             return {location(), Token::Tag::Qualifier_Type};
         }
+        if (accept(0x001D41)) return {location(), Token::Tag::QualifierU};
+        if (accept(0x001D3F)) return {location(), Token::Tag::QualifierR};
+        if (accept(0x001D2C)) return {location(), Token::Tag::QualifierA};
+        if (accept(0x001D38)) return {location(), Token::Tag::QualifierL};
 
         if (dec(peek()) || sgn(peek())) {
             auto lit = parse_literal();

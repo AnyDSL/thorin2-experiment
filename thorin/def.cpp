@@ -802,7 +802,7 @@ std::ostream& Singleton::stream(std::ostream& os) const {
 }
 
 std::ostream& Star::stream(std::ostream& os) const {
-    return os << op(0) << name();
+    return os << name() << op(0);
 }
 
 std::ostream& Universe::stream(std::ostream& os) const {
