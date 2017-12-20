@@ -216,17 +216,15 @@ const Def* WorldBase::extract(const Def* def, const Def* index, Debug dbg) {
 
             if (auto sigma = type->isa<Sigma>()) {
                 auto type = sigma->op(i);
-                if (type->free_vars().any_end(i)) {
-                    size_t skipped_shifts = 0;
-                    for (size_t delta = 1; delta <= i; ++delta) {
-                        if (type->free_vars().none_begin(skipped_shifts)) {
-                            ++skipped_shifts;
-                            continue;
-                        }
+                //size_t skipped_shifts = 0;
+                for (size_t delta = 1; delta <= i; ++delta) {
+                    //if (type->free_vars().none_begin(skipped_shifts)) {
+                    //    ++skipped_shifts;
+                    //    continue;
+                    //}
 
-                        // this also shifts any Var with i > skipped_shifts by -1
-                        type = type->reduce(extract(def, i - delta), skipped_shifts);
-                    }
+                    // this also shifts any Var with i > skipped_shifts by -1
+                    type = type->reduce(extract(def, i - delta));
                 }
                 return unify<Extract>(2, *this, type, def, index, dbg);
             }
