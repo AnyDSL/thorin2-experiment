@@ -346,10 +346,6 @@ const Def* WorldBase::lambda(const Def* domain, const Def* body, const Def* type
     return unify<Lambda>(1, *this, p, body, dbg);
 }
 
-Lambda* WorldBase::nominal_lambda(const Def* domain, const Def* codomain, const Def* type_qualifier, Debug dbg) {
-    return insert<Lambda>(1, *this, pi(domain, codomain, type_qualifier, dbg), dbg);
-}
-
 const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
     assertf(multi_arity_kind()->assignable(arity), "({} : {}) provided to variadic constructor is not a (multi-) arity",
             arity, arity-> type());
@@ -454,7 +450,6 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
 const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
     if (auto sigma = arity->isa<Sigma>())
         return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
-
 
     if (auto v = arity->isa<Variadic>()) {
         if (auto axiom = v->arity()->isa<Axiom>()) {

@@ -307,7 +307,6 @@ protected:
         mutable const Def* cache_;  ///< Used by App.
         size_t index_;              ///< Used by Var.
         Box box_;                   ///< Used by Axiom.
-        bool normalize_;            ///< Used by nominal Lambda.
     };
     BitSet free_vars_;
 
@@ -383,19 +382,13 @@ private:
 
 class Lambda : public Def {
 private:
-    /// @em Nominal/recursive Lambda
-    Lambda(WorldBase& world, const Pi* type, Debug dbg)
-        : Def(world, Tag::Lambda, type, 1, dbg)
-    {}
     Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg);
 
 public:
     const Def* domain() const { return type()->domain(); }
     const Def* body() const { return op(0); }
     const Def* reduce(Defs) const;
-    Lambda* set(const Def* def);
     const Pi* type() const { return Def::type()->as<Pi>(); }
-    Lambda* stub(WorldBase&, const Def*, Debug) const override;
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 
     std::ostream& stream(std::ostream&) const override;

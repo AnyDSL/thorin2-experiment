@@ -61,10 +61,6 @@ public:
         return lambda(domain, body, unlimited(), dbg);
     }
     const Def* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {});
-    Lambda* nominal_lambda(const Def* domain, const Def* codomain, Debug dbg = {}) {
-        return nominal_lambda(domain, codomain, unlimited(), dbg);
-    }
-    Lambda* nominal_lambda(const Def* domain, const Def* codomain, const Def* type_qualifier, Debug dbg = {});
     //@}
 
     //@{ create App

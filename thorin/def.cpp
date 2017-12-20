@@ -128,10 +128,6 @@ Def* Def::set(size_t i, const Def* def) {
     return this;
 }
 
-Lambda* Lambda::set(const Def* body) {
-    return Def::set(0, body)->as<Lambda>();
-};
-
 void Def::finalize() {
     assert(is_closed());
 
@@ -502,10 +498,6 @@ Axiom* Axiom::stub(WorldBase& to, const Def*, Debug) const {
     assert(&world() != &to);
     assert(is_nominal());
     return const_cast<Axiom*>(this);
-}
-Lambda* Lambda::stub(WorldBase& to, const Def* type, Debug dbg) const {
-    auto pi = type->as<Pi>();
-    return to.nominal_lambda(pi->domain(), pi->body(), pi->qualifier(), dbg);
 }
 Sigma* Sigma::stub(WorldBase& to, const Def* type, Debug dbg) const {
     return to.sigma(type, num_ops(), dbg);

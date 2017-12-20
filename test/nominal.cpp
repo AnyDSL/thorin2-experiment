@@ -38,18 +38,6 @@ TEST(Nominal, SigmaFreeVars) {
     ASSERT_TRUE(sig->free_vars().none_begin(3));
 }
 
-TEST(Nominal, LambdaFreeVars) {
-    World w;
-    auto nat = w.type_nat();
-
-    auto lam = w.nominal_lambda(nat, nat, {"lam"});
-    auto v0 = w.var(nat, 0);
-    auto v1 = w.var(w.pi(nat, nat), 1);
-    lam->set(w.app(v1, v0));
-    ASSERT_TRUE(lam->free_vars().test(0));
-    ASSERT_FALSE(lam->free_vars().any_begin(1));
-}
-
 TEST(Nominal, ReduceWithNominals) {
     World w;
     auto nat = w.type_nat();
@@ -72,32 +60,6 @@ TEST(Nominal, ReduceWithNominals) {
     auto red2 = w.app(lam2, nat);
     ASSERT_FALSE(red2->isa<App>());
     ASSERT_NE(red2->op(0), red2->op(1));
-}
-
-TEST(Nominal, PolymorphicList) {
-    World w;
-    auto nat = w.type_nat();
-    auto star = w.star();
-
-    auto list = w.nominal_lambda(star, star, {"list"});
-    auto cons = w.sigma_type(2, {"cons"});
-    cons->set(0, w.var(star, 0));
-    cons->set(1, w.app(list, w.var(star, 1)));
-    ASSERT_TRUE(cons->is_closed());
-    ASSERT_TRUE(cons->free_vars().any_end(1));
-    print_value_type(cons);
-    auto nil = w.sigma_type(0, {"nil"});
-    ASSERT_TRUE(nil->is_closed());
-    print_value_type(nil);
-    auto cons_or_nil = w.variant(star, {cons, nil});
-    list->set(cons_or_nil);
-    ASSERT_TRUE(list->is_closed());
-    print_value_type(list);
-    auto apped = w.app(list, nat);
-    print_value_type(apped);
-    print_value_type(apped->op(0));
-    print_value_type(apped->op(1));
-    ASSERT_EQ(apped->op(1)->op(0), nat);
 }
 
 TEST(Nominal, PolymorphicListVariantNominal) {
