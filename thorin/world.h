@@ -72,10 +72,6 @@ public:
         return app(callee, tuple(args, dbg), dbg);
     }
     const Def* app(const Def* callee, const Def* arg, Debug dbg = {});
-    // TODO think about removing this:
-    const Def* app(const Def* callee, Debug dbg = {}) {
-        return app(callee, tuple0(), dbg);
-    }
     //@}
 
     //@{ create Sigma
