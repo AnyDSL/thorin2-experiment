@@ -204,7 +204,7 @@ Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
 {}
 
 MultiArityKind::MultiArityKind(WorldBase& world)
-    : Def(world, Tag::MultiArityKind, world.universe(), {}, {"𝔸ₘ"})
+    : Def(world, Tag::MultiArityKind, world.universe(), {}, {"𝕄"})
 {}
 
 Pack::Pack(WorldBase& world, const Def* type, const Def* body, Debug dbg)
@@ -728,12 +728,6 @@ std::ostream& Any::stream(std::ostream& os) const {
 std::ostream& App::stream(std::ostream& os) const {
     auto begin = "(";
     auto end = ")";
-    auto domains = callee()->type()->as<Pi>()->domains();
-    if (std::any_of(domains.begin(), domains.end(), [](auto t) { return t->is_kind(); })) {
-        qualifier_stream(os);
-        begin = "[";
-        end = "]";
-    }
     callee()->name_stream(os);
     return stream_list(os, args(), [&](const Def* def) { def->name_stream(os); }, begin, end);
 }
@@ -810,8 +804,6 @@ std::ostream& Universe::stream(std::ostream& os) const {
 }
 
 std::ostream& Tuple::stream(std::ostream& os) const {
-    if (num_ops() == 0 && is_type())
-        return os << "():[]*";
     return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
 }
 
