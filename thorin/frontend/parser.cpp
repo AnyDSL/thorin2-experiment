@@ -148,6 +148,8 @@ const Def* Parser::parse_sigma_or_variadic() {
             return elem;
         }, "elements of sigma type", first);
     auto sigma = world_.sigma(defs, tracker.location());
+    // shift identifiers declared within the sigma by generating
+    // extracts to the DeBruijn variable \0 (the current binder)
     shift_identifiers(defs.size());
     return sigma;
 }

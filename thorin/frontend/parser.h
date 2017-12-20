@@ -58,8 +58,8 @@ private:
 
     struct Binder {
         std::string name;
-        size_t depth;
-        std::vector<size_t> ids;
+        size_t depth;               // binding depth
+        std::vector<size_t> ids;    // sequence of extract indices
 
         Binder(std::string name = "", size_t depth = 0)
             : name(name), depth(depth)
@@ -107,6 +107,7 @@ private:
         depth_--;
     }
     void shift_identifiers(size_t count) {
+        // shift identifiers declared within a sigma by adding extracts
         std::vector<Binder> shifted;
         size_t new_depth = depth_ - count;
         while (!binders_.empty()) {
