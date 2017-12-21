@@ -294,7 +294,8 @@ const Def* Sigma::kind_qualifier() const {
     if (num_ops() == 0)
         return unlimited;
     auto qualifiers = DefArray(num_ops(), [&](auto i) {
-            return this->op(i)->has_values() ? this->op(i)->qualifier() : unlimited; });
+       // XXX qualifiers should/must not be dependent within a sigma, as we couldn't express the qualifier of the sigma itself then
+       return this->op(i)->has_values() ? this->op(i)->qualifier()->shift_free_vars(-i) : unlimited; });
     return world().variant(world().qualifier_type(), qualifiers);
 }
 

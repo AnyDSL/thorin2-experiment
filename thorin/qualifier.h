@@ -33,7 +33,7 @@ inline bool operator<=(Qualifier lhs, Qualifier rhs) {
 }
 
 constexpr const char* qualifier2str(Qualifier q) {
-    return q == Qualifier::Unlimited ? "" : //ᵁ
+    return q == Qualifier::Unlimited ? "ᵁ" :
         q == Qualifier::Relevant ? "ᴿ" :
         q == Qualifier::Affine ? "ᴬ" :
         "ᴸ";
