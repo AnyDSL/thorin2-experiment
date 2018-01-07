@@ -145,9 +145,6 @@ WorldBase::WorldBase()
         unit_[i] = arity(1, qualifier_[i]);
         unit_val_[i] = index_zero(unit_[i]);
     }
-    // TODO think hard about unit_kind and qualifiers, they are inferred for other sigma kinds (that may have qualifiers), this one is always unrestricted, doe that imply subtyping on qualifiers?
-    unit_kind_ = insert<Variadic>(2, *this, universe_, arity(0), star(), Debug());
-    unit_kind_val_ = insert<Pack>(1, *this, unit_kind_, unit(), Debug());
 }
 
 WorldBase::~WorldBase() {
@@ -394,7 +391,7 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
         auto a = axiom->box().get_u64();
         if (a == 0) {
             if (body->is_kind())
-                return unit_kind();
+                return unify<Variadic>(2, *this, universe(), arity(0), star(body->qualifier()), dbg);
             return unit(body->type()->qualifier());
         }
         if (a == 1) return body->reduce(this->index(1, 0));
@@ -491,7 +488,7 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
         auto a = axiom->box().get_u64();
         if (a == 0) {
             if (body->is_type())
-                return val_unit_kind();
+                return unify<Pack>(1, *this, unit_kind(body->qualifier()), unit(body->qualifier()), dbg);
             return val_unit(body->type()->qualifier());
         }
         if (a == 1) return body->reduce(this->index(1, 0));

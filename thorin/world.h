@@ -85,9 +85,10 @@ public:
     const Def* unit(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
             return unit(cq->box().get_qualifier());
-        return unify<Sigma>(0, *this, star(q), Defs(), Debug("[]"));
+        return arity(1, q);
     }
-    const Def* unit_kind() { return unit_kind_; }
+    const Def* unit_kind(Qualifier q = Qualifier::Unlimited) { return variadic(arity(0), star(q)); }
+    const Def* unit_kind(const Def* q) { return variadic(arity(0), star(q)); }
     //@}
 
     //@{ create Sigma
@@ -136,7 +137,8 @@ public:
             return val_unit(cq->box().get_qualifier());
         return index_zero(arity(1, q));
     }
-    const Def* val_unit_kind() const { return unit_kind_val_; }
+    const Def* val_unit_kind(Qualifier q = Qualifier::Unlimited) { return pack(arity(0), unit(q)); }
+    const Def* val_unit_kind(const Def* q) { return pack(arity(0), unit(q)); }
     //@}
 
     //@{ create Pack
@@ -292,12 +294,12 @@ protected:
     const Axiom* qualifier_type_;
     const Axiom* arity_succ_;
     const Axiom* index_succ_;
-    const Def* unit_kind_;
-    const Def* unit_kind_val_;
     std::array<const Axiom*, 4> qualifier_;
     std::array<const Star*,  4> star_;
     std::array<const Def*, 4> unit_;
     std::array<const Def*, 4> unit_val_;
+    std::array<const Def*, 4> unit_kind_;
+    std::array<const Def*, 4> unit_kind_val_;
     std::array<const ArityKind*, 4> arity_kind_;
     std::array<const MultiArityKind*, 4> multi_arity_kind_;
 };
