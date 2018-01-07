@@ -186,7 +186,7 @@ const Def* Parser::parse_tuple_or_pack() {
     eat(Token::Tag::L_Paren);
 
     if (accept(Token::Tag::R_Paren))
-        return world_.tuple0();
+        return world_.val_unit();
 
     auto first = parse_def();
     if (accept(Token::Tag::Semicolon)) {

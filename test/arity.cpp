@@ -51,7 +51,7 @@ TEST(Arity, Pack) {
     auto a1 = w.arity(1);
     auto a2 = w.arity(2);
     auto unit = w.unit();
-    auto tuple0t = w.tuple0_of_types();
+    auto tuple0t = w.val_unit_kind();
 
     EXPECT_EQ(tuple0t, w.pack({a0, a1, a2}, unit));
     EXPECT_EQ(tuple0t, w.pack({a1, a0}, unit));
@@ -74,7 +74,7 @@ TEST(Arity, Subkinding) {
     EXPECT_TRUE(M->assignable(vA));
 
     auto sig = w.sigma({M, w.variadic(w.var(M, 0), w.star())});
-    EXPECT_TRUE(sig->assignable(w.tuple({a0, w.tuple0_of_types()})));
+    EXPECT_TRUE(sig->assignable(w.tuple({a0, w.val_unit_kind()})));
 }
 
 TEST(Arity, PrefixExtract) {

@@ -28,8 +28,18 @@ public:
 
     //@{ create universe and kinds
     const Universe* universe() const { return universe_; }
-    const ArityKind* arity_kind() const { return arity_kind_; }
-    const MultiArityKind* multi_arity_kind() const { return multi_arity_kind_; }
+    const ArityKind* arity_kind(Qualifier q = Qualifier::Unlimited) const { return arity_kind_[size_t(q)]; }
+    const ArityKind* arity_kind(const Def* q) {
+        if (auto cq = isa_const_qualifier(q))
+            return arity_kind(cq->box().get_qualifier());
+        return unify<ArityKind>(1, *this, q);
+    }
+    const MultiArityKind* multi_arity_kind(Qualifier q = Qualifier::Unlimited) const { return multi_arity_kind_[size_t(q)]; }
+    const MultiArityKind* multi_arity_kind(const Def* q) {
+        if (auto cq = isa_const_qualifier(q))
+            return multi_arity_kind(cq->box().get_qualifier());
+        return unify<MultiArityKind>(1, *this, q);
+    }
     const Star* star(Qualifier q = Qualifier::Unlimited) const { return star_[size_t(q)]; }
     const Star* star(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
@@ -70,15 +80,17 @@ public:
     const Def* app(const Def* callee, const Def* arg, Debug dbg = {});
     //@}
 
-    //@{ create Sigma
-    const Sigma* unit(Qualifier q = Qualifier::Unlimited) { return unit_[size_t(q)]; }
-    const Sigma* unit(const Def* q) {
+    //@{ create Units
+    const Def* unit(Qualifier q = Qualifier::Unlimited) { return unit_[size_t(q)]; }
+    const Def* unit(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
             return unit(cq->box().get_qualifier());
         return unify<Sigma>(0, *this, star(q), Defs(), Debug("[]"));
     }
-    const Sigma* unit_kind() { return unit_kind_; }
+    const Def* unit_kind() { return unit_kind_; }
+    //@}
 
+    //@{ create Sigma
     /// @em structural Sigma types or kinds
     const Def* sigma(Defs defs, Debug dbg = {}) { return sigma(nullptr, defs, dbg); }
     const Def* sigma(const Def* qualifier, Defs, Debug dbg = {});
@@ -103,35 +115,50 @@ public:
     //@{ create Variadic
     const Def* variadic(const Def* arities, const Def* body, Debug dbg = {});
     const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
-    const Def* variadic(size_t a, const Def* body, Debug dbg = {}) { return variadic(arity(a, dbg), body, dbg); }
+    const Def* variadic(size_t a, const Def* body, Debug dbg = {}) {
+        return variadic(arity(a, Qualifier::Unlimited, dbg), body, dbg);
+    }
     const Def* variadic(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
-        return variadic(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
+        return variadic(DefArray(a.size(), [&](auto i) {
+                    return this->arity(a[i], Qualifier::Unlimited, dbg);
+                }), body, dbg);
     }
     //@}
 
     //@{ create Tuple
     const Def* tuple(Defs defs, Debug dbg = {});
-    const Tuple* tuple0_of_types() const { return tuple0_of_types_; }
-    const Tuple* tuple0(Qualifier q = Qualifier::Unlimited) { return tuple0_[size_t(q)]; }
-    const Tuple* tuple0(const Def* q) {
+    //@}
+
+    //@{ create unit values
+    const Def* val_unit(Qualifier q = Qualifier::Unlimited) { return unit_val_[size_t(q)]; }
+    const Def* val_unit(const Def* q) {
         if (auto cq = isa_const_qualifier(q))
-            return tuple0(cq->box().get_qualifier());
-        return unify<Tuple>(0, *this, unit(q), Defs(), Debug("()"));
+            return val_unit(cq->box().get_qualifier());
+        return index_zero(arity(1, q));
     }
+    const Def* val_unit_kind() const { return unit_kind_val_; }
     //@}
 
     //@{ create Pack
     const Def* pack(const Def* arities, const Def* body, Debug dbg = {});
     const Def* pack(Defs arities, const Def* body, Debug dbg = {});
-    const Def* pack(size_t a, const Def* body, Debug dbg = {}) { return pack(arity(a, dbg), body, dbg); }
+    const Def* pack(size_t a, const Def* body, Debug dbg = {}) {
+        return pack(arity(a, Qualifier::Unlimited, dbg), body, dbg);
+    }
     const Def* pack(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
-        return pack(DefArray(a.size(), [&](auto i) { return this->arity(a[i], dbg); }), body, dbg);
+        return pack(DefArray(a.size(), [&](auto i) {
+                    return this->arity(a[i], Qualifier::Unlimited, dbg);
+                }), body, dbg);
     }
     //@}
 
     //@{ misc factory methods
     const Def* any(const Def* type, const Def* def, Debug dbg = {});
-    const Axiom* arity(size_t a, Location location = {});
+    const Axiom* arity(size_t a, Qualifier q = Qualifier::Unlimited, Location location = {}) {
+        return arity(a, qualifier(q), location);
+    }
+    const Axiom* arity(size_t a, const Def* q, Location location = {});
+    const Def* arity_succ(const Def* arity, Debug dbg = {});
     /// @em nominal Axiom
     const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
     /// @em structural Axiom
@@ -144,6 +171,8 @@ public:
     }
     const Def* extract(const Def* def, size_t index, Debug dbg = {});
     const Def* index(size_t arity, size_t index, Location location = {});
+    const Def* index_zero(const Def* arity, Location location = {});
+    const Def* index_succ(const Def* index, Debug dbg = {});
     const Def* insert(const Def* def, const Def* index, const Def* value, Debug dbg = {});
     const Def* insert(const Def* def, int index, const Def* value, Debug dbg = {}) {
         return insert(def, size_t(index), value, dbg);
@@ -261,14 +290,16 @@ protected:
     const Universe* universe_;
     const Axiom* qualifier_kind_;
     const Axiom* qualifier_type_;
-    const Sigma* unit_kind_;
-    const Tuple* tuple0_of_types_;
+    const Axiom* arity_succ_;
+    const Axiom* index_succ_;
+    const Def* unit_kind_;
+    const Def* unit_kind_val_;
     std::array<const Axiom*, 4> qualifier_;
     std::array<const Star*,  4> star_;
-    std::array<const Sigma*, 4> unit_;
-    std::array<const Tuple*, 4> tuple0_;
-    const ArityKind* arity_kind_;
-    const MultiArityKind* multi_arity_kind_;
+    std::array<const Def*, 4> unit_;
+    std::array<const Def*, 4> unit_val_;
+    std::array<const ArityKind*, 4> arity_kind_;
+    std::array<const MultiArityKind*, 4> multi_arity_kind_;
 };
 
 class World : public WorldBase {

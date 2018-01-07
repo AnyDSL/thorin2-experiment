@@ -222,6 +222,8 @@ public:
 
     //@{ get Qualifier
     const Def* qualifier() const;
+    /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
+    virtual const Def* kind_qualifier() const;
     bool maybe_affine() const;
     //@}
 
@@ -283,8 +285,6 @@ public:
     }
 
 protected:
-    /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
-    virtual const Def* kind_qualifier() const;
     /**
      * The amount to shift De Bruijn indices when descending into this Def's @p i's Def::op.
      * For example:
@@ -305,7 +305,7 @@ protected:
 
     union {
         mutable const Def* cache_;  ///< Used by App.
-        size_t index_;              ///< Used by Var.
+        size_t index_;              ///< Used by Var, Arity and Index.
         Box box_;                   ///< Used by Axiom.
     };
     BitSet free_vars_;
@@ -679,11 +679,12 @@ private:
 
 class ArityKind : public Def {
 private:
-    ArityKind(WorldBase& world);
+    ArityKind(WorldBase& world, const Def* qualifier);
 
 public:
     const Def* arity() const override;
     std::ostream& stream(std::ostream&) const override;
+    const Def* kind_qualifier() const override;
 
 private:
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;
@@ -693,12 +694,13 @@ private:
 
 class MultiArityKind : public Def {
 private:
-    MultiArityKind(WorldBase& world);
+    MultiArityKind(WorldBase& world, const Def* qualifier);
 
 public:
     const Def* arity() const override;
     bool assignable(const Def* def) const override;
     std::ostream& stream(std::ostream&) const override;
+    const Def* kind_qualifier() const override;
 
 private:
     const Def* rebuild(WorldBase&, const Def*, Defs) const override;

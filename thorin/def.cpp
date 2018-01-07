@@ -183,8 +183,8 @@ Def::~Def() {
         delete[] ops_;
 }
 
-ArityKind::ArityKind(WorldBase& world)
-    : Def(world, Tag::ArityKind, world.universe(), {}, {"𝔸"})
+ArityKind::ArityKind(WorldBase& world, const Def* qualifier)
+    : Def(world, Tag::ArityKind, world.universe(), {qualifier}, {"𝔸"})
 {}
 
 Intersection::Intersection(WorldBase& world, const Def* type, Defs ops, Debug dbg)
@@ -197,8 +197,8 @@ Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
     : Def(world, Tag::Lambda, type, {body}, dbg)
 {}
 
-MultiArityKind::MultiArityKind(WorldBase& world)
-    : Def(world, Tag::MultiArityKind, world.universe(), {}, {"𝕄"})
+MultiArityKind::MultiArityKind(WorldBase& world, const Def* qualifier)
+    : Def(world, Tag::MultiArityKind, world.universe(), {qualifier}, {"𝕄"})
 {}
 
 Pack::Pack(WorldBase& world, const Def* type, const Def* body, Debug dbg)
@@ -279,7 +279,16 @@ const Def* Def::qualifier() const {
 }
 
 const Def* Def::kind_qualifier() const {
+    assert(is_kind());
     return world().unlimited();
+}
+
+const Def* ArityKind::kind_qualifier() const {
+    return op(0);
+}
+
+const Def* MultiArityKind::kind_qualifier() const {
+    return op(0);
 }
 
 const Def* Intersection::kind_qualifier() const {
@@ -301,7 +310,7 @@ const Def* Sigma::kind_qualifier() const {
 
 const Def* Singleton::kind_qualifier() const {
     assert(is_kind());
-    // TODO this might recur endlessly if op(0) has this as type, need to forbid that
+    // TODO this might recur endlessly if op(0) has this as type, need to guarantee that doesn't occurr/errors early
     return op(0)->qualifier();
 }
 
@@ -456,7 +465,7 @@ bool Var::equal(const Def* other) const {
 
 const Def* Any           ::rebuild(WorldBase& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App           ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.app(ops[0], ops[1], debug()); }
-const Def* ArityKind     ::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.arity_kind(); }
+const Def* ArityKind     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.arity_kind(ops[0]); }
 const Def* Axiom         ::rebuild(WorldBase& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
     return to.assume(t, box(), debug());
@@ -470,7 +479,7 @@ const Def* Lambda        ::rebuild(WorldBase& to, const Def* t, Defs ops) const 
     return to.lambda(t->as<Pi>()->domain(), ops.front(), debug());
 }
 const Def* Match         ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
-const Def* MultiArityKind::rebuild(WorldBase& to, const Def*  , Defs    ) const { return to.multi_arity_kind(); }
+const Def* MultiArityKind::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.multi_arity_kind(ops[0]); }
 const Def* Pack          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pack(arity(), ops[0], debug()); }
 const Def* Pi            ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.pi(ops[0], ops[1], debug()); }
 const Def* Pick          ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
@@ -561,6 +570,7 @@ const Def* Def::shift_free_vars(size_t shift) const {
 
 /*
  * assignable
+ * TODO: qualifiers?
  */
 
 bool MultiArityKind::assignable(const Def* def) const {
@@ -593,8 +603,8 @@ bool Sigma::assignable(const Def* def) const {
 
 bool Star::assignable(const Def* def) const {
     auto type = def->type();
-    return this == type ||
-        (kind_qualifier() == world().unlimited() && (world().multi_arity_kind() == type || world().arity_kind() == type));
+    return this == type || (kind_qualifier() == type->kind_qualifier()
+                            && (type->isa<MultiArityKind>() || type->isa<ArityKind>()));
 }
 
 bool Variadic::assignable(const Def* def) const {
@@ -732,7 +742,7 @@ std::ostream& App::stream(std::ostream& os) const {
 }
 
 std::ostream& ArityKind::stream(std::ostream& os) const {
-    return os << name();
+    return os << name() << op(0);
 }
 
 std::ostream& Axiom::stream(std::ostream& os) const { return qualifier_stream(os) << name(); }
@@ -760,7 +770,7 @@ std::ostream& Match::stream(std::ostream& os) const {
 }
 
 std::ostream& MultiArityKind::stream(std::ostream& os) const {
-    return os << name();
+    return os << name() << op(0);
 }
 
 std::ostream& Lambda::stream(std::ostream& os) const {

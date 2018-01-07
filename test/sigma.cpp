@@ -38,23 +38,6 @@ TEST(Sigma, ExtractAndSingleton) {
     std::cout << single_pi << ": " << single_pi->type() << std::endl;
 }
 
-TEST(Sigma, Unit) {
-    World w;
-
-    auto unit = w.unit();
-    ASSERT_FALSE(unit->is_dependent());
-    auto tuple0 = w.tuple0();
-    ASSERT_EQ(tuple0->type(), unit);
-
-    auto lam = w.lambda(unit, tuple0)->as<Lambda>();
-    ASSERT_EQ(lam->domain(), unit);
-    ASSERT_EQ(lam->type()->body(), unit);
-    auto pi = w.pi(w.sigma({}), unit);
-    ASSERT_EQ(pi, lam->type());
-    auto apped = w.app(lam, tuple0);
-    ASSERT_EQ(tuple0, apped);
-}
-
 TEST(Tuple, Error) {
     World w;
 

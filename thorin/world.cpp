@@ -136,18 +136,18 @@ WorldBase::WorldBase()
     universe_ = insert<Universe>(0, *this);
     qualifier_kind_ = axiom(universe_, {"ℚₖ"});
     qualifier_type_ = axiom(qualifier_kind_, {"ℚ"});
-    // TODO think hard about unit_kind and qualifiers, they are inferred for other sigma kinds, this one is always unrestricted, doe that imply subtyping on qualifiers?
-    unit_kind_ = insert<Sigma>(0, *this, universe_, Defs(), Debug("[]*"));
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
         qualifier_[i] = assume(qualifier_type(), {q}, {qualifier2str(q)});
-        star_     [i] = insert<Star >(1, *this, qualifier_[i]);
-        unit_     [i] = insert<Sigma>(0, *this, star_[i], Defs(), Debug("[])"));
-        tuple0_   [i] = insert<Tuple>(0, *this, unit_[i], Defs(), Debug("()"));
+        star_[i] = insert<Star>(1, *this, qualifier_[i]);
+        arity_kind_[i] = insert<ArityKind>(1, *this, qualifier_[i]);
+        multi_arity_kind_[i] = insert<MultiArityKind>(1, *this, qualifier_[i]);
+        unit_[i] = arity(1, qualifier_[i]);
+        unit_val_[i] = index_zero(unit_[i]);
     }
-    tuple0_of_types_ = insert<Tuple>(0, *this, unit_kind_, Defs(), Debug("()*"));
-    arity_kind_ = insert<ArityKind>(0, *this);
-    multi_arity_kind_ = insert<MultiArityKind>(0, *this);
+    // TODO think hard about unit_kind and qualifiers, they are inferred for other sigma kinds (that may have qualifiers), this one is always unrestricted, doe that imply subtyping on qualifiers?
+    unit_kind_ = insert<Variadic>(2, *this, universe_, arity(0), star(), Debug());
+    unit_kind_val_ = insert<Pack>(1, *this, unit_kind_, unit(), Debug());
 }
 
 WorldBase::~WorldBase() {
@@ -167,14 +167,23 @@ const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
     return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
 }
 
-const Axiom* WorldBase::arity(size_t a, Location location) {
+const Axiom* WorldBase::arity(size_t a, const Def* q, Location location) {
+    assert(q->type() == qualifier_type());
     auto cur = Def::gid_counter();
-    auto result = assume(arity_kind(), {u64(a)}, {location});
+    auto result = assume(arity_kind(q), {u64(a)}, {location});
 
     if (result->gid() >= cur)
         result->debug().set(std::to_string(a) + "ₐ");
 
     return result;
+}
+
+const Def* WorldBase::arity_succ(const Def* a, Debug dbg) {
+    if (auto axiom = a->isa<Axiom>()) {
+        auto val = axiom->box().get_u64();
+        return arity(val + 1, a->qualifier(), dbg);
+    }
+    return app(arity_succ_, a, dbg);
 }
 
 const Def* WorldBase::app(const Def* callee, const Def* arg, Debug dbg) {
@@ -279,6 +288,21 @@ const Def* WorldBase::index(size_t a, size_t i, Location location) {
     }
 
     return error(arity(a));
+}
+
+const Def* WorldBase::index_zero(const Def* arity, Location location) {
+    assert(arity->type()->isa<ArityKind>());
+    return assume(arity_succ(arity), {0}, {location});
+}
+
+const Def* WorldBase::index_succ(const Def* index, Debug dbg) {
+    assert(index->type()->type()->isa<ArityKind>());
+    auto arity = arity_succ(index->type());
+    if (auto axiom = index->isa<Axiom>()) {
+        auto val = axiom->box().get_u64();
+        return assume(arity, {val + 1}, dbg);
+    }
+    return app(app(index_succ_, index->type(), dbg), index, dbg);
 }
 
 const Def* WorldBase::insert(const Def* def, const Def* i, const Def* value, Debug dbg) {
@@ -407,7 +431,7 @@ const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && is_homogeneous(defs)) {
         assert(q == nullptr || defs.front()->qualifier() == q);
-        return variadic(arity(defs.size(), dbg), defs.front()->shift_free_vars(-1), dbg);
+        return variadic(arity(defs.size(), Qualifier::Unlimited, dbg), defs.front()->shift_free_vars(-1), dbg);
     }
 
     return unify<Sigma>(defs.size(), *this, type, defs, dbg);
@@ -467,8 +491,8 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
         auto a = axiom->box().get_u64();
         if (a == 0) {
             if (body->is_type())
-                return tuple0_of_types();
-            return tuple0(body->type()->qualifier());
+                return val_unit_kind();
+            return val_unit(body->type()->qualifier());
         }
         if (a == 1) return body->reduce(this->index(1, 0));
         if (body->free_vars().test(0))
@@ -494,6 +518,8 @@ const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
 
 const Def* WorldBase::tuple(Defs defs, Debug dbg) {
     size_t size = defs.size();
+    if (size == 0)
+        return val_unit();
     if (size == 1)
         return defs.front();
     auto type = sigma(types(defs), dbg);
@@ -522,7 +548,7 @@ const Def* WorldBase::tuple(Defs defs, Debug dbg) {
 
     if (size != 0) {
         if (is_homogeneous(defs))
-            return pack(arity(size, dbg), defs.front()->shift_free_vars(-1), dbg);
+            return pack(arity(size, Qualifier::Unlimited, dbg), defs.front()->shift_free_vars(-1), dbg);
         else if (auto same = eta_property())
             return same;
     }
