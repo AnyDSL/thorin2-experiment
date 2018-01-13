@@ -703,7 +703,6 @@ void Sigma::typecheck_vars(Environment& types, EnvDefSet& checked) const {
 }
 
 void Var::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    check(type(), types, checked);
     auto reverse_index = types.size() - 1 - index();
     auto shifted_type = type()->shift_free_vars(index() + 1);
     auto env_type = types[reverse_index];
