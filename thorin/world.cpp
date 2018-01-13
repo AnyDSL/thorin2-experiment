@@ -241,12 +241,12 @@ const Def* WorldBase::extract(const Def* def, const Def* index, Debug dbg) {
 
         return unify<Extract>(2, *this, result_type, def, index, dbg);
     }
-    if (index->type()->type() == multi_arity_kind()) {
-        // not the same exact arity
-        // can only extract if we can iteratively extract with each index in the multi-index
-        // can only do that if we know how many indices there are
-        if (auto i_arity = index->arity(); auto assume = i_arity->isa<Axiom>()) {
-            auto a = assume->box().get_u64();
+    // not the same exact arity, but as long as it types, we can use indices from constant arity tuples, even of non-index type
+    // can only extract if we can iteratively extract with each index in the multi-index
+    // can only do that if we know how many elements there are
+    if (auto i_arity = index->arity(); auto assume = i_arity->isa<Axiom>()) {
+        auto a = assume->box().get_u64();
+        if (a > 1) {
             auto extracted = def;
             for (size_t i = 0; i < a; ++i) {
                 auto idx = extract(index, i, dbg);
@@ -391,7 +391,7 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
         auto a = axiom->box().get_u64();
         if (a == 0) {
             if (body->is_kind())
-                return unify<Variadic>(2, *this, universe(), arity(0), star(body->qualifier()), dbg);
+                return unify<Variadic>(2, *this, universe(), this->arity(0), star(body->qualifier()), dbg);
             return unit(body->type()->qualifier());
         }
         if (a == 1) return body->reduce(this->index(1, 0));
