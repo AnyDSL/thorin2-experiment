@@ -42,7 +42,7 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
             // TODO might want to assert that this will always be a kind?
             inferred_q = use_glb ? linear() : unlimited();
         } else {
-            auto qualifier = def->qualifier()->shift_free_vars(i);
+            auto qualifier = def->qualifier()->shift_free_vars(-i);
 
             inferred_q = use_glb ? intersection(qualifier_type(), {inferred_q, qualifier})
                 : variant(qualifier_type(), {inferred_q, qualifier});
@@ -361,7 +361,7 @@ const Def* WorldBase::lambda(const Def* domain, const Def* body, const Def* type
         };
 
         if (!app->callee()->free_vars().test(0) && eta_property())
-            return app->callee()->shift_free_vars(1);
+            return app->callee()->shift_free_vars(-1);
     }
 
     return unify<Lambda>(1, *this, p, body, dbg);
@@ -380,9 +380,9 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
             assert(!v->body()->free_vars().test(0));
             auto a = axiom->box().get_u64();
             assert(a != 1);
-            auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(1-a)));
+            auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(a-1)));
             for (size_t i = a; i-- != 0;)
-                result = variadic(v->body()->shift_free_vars(-i+1), result, dbg);
+                result = variadic(v->body()->shift_free_vars(i-1), result, dbg);
             return result;
         }
     }
@@ -397,11 +397,11 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
         if (a == 1) return body->reduce(this->index(1, 0));
         if (body->free_vars().test(0))
             return sigma(DefArray(a, [&](auto i) {
-                        return body->reduce(this->index(a, i))->shift_free_vars(-i); }), dbg);
+                        return body->reduce(this->index(a, i))->shift_free_vars(i); }), dbg);
     }
 
     assert(body->type()->is_kind() || body->type()->is_universe());
-    return unify<Variadic>(2, *this, body->type()->shift_free_vars(1), arity, body, dbg);
+    return unify<Variadic>(2, *this, body->type()->shift_free_vars(-1), arity, body, dbg);
 }
 
 const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
@@ -477,9 +477,9 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
             assert(!v->body()->free_vars().test(0));
             auto a = axiom->box().get_u64();
             assert(a != 1);
-            auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(1-a)));
+            auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(a-1)));
             for (size_t i = a; i-- != 0;)
-                result = pack(v->body()->shift_free_vars(-i+1), result, dbg);
+                result = pack(v->body()->shift_free_vars(i-1), result, dbg);
             return result;
         }
     }
@@ -499,7 +499,7 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
     if (auto extract = body->isa<Extract>()) {
         if (auto var = extract->index()->isa<Var>()) {
             if (var->index() == 0 && !extract->scrutinee()->free_vars().test(0))
-                return extract->scrutinee()->shift_free_vars(1);
+                return extract->scrutinee()->shift_free_vars(-1);
         }
     }
 
@@ -519,7 +519,8 @@ const Def* WorldBase::tuple(Defs defs, Debug dbg) {
         return val_unit();
     if (size == 1)
         return defs.front();
-    auto type = sigma(types(defs), dbg);
+    auto type = sigma(DefArray(defs.size(),
+                               [&](auto i) { return defs[i]->type()->shift_free_vars(i); }), dbg);
 
     auto eta_property = [&]() {
         const Def* same = nullptr;
@@ -545,7 +546,7 @@ const Def* WorldBase::tuple(Defs defs, Debug dbg) {
 
     if (size != 0) {
         if (is_homogeneous(defs))
-            return pack(arity(size, Qualifier::Unlimited, dbg), defs.front()->shift_free_vars(-1), dbg);
+            return pack(arity(size, Qualifier::Unlimited, dbg), defs.front()->shift_free_vars(1), dbg);
         else if (auto same = eta_property())
             return same;
     }

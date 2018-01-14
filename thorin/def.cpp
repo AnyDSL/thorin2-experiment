@@ -702,9 +702,9 @@ void Sigma::typecheck_vars(Environment& types, EnvDefSet& checked) const {
     dependent_check(ops(), types, checked, Defs());
 }
 
-void Var::typecheck_vars(Environment& types, EnvDefSet& checked) const {
+void Var::typecheck_vars(Environment& types, EnvDefSet&) const {
     auto reverse_index = types.size() - 1 - index();
-    auto shifted_type = type()->shift_free_vars(index() + 1);
+    auto shifted_type = type()->shift_free_vars(-index() - 1);
     auto env_type = types[reverse_index];
     assertf(env_type == shifted_type,
             "The shifted type {} of variable {} does not match the type {} declared by the binder.", shifted_type,

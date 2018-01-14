@@ -21,7 +21,7 @@ public:
         , args_(args)
         , shift_(args.size())
     {}
-    Reducer(WorldBase& world, size_t shift)
+    Reducer(WorldBase& world, int64_t shift)
         : world_(world)
         , args_()
         , shift_(shift)
@@ -36,7 +36,7 @@ public:
 private:
     WorldBase& world_;
     DefArray args_;
-    size_t shift_;
+    int64_t shift_;
     thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
     std::stack<DefIndex> nominals_;
 };
@@ -140,11 +140,11 @@ const Def* flatten(const Def* body, Defs args) {
     return reduce(body, {t});
 }
 
-const Def* shift_free_vars(const Def* def, size_t shift) {
+const Def* shift_free_vars(const Def* def, int64_t shift) {
     if (shift == 0 || def->free_vars().none())
         return def;
 
-    Reducer reducer(def->world(), shift);
+    Reducer reducer(def->world(), -shift);
     auto result = reducer.reduce_structurals(def, 0);
     reducer.reduce_nominals();
     return result;

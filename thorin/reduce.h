@@ -23,7 +23,7 @@ const Def* flatten(const Def* body, Defs args);
 const Def* unflatten(const Def* body, const Def* arg);
 
 /// Adds @p shift to all free variables in @p def.
-const Def* shift_free_vars(const Def* def, size_t shift);
+const Def* shift_free_vars(const Def* def, int64_t shift);
 }
 
 #endif
