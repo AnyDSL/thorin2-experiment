@@ -10,7 +10,7 @@
 
 namespace thorin {
 
-class WorldBase {
+class World {
 public:
     struct DefHash {
         static uint64_t hash(const Def* def) { return def->hash(); }
@@ -20,11 +20,11 @@ public:
 
     typedef HashSet<const Def*, DefHash> DefSet;
 
-    WorldBase& operator=(const WorldBase&) = delete;
-    WorldBase(const WorldBase&) = delete;
+    World& operator=(const World&) = delete;
+    World(const World&) = delete;
 
-    WorldBase();
-    ~WorldBase();
+    World();
+    ~World();
 
     //@{ create universe and kinds
     const Universe* universe() const { return universe_; }
@@ -222,7 +222,7 @@ public:
 
     const DefSet& defs() const { return defs_; }
 
-    friend void swap(WorldBase& w1, WorldBase& w2) {
+    friend void swap(World& w1, World& w2) {
         using std::swap;
         swap(w1.defs_, w2.defs_);
         w1.fix();
@@ -349,99 +349,6 @@ protected:
 
 inline const Def* app_arg(const Def* def) { return def->as<App>()->arg(); }
 inline const Def* app_arg(const Def* def, size_t i) { return def->world().extract(app_arg(def), i); }
-
-class World : public WorldBase {
-public:
-    World();
-
-    //@{ types and type constructors
-#define CODE(ir)                                                                                                         \
-    const Axiom* type_ ## ir() { return type_ ## ir ## _; }                                                              \
-    const App* type_ ## ir(ir ## flags flags, int64_t width) { return type_ ## ir(Qualifier::Unlimited, flags, width); } \
-    const App* type_ ## ir(Qualifier q, ir ## flags flags, int64_t width) {                                              \
-        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return type_ ## ir(qualifier(q), f, w);               \
-    }                                                                                                                    \
-    const App* type_ ## ir(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {                           \
-        return app(type_ ## ir(), {q, flags, width}, dbg)->as<App>();                                                    \
-    }
-    CODE(i)
-    CODE(r)
-#undef CODE
-
-    const Axiom* type_mem() { return type_mem_; }
-    const Axiom* type_frame() { return type_frame_; }
-    const Axiom* type_ptr() { return type_ptr_; }
-    const Def* type_ptr(const Def* pointee, Debug dbg = {}) { return type_ptr(pointee, val_nat_0(), dbg); }
-    const Def* type_ptr(const Def* pointee, const Def* addr_space, Debug dbg = {}) {
-        return app(type_ptr_, {pointee, addr_space}, dbg);
-    }
-    //@}
-
-    //@{ values
-    const Axiom* val(iflags f,  uint8_t val) { return assume(type_i(f,  8), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, uint16_t val) { return assume(type_i(f, 16), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, uint32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, uint64_t val) { return assume(type_i(f, 64), {val}, {std::to_string(val)}); }
-
-    const Axiom* val(iflags f,  int8_t val) { return assume(type_i(f,  8), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, int16_t val) { return assume(type_i(f, 16), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, int32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, int64_t val) { return assume(type_i(f, 64), {val}, {std::to_string(val)}); }
-
-    const Axiom* val(rflags f, half   val) { return assume(type_r(f, 16), {val}, {std::to_string(val)}); }
-    const Axiom* val(rflags f, float  val) { return assume(type_r(f, 32), {val}, {std::to_string(val)}); }
-    const Axiom* val(rflags f, double val) { return assume(type_r(f, 64), {val}, {std::to_string(val)}); }
-    //@}
-
-    //@{ arithmetic operations
-    template<iarithop O> const Axiom* op() { return iarithop_[O]; }
-    template<rarithop O> const Axiom* op() { return rarithop_[O]; }
-    template<iarithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {});
-    template<rarithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {});
-    //@}
-
-    //@{ relational operations
-    const Axiom* op_icmp() { return op_icmp_; }
-    const Axiom* op_rcmp() { return op_rcmp_; }
-    const Def* op_icmp(irel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_icmp(val_nat(int64_t(rel)), a, b, dbg); }
-    const Def* op_rcmp(rrel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_rcmp(val_nat(int64_t(rel)), a, b, dbg); }
-    const Def* op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
-    const Def* op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
-    //@}
-
-    //@{ tuple operations
-    const Axiom* op_lea() { return op_lea_; }
-    const Def* op_lea(const Def* ptr, const Def* index, Debug dbg = {});
-    const Def* op_lea(const Def* ptr, size_t index, Debug dbg = {});
-    //@}
-
-    //@{ memory operations
-    const Def* op_alloc(const Def* type, const Def* mem, Debug dbg = {});
-    const Def* op_alloc(const Def* type, const Def* mem, const Def* extra, Debug dbg = {});
-    const Def* op_enter(const Def* mem, Debug dbg = {});
-    const Def* op_global(const Def* init, Debug dbg = {});
-    const Def* op_global_const(const Def* init, Debug dbg = {});
-    const Def* op_load(const Def* mem, const Def* ptr, Debug dbg = {});
-    const Def* op_slot(const Def* type, const Def* frame, Debug dbg = {});
-    const Def* op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg = {});
-    //@}
-
-private:
-    const Axiom* type_i_;
-    const Axiom* type_r_;
-    const Axiom* type_mem_;
-    const Axiom* type_frame_;
-    const Axiom* type_ptr_;
-    const Axiom* op_enter_;
-    const Axiom* op_lea_;
-    const Axiom* op_load_;
-    const Axiom* op_slot_;
-    const Axiom* op_store_;
-    std::array<const Axiom*, Num_IArithOp> iarithop_;
-    std::array<const Axiom*, Num_RArithOp> rarithop_;
-    const Axiom* op_icmp_;
-    const Axiom* op_rcmp_;
-};
 
 }
 

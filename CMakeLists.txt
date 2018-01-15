@@ -53,6 +53,8 @@ add_executable(coc
     thorin/traits.h
     thorin/world.cpp
     thorin/world.h
+    thorin/core/world.cpp
+    thorin/core/world.h
     thorin/frontend/lexer.cpp
     thorin/frontend/lexer.h
     thorin/frontend/parser.cpp

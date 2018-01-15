@@ -18,7 +18,7 @@
 namespace thorin {
 
 class Def;
-class WorldBase;
+class World;
 
 /**
  * References a user.
@@ -137,7 +137,7 @@ protected:
     Def& operator=(const Def&) = delete;
 
     /// A @em nominal Def.
-    Def(WorldBase& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
+    Def(World& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
         : world_(&world)
         , debug_(dbg)
         , type_(type)
@@ -154,7 +154,7 @@ protected:
     }
     /// A @em structural Def.
     template<class I>
-    Def(WorldBase& world, Tag tag, const Def* type, Range<I> ops, Debug dbg)
+    Def(World& world, Tag tag, const Def* type, Range<I> ops, Debug dbg)
         : world_(&world)
         , debug_(dbg)
         , type_(type)
@@ -170,7 +170,7 @@ protected:
         std::copy(ops.begin(), ops.end(), ops_);
     }
     /// A @em structural Def.
-    Def(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+    Def(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
         : Def(world, tag, type, range(ops), dbg)
     {}
     ~Def() override;
@@ -238,7 +238,7 @@ public:
     bool is_closed() const { return closed_; }
     bool has_error() const { return has_error_; }
     Tag tag() const { return Tag(tag_); }
-    WorldBase& world() const { return *world_; }
+    World& world() const { return *world_; }
     //@}
 
     void typecheck() const {
@@ -267,7 +267,7 @@ public:
     }
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
 
-    virtual Def* stub(WorldBase&, const Def*, Debug) const { THORIN_UNREACHABLE; }
+    virtual Def* stub(World&, const Def*, Debug) const { THORIN_UNREACHABLE; }
     virtual bool assignable(const Def* def) const {
         return this == def->type();
     }
@@ -312,14 +312,14 @@ protected:
 
 private:
     const Def** ops_ptr() { return reinterpret_cast<const Def**>(reinterpret_cast<char*>(this) + sizeof(Def)); }
-    virtual const Def* rebuild(WorldBase&, const Def*, Defs) const = 0;
+    virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
     bool on_heap() const { return ops_ != const_cast<Def*>(this)->ops_ptr(); }
 
     static size_t gid_counter_;
 
     mutable Uses uses_;
     mutable uint64_t hash_ = 0;
-    mutable WorldBase* world_;
+    mutable World* world_;
     mutable Debug debug_;
     const Def* type_;
     uint32_t num_ops_;
@@ -343,7 +343,7 @@ private:
     friend class Cleaner;
     friend class Reducer;
     friend class Scope;
-    friend class WorldBase;
+    friend class World;
 };
 
 uint64_t UseHash::hash(Use use) {
@@ -374,7 +374,7 @@ const SortedDefSet set_flatten(Defs defs) {
 
 class Pi : public Def {
 private:
-    Pi(WorldBase& world, const Def* type, const Def* domain, const Def* body, Debug dbg);
+    Pi(World& world, const Def* type, const Def* domain, const Def* body, Debug dbg);
 
 public:
     const Def* arity() const override;
@@ -388,14 +388,14 @@ public:
 
 private:
     size_t shift(size_t) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Lambda : public Def {
 private:
-    Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg);
+    Lambda(World& world, const Pi* type, const Def* body, Debug dbg);
 
 public:
     const Def* domain() const { return type()->domain(); }
@@ -408,14 +408,14 @@ public:
 
 private:
     size_t shift(size_t) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class App : public Def {
 private:
-    App(WorldBase& world, const Def* type, const Def* callee, const Def* arg, Debug dbg)
+    App(World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg)
         : Def(world, Tag::App, type, {callee, arg}, dbg)
     {
         cache_ = nullptr;
@@ -427,20 +427,20 @@ public:
     const Def* arg() const { return op(1); }
 
     std::ostream& stream(std::ostream&) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
     const Def* try_reduce() const;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 //------------------------------------------------------------------------------
 
 class SigmaBase : public Def {
 protected:
-    SigmaBase(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+    SigmaBase(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
         : Def(world, tag, type, ops, dbg)
     {}
-    SigmaBase(WorldBase& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
+    SigmaBase(World& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
         : Def(world, tag, type, num_ops, dbg)
     {}
 };
@@ -448,12 +448,12 @@ protected:
 class Sigma : public SigmaBase {
 private:
     /// Nominal Sigma kind
-    Sigma(WorldBase& world, size_t num_ops, Debug dbg);
+    Sigma(World& world, size_t num_ops, Debug dbg);
     /// Nominal Sigma type, \a type is some Star/Universe
-    Sigma(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
+    Sigma(World& world, const Def* type, size_t num_ops, Debug dbg)
         : SigmaBase(world, Tag::Sigma, type, num_ops, dbg)
     {}
-    Sigma(WorldBase& world, const Def* type, Defs ops, Debug dbg)
+    Sigma(World& world, const Def* type, Defs ops, Debug dbg)
         : SigmaBase(world, Tag::Sigma, type, ops, dbg)
     {}
 
@@ -467,20 +467,20 @@ public:
     Sigma* set(size_t i, const Def* def) { return Def::set(i, def)->as<Sigma>(); };
 
     std::ostream& stream(std::ostream&) const override;
-    Sigma* stub(WorldBase&, const Def*, Debug) const override;
+    Sigma* stub(World&, const Def*, Debug) const override;
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 
 private:
-    static const Def* max_type(WorldBase& world, Defs ops, const Def* qualifier);
+    static const Def* max_type(World& world, Defs ops, const Def* qualifier);
     size_t shift(size_t) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Variadic : public SigmaBase {
 private:
-    Variadic(WorldBase& world, const Def* type, const Def* arity, const Def* body, Debug dbg);
+    Variadic(World& world, const Def* type, const Def* arity, const Def* body, Debug dbg);
 
 public:
     const Def* arity() const override { return op(0); }
@@ -494,21 +494,21 @@ public:
 
 private:
     size_t shift(size_t) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class TupleBase : public Def {
 protected:
-    TupleBase(WorldBase& world, Tag tag, const Def* type, Defs ops, Debug dbg)
+    TupleBase(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
         : Def(world, tag, type, ops, dbg)
     {}
 };
 
 class Tuple : public TupleBase {
 private:
-    Tuple(WorldBase& world, const SigmaBase* type, Defs ops, Debug dbg)
+    Tuple(World& world, const SigmaBase* type, Defs ops, Debug dbg)
         : TupleBase(world, Tag::Tuple, type, ops, dbg)
     {}
 
@@ -516,14 +516,14 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Pack : public TupleBase {
 private:
-    Pack(WorldBase& world, const Def* type, const Def* body, Debug dbg);
+    Pack(World& world, const Def* type, const Def* body, Debug dbg);
 
 public:
     const Def* body() const { return op(0); }
@@ -532,14 +532,14 @@ public:
 
 private:
     size_t shift(size_t) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Extract : public Def {
 private:
-    Extract(WorldBase& world, const Def* type, const Def* tuple, const Def* index, Debug dbg)
+    Extract(World& world, const Def* type, const Def* tuple, const Def* index, Debug dbg)
         : Def(world, Tag::Extract, type, {tuple, index}, dbg)
     {}
 
@@ -549,14 +549,14 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Insert : public Def {
 private:
-    Insert(WorldBase& world, const Def* type, const Def* tuple, const Def* index, const Def* value, Debug dbg)
+    Insert(World& world, const Def* type, const Def* tuple, const Def* index, const Def* value, Debug dbg)
         : Def(world, Tag::Insert, type, {tuple, index, value}, dbg)
     {}
 
@@ -567,14 +567,14 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Intersection : public Def {
 private:
-    Intersection(WorldBase& world, const Def* type, const SortedDefSet& ops, Debug dbg);
+    Intersection(World& world, const Def* type, const SortedDefSet& ops, Debug dbg);
 
 public:
     const Def* kind_qualifier() const override;
@@ -582,14 +582,14 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Pick : public Def {
 private:
-    Pick(WorldBase& world, const Def* type, const Def* def, Debug dbg)
+    Pick(World& world, const Def* type, const Def* def, Debug dbg)
         : Def(world, Tag::Pick, type, {def}, dbg)
     {}
 
@@ -598,16 +598,16 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Variant : public Def {
 private:
-    Variant(WorldBase& world, const Def* type, const SortedDefSet& ops, Debug dbg);
+    Variant(World& world, const Def* type, const SortedDefSet& ops, Debug dbg);
     // Nominal Variant
-    Variant(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
+    Variant(World& world, const Def* type, size_t num_ops, Debug dbg)
         : Def(world, Tag::Variant, type, num_ops, dbg)
     {}
 
@@ -619,16 +619,16 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
-    Variant* stub(WorldBase&, const Def*, Debug) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    Variant* stub(World&, const Def*, Debug) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 /// Cast a Def to a Variant type.
 class Any : public Def {
 private:
-    Any(WorldBase& world, const Variant* type, const Def* def, Debug dbg)
+    Any(World& world, const Variant* type, const Def* def, Debug dbg)
         : Def(world, Tag::Any, type, {def}, dbg)
     {}
 
@@ -646,14 +646,14 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Match : public Def {
 private:
-    Match(WorldBase& world, const Def* type, const Def* def, const Defs handlers, Debug dbg)
+    Match(World& world, const Def* type, const Def* def, const Defs handlers, Debug dbg)
         : Def(world, Tag::Match, type, concat(def, handlers), dbg)
     {}
 
@@ -666,14 +666,14 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Singleton : public Def {
 private:
-    Singleton(WorldBase& world, const Def* def, Debug dbg)
+    Singleton(World& world, const Def* def, Debug dbg)
         : Def(world, Tag::Singleton, def->type()->type(), {def}, dbg)
     {
         assert((def->is_term() || def->is_type()) && "No singleton type universes allowed.");
@@ -685,14 +685,14 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class ArityKind : public Def {
 private:
-    ArityKind(WorldBase& world, const Def* qualifier);
+    ArityKind(World& world, const Def* qualifier);
 
 public:
     const Def* arity() const override;
@@ -700,14 +700,14 @@ public:
     const Def* kind_qualifier() const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class MultiArityKind : public Def {
 private:
-    MultiArityKind(WorldBase& world, const Def* qualifier);
+    MultiArityKind(World& world, const Def* qualifier);
 
 public:
     const Def* arity() const override;
@@ -716,15 +716,15 @@ public:
     const Def* kind_qualifier() const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 
 class Star : public Def {
 private:
-    Star(WorldBase& world, const Def* qualifier);
+    Star(World& world, const Def* qualifier);
 
 public:
     const Def* arity() const override;
@@ -733,14 +733,14 @@ public:
     const Def* kind_qualifier() const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Universe : public Def {
 private:
-    Universe(WorldBase& world)
+    Universe(World& world)
         : Def(world, Tag::Universe, nullptr, 0, {"□"})
     {}
 
@@ -749,14 +749,14 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Var : public Def {
 private:
-    Var(WorldBase& world, const Def* type, size_t index, Debug dbg)
+    Var(World& world, const Def* type, size_t index, Debug dbg)
         : Def(world, Tag::Var, type, Defs(), dbg)
     {
         assert(!type->is_universe());
@@ -775,22 +775,22 @@ public:
 private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Axiom : public Def {
 private:
     /// A @em nominal axiom.
-    Axiom(WorldBase& world, const Def* type, Debug dbg)
+    Axiom(World& world, const Def* type, Debug dbg)
         : Def(world, Tag::Axiom, type, 0, dbg)
     {
         assert(type->free_vars().none());
     }
 
     /// A @em structural axiom.
-    Axiom(WorldBase& world, const Def* type, Box box, Debug dbg)
+    Axiom(World& world, const Def* type, Box box, Debug dbg)
         : Def(world, Tag::Axiom, type, Defs(), dbg)
     {
         box_ = box;
@@ -800,21 +800,21 @@ public:
     const Def* arity() const override;
     Box box() const { assert(!is_nominal()); return box_; }
     std::ostream& stream(std::ostream&) const override;
-    Axiom* stub(WorldBase&, const Def*, Debug) const override;
+    Axiom* stub(World&, const Def*, Debug) const override;
     bool has_values() const override;
 
 private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 class Error : public Def {
 private:
     // TODO additional error message with more precise information
-    Error(WorldBase& world, const Def* type)
+    Error(World& world, const Def* type)
         : Def(world, Tag::Error, type, Defs(), {"<error>"})
     {}
 
@@ -822,9 +822,9 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
-    const Def* rebuild(WorldBase&, const Def*, Defs) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
-    friend class WorldBase;
+    friend class World;
 };
 
 inline bool is_error(const Def* def) { return def->tag() == Def::Tag::Error; }

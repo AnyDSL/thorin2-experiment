@@ -3,7 +3,6 @@
 
 #include "thorin/world.h"
 #include "thorin/reduce.h"
-#include "thorin/frontend/parser.h"
 
 namespace thorin {
 
@@ -24,7 +23,7 @@ static bool any_of(const Def* def, Defs defs) {
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
 template<bool use_glb, class I>
-const Def* WorldBase::bound(Range<I> defs, const Def* q, bool require_qualifier) {
+const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
     if (defs.distance() == 0)
         return star(q ? q : use_glb ? linear() : unlimited());
 
@@ -88,7 +87,7 @@ const Def* WorldBase::bound(Range<I> defs, const Def* q, bool require_qualifier)
 }
 
 template<bool use_glb, class I>
-const Def* WorldBase::qualifier_bound(Range<I> defs, std::function<const Def*(const SortedDefSet&)> unify_fn) {
+const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const SortedDefSet&)> unify_fn) {
     auto const_elem = use_glb ? Qualifier::Unlimited : Qualifier::Linear;
     auto ident_elem = use_glb ? Qualifier::Linear : Qualifier::Unlimited;
     size_t num_defs = defs.distance();
@@ -126,13 +125,9 @@ const Def* WorldBase::qualifier_bound(Range<I> defs, std::function<const Def*(co
 
 //------------------------------------------------------------------------------
 
-/*
- * WorldBase
- */
+bool World::alloc_guard_ = false;
 
-bool WorldBase::alloc_guard_ = false;
-
-WorldBase::WorldBase()
+World::World()
     : root_page_(new Zone)
     , cur_page_(root_page_.get())
 {
@@ -160,12 +155,12 @@ WorldBase::WorldBase()
         val_nat_[j] = val_nat(1 << int64_t(j));
 }
 
-WorldBase::~WorldBase() {
+World::~World() {
     for (auto def : defs_)
         def->~Def();
 }
 
-const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
+const Def* World::any(const Def* type, const Def* def, Debug dbg) {
     if (!type->isa<Variant>()) {
         assert(type == def->type());
         return def;
@@ -177,7 +172,7 @@ const Def* WorldBase::any(const Def* type, const Def* def, Debug dbg) {
     return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
 }
 
-const Axiom* WorldBase::arity(size_t a, const Def* q, Location location) {
+const Axiom* World::arity(size_t a, const Def* q, Location location) {
     assert(q->type() == qualifier_type());
     auto cur = Def::gid_counter();
     auto result = assume(arity_kind(q), {u64(a)}, {location});
@@ -188,7 +183,7 @@ const Axiom* WorldBase::arity(size_t a, const Def* q, Location location) {
     return result;
 }
 
-const Def* WorldBase::arity_succ(const Def* a, Debug dbg) {
+const Def* World::arity_succ(const Def* a, Debug dbg) {
     if (auto axiom = a->isa<Axiom>()) {
         auto val = axiom->box().get_u64();
         return arity(val + 1, a->qualifier(), dbg);
@@ -196,7 +191,7 @@ const Def* WorldBase::arity_succ(const Def* a, Debug dbg) {
     return app(arity_succ_, a, dbg);
 }
 
-const Def* WorldBase::app(const Def* callee, const Def* arg, Debug dbg) {
+const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     auto callee_type = callee->type()->as<Pi>();
     assertf(callee_type->domain()->assignable(arg),
             "callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
@@ -207,7 +202,7 @@ const Def* WorldBase::app(const Def* callee, const Def* arg, Debug dbg) {
     return app->try_reduce();
 }
 
-const Def* WorldBase::extract(const Def* def, const Def* index, Debug dbg) {
+const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     if (index->type() == arity(1))
         return def;
     // need to allow the above, as types are also a 1-tuple of a type
@@ -272,12 +267,12 @@ const Def* WorldBase::extract(const Def* def, const Def* index, Debug dbg) {
             index, index->type(), def, type);
 }
 
-const Def* WorldBase::extract(const Def* def, size_t i, Debug dbg) {
+const Def* World::extract(const Def* def, size_t i, Debug dbg) {
     assertf(def->arity()->isa<Axiom>(), "can only extract by size_t on constant arities");
     return extract(def, index(def->arity()->as<Axiom>()->box().get_u64(), i, dbg), dbg);
 }
 
-const Def* WorldBase::index(size_t a, size_t i, Location location) {
+const Def* World::index(size_t a, size_t i, Location location) {
     if (i < a) {
         auto cur = Def::gid_counter();
         auto result = assume(arity(a), {u64(i)}, {location});
@@ -300,12 +295,12 @@ const Def* WorldBase::index(size_t a, size_t i, Location location) {
     return error(arity(a));
 }
 
-const Def* WorldBase::index_zero(const Def* arity, Location location) {
+const Def* World::index_zero(const Def* arity, Location location) {
     assert(arity->type()->isa<ArityKind>());
     return assume(arity_succ(arity), {0}, {location});
 }
 
-const Def* WorldBase::index_succ(const Def* index, Debug dbg) {
+const Def* World::index_succ(const Def* index, Debug dbg) {
     assert(index->type()->type()->isa<ArityKind>());
     auto arity = arity_succ(index->type());
     if (auto axiom = index->isa<Axiom>()) {
@@ -315,22 +310,22 @@ const Def* WorldBase::index_succ(const Def* index, Debug dbg) {
     return app(app(index_succ_, index->type(), dbg), index, dbg);
 }
 
-const Def* WorldBase::insert(const Def* def, const Def* i, const Def* value, Debug dbg) {
+const Def* World::insert(const Def* def, const Def* i, const Def* value, Debug dbg) {
     // TODO type check insert node
     return unify<Insert>(2, *this, def->type(), def, i, value, dbg);
 }
 
-const Def* WorldBase::insert(const Def* def, size_t i, const Def* value, Debug dbg) {
+const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) {
     auto idx = index(def->arity()->as<Axiom>()->box().get_u64(), i);
     return insert(def, idx, value, dbg);
 }
 
-const Def* WorldBase::intersection(Defs defs, Debug dbg) {
+const Def* World::intersection(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
     return intersection(glb(defs, nullptr), defs, dbg);
 }
 
-const Def* WorldBase::intersection(const Def* type, Defs ops, Debug dbg) {
+const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
     assert(ops.size() > 0); // TODO empty intersection -> empty type/kind
     auto defs = set_flatten<Intersection>(ops);
     auto first = *defs.begin();
@@ -351,13 +346,13 @@ const Def* WorldBase::intersection(const Def* type, Defs ops, Debug dbg) {
     return unify<Intersection>(defs.size(), *this, type, defs, dbg);
 }
 
-const Pi* WorldBase::pi(const Def* domain, const Def* body, const Def* q, Debug dbg) {
+const Pi* World::pi(const Def* domain, const Def* body, const Def* q, Debug dbg) {
     assertf(!body->is_value(), "body {} : {} of function type cannot be a value", body, body->type());
     auto type = lub({domain, body}, q, false);
     return unify<Pi>(2, *this, type, domain, body, dbg);
 }
 
-const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
+const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
     if (auto def_type = def->type()->isa<Intersection>()) {
         assert(any_of(type, def_type->ops()) && "picked type must be a part of the intersection type");
         return unify<Pick>(1, *this, type, def, dbg);
@@ -367,7 +362,7 @@ const Def* WorldBase::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
-const Def* WorldBase::lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg) {
+const Def* World::lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg) {
     auto p = pi(domain, body->type(), type_qualifier, dbg);
 
     if (auto app = body->isa<App>()) {
@@ -382,7 +377,7 @@ const Def* WorldBase::lambda(const Def* domain, const Def* body, const Def* type
     return unify<Lambda>(1, *this, p, body, dbg);
 }
 
-const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
+const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
     assertf(multi_arity_kind()->assignable(arity), "({} : {}) provided to variadic constructor is not a (multi-) arity",
             arity, arity-> type());
     if (auto sigma = arity->isa<Sigma>()) {
@@ -419,13 +414,13 @@ const Def* WorldBase::variadic(const Def* arity, const Def* body, Debug dbg) {
     return unify<Variadic>(2, *this, body->type()->shift_free_vars(-1), arity, body, dbg);
 }
 
-const Def* WorldBase::variadic(Defs arity, const Def* body, Debug dbg) {
+const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
     if (arity.empty())
         return body;
     return variadic(arity.skip_back(), variadic(arity.back(), body, dbg), dbg);
 }
 
-const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
+const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
     auto type = lub(defs, q);
     if (defs.size() == 0)
         return unit(type->qualifier());
@@ -449,7 +444,7 @@ const Def* WorldBase::sigma(const Def* q, Defs defs, Debug dbg) {
     return unify<Sigma>(defs.size(), *this, type, defs, dbg);
 }
 
-const Def* WorldBase::singleton(const Def* def, Debug dbg) {
+const Def* World::singleton(const Def* def, Debug dbg) {
     assert(def->sort() != Def::Sort::Universe && "can't create singletons of universes");
 
     if (def->type()->isa<Singleton>())
@@ -483,7 +478,7 @@ const Def* WorldBase::singleton(const Def* def, Debug dbg) {
     return unify<Singleton>(1, *this, def, dbg);
 }
 
-const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
+const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
     if (auto sigma = arity->isa<Sigma>())
         return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
 
@@ -522,13 +517,13 @@ const Def* WorldBase::pack(const Def* arity, const Def* body, Debug dbg) {
     return unify<Pack>(1, *this, variadic(arity, body->type()), body, dbg);
 }
 
-const Def* WorldBase::pack(Defs arity, const Def* body, Debug dbg) {
+const Def* World::pack(Defs arity, const Def* body, Debug dbg) {
     if (arity.empty())
         return body;
     return pack(arity.skip_back(), pack(arity.back(), body, dbg), dbg);
 }
 
-const Def* WorldBase::tuple(Defs defs, Debug dbg) {
+const Def* World::tuple(Defs defs, Debug dbg) {
     size_t size = defs.size();
     if (size == 0)
         return val_unit();
@@ -566,15 +561,15 @@ const Def* WorldBase::tuple(Defs defs, Debug dbg) {
             return same;
     }
 
-    return unify<Tuple>(size, *this, type->as<SigmaBase>(), defs, dbg);
+    return unify<Tuple>(size, *this, type->as<Sigma>(), defs, dbg);
 }
 
-const Def* WorldBase::variant(Defs defs, Debug dbg) {
+const Def* World::variant(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
     return variant(lub(defs, nullptr), defs, dbg);
 }
 
-const Def* WorldBase::variant(const Def* type, Defs ops, Debug dbg) {
+const Def* World::variant(const Def* type, Defs ops, Debug dbg) {
     assert(ops.size() > 0);
     auto defs = set_flatten<Variant>(ops);
     auto first = *defs.begin();
@@ -594,7 +589,7 @@ const Def* WorldBase::variant(const Def* type, Defs ops, Debug dbg) {
     return unify<Variant>(defs.size(), *this, type, defs, dbg);
 }
 
-static const Def* build_match_type(WorldBase& w, Defs handlers) {
+static const Def* build_match_type(World& w, Defs handlers) {
     auto types = DefArray(handlers.size(),
             [&](auto i) { return handlers[i]->type()->template as<Pi>()->body(); });
     // We're not actually building a sum type here, we need uniqueness
@@ -602,7 +597,7 @@ static const Def* build_match_type(WorldBase& w, Defs handlers) {
     return w.variant(types);
 }
 
-const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
+const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
     auto def_type = def->type();
     if (handlers.size() == 1) {
         assert(!def_type->isa<Variant>());
@@ -632,7 +627,7 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
     return unify<Match>(1, *this, type, def, sorted_handlers, dbg);
 }
 
-const Axiom* WorldBase::val_nat(int64_t val, Location location) {
+const Axiom* World::val_nat(int64_t val, Location location) {
     auto cur = Def::gid_counter();
     auto result = assume(type_nat(), {val}, {location});
     if (result->gid() >= cur)
@@ -641,113 +636,5 @@ const Axiom* WorldBase::val_nat(int64_t val, Location location) {
 }
 
 //------------------------------------------------------------------------------
-
-/*
- * World
- */
-
-World::World() {
-    auto Q = qualifier_type();
-    auto S = star();
-    auto N = type_nat();
-
-    auto sigQNN = sigma({Q, N, N});
-    type_i_ = axiom(pi(sigQNN, star(extract(var(sigQNN, 0), 0))), {"int" });
-    type_r_ = axiom(pi(sigQNN, star(extract(var(sigQNN, 0), 0))), {"real"});
-
-    Env env;
-    env["nat"]  = type_nat();
-    env["bool"] = type_bool();
-    env["ptr"]  = type_ptr_   = axiom(parse(*this, "Π[*, nat]. *", env), {"ptr"});
-    env["M"]    = type_mem_   = axiom(star(Qualifier::Linear), {"M"});
-    env["F"]    = type_frame_ = axiom(S, {"F"});
-    env["int"]  = type_i();
-    env["real"] = type_r();
-
-    auto i_type_arithop = parse(*this, "Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s;  int(q, f, w)]", env);
-    auto r_type_arithop = parse(*this, "Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; real(q, f, w)]", env);
-
-    for (size_t o = 0; o != Num_IArithOp; ++o) iarithop_[o] = axiom(i_type_arithop, {iarithop2str(iarithop(o))});
-    for (size_t o = 0; o != Num_RArithOp; ++o) rarithop_[o] = axiom(r_type_arithop, {rarithop2str(rarithop(o))});
-
-    auto i_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s; bool]", env);
-    auto r_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; bool]", env);
-    op_icmp_  = axiom(i_type_cmp, {"icmp"});
-    op_rcmp_  = axiom(r_type_cmp, {"rcmp"});
-    op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)", env), {"lea"});
-    op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]", env), {"load"});
-    op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});
-    op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
-    op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
-}
-
-static std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
-    if (auto variadic = def->isa<Variadic>())
-        return {variadic->arity(), variadic->body()};
-    return {def->world().arity(1), def};
-}
-
-template<iarithop O>
-const Def* World::op(const Def* a, const Def* b, Debug dbg) {
-    auto [shape, body] = shape_and_body(a->type());
-    return app(app(app(op<O>(), shape), app_arg(body)), {a, b}, dbg);
-}
-
-template<rarithop O>
-const Def* World::op(const Def* a, const Def* b, Debug dbg) {
-    auto [shape, body] = shape_and_body(a->type());
-    return app(app(app(op<O>(), shape), app_arg(body)), {a, b}, dbg);
-}
-
-const Def* World::op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
-    auto [shape, body] = shape_and_body(a->type());
-    return app(app(app(app(op_icmp(), rel), shape), app_arg(body)), {a, b}, dbg);
-}
-const Def* World::op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
-    auto [shape, body] = shape_and_body(a->type());
-    return app(app(app(app(op_rcmp(), rel), shape), app_arg(body)), {a, b}, dbg);
-}
-
-#define CODE(O) \
-    template const Def* World::op<O>(const Def*, const Def*, Debug);
-THORIN_I_ARITHOP(CODE)
-THORIN_R_ARITHOP(CODE)
-#undef CODE
-
-const Def* World::op_enter(const Def* mem, Debug dbg) {
-    return app(op_enter_, mem, dbg);
-}
-
-const Def* types_from_tuple_type(World& w, const Def* type) {
-    if (auto sig = type->isa<Sigma>()) {
-        return w.tuple(sig->ops());
-    } else if (auto var = type->isa<Variadic>()) {
-        return w.pack(var->arity(), var->body());
-    }
-    return type;
-}
-
-const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
-    auto types = types_from_tuple_type(*this, app_arg(ptr->type(), 0));
-    return app(app(op_lea_, {types->arity(), types, app_arg(ptr->type(), 1)}, dbg), {ptr, index}, dbg);
-}
-
-const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
-    auto types = types_from_tuple_type(*this, app_arg(ptr->type(), 0));
-    auto idx = index(types->arity()->as<Axiom>()->box().get_u64(), i);
-    return app(app(op_lea_, {types->arity(), types, app_arg(ptr->type(), 1)}, dbg), {ptr, idx}, dbg);
-}
-
-const Def* World::op_load(const Def* mem, const Def* ptr, Debug dbg) {
-    return app(app(op_load_, ptr->type()->as<App>()->arg(), dbg), {mem, ptr}, dbg);
-}
-
-const Def* World::op_slot(const Def* type, const Def* frame, Debug dbg) {
-    return app(app(op_slot_, {type, val_nat_0()}, dbg), {frame, val_nat(Def::gid_counter())}, dbg);
-}
-
-const Def* World::op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg) {
-    return app(app(op_store_, ptr->type()->as<App>()->arg(), dbg), {mem, ptr, val}, dbg);
-}
 
 }

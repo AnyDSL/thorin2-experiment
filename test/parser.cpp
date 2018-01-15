@@ -9,19 +9,19 @@
 using namespace thorin;
 
 TEST(Parser, SimplePi) {
-    WorldBase w;
+    World w;
     auto def = w.pi(w.star(), w.pi(w.var(w.star(), 0), w.var(w.star(), 1)));
     ASSERT_EQ(parse(w, "ΠT:*. ΠU:T. T"), def);
 }
 
 TEST(Parser, SimpleLambda) {
-    WorldBase w;
+    World w;
     auto def = w.lambda(w.star(), w.lambda(w.var(w.star(), 0), w.var(w.var(w.star(), 1), 0)));
     ASSERT_EQ(parse(w, "λT:*. λx:T. x"), def);
 }
 
 TEST(Parser, SimpleSigma) {
-    WorldBase w;
+    World w;
 
     ASSERT_EQ(parse(w, "[]"), w.unit());
 
@@ -30,7 +30,7 @@ TEST(Parser, SimpleSigma) {
 }
 
 TEST(Parser, SimpleVariadic) {
-    WorldBase w;
+    World w;
     auto S = w.star();
     auto M = w.multi_arity_kind();
 
@@ -40,7 +40,7 @@ TEST(Parser, SimpleVariadic) {
 }
 
 TEST(Parser, Star) {
-    WorldBase w;
+    World w;
     EXPECT_EQ(parse(w, "*"), w.star());
     EXPECT_EQ(parse(w, "*ᵁ"), w.star());
     EXPECT_EQ(parse(w, "*ᴿ"), w.star(Qualifier::Relevant));
@@ -50,7 +50,7 @@ TEST(Parser, Star) {
 }
 
 TEST(Parser, ComplexVariadics) {
-    WorldBase w;
+    World w;
     auto S = w.star();
     auto M = w.multi_arity_kind();
 
@@ -61,7 +61,7 @@ TEST(Parser, ComplexVariadics) {
 }
 
 TEST(Parser, NestedBinders) {
-    WorldBase w;
+    World w;
     auto S = w.star();
     auto N = w.axiom(S, {"nat"});
     auto sig = w.sigma({N, N});
@@ -77,7 +77,7 @@ TEST(Parser, NestedBinders) {
 }
 
 TEST(Parser, NestedBinders2) {
-    WorldBase w;
+    World w;
     auto S = w.star();
     auto N = w.axiom(S, {"nat"});
     auto sig = w.sigma({N, w.sigma({N, N})});
@@ -92,7 +92,7 @@ TEST(Parser, NestedBinders2) {
 }
 
 TEST(Parser, NestedDependentBinders) {
-    WorldBase w;
+    World w;
     auto S = w.star();
     auto N = w.axiom(S, {"nat"});
     auto dtyp = w.axiom(w.pi(N, S), {"dt"});
@@ -109,7 +109,7 @@ TEST(Parser, NestedDependentBinders) {
 }
 
 TEST(Parser, IntArithOp) {
-    WorldBase w;
+    World w;
     auto Q = w.qualifier_type();
     auto S = w.star();
     auto N = w.axiom(S, {"nat" });

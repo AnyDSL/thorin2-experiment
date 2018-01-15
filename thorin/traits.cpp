@@ -9,6 +9,7 @@ const Axiom* isa_const_qualifier(const Def* def) {
     return nullptr;
 }
 
+#if  0
 bool is_primitive_type(const Def* type) {
     auto& world = static_cast<World&>(type->world());
     if (type == world.type_bool() || type == world.type_nat())
@@ -28,5 +29,6 @@ bool is_primitive_type_constructor(const Def* def) {
         def = app->callee();
     return def && (def == world.type_i() || def == world.type_r());
 }
+#endif
 
 }

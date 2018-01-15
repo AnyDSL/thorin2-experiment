@@ -16,12 +16,12 @@ struct DefIndexHash {
 
 class Reducer {
 public:
-    Reducer(WorldBase& world, Defs args)
+    Reducer(World& world, Defs args)
         : world_(world)
         , args_(args)
         , shift_(args.size())
     {}
-    Reducer(WorldBase& world, int64_t shift)
+    Reducer(World& world, int64_t shift)
         : world_(world)
         , args_()
         , shift_(shift)
@@ -29,12 +29,12 @@ public:
 
     size_t shift() const { return shift_; }
     bool is_shift_only() const { return args_.empty(); }
-    WorldBase& world() const { return world_; }
+    World& world() const { return world_; }
     const Def* reduce_structurals(const Def* def, size_t index = 0);
     void reduce_nominals();
 
 private:
-    WorldBase& world_;
+    World& world_;
     DefArray args_;
     int64_t shift_;
     thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;

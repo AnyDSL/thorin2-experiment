@@ -16,7 +16,7 @@ typedef std::unordered_map<std::string, const Def*> Env;
 
 class Parser {
 public:
-    Parser(WorldBase& world, Lexer& lexer, Env& env)
+    Parser(World& world, Lexer& lexer, Env& env)
         : world_(world)
         , lexer_(lexer)
         , env_(env)
@@ -126,7 +126,7 @@ private:
         depth_ = new_depth;
     }
 
-    WorldBase& world_;
+    World& world_;
     Lexer& lexer_;
     Env env_;
 
@@ -136,7 +136,7 @@ private:
     size_t depth_ = 0;
 };
 
-const Def* parse(WorldBase& world, const std::string& str, Env env = {});
+const Def* parse(World& world, const std::string& str, Env env = {});
 
 }
 

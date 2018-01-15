@@ -9,7 +9,7 @@ using namespace thorin;
 #define print_value_type(x) do{ std::cout << "<" << x->gid() << "> " << (x->name() == "" ? #x : x->name()) << " = " << x << ": " << x->type() << endl; }while(0)
 
 TEST(Qualifiers, Lattice) {
-    WorldBase w;
+    World w;
     auto U = Qualifier::Unlimited;
     auto R = Qualifier::Relevant;
     auto A = Qualifier::Affine;
@@ -37,7 +37,7 @@ TEST(Qualifiers, Lattice) {
 }
 
 TEST(Qualifiers, Variants) {
-    WorldBase w;
+    World w;
     auto u = w.unlimited();
     auto r = w.relevant();
     auto a = w.affine();
@@ -75,7 +75,7 @@ TEST(Qualifiers, Variants) {
 }
 
 TEST(Qualifiers, Kinds) {
-    WorldBase w;
+    World w;
     auto u = w.unlimited();
     auto r = w.relevant();
     auto a = w.affine();
@@ -97,7 +97,7 @@ TEST(Qualifiers, Kinds) {
 
 #if 0
 TEST(Substructural, Misc) {
-    WorldBase w;
+    World w;
     //auto R = Qualifier::Relevant;
     auto A = Qualifier::Affine;
     auto L = Qualifier::Linear;
@@ -153,7 +153,7 @@ TEST(Substructural, Misc) {
 #endif
 
 TEST(Substructural, UnlimitedRefs) {
-    WorldBase w;
+    World w;
     Env env;
     auto Star = w.star();
     auto Nat = w.axiom(Star, {"Nat"});
@@ -179,7 +179,7 @@ TEST(Substructural, UnlimitedRefs) {
 }
 
 TEST(Substructural, AffineRefs) {
-    WorldBase w;
+    World w;
     Env env;
     auto a = w.affine();
     auto Star = w.star();
@@ -200,7 +200,7 @@ TEST(Substructural, AffineRefs) {
 }
 
 TEST(Substructural, AffineCapabilityRefs) {
-    WorldBase w;
+    World w;
     Env env;
     auto a = w.affine();
     auto Star = w.star();
@@ -236,7 +236,7 @@ TEST(Substructural, AffineCapabilityRefs) {
 }
 
 TEST(Substructural, AffineFractionalCapabilityRefs) {
-    WorldBase w;
+    World w;
     Env env;
     auto a = w.affine();
     auto Star = w.star();

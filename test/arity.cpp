@@ -5,7 +5,7 @@
 using namespace thorin;
 
 TEST(Arity, Sigma) {
-    WorldBase w;
+    World w;
     auto a0 = w.arity(0);
     auto a1 = w.arity(1);
     auto a2 = w.arity(2);
@@ -20,7 +20,7 @@ TEST(Arity, Sigma) {
 }
 
 TEST(Arity, DependentSigma) {
-    WorldBase w;
+    World w;
     // auto a0 = w.arity(0);
     // auto a1 = w.arity(1);
     auto a2 = w.arity(2);
@@ -33,7 +33,7 @@ TEST(Arity, DependentSigma) {
 }
 
 TEST(Arity, Variadic) {
-    WorldBase w;
+    World w;
     auto a0 = w.arity(0);
     auto a1 = w.arity(1);
     auto a2 = w.arity(2);
@@ -46,7 +46,7 @@ TEST(Arity, Variadic) {
 }
 
 TEST(Arity, Pack) {
-    WorldBase w;
+    World w;
     auto a0 = w.arity(0);
     auto a1 = w.arity(1);
     auto a2 = w.arity(2);
@@ -59,7 +59,7 @@ TEST(Arity, Pack) {
 }
 
 TEST(Arity, Subkinding) {
-    WorldBase w;
+    World w;
     auto a0 = w.arity(0);
     auto a3 = w.arity(3);
     auto A = w.arity_kind();
@@ -78,7 +78,7 @@ TEST(Arity, Subkinding) {
 }
 
 TEST(Arity, PrefixExtract) {
-    WorldBase w;
+    World w;
     auto a2 = w.arity(2);
     auto i1_2 = w.index(2, 1);
     auto a3 = w.arity(3);

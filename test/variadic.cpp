@@ -1,12 +1,12 @@
 #include "gtest/gtest.h"
 
-#include "thorin/world.h"
+#include "thorin/core/world.h"
 #include "thorin/frontend/parser.h"
 
 using namespace thorin;
 
 TEST(Variadic, Unit) {
-    World w;
+    core::World w;
     auto N = w.type_nat();
     ASSERT_EQ(w.variadic(0_s, N), w.unit());
     ASSERT_EQ(w.variadic(0_s, w.type_i(Qualifier::Affine, iflags::so, 32)), w.unit(w.affine()));
@@ -58,7 +58,7 @@ TEST(Variadic, Misc) {
 }
 
 TEST(Variadic, LEA) {
-    World w;
+    core::World w;
     auto B = w.type_bool();
     auto N = w.type_nat();
 
