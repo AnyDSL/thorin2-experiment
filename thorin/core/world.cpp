@@ -67,6 +67,7 @@ const Def* World::op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg)
     return app(app(app(app(op_rcmp(), rel), shape), app_arg(body)), {a, b}, dbg);
 }
 
+// instantiate templates
 #define CODE(O) \
     template const Def* World::op<O>(const Def*, const Def*, Debug);
 THORIN_I_ARITHOP(CODE)
