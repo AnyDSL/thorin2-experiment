@@ -279,7 +279,7 @@ const Def* Def::qualifier() const {
 }
 
 const Def* Def::kind_qualifier() const {
-    assert(is_kind());
+    assert(is_kind() || is_universe());
     return world().unlimited();
 }
 
