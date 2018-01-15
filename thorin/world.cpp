@@ -145,11 +145,11 @@ World::World()
         unit_val_[i] = index_zero(unit_[i]);
     }
 
-    type_bool_ = axiom(star(), {"bool"});
+    type_bool_ = arity(2);
     type_nat_  = axiom(star(), {"nat" });
 
-    val_bool_[0] = assume(type_bool_, {false}, {"⊥"});
-    val_bool_[1] = assume(type_bool_, {true }, {"⊤"});
+    val_bool_[0] = index(2, 0)->as<Axiom>();
+    val_bool_[1] = index(2, 1)->as<Axiom>();
 
     val_nat_0_   = val_nat(0);
     for (size_t j = 0; j != val_nat_.size(); ++j)

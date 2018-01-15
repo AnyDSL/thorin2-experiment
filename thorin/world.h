@@ -199,8 +199,8 @@ public:
     //@}
 
     //@{ bool and nat types
-    const Def* type_bool() { return type_bool_; }
-    const Def* type_nat() { return type_nat_; }
+    const Axiom* type_bool() { return type_bool_; }
+    const Axiom* type_nat() { return type_nat_; }
     //@}
 
 
@@ -346,8 +346,8 @@ protected:
     std::array<const Def*, 4> unit_kind_val_;
     std::array<const ArityKind*, 4> arity_kind_;
     std::array<const MultiArityKind*, 4> multi_arity_kind_;
-    const Def* type_bool_;
-    const Def* type_nat_;
+    const Axiom* type_bool_;
+    const Axiom* type_nat_;
     const Axiom* val_nat_0_;
     std::array<const Axiom*, 2> val_bool_;
     std::array<const Axiom*, 7> val_nat_;
