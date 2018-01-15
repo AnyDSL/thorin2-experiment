@@ -22,14 +22,15 @@ static bool any_of(const Def* def, Defs defs) {
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
-template<bool use_glb, class I>
+template<bool use_glb, bool type_bound, class I>
 const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
     if (defs.distance() == 0)
         return star(q ? q : use_glb ? linear() : unlimited());
 
     auto first = *defs.begin();
     auto inferred_q = first->qualifier();
-    auto max_type = first->type();
+    auto def_or_type = [&] (auto def) { return type_bound ? def->type() : def; };
+    auto max = def_or_type(first);
 
     auto iter = defs.begin() + 1;
     for (size_t i = 1, e = defs.distance(); i != e; ++i, ++iter) {
@@ -48,25 +49,25 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
                 : variant(qualifier_type(), {inferred_q, qualifier});
         }
 
-        if (def->type() == universe() || max_type == universe()) {
-            max_type = universe();
+        if (def_or_type(def) == universe() || max == universe()) {
+            max = universe();
             break;
         }
-        else if (def->type() == arity_kind() && (max_type == arity_kind() || max_type == multi_arity_kind()))
+        else if (def_or_type(def) == arity_kind() && (max == arity_kind() || max == multi_arity_kind()))
             // found at least two arities, must be a multi-arity
-            max_type = multi_arity_kind();
+            max = multi_arity_kind();
         else {
-            max_type = star(inferred_q);
+            max = star(inferred_q);
         }
     }
 
-    if (max_type->template isa<Star>()) {
+    if (max->template isa<Star>()) {
         if (!require_qualifier)
             return star(q ? q : use_glb ? linear() : unlimited());
         if (q == nullptr) {
             // no provided qualifier, so we use the inferred one
-            assert(!max_type || max_type->op(0) == inferred_q);
-            return max_type;
+            assert(!max || max->op(0) == inferred_q);
+            return max;
         } else {
 #ifndef NDEBUG
             if (auto qual_axiom = isa_const_qualifier(inferred_q)) {
@@ -83,7 +84,7 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
             return star(q);
         }
     }
-    return max_type;
+    return max;
 }
 
 template<bool use_glb, class I>
@@ -241,14 +242,13 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
         const Def* result_type = nullptr;
         if (auto sigma = type->isa<Sigma>()) {
             assertf(!sigma->is_dependent(), "can't extract at {} from {} : {}, type is dependent", index, def, sigma);
-            // TODO some cases are typeable: ()
             if (sigma->type() == universe()) {
                 // can only type those, that we can bound usefully
-                if (def->isa<Tuple>())
-                    result_type = lub(def->ops(), nullptr, true);
-                // else if (def->isa<Pack>())
-                else
-                    assertf(false, "can't extract at {} from {} : {}, type is a kind (not reflectable), maybe TODO", index, def, sigma);
+                auto bound = lub(sigma->ops(), nullptr, true);
+                if (bound != universe())
+                    result_type = bound;
+                else // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *], but * not a subtype of Universe
+                    assertf(false, "can't extract at {} from {} : {}, type may be □ (not reflectable)", index, def, sigma);
             } else
                 result_type = extract(tuple(sigma->ops(), dbg), index);
         } else
@@ -329,7 +329,7 @@ const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) 
 
 const Def* World::intersection(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return intersection(glb(defs, nullptr), defs, dbg);
+    return intersection(type_glb(defs, nullptr), defs, dbg);
 }
 
 const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
@@ -355,7 +355,7 @@ const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
 
 const Pi* World::pi(const Def* domain, const Def* body, const Def* q, Debug dbg) {
     assertf(!body->is_value(), "body {} : {} of function type cannot be a value", body, body->type());
-    auto type = lub({domain, body}, q, false);
+    auto type = type_lub({domain, body}, q, false);
     return unify<Pi>(2, *this, type, domain, body, dbg);
 }
 
@@ -428,7 +428,7 @@ const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
 }
 
 const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
-    auto type = lub(defs, q);
+    auto type = type_lub(defs, q);
     if (defs.size() == 0)
         return unit(type->qualifier());
 
@@ -573,7 +573,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
 
 const Def* World::variant(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return variant(lub(defs, nullptr), defs, dbg);
+    return variant(type_lub(defs, nullptr), defs, dbg);
 }
 
 const Def* World::variant(const Def* type, Defs ops, Debug dbg) {

@@ -42,10 +42,13 @@ TEST(Tuple, TypeExtract) {
     World w;
     auto arity2 = w.arity(2);
     auto nat = w.axiom(w.star(), {"Nat"});
-    auto tup = w.tuple({arity2, nat});
 
-    auto ex = w.extract(tup, w.var(arity2, 0));
-    EXPECT_EQ(ex->type(), w.star());
+    auto tup = w.tuple({arity2, nat});
+    auto ex_tup = w.extract(tup, w.var(arity2, 0));
+    EXPECT_EQ(ex_tup->type(), w.star());
+
+    auto ex_var_tup = w.extract(w.var(w.sigma({w.arity_kind(), w.star()}), 1), w.var(arity2, 0))->type();
+    EXPECT_EQ(ex_var_tup, w.star());
 }
 
 TEST(Tuple, Error) {

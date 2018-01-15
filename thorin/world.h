@@ -230,13 +230,19 @@ public:
     }
 
 private:
-    template<bool glb, class I>
+    template<bool glb, bool type_bound = true, class I>
     const Def* bound(Range<I> ops, const Def* q, bool require_qualifier = true);
     template<class I>
-    const Def* lub(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<false>(ops, q, require_qualifier); }
+    const Def* type_lub(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<false, true>(ops, q, require_qualifier); }
+    const Def* type_lub(Defs ops, const Def* q, bool require_qualifier = true) { return type_lub(range(ops), q, require_qualifier); }
+    template<class I>
+    const Def* lub(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<false, false>(ops, q, require_qualifier); }
     const Def* lub(Defs ops, const Def* q, bool require_qualifier = true) { return lub(range(ops), q, require_qualifier); }
     template<class I>
-    const Def* glb(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<true >(ops, q, require_qualifier); }
+    const Def* type_glb(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<true, true>(ops, q, require_qualifier); }
+    const Def* type_glb(Defs ops, const Def* q, bool require_qualifier = true) { return glb(range(ops), q, require_qualifier); }
+    template<class I>
+    const Def* glb(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<true, false>(ops, q, require_qualifier); }
     const Def* glb(Defs ops, const Def* q, bool require_qualifier = true) { return glb(range(ops), q, require_qualifier); }
 
     template<bool glb, class I>
