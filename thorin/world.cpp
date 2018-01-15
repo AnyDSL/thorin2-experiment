@@ -49,15 +49,21 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
                 : variant(qualifier_type(), {inferred_q, qualifier});
         }
 
-        if (def_or_type(def) == universe() || max == universe()) {
+        auto defotype = def_or_type(def);
+        // TODO somehow build into a def->is_subtype_of(other)/similar
+        bool is_arity = defotype->template isa<ArityKind>();
+        bool is_star = defotype->template isa<Star>();
+        bool is_marity = is_arity || defotype->template isa<MultiArityKind>();
+        bool max_is_marity = max->template isa<ArityKind>() || max->template isa<MultiArityKind>();
+        bool max_is_star = max->template isa<Star>();
+        if (is_arity && max_is_marity)
+            // found at least two arities, must be a multi-arity
+            max = multi_arity_kind(inferred_q);
+        else if ((is_star || is_marity) && (max_is_star || max_is_marity))
+            max = star(inferred_q);
+        else {
             max = universe();
             break;
-        }
-        else if (def_or_type(def) == arity_kind() && (max == arity_kind() || max == multi_arity_kind()))
-            // found at least two arities, must be a multi-arity
-            max = multi_arity_kind();
-        else {
-            max = star(inferred_q);
         }
     }
 
@@ -245,10 +251,9 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             if (sigma->type() == universe()) {
                 // can only type those, that we can bound usefully
                 auto bound = lub(sigma->ops(), nullptr, true);
-                if (bound != universe())
-                    result_type = bound;
-                else // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *], but * not a subtype of Universe
-                    assertf(false, "can't extract at {} from {} : {}, type may be □ (not reflectable)", index, def, sigma);
+                // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *], but * not a subtype of Universe, thus can't derive a bound for this
+                assertf(bound != universe(), "can't extract at {} from {} : {}, type may be □ (not reflectable)", index, def, sigma);
+                result_type = bound;
             } else
                 result_type = extract(tuple(sigma->ops(), dbg), index);
         } else

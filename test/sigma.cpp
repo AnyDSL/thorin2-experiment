@@ -49,6 +49,9 @@ TEST(Tuple, TypeExtract) {
 
     auto ex_var_tup = w.extract(w.var(w.sigma({w.arity_kind(), w.star()}), 1), w.var(arity2, 0))->type();
     EXPECT_EQ(ex_var_tup, w.star());
+
+    auto sig = w.sigma({w.pi(w.star(), w.star()), w.star()});
+    EXPECT_DEATH(w.extract(w.var(sig, 1), w.var(arity2, 0))->type(), ".*");
 }
 
 TEST(Tuple, Error) {
