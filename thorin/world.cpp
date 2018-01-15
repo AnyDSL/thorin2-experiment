@@ -561,7 +561,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
             return same;
     }
 
-    return unify<Tuple>(size, *this, type->as<Sigma>(), defs, dbg);
+    return unify<Tuple>(size, *this, type->as<SigmaBase>(), defs, dbg);
 }
 
 const Def* World::variant(Defs defs, Debug dbg) {
