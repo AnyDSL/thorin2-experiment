@@ -198,6 +198,28 @@ public:
     }
     //@}
 
+    //@{ bool and nat types
+    const Def* type_bool() { return type_bool_; }
+    const Def* type_nat() { return type_nat_; }
+    //@}
+
+
+    //@{ values for bool and nat
+    const Axiom* val_nat(int64_t val, Location location = {});
+    const Axiom* val_nat_0() { return val_nat_0_; }
+    const Axiom* val_nat_1() { return val_nat_[0]; }
+    const Axiom* val_nat_2() { return val_nat_[1]; }
+    const Axiom* val_nat_4() { return val_nat_[2]; }
+    const Axiom* val_nat_8() { return val_nat_[3]; }
+    const Axiom* val_nat_16() { return val_nat_[4]; }
+    const Axiom* val_nat_32() { return val_nat_[5]; }
+    const Axiom* val_nat_64() { return val_nat_[6]; }
+
+    const Axiom* val_bool(bool val) { return val_bool_[size_t(val)]; }
+    const Axiom* val_bool_bot() { return val_bool_[0]; }
+    const Axiom* val_bool_top() { return val_bool_[1]; }
+    //@}
+
     const DefSet& defs() const { return defs_; }
 
     friend void swap(WorldBase& w1, WorldBase& w2) {
@@ -318,6 +340,11 @@ protected:
     std::array<const Def*, 4> unit_kind_val_;
     std::array<const ArityKind*, 4> arity_kind_;
     std::array<const MultiArityKind*, 4> multi_arity_kind_;
+    const Def* type_bool_;
+    const Def* type_nat_;
+    const Axiom* val_nat_0_;
+    std::array<const Axiom*, 2> val_bool_;
+    std::array<const Axiom*, 7> val_nat_;
 };
 
 inline const Def* app_arg(const Def* def) { return def->as<App>()->arg(); }
@@ -325,14 +352,9 @@ inline const Def* app_arg(const Def* def, size_t i) { return def->world().extrac
 
 class World : public WorldBase {
 public:
-    template<class T, size_t N> using array = std::array<T, N>;
-
     World();
 
     //@{ types and type constructors
-    const Def* type_bool() { return type_bool_; }
-    const Def* type_nat() { return type_nat_; }
-
 #define CODE(ir)                                                                                                         \
     const Axiom* type_ ## ir() { return type_ ## ir ## _; }                                                              \
     const App* type_ ## ir(ir ## flags flags, int64_t width) { return type_ ## ir(Qualifier::Unlimited, flags, width); } \
@@ -356,20 +378,6 @@ public:
     //@}
 
     //@{ values
-    const Axiom* val_nat(int64_t val, Location location = {});
-    const Axiom* val_nat_0() { return val_nat_0_; }
-    const Axiom* val_nat_1() { return val_nat_[0]; }
-    const Axiom* val_nat_2() { return val_nat_[1]; }
-    const Axiom* val_nat_4() { return val_nat_[2]; }
-    const Axiom* val_nat_8() { return val_nat_[3]; }
-    const Axiom* val_nat_16() { return val_nat_[4]; }
-    const Axiom* val_nat_32() { return val_nat_[5]; }
-    const Axiom* val_nat_64() { return val_nat_[6]; }
-
-    const Axiom* val_bool(bool val) { return val_bool_[size_t(val)]; }
-    const Axiom* val_bool_bot() { return val_bool_[0]; }
-    const Axiom* val_bool_top() { return val_bool_[1]; }
-
     const Axiom* val(iflags f,  uint8_t val) { return assume(type_i(f,  8), {val}, {std::to_string(val)}); }
     const Axiom* val(iflags f, uint16_t val) { return assume(type_i(f, 16), {val}, {std::to_string(val)}); }
     const Axiom* val(iflags f, uint32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
@@ -419,11 +427,6 @@ public:
     //@}
 
 private:
-    const Def* type_bool_;
-    const Def* type_nat_;
-    const Axiom* val_nat_0_;
-    array<const Axiom*, 2> val_bool_;
-    array<const Axiom*, 7> val_nat_;
     const Axiom* type_i_;
     const Axiom* type_r_;
     const Axiom* type_mem_;
@@ -434,8 +437,8 @@ private:
     const Axiom* op_load_;
     const Axiom* op_slot_;
     const Axiom* op_store_;
-    array<const Axiom*, Num_IArithOp> iarithop_;
-    array<const Axiom*, Num_RArithOp> rarithop_;
+    std::array<const Axiom*, Num_IArithOp> iarithop_;
+    std::array<const Axiom*, Num_RArithOp> rarithop_;
     const Axiom* op_icmp_;
     const Axiom* op_rcmp_;
 };

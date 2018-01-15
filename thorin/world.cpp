@@ -148,6 +148,16 @@ WorldBase::WorldBase()
         unit_[i] = arity(1, qualifier_[i]);
         unit_val_[i] = index_zero(unit_[i]);
     }
+
+    type_bool_ = axiom(star(), {"bool"});
+    type_nat_  = axiom(star(), {"nat" });
+
+    val_bool_[0] = assume(type_bool_, {false}, {"⊥"});
+    val_bool_[1] = assume(type_bool_, {true }, {"⊤"});
+
+    val_nat_0_   = val_nat(0);
+    for (size_t j = 0; j != val_nat_.size(); ++j)
+        val_nat_[j] = val_nat(1 << int64_t(j));
 }
 
 WorldBase::~WorldBase() {
@@ -622,6 +632,14 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
     return unify<Match>(1, *this, type, def, sorted_handlers, dbg);
 }
 
+const Axiom* WorldBase::val_nat(int64_t val, Location location) {
+    auto cur = Def::gid_counter();
+    auto result = assume(type_nat(), {val}, {location});
+    if (result->gid() >= cur)
+        result->debug().set(std::to_string(val));
+    return result;
+}
+
 //------------------------------------------------------------------------------
 
 /*
@@ -630,19 +648,12 @@ const Def* WorldBase::match(const Def* def, Defs handlers, Debug dbg) {
 
 World::World() {
     auto Q = qualifier_type();
-    auto B = type_bool_ = axiom(star(), {"bool"});
-    auto N = type_nat_  = axiom(star(), {"nat" });
     auto S = star();
+    auto N = type_nat();
 
     auto sigQNN = sigma({Q, N, N});
     type_i_ = axiom(pi(sigQNN, star(extract(var(sigQNN, 0), 0))), {"int" });
     type_r_ = axiom(pi(sigQNN, star(extract(var(sigQNN, 0), 0))), {"real"});
-
-    val_bool_[0] = assume(B, {false}, {"⊥"});
-    val_bool_[1] = assume(B, {true }, {"⊤"});
-    val_nat_0_   = val_nat(0);
-    for (size_t j = 0; j != val_nat_.size(); ++j)
-        val_nat_[j] = val_nat(1 << int64_t(j));
 
     Env env;
     env["nat"]  = type_nat();
@@ -668,14 +679,6 @@ World::World() {
     op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});
     op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
     op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
-}
-
-const Axiom* World::val_nat(int64_t val, Location location) {
-    auto cur = Def::gid_counter();
-    auto result = assume(type_nat(), {val}, {location});
-    if (result->gid() >= cur)
-        result->debug().set(std::to_string(val));
-    return result;
 }
 
 static std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
