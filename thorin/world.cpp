@@ -738,8 +738,7 @@ const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
 }
 
 const Def* World::op_load(const Def* mem, const Def* ptr, Debug dbg) {
-    PtrType ptr_type(ptr->type());
-    return app(app(op_load_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {mem, ptr}, dbg);
+    return app(app(op_load_, ptr->type()->as<App>()->arg(), dbg), {mem, ptr}, dbg);
 }
 
 const Def* World::op_slot(const Def* type, const Def* frame, Debug dbg) {
@@ -747,8 +746,7 @@ const Def* World::op_slot(const Def* type, const Def* frame, Debug dbg) {
 }
 
 const Def* World::op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg) {
-    PtrType ptr_type(ptr->type());
-    return app(app(op_store_, {ptr_type.pointee(), ptr_type.addr_space()}, dbg), {mem, ptr, val}, dbg);
+    return app(app(op_store_, ptr->type()->as<App>()->arg(), dbg), {mem, ptr, val}, dbg);
 }
 
 }
