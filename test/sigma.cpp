@@ -38,6 +38,16 @@ TEST(Sigma, ExtractAndSingleton) {
     std::cout << single_pi << ": " << single_pi->type() << std::endl;
 }
 
+TEST(Tuple, TypeExtract) {
+    World w;
+    auto arity2 = w.arity(2);
+    auto nat = w.axiom(w.star(), {"Nat"});
+    auto tup = w.tuple({arity2, nat});
+
+    auto ex = w.extract(tup, w.var(arity2, 0));
+    EXPECT_EQ(ex->type(), w.star());
+}
+
 TEST(Tuple, Error) {
     World w;
 

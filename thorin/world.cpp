@@ -241,9 +241,16 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
         const Def* result_type = nullptr;
         if (auto sigma = type->isa<Sigma>()) {
             assertf(!sigma->is_dependent(), "can't extract at {} from {} : {}, type is dependent", index, def, sigma);
-            assertf(sigma->type() != universe(), "can't extract at {} from {} : {}, type is a kind (not reflectable)", index,
-                   def, sigma);
-            result_type = extract(tuple(sigma->ops(), dbg), index);
+            // TODO some cases are typeable: ()
+            if (sigma->type() == universe()) {
+                // can only type those, that we can bound usefully
+                if (def->isa<Tuple>())
+                    result_type = lub(def->ops(), nullptr, true);
+                // else if (def->isa<Pack>())
+                else
+                    assertf(false, "can't extract at {} from {} : {}, type is a kind (not reflectable), maybe TODO", index, def, sigma);
+            } else
+                result_type = extract(tuple(sigma->ops(), dbg), index);
         } else
             result_type = type->as<Variadic>()->body()->reduce(index);
 
