@@ -684,20 +684,6 @@ static std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
     return {def->world().arity(1), def};
 }
 
-// TODO reuse shape_and_body
-static std::tuple<const Def*, const Def*> shape_and_flags(const Def* def) {
-    const Def* shape;
-    const App* app;
-    if (auto variadic = def->isa<Variadic>()) {
-        app = variadic->body()->as<App>();
-        shape = variadic->arity();
-    } else {
-        app = def->as<App>();
-        shape = def->world().arity(1);
-    }
-    return {shape, app->arg()};
-}
-
 template<iarithop O>
 const Def* World::op(const Def* a, const Def* b, Debug dbg) {
     auto [shape, body] = shape_and_body(a->type());
@@ -706,17 +692,17 @@ const Def* World::op(const Def* a, const Def* b, Debug dbg) {
 
 template<rarithop O>
 const Def* World::op(const Def* a, const Def* b, Debug dbg) {
-    auto [shape, flags] = shape_and_flags(a->type());
-    return app(app(app(op<O>(), shape), flags), {a, b}, dbg);
+    auto [shape, body] = shape_and_body(a->type());
+    return app(app(app(op<O>(), shape), app_arg(body)), {a, b}, dbg);
 }
 
 const Def* World::op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
-    auto [shape, flags] = shape_and_flags(a->type());
-    return app(app(app(app(op_icmp(), rel), shape), flags), {a, b}, dbg);
+    auto [shape, body] = shape_and_body(a->type());
+    return app(app(app(app(op_icmp(), rel), shape), app_arg(body)), {a, b}, dbg);
 }
 const Def* World::op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
-    auto [shape, flags] = shape_and_flags(a->type());
-    return app(app(app(app(op_rcmp(), rel), shape), flags), {a, b}, dbg);
+    auto [shape, body] = shape_and_body(a->type());
+    return app(app(app(app(op_rcmp(), rel), shape), app_arg(body)), {a, b}, dbg);
 }
 
 #define CODE(O) \
