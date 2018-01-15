@@ -320,6 +320,9 @@ protected:
     std::array<const MultiArityKind*, 4> multi_arity_kind_;
 };
 
+inline const Def* app_arg(const Def* def) { return def->as<App>()->arg(); }
+inline const Def* app_arg(const Def* def, size_t i) { return def->world().extract(app_arg(def), i); }
+
 class World : public WorldBase {
 public:
     template<class T, size_t N> using array = std::array<T, N>;

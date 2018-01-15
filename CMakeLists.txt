@@ -34,9 +34,6 @@ add_executable(coc
     test/lambda.cpp
     test/lexer.cpp
     test/main.cpp
-    test/matchers/types.cpp
-    test/matchers/ops.cpp
-    test/matchers/literals.cpp
     test/nominal.cpp
     test/pack.cpp
     test/parser.cpp
@@ -62,9 +59,6 @@ add_executable(coc
     thorin/frontend/parser.h
     thorin/frontend/token.h
     thorin/frontend/token.cpp
-    thorin/matchers/types.h
-    thorin/matchers/literals.h
-    thorin/matchers/ops.h
     thorin/util/array.h
     thorin/util/bitset.cpp
     thorin/util/bitset.h

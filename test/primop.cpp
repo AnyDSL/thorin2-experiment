@@ -39,6 +39,7 @@ TEST(Primop, Types) {
 
 TEST(Primop, Arithop) {
     World w;
+    w.op<iadd>()->type()->dump();
     auto a = w.op<iadd>(w.val(iflags::uo, 23), w.val(iflags::uo, 42));
     a->dump();
     a->type()->dump();

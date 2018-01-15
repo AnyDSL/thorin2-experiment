@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 
 #include "thorin/world.h"
-#include "thorin/matchers/ops.h"
 #include "thorin/frontend/parser.h"
 
 using namespace thorin;
@@ -65,25 +64,25 @@ TEST(Variadic, LEA) {
 
     auto s2 = w.sigma({B, N});
     auto ps2 = w.axiom(w.type_ptr(s2, w.val_nat_2()), {"ptr_s2"});
-    auto lea1 = LEA(w.op_lea(ps2, 1));
-    ASSERT_EQ(lea1.type(), w.type_ptr(N, w.val_nat_2()));
-    ASSERT_EQ(lea1.ptr_pointee(), s2);
-    ASSERT_EQ(w.insert(w.tuple({w.val_bool_top(), w.val_nat_2()}), 1, w.val_nat_8())->type(), s2);
+    ASSERT_EQ(w.op_lea(ps2, 0_s)->type(), w.type_ptr(B, w.val_nat_2()));
+    ASSERT_EQ(w.op_lea(ps2, 1_s)->type(), w.type_ptr(N, w.val_nat_2()));
 
     auto v3n = w.variadic(w.arity(3), N);
     auto pv3n = w.axiom(w.type_ptr(v3n, w.val_nat_2()), {"ptr_v3n"});
-    auto lea3 = LEA(w.op_lea(pv3n, 1));
-    ASSERT_EQ(lea3.type(), w.type_ptr(N, w.val_nat_2()));
-    ASSERT_EQ(lea3.ptr_pointee(), v3n);
+    ASSERT_EQ(w.op_lea(pv3n, 0_s)->type(), w.type_ptr(N, w.val_nat_2()));
+    ASSERT_EQ(w.op_lea(pv3n, 1_s)->type(), w.type_ptr(N, w.val_nat_2()));
+    ASSERT_EQ(w.op_lea(pv3n, 2_s)->type(), w.type_ptr(N, w.val_nat_2()));
 
     // TODO allow assignability/conversion from values of nominal type to structural type
-    // auto n2 = w.sigma_type(2, {"n2"})->set(0, B)->set(1, N);
-    // auto pn2 = w.axiom(w.type_ptr(n2, w.val_nat_4()), {"ptr_n2"});
-    // auto lea2 = LEA(w.op_lea(pn2, 1));
-    // ASSERT_EQ(lea2.type(), w.type_ptr(N, w.val_nat_4()));
-    // ASSERT_EQ(lea2.ptr_pointee(), n2);
+#if 0
+    auto n2 = w.sigma_type(2, {"n2"})->set(0, B)->set(1, N);
+    auto pn2 = w.axiom(w.type_ptr(n2, w.val_nat_4()), {"ptr_n2"});
+    ASSERT_EQ(w.op_lea(pn2, 0_s)->type(), w.type_ptr(B, w.val_nat_2()));
+    ASSERT_EQ(w.op_lea(pn2, 1_s)->type(), w.type_ptr(N, w.val_nat_2()));
+#endif
 }
 
+#if 0
 TEST(Variadic, Multi) {
     World w;
     auto N = w.type_nat();
@@ -120,6 +119,7 @@ TEST(Variadic, Multi) {
     ASSERT_EQ(w.app(w.app(l, w.arity(2)), args), w.variadic({3, 4}, N));
 
 }
+#endif
 
 TEST(Variadic, InlineSigmaInterOp) {
     World w;
@@ -161,6 +161,7 @@ TEST(Variadic, Nested) {
     ASSERT_EQ(v, w.sigma(outer_sigmas));
 }
 
+#if 0
 TEST(XLA, Misc) {
     World w;
     auto N = w.type_nat();
@@ -182,4 +183,5 @@ TEST(XLA, Misc) {
     auto reduce = w.axiom(parse(w, "Π[s:𝕄, t:*, Π[t, t].t]. Π[x: arr(s, t), t]. t"), {"reduce"});
     reduce->type()->dump();
 }
+#endif
 

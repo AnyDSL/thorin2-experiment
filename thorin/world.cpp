@@ -3,7 +3,6 @@
 
 #include "thorin/world.h"
 #include "thorin/reduce.h"
-#include "thorin/matchers/types.h"
 #include "thorin/frontend/parser.h"
 
 namespace thorin {
@@ -664,7 +663,7 @@ World::World() {
     auto r_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; bool]", env);
     op_icmp_  = axiom(i_type_cmp, {"icmp"});
     op_rcmp_  = axiom(r_type_cmp, {"rcmp"});
-    op_lea_   = axiom(parse(*this, "Π[s: 𝕄, ts: [s; *], as: nat]. Π[ptr([j: s; (ts#j)], as), i: s]. ptr((ts#i), as)", env), {"lea"});
+    op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)", env), {"lea"});
     op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]", env), {"load"});
     op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});
     op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
@@ -679,6 +678,13 @@ const Axiom* World::val_nat(int64_t val, Location location) {
     return result;
 }
 
+static std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
+    if (auto variadic = def->isa<Variadic>())
+        return {variadic->arity(), variadic->body()};
+    return {def->world().arity(1), def};
+}
+
+// TODO reuse shape_and_body
 static std::tuple<const Def*, const Def*> shape_and_flags(const Def* def) {
     const Def* shape;
     const App* app;
@@ -694,8 +700,8 @@ static std::tuple<const Def*, const Def*> shape_and_flags(const Def* def) {
 
 template<iarithop O>
 const Def* World::op(const Def* a, const Def* b, Debug dbg) {
-    auto [shape, flags] = shape_and_flags(a->type());
-    return app(app(app(op<O>(), shape), flags), {a, b}, dbg);
+    auto [shape, body] = shape_and_body(a->type());
+    return app(app(app(op<O>(), shape), app_arg(body)), {a, b}, dbg);
 }
 
 template<rarithop O>
@@ -733,16 +739,14 @@ const Def* types_from_tuple_type(World& w, const Def* type) {
 }
 
 const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
-    PtrType ptr_type(ptr->type());
-    auto types = types_from_tuple_type(*this, ptr_type.pointee());
-    return app(app(op_lea_, {types->arity(), types, ptr_type.addr_space()}, dbg), {ptr, index}, dbg);
+    auto types = types_from_tuple_type(*this, app_arg(ptr->type(), 0));
+    return app(app(op_lea_, {types->arity(), types, app_arg(ptr->type(), 1)}, dbg), {ptr, index}, dbg);
 }
 
 const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
-    PtrType ptr_type(ptr->type());
-    auto types = types_from_tuple_type(*this, ptr_type.pointee());
+    auto types = types_from_tuple_type(*this, app_arg(ptr->type(), 0));
     auto idx = index(types->arity()->as<Axiom>()->box().get_u64(), i);
-    return app(app(op_lea_, {types->arity(), types, ptr_type.addr_space()}, dbg), {ptr, idx}, dbg);
+    return app(app(op_lea_, {types->arity(), types, app_arg(ptr->type(), 1)}, dbg), {ptr, idx}, dbg);
 }
 
 const Def* World::op_load(const Def* mem, const Def* ptr, Debug dbg) {

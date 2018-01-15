@@ -48,6 +48,7 @@ TEST(Lambda, PolyId) {
     EXPECT_EQ(w.app(int_id, n23), n23);
 }
 
+#if 0
 TEST(Lambda, PolyIdPredicative) {
     World w;
     // λT:*.λx:T.x
@@ -58,6 +59,7 @@ TEST(Lambda, PolyIdPredicative) {
 
     EXPECT_FALSE(poly_id->domain()->assignable(poly_id->type()));
 }
+#endif
 
 static const int test_num_vars = 1000;
 
