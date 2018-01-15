@@ -24,16 +24,18 @@ static bool any_of(const Def* def, Defs defs) {
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
-template<bool use_glb>
-const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
-    if (defs.empty())
+template<bool use_glb, class I>
+const Def* WorldBase::bound(Range<I> defs, const Def* q, bool require_qualifier) {
+    if (defs.distance() == 0)
         return star(q ? q : use_glb ? linear() : unlimited());
 
-    auto inferred_q = defs.front()->qualifier();
-    auto max_type = defs.front()->type();
+    auto first = *defs.begin();
+    auto inferred_q = first->qualifier();
+    auto max_type = first->type();
 
-    for (size_t i = 1, e = defs.size(); i != e; ++i) {
-        auto def = defs[i];
+    auto iter = defs.begin() + 1;
+    for (size_t i = 1, e = defs.distance(); i != e; ++i, ++iter) {
+        auto def = *iter;
         assertf(!def->is_value(), "can't have value {} as operand of bound operator", def);
         assertf(def->sort() != Def::Sort::Universe, "type universes must not be operands");
 
@@ -60,7 +62,7 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
         }
     }
 
-    if (max_type->isa<Star>()) {
+    if (max_type->template isa<Star>()) {
         if (!require_qualifier)
             return star(q ? q : use_glb ? linear() : unlimited());
         if (q == nullptr) {
@@ -86,22 +88,23 @@ const Def* WorldBase::bound(Defs defs, const Def* q, bool require_qualifier) {
     return max_type;
 }
 
-template<bool use_glb>
-const Def* WorldBase::qualifier_bound(Defs defs, std::function<const Def*(Defs)> unify_fn) {
+template<bool use_glb, class I>
+const Def* WorldBase::qualifier_bound(Range<I> defs, std::function<const Def*(const SortedDefSet&)> unify_fn) {
     auto const_elem = use_glb ? Qualifier::Unlimited : Qualifier::Linear;
     auto ident_elem = use_glb ? Qualifier::Linear : Qualifier::Unlimited;
-    size_t num_defs = defs.size();
+    size_t num_defs = defs.distance();
     DefArray reduced(num_defs);
     Qualifier accu = Qualifier::Unlimited;
     size_t num_const = 0;
-    for (size_t i = 0, e = num_defs; i != e; ++i) {
-        if (auto q = isa_const_qualifier(defs[i])) {
+    I iter = defs.begin();
+    for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
+        if (auto q = isa_const_qualifier(*iter)) {
             auto qual = q->box().get_qualifier();
             accu = use_glb ? meet(accu, qual) : join(accu, qual);
             num_const++;
         } else {
-            assert(is_qualifier(defs[i]));
-            reduced[i - num_const] = defs[i];
+            assert(is_qualifier(*iter));
+            reduced[i - num_const] = *iter;
         }
     }
     if (num_const == num_defs)
@@ -118,7 +121,8 @@ const Def* WorldBase::qualifier_bound(Defs defs, std::function<const Def*(Defs)>
     reduced.shrink(num_defs - num_const);
     if (reduced.size() == 1)
         return reduced[0];
-    return unify_fn(reduced);
+    SortedDefSet set(reduced.begin(), reduced.end());
+    return unify_fn(set);
 }
 
 //------------------------------------------------------------------------------
@@ -317,18 +321,20 @@ const Def* WorldBase::intersection(Defs defs, Debug dbg) {
     return intersection(glb(defs, nullptr), defs, dbg);
 }
 
-const Def* WorldBase::intersection(const Def* type, Defs defs, Debug dbg) {
-    assert(defs.size() > 0); // TODO empty intersection -> empty type/kind
+const Def* WorldBase::intersection(const Def* type, Defs ops, Debug dbg) {
+    assert(ops.size() > 0); // TODO empty intersection -> empty type/kind
+    auto defs = set_flatten<Intersection>(ops);
+    auto first = *defs.begin();
     if (defs.size() == 1) {
-        assert(defs.front()->type() == type);
-        return defs.front();
+        assert(first->type() == type);
+        return first;
     }
     // implements a least upper bound on qualifiers,
     // could possibly be replaced by something subtyping-generic
-    if (is_qualifier(defs.front())) {
+    if (is_qualifier(first)) {
         assert(type == qualifier_type());
-        return qualifier_glb(defs, [&] (Defs defs) {
-            return unify<Intersection>(defs.size(), *this, qualifier_type(), defs, dbg);
+        return qualifier_glb(range(defs), [&] (const SortedDefSet& defs) {
+                return unify<Intersection>(defs.size(), *this, qualifier_type(), defs, dbg);
         });
     }
 
@@ -559,17 +565,19 @@ const Def* WorldBase::variant(Defs defs, Debug dbg) {
     return variant(lub(defs, nullptr), defs, dbg);
 }
 
-const Def* WorldBase::variant(const Def* type, Defs defs, Debug dbg) {
-    assert(defs.size() > 0);
+const Def* WorldBase::variant(const Def* type, Defs ops, Debug dbg) {
+    assert(ops.size() > 0);
+    auto defs = set_flatten<Variant>(ops);
+    auto first = *defs.begin();
     if (defs.size() == 1) {
-        assert(defs.front()->type() == type);
-        return defs.front();
+        assert(first->type() == type);
+        return first;
     }
     // implements a least upper bound on qualifiers,
     // could possibly be replaced by something subtyping-generic
-    if (is_qualifier(defs.front())) {
+    if (is_qualifier(first)) {
         assert(type == qualifier_type());
-        return qualifier_lub(defs, [&] (Defs defs) {
+        return qualifier_lub(range(defs), [&] (const SortedDefSet& defs) {
             return unify<Variant>(defs.size(), *this, qualifier_type(), defs, dbg);
         });
     }

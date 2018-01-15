@@ -49,19 +49,6 @@ DefArray unique_gid_sorted(Defs defs) {
     return result;
 }
 
-template<class T>
-const SortedDefSet set_flatten(Defs defs) {
-    SortedDefSet flat_defs;
-    for (auto def : defs) {
-        if (def->isa<T>())
-            for (auto inner : def->ops())
-                flat_defs.insert(inner);
-        else
-            flat_defs.insert(def);
-    }
-    return flat_defs;
-}
-
 bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
 #ifndef NDEBUG
     auto all = std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); });
@@ -187,10 +174,10 @@ ArityKind::ArityKind(WorldBase& world, const Def* qualifier)
     : Def(world, Tag::ArityKind, world.universe(), {qualifier}, {"𝔸"})
 {}
 
-Intersection::Intersection(WorldBase& world, const Def* type, Defs ops, Debug dbg)
-    : Def(world, Tag::Intersection, type, range(set_flatten<Intersection>(ops)), dbg)
+Intersection::Intersection(WorldBase& world, const Def* type, const SortedDefSet& ops, Debug dbg)
+    : Def(world, Tag::Intersection, type, range(ops), dbg)
 {
-    assert(check_same_sorted_ops(sort(), ops));
+    assert(check_same_sorted_ops(sort(), this->ops()));
 }
 
 Lambda::Lambda(WorldBase& world, const Pi* type, const Def* body, Debug dbg)
@@ -221,11 +208,11 @@ Variadic::Variadic(WorldBase& world, const Def* type, const Def* arity, const De
     : SigmaBase(world, Tag::Variadic, type, {arity, body}, dbg)
 {}
 
-Variant::Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg)
-    : Def(world, Tag::Variant, type, range(set_flatten<Variant>(ops)), dbg)
+Variant::Variant(WorldBase& world, const Def* type, const SortedDefSet& ops, Debug dbg)
+    : Def(world, Tag::Variant, type, range(ops), dbg)
 {
     // TODO does same sorted ops really hold? ex: matches that return different sorted stuff? allowed?
-    assert(check_same_sorted_ops(sort(), ops));
+    assert(check_same_sorted_ops(sort(), this->ops()));
 }
 
 //------------------------------------------------------------------------------

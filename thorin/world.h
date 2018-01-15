@@ -208,15 +208,31 @@ public:
     }
 
 private:
-    template<bool glb>
-    const Def* bound(Defs ops, const Def* q, bool require_qualifier = true);
-    const Def* lub(Defs ops, const Def* q, bool require_qualifier = true) { return bound<false>(ops, q, require_qualifier); }
-    const Def* glb(Defs ops, const Def* q, bool require_qualifier = true) { return bound<true >(ops, q, require_qualifier); }
+    template<bool glb, class I>
+    const Def* bound(Range<I> ops, const Def* q, bool require_qualifier = true);
+    template<class I>
+    const Def* lub(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<false>(ops, q, require_qualifier); }
+    const Def* lub(Defs ops, const Def* q, bool require_qualifier = true) { return lub(range(ops), q, require_qualifier); }
+    template<class I>
+    const Def* glb(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<true >(ops, q, require_qualifier); }
+    const Def* glb(Defs ops, const Def* q, bool require_qualifier = true) { return glb(range(ops), q, require_qualifier); }
 
-    template<bool glb>
-    const Def* qualifier_bound(Defs defs, std::function<const Def*(Defs)> f);
-    const Def* qualifier_lub(Defs defs, std::function<const Def*(Defs)> f) { return qualifier_bound<false>(defs, f); }
-    const Def* qualifier_glb(Defs defs, std::function<const Def*(Defs)> f) { return qualifier_bound<true >(defs, f); }
+    template<bool glb, class I>
+    const Def* qualifier_bound(Range<I> defs, std::function<const Def*(const SortedDefSet&)> f);
+    template<class I>
+    const Def* qualifier_lub(Range<I> defs, std::function<const Def*(const SortedDefSet&)> f) {
+        return qualifier_bound<false>(defs, f);
+    }
+    const Def* qualifier_lub(Defs defs, std::function<const Def*(const SortedDefSet&)> f) {
+        return qualifier_lub(range(defs), f);
+    }
+    template<class I>
+    const Def* qualifier_glb(Range<I> defs, std::function<const Def*(const SortedDefSet&)> f) {
+        return qualifier_bound<true >(defs, f);
+    }
+    const Def* qualifier_glb(Defs defs, std::function<const Def*(const SortedDefSet&)> f) {
+        return qualifier_glb(range(defs), f);
+    }
 
     void fix() { for (auto def : defs_) def->world_ = this; }
 

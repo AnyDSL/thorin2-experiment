@@ -357,6 +357,19 @@ uint64_t EnvDefHash::hash(const EnvDef& p) {
     return hash;
 }
 
+template<class T>
+const SortedDefSet set_flatten(Defs defs) {
+    SortedDefSet flat_defs;
+    for (auto def : defs) {
+        if (def->isa<T>())
+            for (auto inner : def->ops())
+                flat_defs.insert(inner);
+        else
+            flat_defs.insert(def);
+    }
+    return flat_defs;
+}
+
 //------------------------------------------------------------------------------
 
 class Pi : public Def {
@@ -561,7 +574,7 @@ private:
 
 class Intersection : public Def {
 private:
-    Intersection(WorldBase& world, const Def* type, Defs ops, Debug dbg);
+    Intersection(WorldBase& world, const Def* type, const SortedDefSet& ops, Debug dbg);
 
 public:
     const Def* kind_qualifier() const override;
@@ -592,7 +605,7 @@ private:
 
 class Variant : public Def {
 private:
-    Variant(WorldBase& world, const Def* type, Defs ops, Debug dbg);
+    Variant(WorldBase& world, const Def* type, const SortedDefSet& ops, Debug dbg);
     // Nominal Variant
     Variant(WorldBase& world, const Def* type, size_t num_ops, Debug dbg)
         : Def(world, Tag::Variant, type, num_ops, dbg)
