@@ -684,20 +684,26 @@ static std::tuple<const Def*, const Def*> shape_and_flags(const Def* def) {
     return {shape, app->arg()};
 }
 
-#define CODE(ir)                                                                            \
-template<ir ## arithop O>                                                                   \
-const Def* World::op(const Def* a, const Def* b, Debug dbg) {                               \
-    auto [shape, flags] = shape_and_flags(a->type());                                       \
-    return app(app(app(op<O>(), shape), flags), {a, b}, dbg);                               \
-}                                                                                           \
-                                                                                            \
-const Def* World::op_ ## ir ## cmp(const Def* rel, const Def* a, const Def* b, Debug dbg) { \
-    auto [shape, flags] = shape_and_flags(a->type());                                       \
-    return app(app(app(app(op_ ## ir ## cmp(), rel), shape), flags), {a, b}, dbg);          \
+template<iarithop O>
+const Def* World::op(const Def* a, const Def* b, Debug dbg) {
+    auto [shape, flags] = shape_and_flags(a->type());
+    return app(app(app(op<O>(), shape), flags), {a, b}, dbg);
 }
-CODE(i)
-CODE(r)
-#undef CODE
+
+template<rarithop O>
+const Def* World::op(const Def* a, const Def* b, Debug dbg) {
+    auto [shape, flags] = shape_and_flags(a->type());
+    return app(app(app(op<O>(), shape), flags), {a, b}, dbg);
+}
+
+const Def* World::op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
+    auto [shape, flags] = shape_and_flags(a->type());
+    return app(app(app(app(op_icmp(), rel), shape), flags), {a, b}, dbg);
+}
+const Def* World::op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
+    auto [shape, flags] = shape_and_flags(a->type());
+    return app(app(app(app(op_rcmp(), rel), shape), flags), {a, b}, dbg);
+}
 
 #define CODE(O) \
     template const Def* World::op<O>(const Def*, const Def*, Debug);
