@@ -486,9 +486,9 @@ const Def* Pick          ::rebuild(WorldBase& to, const Def* t, Defs ops) const 
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* Sigma         ::rebuild(WorldBase& to, const Def*  , Defs ops) const {
+const Def* Sigma         ::rebuild(WorldBase& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
-    return to.sigma(qualifier(), ops, debug());
+    return to.sigma(t->qualifier(), ops, debug());
 }
 const Def* Singleton     ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.singleton(ops[0]); }
 const Def* Star          ::rebuild(WorldBase& to, const Def*  , Defs ops) const { return to.star(ops[0]); }
