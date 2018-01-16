@@ -13,12 +13,6 @@ namespace thorin {
  * helpers
  */
 
-DefArray types(Defs defs) {
-    DefArray result(defs.size());
-    for (size_t i = 0, e = result.size(); i != e; ++i)
-        result[i] = defs[i]->type();
-    return result;
-}
 
 DefArray qualifiers(Defs defs) {
     DefArray result(defs.size());
@@ -199,7 +193,7 @@ Pi::Pi(World& world, const Def* type, const Def* domain, const Def* body, Debug 
 {}
 
 QualifierType::QualifierType(World& world)
-    : Def(world, Tag::QualifierType, world.universe(), 0, {"ℚ"})
+    : Def(world, Tag::QualifierType, world.universe(), 0, ops_ptr<Universe>(), {"ℚ"})
 {}
 
 Sigma::Sigma(World& world, size_t num_ops, Debug dbg)

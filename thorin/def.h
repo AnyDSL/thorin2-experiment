@@ -88,7 +88,6 @@ struct EnvDefHash {
 
 typedef thorin::HashSet<std::pair<DefArray, const Def*>, EnvDefHash> EnvDefSet;
 
-DefArray types(Defs defs);
 DefArray qualifiers(Defs defs);
 void gid_sort(DefArray* defs);
 DefArray gid_sorted(Defs defs);

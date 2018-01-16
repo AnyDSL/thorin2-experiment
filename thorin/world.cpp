@@ -22,21 +22,20 @@ static bool any_of(const Def* def, Defs defs) {
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
-template<bool use_glb, bool type_bound, class I>
+template<bool use_glb, class I>
 const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
     if (defs.distance() == 0)
         return star(q ? q : use_glb ? linear() : unlimited());
 
     auto first = *defs.begin();
     auto inferred_q = first->qualifier();
-    auto def_or_type = [&] (auto def) { return type_bound ? def->type() : def; };
-    auto max = def_or_type(first);
+    auto max = first;
 
-    auto iter = defs.begin() + 1;
+    auto iter = defs.begin();
+    iter++;
     for (size_t i = 1, e = defs.distance(); i != e; ++i, ++iter) {
         auto def = *iter;
         assertf(!def->is_value(), "can't have value {} as operand of bound operator", def);
-        assertf(def->sort() != Def::Sort::Universe, "type universes must not be operands");
 
         if (def->qualifier()->free_vars().any_range(0, i)) {
             // qualifier is dependent within this type/kind, go to top directly
@@ -49,11 +48,10 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
                 : variant(qualifier_type(), {inferred_q, qualifier});
         }
 
-        auto defotype = def_or_type(def);
         // TODO somehow build into a def->is_subtype_of(other)/similar
-        bool is_arity = defotype->template isa<ArityKind>();
-        bool is_star = defotype->template isa<Star>();
-        bool is_marity = is_arity || defotype->template isa<MultiArityKind>();
+        bool is_arity = def->template isa<ArityKind>();
+        bool is_star = def->template isa<Star>();
+        bool is_marity = is_arity || def->template isa<MultiArityKind>();
         bool max_is_marity = max->template isa<ArityKind>() || max->template isa<MultiArityKind>();
         bool max_is_star = max->template isa<Star>();
         if (is_arity && max_is_marity)
