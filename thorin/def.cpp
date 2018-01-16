@@ -738,7 +738,9 @@ std::ostream& ArityKind::stream(std::ostream& os) const {
     return os << name() << op(0);
 }
 
-std::ostream& Axiom::stream(std::ostream& os) const { return qualifier_stream(os) << name(); }
+std::ostream& Axiom::stream(std::ostream& os) const {
+    return qualifier_stream(os) << (is_nominal() || type() == world().qualifier_type() || type() == world().qualifier_kind() ? name() : std::to_string(box().get_u64()));
+}
 
 std::ostream& Error::stream(std::ostream& os) const { return os << "<error>"; }
 
