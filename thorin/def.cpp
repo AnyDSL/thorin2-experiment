@@ -96,6 +96,8 @@ void Def::resize(size_t num_ops) {
     if (num_ops_ > ops_capacity_) {
         if (on_heap())
             delete[] ops_;
+        else
+            on_heap_ = true;
         ops_capacity_ *= size_t(2);
         ops_ = new const Def*[ops_capacity_]();
     }
@@ -171,21 +173,21 @@ Def::~Def() {
 }
 
 ArityKind::ArityKind(World& world, const Def* qualifier)
-    : Def(world, Tag::ArityKind, world.universe(), {qualifier}, {"𝔸"})
+    : Def(world, Tag::ArityKind, world.universe(), {qualifier}, ops_ptr<ArityKind>(), {"𝔸"})
 {}
 
 Intersection::Intersection(World& world, const Def* type, const SortedDefSet& ops, Debug dbg)
-    : Def(world, Tag::Intersection, type, range(ops), dbg)
+    : Def(world, Tag::Intersection, type, range(ops), ops_ptr<Intersection>(), dbg)
 {
     assert(check_same_sorted_ops(sort(), this->ops()));
 }
 
 Lambda::Lambda(World& world, const Pi* type, const Def* body, Debug dbg)
-    : Def(world, Tag::Lambda, type, {body}, dbg)
+    : Def(world, Tag::Lambda, type, {body}, ops_ptr<Lambda>(), dbg)
 {}
 
 MultiArityKind::MultiArityKind(World& world, const Def* qualifier)
-    : Def(world, Tag::MultiArityKind, world.universe(), {qualifier}, {"𝕄"})
+    : Def(world, Tag::MultiArityKind, world.universe(), {qualifier}, ops_ptr<MultiArityKind>(), {"𝕄"})
 {}
 
 Pack::Pack(World& world, const Def* type, const Def* body, Debug dbg)
@@ -193,7 +195,7 @@ Pack::Pack(World& world, const Def* type, const Def* body, Debug dbg)
 {}
 
 Pi::Pi(World& world, const Def* type, const Def* domain, const Def* body, Debug dbg)
-    : Def(world, Tag::Pi, type, {domain, body}, dbg)
+    : Def(world, Tag::Pi, type, {domain, body}, ops_ptr<Pi>(), dbg)
 {}
 
 Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
@@ -201,7 +203,7 @@ Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
 {}
 
 Star::Star(World& world, const Def* qualifier)
-    : Def(world, Tag::Star, world.universe(), {qualifier}, {"*"})
+    : Def(world, Tag::Star, world.universe(), {qualifier}, ops_ptr<Star>(), {"*"})
 {}
 
 Variadic::Variadic(World& world, const Def* type, const Def* arity, const Def* body, Debug dbg)
@@ -209,7 +211,7 @@ Variadic::Variadic(World& world, const Def* type, const Def* arity, const Def* b
 {}
 
 Variant::Variant(World& world, const Def* type, const SortedDefSet& ops, Debug dbg)
-    : Def(world, Tag::Variant, type, range(ops), dbg)
+    : Def(world, Tag::Variant, type, range(ops), ops_ptr<Variant>(), dbg)
 {
     // TODO does same sorted ops really hold? ex: matches that return different sorted stuff? allowed?
     assert(check_same_sorted_ops(sort(), this->ops()));

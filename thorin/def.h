@@ -137,7 +137,7 @@ protected:
     Def& operator=(const Def&) = delete;
 
     /// A @em nominal Def.
-    Def(World& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
+    Def(World& world, Tag tag, const Def* type, size_t num_ops, const Def** ops_ptr, Debug dbg)
         : world_(&world)
         , debug_(dbg)
         , type_(type)
@@ -148,13 +148,14 @@ protected:
         , closed_(num_ops == 0)
         , nominal_(true)
         , has_error_(false)
-        , ops_(ops_ptr())
+        , on_heap_(false)
+        , ops_(ops_ptr)
     {
         std::fill_n(ops_, num_ops, nullptr);
     }
     /// A @em structural Def.
     template<class I>
-    Def(World& world, Tag tag, const Def* type, Range<I> ops, Debug dbg)
+    Def(World& world, Tag tag, const Def* type, Range<I> ops, const Def** ops_ptr, Debug dbg)
         : world_(&world)
         , debug_(dbg)
         , type_(type)
@@ -165,13 +166,14 @@ protected:
         , closed_(true)
         , nominal_(false)
         , has_error_(false)
-        , ops_(ops_ptr())
+        , on_heap_(false)
+        , ops_(ops_ptr)
     {
         std::copy(ops.begin(), ops.end(), ops_);
     }
     /// A @em structural Def.
-    Def(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(world, tag, type, range(ops), dbg)
+    Def(World& world, Tag tag, const Def* type, Defs ops, const Def** ops_ptr, Debug dbg)
+        : Def(world, tag, type, range(ops), ops_ptr, dbg)
     {}
     ~Def() override;
 
@@ -281,6 +283,17 @@ public:
     }
 
 protected:
+    //@{ hash and equal
+    uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
+    virtual uint64_t vhash() const;
+    virtual bool equal(const Def*) const;
+    //@}
+
+    /// Use this to caclulate the @c ops_ptr when invoking this class's constructor in a subclass @p T.
+    template<class T>
+    inline const Def** ops_ptr() { return reinterpret_cast<const Def**>(reinterpret_cast<char*>(this) + sizeof(T)); }
+
+private:
     /**
      * The amount to shift De Bruijn indices when descending into this Def's @p i's Def::op.
      * For example:
@@ -293,26 +306,15 @@ protected:
     */
     virtual size_t shift(size_t i) const;
 
-    //@{ hash and equal
-    uint64_t hash() const { return hash_ == 0 ? hash_ = vhash() : hash_; }
-    virtual uint64_t vhash() const;
-    virtual bool equal(const Def*) const;
-    //@}
-
-    union {
-        mutable const Def* cache_;  ///< Used by App.
-        size_t index_;              ///< Used by Var, Arity and Index.
-        Box box_;                   ///< Used by Axiom.
-    };
-    BitSet free_vars_;
-
-private:
-    const Def** ops_ptr() { return reinterpret_cast<const Def**>(reinterpret_cast<char*>(this) + sizeof(Def)); }
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
-    bool on_heap() const { return ops_ != const_cast<Def*>(this)->ops_ptr(); }
+    bool on_heap() const { return on_heap_; }
 
     static size_t gid_counter_;
 
+protected:
+    BitSet free_vars_;
+
+private:
     mutable Uses uses_;
     mutable uint64_t hash_ = 0;
     mutable World* world_;
@@ -322,11 +324,12 @@ private:
     uint32_t ops_capacity_;
     union {
         struct {
-            unsigned gid_           : 23;
+            unsigned gid_           : 22;
             unsigned tag_           :  6;
             unsigned closed_        :  1;
             unsigned nominal_       :  1;
             unsigned has_error_     :  1;
+            unsigned on_heap_       :  1;
             // this sum must be 32   ^^^
         };
         uint32_t fields_;
@@ -373,10 +376,11 @@ private:
     Pi(World& world, const Def* type, const Def* domain, const Def* body, Debug dbg);
 
 public:
-    const Def* arity() const override;
     const Def* domain() const { return op(0); }
     const Def* body() const { return op(1); }
     const Def* apply(const Def*) const;
+
+    const Def* arity() const override;
     bool has_values() const override;
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 
@@ -412,19 +416,20 @@ private:
 class App : public Def {
 private:
     App(World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg)
-        : Def(world, Tag::App, type, {callee, arg}, dbg)
-    {
-        cache_ = nullptr;
-    }
+        : Def(world, Tag::App, type, {callee, arg}, ops_ptr<App>(), dbg)
+    {}
 
 public:
-    const Def* arity() const;
     const Def* callee() const { return op(0); }
     const Def* arg() const { return op(1); }
 
+    const Def* arity() const override;
     std::ostream& stream(std::ostream&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     const Def* try_reduce() const;
+
+private:
+    mutable const Def* cache_ = nullptr;
 
     friend class World;
 };
@@ -434,10 +439,10 @@ public:
 class SigmaBase : public Def {
 protected:
     SigmaBase(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(world, tag, type, ops, dbg)
+        : Def(world, tag, type, ops, ops_ptr<SigmaBase>(), dbg)
     {}
     SigmaBase(World& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
-        : Def(world, tag, type, num_ops, dbg)
+        : Def(world, tag, type, num_ops, ops_ptr<SigmaBase>(), dbg)
     {}
 };
 
@@ -498,7 +503,7 @@ private:
 class TupleBase : public Def {
 protected:
     TupleBase(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(world, tag, type, ops, dbg)
+        : Def(world, tag, type, ops, ops_ptr<TupleBase>(), dbg)
     {}
 };
 
@@ -536,7 +541,7 @@ private:
 class Extract : public Def {
 private:
     Extract(World& world, const Def* type, const Def* tuple, const Def* index, Debug dbg)
-        : Def(world, Tag::Extract, type, {tuple, index}, dbg)
+        : Def(world, Tag::Extract, type, {tuple, index}, ops_ptr<Extract>(), dbg)
     {}
 
 public:
@@ -553,7 +558,7 @@ private:
 class Insert : public Def {
 private:
     Insert(World& world, const Def* type, const Def* tuple, const Def* index, const Def* value, Debug dbg)
-        : Def(world, Tag::Insert, type, {tuple, index, value}, dbg)
+        : Def(world, Tag::Insert, type, {tuple, index, value}, ops_ptr<Insert>(), dbg)
     {}
 
 public:
@@ -586,7 +591,7 @@ private:
 class Pick : public Def {
 private:
     Pick(World& world, const Def* type, const Def* def, Debug dbg)
-        : Def(world, Tag::Pick, type, {def}, dbg)
+        : Def(world, Tag::Pick, type, {def}, ops_ptr<Pick>(), dbg)
     {}
 
 public:
@@ -604,7 +609,7 @@ private:
     Variant(World& world, const Def* type, const SortedDefSet& ops, Debug dbg);
     // Nominal Variant
     Variant(World& world, const Def* type, size_t num_ops, Debug dbg)
-        : Def(world, Tag::Variant, type, num_ops, dbg)
+        : Def(world, Tag::Variant, type, num_ops, ops_ptr<Variant>(), dbg)
     {}
 
 public:
@@ -625,7 +630,7 @@ private:
 class Any : public Def {
 private:
     Any(World& world, const Variant* type, const Def* def, Debug dbg)
-        : Def(world, Tag::Any, type, {def}, dbg)
+        : Def(world, Tag::Any, type, {def}, ops_ptr<Any>(), dbg)
     {}
 
 public:
@@ -650,7 +655,7 @@ private:
 class Match : public Def {
 private:
     Match(World& world, const Def* type, const Def* def, const Defs handlers, Debug dbg)
-        : Def(world, Tag::Match, type, concat(def, handlers), dbg)
+        : Def(world, Tag::Match, type, concat(def, handlers), ops_ptr<Match>(), dbg)
     {}
 
 public:
@@ -670,7 +675,7 @@ private:
 class Singleton : public Def {
 private:
     Singleton(World& world, const Def* def, Debug dbg)
-        : Def(world, Tag::Singleton, def->type()->type(), {def}, dbg)
+        : Def(world, Tag::Singleton, def->type()->type(), {def}, ops_ptr<Singleton>(), dbg)
     {
         assert((def->is_term() || def->is_type()) && "No singleton type universes allowed.");
     }
@@ -737,7 +742,7 @@ private:
 class Universe : public Def {
 private:
     Universe(World& world)
-        : Def(world, Tag::Universe, nullptr, 0, {"□"})
+        : Def(world, Tag::Universe, nullptr, 0, ops_ptr<Universe>(), {"□"})
     {}
 
 public:
@@ -753,7 +758,7 @@ private:
 class Var : public Def {
 private:
     Var(World& world, const Def* type, size_t index, Debug dbg)
-        : Def(world, Tag::Var, type, Defs(), dbg)
+        : Def(world, Tag::Var, type, Defs(), ops_ptr<Var>(), dbg)
     {
         assert(!type->is_universe());
         index_ = index;
@@ -773,6 +778,8 @@ private:
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
+    size_t index_;
+
     friend class World;
 };
 
@@ -780,17 +787,16 @@ class Axiom : public Def {
 private:
     /// A @em nominal axiom.
     Axiom(World& world, const Def* type, Debug dbg)
-        : Def(world, Tag::Axiom, type, 0, dbg)
+        : Def(world, Tag::Axiom, type, 0, ops_ptr<Axiom>(), dbg)
     {
         assert(type->free_vars().none());
     }
 
     /// A @em structural axiom.
     Axiom(World& world, const Def* type, Box box, Debug dbg)
-        : Def(world, Tag::Axiom, type, Defs(), dbg)
-    {
-        box_ = box;
-    }
+        : Def(world, Tag::Axiom, type, Defs(), ops_ptr<Axiom>(), dbg)
+        , box_(box)
+    {}
 
 public:
     const Def* arity() const override;
@@ -804,6 +810,8 @@ private:
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
+    Box box_;
+
     friend class World;
 };
 
@@ -811,7 +819,7 @@ class Error : public Def {
 private:
     // TODO additional error message with more precise information
     Error(World& world, const Def* type)
-        : Def(world, Tag::Error, type, Defs(), {"<error>"})
+        : Def(world, Tag::Error, type, Defs(), ops_ptr<Error>(), {"<error>"})
     {}
 
 public:
