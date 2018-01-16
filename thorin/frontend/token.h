@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "thorin/tables.h"
+#include "thorin/core/tables.h" // TODO get rid of this dependency
 #include "thorin/util/location.h"
 #include "thorin/util/utility.h"
 

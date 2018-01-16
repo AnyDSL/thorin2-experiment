@@ -5,6 +5,7 @@
 #include <string>
 
 #include "thorin/world.h"
+#include "thorin/core/tables.h"
 
 namespace thorin {
 namespace core {
@@ -30,7 +31,6 @@ public:
     const App* type_r(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
         return app(type_r(), {q, flags, width}, dbg)->as<App>();
     }
-
     const Axiom* type_mem() { return type_mem_; }
     const Axiom* type_frame() { return type_frame_; }
     const Axiom* type_ptr() { return type_ptr_; }

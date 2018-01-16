@@ -538,20 +538,20 @@ const Def* App::try_reduce() const {
     if (cache_)
         return cache_;
 
-    auto pi_type = callee()->type()->as<Pi>();
-
     if (auto lambda = callee()->isa<Lambda>()) {
+        auto pi_type = callee()->type()->as<Pi>();
         // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
         if (!pi_type->maybe_affine() && !pi_type->body()->maybe_affine() &&
             (!lambda->is_nominal() || arg()->free_vars().none())) {
-            if  (!lambda->is_closed()) // don't set cache as long lambda is unclosed
+            if (!lambda->is_closed()) // don't set cache as long lambda is unclosed
                 return this;
 
             return thorin::reduce(lambda->body(), {arg()}, [&] (const Def* def) { cache_ = def; });
         }
-    } else if (/*auto axiom =*/ callee()->isa<Axiom>()) {
-        // TODO implement constant folding for primops here
     }
+
+    if (auto normalizer = callee()->normalizer())
+        return cache_ = normalizer(this);
 
     return cache_ = this;
 }

@@ -48,11 +48,13 @@ add_executable(coc
     thorin/qualifier.h
     thorin/reduce.cpp
     thorin/reduce.h
-    thorin/tables.h
     thorin/traits.cpp
     thorin/traits.h
     thorin/world.cpp
     thorin/world.h
+    thorin/core/normalize.cpp
+    thorin/core/normalize.h
+    thorin/core/tables.h
     thorin/core/world.cpp
     thorin/core/world.h
     thorin/frontend/lexer.cpp

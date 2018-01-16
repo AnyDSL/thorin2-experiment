@@ -1,5 +1,6 @@
 #include "thorin/core/world.h"
 
+#include "thorin/core/normalize.h"
 #include "thorin/frontend/parser.h"
 
 namespace thorin {
@@ -38,6 +39,8 @@ World::World() {
     op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});
     op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
     op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
+
+    op<iadd>()->set_normalizer(normalize_iadd_shape);
 }
 
 static std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {

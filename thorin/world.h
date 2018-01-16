@@ -5,7 +5,6 @@
 #include <string>
 
 #include "thorin/def.h"
-#include "thorin/tables.h"
 #include "thorin/traits.h"
 
 namespace thorin {
@@ -153,13 +152,38 @@ public:
     }
     //@}
 
-    //@{ misc factory methods
-    const Def* any(const Def* type, const Def* def, Debug dbg = {});
+    //@{ create Extract
+    const Def* extract(const Def* def, const Def* index, Debug dbg = {});
+    const Def* extract(const Def* def, int index, Debug dbg = {}) {
+        return extract(def, size_t(index), dbg);
+    }
+    const Def* extract(const Def* def, size_t index, Debug dbg = {});
+    //@}
+
+    //@{ create Insert
+    const Def* insert(const Def* def, const Def* index, const Def* value, Debug dbg = {});
+    const Def* insert(const Def* def, int index, const Def* value, Debug dbg = {}) {
+        return insert(def, size_t(index), value, dbg);
+    }
+    const Def* insert(const Def* def, size_t index, const Def* value, Debug dbg = {});
+    //@}
+
+    //@{ create Index
+    const Def* index(size_t arity, size_t index, Location location = {});
+    const Def* index_zero(const Def* arity, Location location = {});
+    const Def* index_succ(const Def* index, Debug dbg = {});
+    //@}
+
+    //@{ create Arity
     const Axiom* arity(size_t a, Qualifier q = Qualifier::Unlimited, Location location = {}) {
         return arity(a, qualifier(q), location);
     }
     const Axiom* arity(size_t a, const Def* q, Location location = {});
     const Def* arity_succ(const Def* arity, Debug dbg = {});
+    //@}
+
+    //@{ misc factory methods
+    const Def* any(const Def* type, const Def* def, Debug dbg = {});
     /// @em nominal Axiom
     const Axiom* axiom(const Def* type, Debug dbg = {}) {
         return insert<Axiom>(0, *this, type, dbg);
@@ -168,19 +192,6 @@ public:
     const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
         return unify<Axiom>(0, *this, type, box, dbg);
     }
-    const Def* extract(const Def* def, const Def* index, Debug dbg = {});
-    const Def* extract(const Def* def, int index, Debug dbg = {}) {
-        return extract(def, size_t(index), dbg);
-    }
-    const Def* extract(const Def* def, size_t index, Debug dbg = {});
-    const Def* index(size_t arity, size_t index, Location location = {});
-    const Def* index_zero(const Def* arity, Location location = {});
-    const Def* index_succ(const Def* index, Debug dbg = {});
-    const Def* insert(const Def* def, const Def* index, const Def* value, Debug dbg = {});
-    const Def* insert(const Def* def, int index, const Def* value, Debug dbg = {}) {
-        return insert(def, size_t(index), value, dbg);
-    }
-    const Def* insert(const Def* def, size_t index, const Def* value, Debug dbg = {});
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
     const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
@@ -194,7 +205,7 @@ public:
     const Def* variant(Defs defs, Debug dbg = {});
     const Def* variant(const Def* type, Defs defs, Debug dbg = {});
     Variant* variant(const Def* type, size_t num_ops, Debug dbg = {}) {
-        assert(num_ops > 1 && "It should not be necessary to build empty/unary variants.");
+        assert(num_ops > 1 && "it should not be necessary to build empty/unary variants");
         return insert<Variant>(num_ops, *this, type, num_ops, dbg);
     }
     //@}

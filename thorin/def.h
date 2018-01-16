@@ -5,6 +5,7 @@
 #include <set>
 #include <stack>
 
+#include "thorin/core/tables.h" // TODO get rid of this dependency
 #include "thorin/util/array.h"
 #include "thorin/util/bitset.h"
 #include "thorin/util/cast.h"
@@ -12,11 +13,13 @@
 #include "thorin/util/iterator.h"
 #include "thorin/util/location.h"
 #include "thorin/util/stream.h"
-#include "thorin/tables.h"
 #include "thorin/qualifier.h"
+
+// TODO do we need has_values and is_value?
 
 namespace thorin {
 
+class App;
 class Def;
 class World;
 
@@ -95,6 +98,8 @@ void unique_gid_sort(DefArray* defs);
 DefArray unique_gid_sorted(Defs defs);
 
 //------------------------------------------------------------------------------
+
+typedef const Def* (*Normalizer)(const App*);
 
 /// Base class for all Def%s.
 class Def : public RuntimeCast<Def>, public Streamable  {
@@ -265,6 +270,8 @@ public:
         return stub(type, debug());
     }
     Def* stub(const Def* type, Debug dbg) const { return stub(world(), type, dbg); }
+    Normalizer normalizer() const { return normalizer_; }
+    const Def* set_normalizer(Normalizer normalizer) const { normalizer_ = normalizer; return this; }
 
     virtual Def* stub(World&, const Def*, Debug) const { THORIN_UNREACHABLE; }
     virtual bool assignable(const Def* def) const {
@@ -327,6 +334,7 @@ private:
     mutable World* world_;
     mutable Debug debug_;
     const Def* type_;
+    mutable Normalizer normalizer_ = nullptr;
     uint32_t num_ops_;
     uint32_t ops_capacity_;
     union {
@@ -808,14 +816,14 @@ private:
 
 class Axiom : public Def {
 private:
-    /// A @em nominal axiom.
+    /// A @em nominal Axiom.
     Axiom(World& world, const Def* type, Debug dbg)
         : Def(world, Tag::Axiom, type, 0, ops_ptr<Axiom>(), dbg)
     {
         assert(type->free_vars().none());
     }
 
-    /// A @em structural axiom.
+    /// A @em structural Axiom (aka assumption).
     Axiom(World& world, const Def* type, Box box, Debug dbg)
         : Def(world, Tag::Axiom, type, Defs(), ops_ptr<Axiom>(), dbg)
         , box_(box)
@@ -824,6 +832,8 @@ private:
 public:
     const Def* arity() const override;
     Box box() const { assert(!is_nominal()); return box_; }
+    bool is_assumption() const { return !is_nominal(); }
+
     std::ostream& stream(std::ostream&) const override;
     Axiom* stub(World&, const Def*, Debug) const override;
     bool has_values() const override;
