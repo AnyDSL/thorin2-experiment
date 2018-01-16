@@ -14,18 +14,22 @@ public:
     World();
 
     //@{ types and type constructors
-#define CODE(ir)                                                                                                         \
-    const Axiom* type_ ## ir() { return type_ ## ir ## _; }                                                              \
-    const App* type_ ## ir(ir ## flags flags, int64_t width) { return type_ ## ir(Qualifier::Unlimited, flags, width); } \
-    const App* type_ ## ir(Qualifier q, ir ## flags flags, int64_t width) {                                              \
-        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return type_ ## ir(qualifier(q), f, w);               \
-    }                                                                                                                    \
-    const App* type_ ## ir(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {                           \
-        return app(type_ ## ir(), {q, flags, width}, dbg)->as<App>();                                                    \
+    const Axiom* type_i() { return type_i_; }
+    const Axiom* type_r() { return type_r_; }
+    const App* type_i(iflags flags, int64_t width) { return type_i(Qualifier::Unlimited, flags, width); }
+    const App* type_r(rflags flags, int64_t width) { return type_r(Qualifier::Unlimited, flags, width); }
+    const App* type_i(Qualifier q, iflags flags, int64_t width) {
+        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return type_i(qualifier(q), f, w);
     }
-    CODE(i)
-    CODE(r)
-#undef CODE
+    const App* type_r(Qualifier q, rflags flags, int64_t width) {
+        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return type_r(qualifier(q), f, w);
+    }
+    const App* type_i(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
+        return app(type_i(), {q, flags, width}, dbg)->as<App>();
+    }
+    const App* type_r(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
+        return app(type_r(), {q, flags, width}, dbg)->as<App>();
+    }
 
     const Axiom* type_mem() { return type_mem_; }
     const Axiom* type_frame() { return type_frame_; }
