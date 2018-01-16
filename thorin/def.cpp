@@ -228,7 +228,7 @@ Variant::Variant(World& world, const Def* type, const SortedDefSet& ops, Debug d
  */
 
 bool Axiom::has_values() const {
-    return is_nominal() ? box_.get_bool() : sort() == Sort::Type && !type()->has_values();
+    return sort() == Sort::Type && !type()->has_values();
 }
 
 bool Intersection::has_values() const {

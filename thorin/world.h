@@ -162,10 +162,7 @@ public:
     const Def* arity_succ(const Def* arity, Debug dbg = {});
     /// @em nominal Axiom
     const Axiom* axiom(const Def* type, Debug dbg = {}) {
-        return axiom(type, false, dbg);
-    }
-    const Axiom* axiom(const Def* type, bool has_values, Debug dbg = {}) {
-        return insert<Axiom>(0, *this, type, has_values, dbg);
+        return insert<Axiom>(0, *this, type, dbg);
     }
     /// @em structural Axiom
     const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {

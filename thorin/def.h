@@ -814,7 +814,6 @@ private:
         : Def(world, Tag::Axiom, type, 0, ops_ptr<Axiom>(), dbg)
     {
         assert(type->free_vars().none());
-        box_ = {has_values};
     }
 
     /// A @em structural axiom.
