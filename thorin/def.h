@@ -249,12 +249,8 @@ public:
     }
     virtual void typecheck_vars(DefVector& types, EnvDefSet& checked) const;
 
-    /**
-     * Substitutes Var%s beginning from @p index with @p args and shifts free Var%s by the number of @p args.
-     * Note that @p args will be indexed in reverse order due to De Bruijn way of counting.
-     */
-    const Def* reduce(Defs args, size_t index = 0) const;
-    const Def* reduce(const Def* arg, size_t index = 0) const { return reduce(Defs{arg}, index); }
+    const Def* reduce(const Def* arg/*, size_t index = 0*/) const { return reduce(Defs{arg}); }
+    const Def* reduce(Defs args/*, size_t index = 0*/) const;
     const Def* shift_free_vars(size_t shift) const;
     const Def* rebuild(const Def* type, Defs defs) const { return rebuild(world(), type, defs); }
     Def* stub(const Def* type) const {
@@ -380,7 +376,7 @@ public:
     const Def* arity() const override;
     const Def* domain() const { return op(0); }
     const Def* body() const { return op(1); }
-    const Def* reduce(Defs) const;
+    const Def* apply(const Def*) const;
     bool has_values() const override;
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 
@@ -400,7 +396,7 @@ private:
 public:
     const Def* domain() const { return type()->domain(); }
     const Def* body() const { return op(0); }
-    const Def* reduce(Defs) const;
+    const Def* apply(const Def*) const;
     const Pi* type() const { return Def::type()->as<Pi>(); }
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 

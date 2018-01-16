@@ -506,25 +506,21 @@ Variant* Variant::stub(World& to, const Def* type, Debug dbg) const {
 //------------------------------------------------------------------------------
 
 /*
- * reduce
+ * reduce/apply
  */
 
-const Def* Def::reduce(Defs args, size_t index) const {
-    return thorin::reduce(this, args, index);
+const Def* Def::reduce(Defs args/*, size_t index*/) const {
+    return thorin::reduce(this, args, 0);
 }
 
-// TODO convert to single arg
-const Def* Pi::reduce(Defs args) const {
-    auto t = world().tuple(args);
-    assert(domain()->assignable(t));
-    return body()->reduce(args);
+const Def* Pi::apply(const Def* arg) const {
+    assert(domain()->assignable(arg));
+    return body()->reduce(arg);
 }
 
-// TODO convert to single arg
-const Def* Lambda::reduce(Defs args) const {
-    auto t = world().tuple(args);
-    assert(domain()->assignable(t));
-    return world().app(this, t);
+const Def* Lambda::apply(const Def* arg) const {
+    assert(domain()->assignable(arg));
+    return world().app(this, arg);
 }
 
 const Def* App::try_reduce() const {

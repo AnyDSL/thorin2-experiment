@@ -202,7 +202,7 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     auto callee_type = callee->type()->as<Pi>();
     assertf(callee_type->domain()->assignable(arg),
             "callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
-    auto type = callee_type->reduce({arg});
+    auto type = callee_type->apply(arg);
     auto app = unify<App>(2, *this, type, callee, arg, dbg);
     assert(app->callee() == callee);
 
