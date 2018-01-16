@@ -49,8 +49,7 @@ public:
     //@}
 
     //@{ create qualifier
-    const Axiom* qualifier_kind() const { return qualifier_kind_; }
-    const Axiom* qualifier_type() const { return qualifier_type_; }
+    const QualifierType* qualifier_type() const { return qualifier_type_; }
     const Axiom* qualifier(Qualifier q = Qualifier::Unlimited) const { return qualifier_[size_t(q)]; }
     const Axiom* unlimited() const { return qualifier(Qualifier::Unlimited); }
     const Axiom* affine() const { return qualifier(Qualifier::Affine); }
@@ -162,7 +161,12 @@ public:
     const Axiom* arity(size_t a, const Def* q, Location location = {});
     const Def* arity_succ(const Def* arity, Debug dbg = {});
     /// @em nominal Axiom
-    const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
+    const Axiom* axiom(const Def* type, Debug dbg = {}) {
+        return axiom(type, false, dbg);
+    }
+    const Axiom* axiom(const Def* type, bool has_values, Debug dbg = {}) {
+        return insert<Axiom>(0, *this, type, has_values, dbg);
+    }
     /// @em structural Axiom
     const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
         return unify<Axiom>(0, *this, type, box, dbg);
@@ -334,7 +338,7 @@ protected:
     DefSet defs_;
     const Universe* universe_;
     const Axiom* qualifier_kind_;
-    const Axiom* qualifier_type_;
+    const QualifierType* qualifier_type_;
     const Axiom* arity_succ_;
     const Axiom* index_succ_;
     std::array<const Axiom*, 4> qualifier_;

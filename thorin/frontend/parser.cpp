@@ -31,7 +31,6 @@ const Def* Parser::parse_def() {
     else if (ahead().isa(Token::Tag::L_Paren))    def = parse_tuple_or_pack();
     else if (ahead().isa(Token::Tag::L_Brace))    def = parse_assume();
     else if (accept(Token::Tag::Qualifier_Type))    def = world_.qualifier_type();
-    else if (accept(Token::Tag::Qualifier_Kind))    def = world_.qualifier_kind();
     else if (accept(Token::Tag::QualifierU))        def = world_.unlimited();
     else if (accept(Token::Tag::QualifierR))        def = world_.relevant();
     else if (accept(Token::Tag::QualifierA))        def = world_.affine();
@@ -53,7 +52,6 @@ const Def* Parser::parse_def() {
         || tag == Token::Tag::L_Brace
         || tag == Token::Tag::L_Paren
         || tag == Token::Tag::Qualifier_Type
-        || tag == Token::Tag::Qualifier_Kind
         || tag == Token::Tag::Arity_Kind
         || tag == Token::Tag::Multi_Arity_Kind) {
         auto arg = parse_def();

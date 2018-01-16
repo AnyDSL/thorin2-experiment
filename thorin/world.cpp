@@ -139,8 +139,7 @@ World::World()
     , cur_page_(root_page_.get())
 {
     universe_ = insert<Universe>(0, *this);
-    qualifier_kind_ = axiom(universe_, {"ℚₖ"});
-    qualifier_type_ = axiom(qualifier_kind_, {"ℚ"});
+    qualifier_type_ = insert<QualifierType>(0, *this);
     for (size_t i = 0; i != 4; ++i) {
         auto q = Qualifier(i);
         qualifier_[i] = assume(qualifier_type(), {q}, {qualifier2str(q)});

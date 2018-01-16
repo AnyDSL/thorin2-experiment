@@ -116,6 +116,7 @@ public:
         Pack,
         Pi,
         Pick,
+        QualifierType,
         Sigma,
         Singleton,
         Star,
@@ -220,6 +221,7 @@ public:
         THORIN_UNREACHABLE;
     }
     virtual bool has_values() const { return false; }
+    bool is_qualifier() const { return type() && type()->tag() == Tag::QualifierType; }
     //@}
 
     //@{ get Qualifier
@@ -269,8 +271,13 @@ public:
     virtual bool assignable(const Def* def) const {
         return this == def->type();
     }
+    bool subtype_of(const Def* def) const {
+        auto s = sort();
+        return s >= Sort::Type && s < Sort::Universe && s == def->sort() && v_subtype_of(def);
+    }
+
     std::ostream& qualifier_stream(std::ostream& os) const {
-        if (!has_values())
+        if (!has_values() || tag() == Tag::QualifierType)
             return os;
         return os << qualifier();
     }
@@ -308,6 +315,7 @@ private:
 
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
     bool on_heap() const { return on_heap_; }
+    virtual bool v_subtype_of(const Def*) const { return false; }
 
     static size_t gid_counter_;
 
@@ -739,6 +747,22 @@ private:
     friend class World;
 };
 
+class QualifierType : public Def {
+private:
+    QualifierType(World& world);
+
+public:
+    const Def* arity() const override;
+    std::ostream& stream(std::ostream&) const override;
+    bool has_values() const override;
+    const Def* kind_qualifier() const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
 class Universe : public Def {
 private:
     Universe(World& world)
@@ -790,6 +814,7 @@ private:
         : Def(world, Tag::Axiom, type, 0, ops_ptr<Axiom>(), dbg)
     {
         assert(type->free_vars().none());
+        box_ = {has_values};
     }
 
     /// A @em structural axiom.

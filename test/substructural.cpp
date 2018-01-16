@@ -15,25 +15,25 @@ TEST(Qualifiers, Lattice) {
     auto A = Qualifier::Affine;
     auto L = Qualifier::Linear;
 
-    ASSERT_LT(U, A);
-    ASSERT_LT(U, R);
-    ASSERT_LT(U, L);
-    ASSERT_LT(A, L);
-    ASSERT_LT(R, L);
+    EXPECT_LT(U, A);
+    EXPECT_LT(U, R);
+    EXPECT_LT(U, L);
+    EXPECT_LT(A, L);
+    EXPECT_LT(R, L);
 
-    ASSERT_EQ(join(U, U), U);
-    ASSERT_EQ(join(A, U), A);
-    ASSERT_EQ(join(R, U), R);
-    ASSERT_EQ(join(L, U), L);
-    ASSERT_EQ(join(A, A), A);
-    ASSERT_EQ(join(A, R), L);
-    ASSERT_EQ(join(L, A), L);
-    ASSERT_EQ(join(L, R), L);
+    EXPECT_EQ(join(U, U), U);
+    EXPECT_EQ(join(A, U), A);
+    EXPECT_EQ(join(R, U), R);
+    EXPECT_EQ(join(L, U), L);
+    EXPECT_EQ(join(A, A), A);
+    EXPECT_EQ(join(A, R), L);
+    EXPECT_EQ(join(L, A), L);
+    EXPECT_EQ(join(L, R), L);
 
-    ASSERT_EQ(w.qualifier(U)->box().get_qualifier(), U);
-    ASSERT_EQ(w.qualifier(R)->box().get_qualifier(), R);
-    ASSERT_EQ(w.qualifier(A)->box().get_qualifier(), A);
-    ASSERT_EQ(w.qualifier(L)->box().get_qualifier(), L);
+    EXPECT_EQ(w.qualifier(U)->box().get_qualifier(), U);
+    EXPECT_EQ(w.qualifier(R)->box().get_qualifier(), R);
+    EXPECT_EQ(w.qualifier(A)->box().get_qualifier(), A);
+    EXPECT_EQ(w.qualifier(L)->box().get_qualifier(), L);
 }
 
 TEST(Qualifiers, Variants) {
@@ -44,34 +44,28 @@ TEST(Qualifiers, Variants) {
     auto l = w.linear();
     auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
 
-    ASSERT_TRUE(u->is_value());
-    ASSERT_TRUE(r->is_value());
-    ASSERT_TRUE(a->is_value());
-    ASSERT_TRUE(l->is_value());
+    EXPECT_EQ(u, u->qualifier());
+    EXPECT_EQ(u, r->qualifier());
+    EXPECT_EQ(u, a->qualifier());
+    EXPECT_EQ(u, l->qualifier());
 
-    ASSERT_EQ(u, u->qualifier());
-    ASSERT_EQ(u, r->qualifier());
-    ASSERT_EQ(u, a->qualifier());
-    ASSERT_EQ(u, l->qualifier());
-
-    ASSERT_EQ(u, lub({u}));
-    ASSERT_EQ(r, lub({r}));
-    ASSERT_EQ(a, lub({a}));
-    ASSERT_EQ(l, lub({l}));
-    ASSERT_EQ(u, lub({u, u, u}));
-    ASSERT_EQ(r, lub({u, r}));
-    ASSERT_EQ(a, lub({a, u}));
-    ASSERT_EQ(l, lub({a, l}));
-    ASSERT_EQ(l, lub({a, r}));
-    ASSERT_EQ(l, lub({u, l, r, r}));
+    EXPECT_EQ(u, lub({u}));
+    EXPECT_EQ(r, lub({r}));
+    EXPECT_EQ(a, lub({a}));
+    EXPECT_EQ(l, lub({l}));
+    EXPECT_EQ(u, lub({u, u, u}));
+    EXPECT_EQ(r, lub({u, r}));
+    EXPECT_EQ(a, lub({a, u}));
+    EXPECT_EQ(l, lub({a, l}));
+    EXPECT_EQ(l, lub({a, r}));
+    EXPECT_EQ(l, lub({u, l, r, r}));
 
     auto v = w.var(w.qualifier_type(), 0);
-    ASSERT_EQ(u, v->qualifier());
-    ASSERT_EQ(v, lub({v}));
-    ASSERT_EQ(v, lub({u, v, u}));
-    ASSERT_EQ(l, lub({v, l}));
-    ASSERT_EQ(l, lub({r, v, a}));
-
+    EXPECT_EQ(u, v->qualifier());
+    EXPECT_EQ(v, lub({v}));
+    EXPECT_EQ(v, lub({u, v, u}));
+    EXPECT_EQ(l, lub({v, l}));
+    EXPECT_EQ(l, lub({r, v, a}));
 }
 
 TEST(Qualifiers, Kinds) {
@@ -81,18 +75,27 @@ TEST(Qualifiers, Kinds) {
     auto a = w.affine();
     auto l = w.linear();
     auto v = w.var(w.qualifier_type(), 0);
+    EXPECT_TRUE(w.qualifier_type()->has_values());
+    EXPECT_TRUE(w.qualifier_type()->is_kind());
+    EXPECT_EQ(u->type(), w.qualifier_type());
+    EXPECT_TRUE(u->is_type());
+    EXPECT_TRUE(u->is_value());
+    EXPECT_FALSE(u->has_values());
+    EXPECT_TRUE(r->is_value());
+    EXPECT_TRUE(a->is_value());
+    EXPECT_TRUE(l->is_value());
     auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
 
     auto anat = w.axiom(w.star(a), {"nat"});
     auto rnat = w.axiom(w.star(r), {"nat"});
     auto vtype = w.assume(w.star(v), {0}, {"nat"});
-    ASSERT_EQ(w.sigma({anat, w.star()})->qualifier(), a);
-    ASSERT_EQ(w.sigma({anat, rnat})->qualifier(), l);
-    ASSERT_EQ(w.sigma({vtype, rnat})->qualifier(), lub({v, r}));
-    ASSERT_EQ(w.sigma({anat, w.star(l)})->qualifier(), a);
+    EXPECT_EQ(w.sigma({anat, w.star()})->qualifier(), a);
+    EXPECT_EQ(w.sigma({anat, rnat})->qualifier(), l);
+    EXPECT_EQ(w.sigma({vtype, rnat})->qualifier(), lub({v, r}));
+    EXPECT_EQ(w.sigma({anat, w.star(l)})->qualifier(), a);
 
-    ASSERT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier());
-    ASSERT_EQ(l, w.variant({w.star(r), w.star(l)})->qualifier());
+    EXPECT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier());
+    EXPECT_EQ(l, w.variant({w.star(r), w.star(l)})->qualifier());
 }
 
 #if 0

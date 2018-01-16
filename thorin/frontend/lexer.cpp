@@ -143,11 +143,7 @@ Token Lexer::lex() {
         if (accept(0x0003a0)) return {location(), Token::Tag::Pi};
         if (accept(0x01D538)) return {location(), Token::Tag::Arity_Kind};
         if (accept(0x01D544)) return {location(), Token::Tag::Multi_Arity_Kind};
-        if (accept(0x00211A)) {
-            if (accept(0x002096))
-                return {location(), Token::Tag::Qualifier_Kind};
-            return {location(), Token::Tag::Qualifier_Type};
-        }
+        if (accept(0x00211A)) return {location(), Token::Tag::Qualifier_Type};
         if (accept(0x001D41)) return {location(), Token::Tag::QualifierU};
         if (accept(0x001D3F)) return {location(), Token::Tag::QualifierR};
         if (accept(0x001D2C)) return {location(), Token::Tag::QualifierA};

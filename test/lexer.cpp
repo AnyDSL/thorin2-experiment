@@ -96,14 +96,13 @@ TEST(Lexer, Literals) {
 }
 
 TEST(Lexer, Utf8) {
-    std::string str = u8"\ufeffΠ λ ℚ ℚₖ 𝔸 𝕄";
+    std::string str = u8"\ufeffΠ λ ℚ 𝔸 𝕄";
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Pi));
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Qualifier_Type));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Qualifier_Kind));
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Arity_Kind));
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Multi_Arity_Kind));
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Eof));

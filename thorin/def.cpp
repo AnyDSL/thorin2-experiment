@@ -198,6 +198,10 @@ Pi::Pi(World& world, const Def* type, const Def* domain, const Def* body, Debug 
     : Def(world, Tag::Pi, type, {domain, body}, ops_ptr<Pi>(), dbg)
 {}
 
+QualifierType::QualifierType(World& world)
+    : Def(world, Tag::QualifierType, world.universe(), 0, {"ℚ"})
+{}
+
 Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
     : Sigma(world, world.universe(), num_ops, dbg)
 {}
@@ -224,7 +228,7 @@ Variant::Variant(World& world, const Def* type, const SortedDefSet& ops, Debug d
  */
 
 bool Axiom::has_values() const {
-    return sort() == Sort::Type;
+    return is_nominal() ? box_.get_bool() : sort() == Sort::Type && !type()->has_values();
 }
 
 bool Intersection::has_values() const {
@@ -232,6 +236,10 @@ bool Intersection::has_values() const {
 }
 
 bool Pi::has_values() const {
+    return true;
+}
+
+bool QualifierType::has_values() const {
     return true;
 }
 
@@ -284,6 +292,10 @@ const Def* Intersection::kind_qualifier() const {
     assert(is_kind());
     auto qualifiers = DefArray(num_ops(), [&](auto i) { return this->op(i)->qualifier(); });
     return world().intersection(world().qualifier_type(), qualifiers);
+}
+
+const Def* QualifierType::kind_qualifier() const {
+    return world().unlimited();
 }
 
 const Def* Sigma::kind_qualifier() const {
@@ -355,6 +367,8 @@ const Def* Axiom::arity() const {
 const Def* MultiArityKind::arity() const { return world().arity(1); }
 
 const Def* Pi::arity() const { return world().arity(1); }
+
+const Def* QualifierType::arity() const { return world().arity(1); }
 
 const Def* Sigma::arity() const { return world().arity(num_ops()); }
 
@@ -475,6 +489,7 @@ const Def* Pick          ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
+const Def* QualifierType ::rebuild(World& to, const Def*  , Defs    ) const { return to.qualifier_type(); }
 const Def* Sigma         ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.sigma(t->qualifier(), ops, debug());
@@ -778,6 +793,10 @@ std::ostream& Pick::stream(std::ostream& os) const {
     type()->name_stream(os);
     destructee()->name_stream(os << "(");
     return os << ")";
+}
+
+std::ostream& QualifierType::stream(std::ostream& os) const {
+    return os << name();
 }
 
 std::ostream& Sigma::stream(std::ostream& os) const {
