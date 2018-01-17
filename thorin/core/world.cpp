@@ -74,7 +74,7 @@ const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
 
 const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
     auto types = types_from_tuple_type(*this, app_arg(ptr->type(), 0));
-    auto idx = index(types->arity()->as<Axiom>()->box().get_u64(), i);
+    auto idx = index(types->arity()->as<Arity>()->value(), i);
     return app(app(op_lea_, {types->arity(), types, app_arg(ptr->type(), 1)}, dbg), {ptr, idx}, dbg);
 }
 

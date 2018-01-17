@@ -4,6 +4,14 @@
 
 using namespace thorin;
 
+TEST(Arity, Successor) {
+    World w;
+    auto a0 = w.arity(0);
+    EXPECT_EQ(w.arity(1), w.arity_succ(a0));
+    EXPECT_EQ(w.arity(42), w.arity_succ(w.arity(41)));
+    EXPECT_TRUE(w.arity_succ(w.var(w.arity_kind(), 0))->isa<App>());
+}
+
 TEST(Arity, Sigma) {
     World w;
     auto a0 = w.arity(0);
@@ -11,12 +19,12 @@ TEST(Arity, Sigma) {
     auto a2 = w.arity(2);
     auto a3 = w.arity(3);
 
-    ASSERT_EQ(a0, w.sigma({a0, a0}));
-    ASSERT_EQ(a0, w.sigma({a1, a0}));
-    ASSERT_EQ(a0, w.sigma({a0, a1}));
+    EXPECT_EQ(a0, w.sigma({a0, a0}));
+    EXPECT_EQ(a0, w.sigma({a1, a0}));
+    EXPECT_EQ(a0, w.sigma({a0, a1}));
 
-    ASSERT_EQ(w.multi_arity_kind(), w.sigma({a2, a3})->type());
-    ASSERT_EQ(w.star(), w.sigma({a2, w.sigma({a3, a2}), a3})->type());
+    EXPECT_EQ(w.multi_arity_kind(), w.sigma({a2, a3})->type());
+    EXPECT_EQ(w.star(), w.sigma({a2, w.sigma({a3, a2}), a3})->type());
 }
 
 TEST(Arity, DependentSigma) {
@@ -39,10 +47,10 @@ TEST(Arity, Variadic) {
     auto a2 = w.arity(2);
     auto unit = w.unit();
 
-    ASSERT_EQ(unit, w.variadic({a0, a1, a2}, unit));
-    ASSERT_EQ(unit, w.variadic({a1, a0}, unit));
-    ASSERT_EQ(w.unit_kind(), w.variadic({a0, a2}, w.arity_kind()));
-    ASSERT_EQ(w.variadic(a2, w.unit_kind()), w.variadic({a2, a0, a2}, w.arity_kind()));
+    EXPECT_EQ(unit, w.variadic({a0, a1, a2}, unit));
+    EXPECT_EQ(unit, w.variadic({a1, a0}, unit));
+    EXPECT_EQ(w.unit_kind(), w.variadic({a0, a2}, w.arity_kind()));
+    EXPECT_EQ(w.variadic(a2, w.unit_kind()), w.variadic({a2, a0, a2}, w.arity_kind()));
 }
 
 TEST(Arity, Pack) {

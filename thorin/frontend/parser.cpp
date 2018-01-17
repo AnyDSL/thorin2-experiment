@@ -25,7 +25,9 @@ const Def* Parser::parse_def() {
     else if (ahead().isa(Token::Tag::Pi))         def = parse_pi();
     else if (ahead().isa(Token::Tag::L_Bracket))  def = parse_sigma_or_variadic();
     else if (ahead().isa(Token::Tag::Lambda))     def = parse_lambda();
-    else if (ahead().isa(Token::Tag::Star))       def = parse_star();
+    else if (ahead().isa(Token::Tag::Star)
+             || ahead().isa(Token::Tag::Arity_Kind)
+             || ahead().isa(Token::Tag::Multi_Arity_Kind)) def = parse_qualified_kind();
     else if (ahead().isa(Token::Tag::Backslash) ||
              ahead().isa(Token::Tag::Identifier)) def = parse_var_or_binder();
     else if (ahead().isa(Token::Tag::L_Paren))    def = parse_tuple_or_pack();
@@ -35,7 +37,6 @@ const Def* Parser::parse_def() {
     else if (accept(Token::Tag::QualifierR))        def = world_.relevant();
     else if (accept(Token::Tag::QualifierA))        def = world_.affine();
     else if (accept(Token::Tag::QualifierL))        def = world_.linear();
-    else if (accept(Token::Tag::Arity_Kind))        def = world_.arity_kind();
     else if (accept(Token::Tag::Multi_Arity_Kind))  def = world_.multi_arity_kind();
 
     if (def != nullptr && accept(Token::Tag::Sharp))
@@ -163,8 +164,10 @@ const Def* Parser::parse_lambda() {
     return world_.lambda(domain, body, tracker.location());
 }
 
-const Star* Parser::parse_star() {
-    eat(Token::Tag::Star);
+const Def* Parser::parse_qualified_kind() {
+    auto kind_tag = ahead().tag();
+    eat(kind_tag);
+    const Def* qualifier = nullptr;
     auto tag = ahead().tag();
     if (tag == Token::Tag::Backslash
         || tag == Token::Tag::Identifier
@@ -173,10 +176,18 @@ const Star* Parser::parse_star() {
         || tag == Token::Tag::QualifierR
         || tag == Token::Tag::QualifierA
         || tag == Token::Tag::QualifierL) {
-        auto qualifier = parse_def();
-        return world_.star(qualifier);
+        qualifier = parse_def();
     }
-    return world_.star();
+    switch (kind_tag) {
+        case Token::Tag::Star:
+            return qualifier == nullptr ? world_.star() : world_.star(qualifier);
+        case Token::Tag::Arity_Kind:
+            return qualifier == nullptr ? world_.arity_kind() : world_.arity_kind(qualifier);
+        case Token::Tag::Multi_Arity_Kind:
+            return qualifier == nullptr ? world_.multi_arity_kind() : world_.multi_arity_kind(qualifier);
+        default:
+            THORIN_UNREACHABLE;
+    }
 }
 
 const Def* Parser::parse_tuple_or_pack() {

@@ -19,8 +19,8 @@ TEST(Variadic, Misc) {
     auto N = w.type_nat();
     auto S = w.star();
 
-    auto p2_4 = w.index(2, 4);
-    auto p2_4b = w.index(2, 4);
+    auto p2_4 = w.index(4, 2);
+    auto p2_4b = w.index(4, 2);
     EXPECT_EQ(p2_4, p2_4b);
     auto v = w.variadic(5, N);
     EXPECT_TRUE(v->arity() == w.arity(5));

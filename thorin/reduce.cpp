@@ -127,9 +127,9 @@ const Def* reduce(const Def* def, Defs args, std::function<void(const Def*)> f, 
 
 const Def* unflatten(const Def* body, const Def* arg) {
     auto& w = body->world();
-    auto arity = arg->arity()->as<Axiom>();
+    auto arity = arg->arity()->as<Arity>();
     assert(arity != nullptr);
-    auto length = arity->box().get_u64();
+    auto length = arity->value();
     auto extracts = DefArray(length, [&](auto i) { return w.extract(arg, i); });
     return reduce(body, extracts);
 }

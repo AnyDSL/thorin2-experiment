@@ -226,6 +226,10 @@ Variant::Variant(World& world, const Def* type, const SortedDefSet& ops, Debug d
  * has_values
  */
 
+bool Arity::has_values() const {
+    return true;
+}
+
 bool Axiom::has_values() const {
     return sort() == Sort::Type && !type()->has_values();
 }
@@ -341,6 +345,8 @@ const Def* Def::arity() const {
     return nullptr;
 }
 
+const Def* Arity::arity() const { return world().arity(1); }
+
 const Def* ArityKind::arity() const { return world().arity(1); }
 
 // const Def* All::arity() const { return TODO; }
@@ -420,12 +426,20 @@ uint64_t Def::vhash() const {
     return seed;
 }
 
+uint64_t Arity::vhash() const {
+    return thorin::hash_combine(Def::vhash(), value());
+}
+
 uint64_t Axiom::vhash() const {
     auto seed = Def::vhash();
     if (is_nominal())
         return seed;
 
     return thorin::hash_combine(seed, box_.get_u64());
+}
+
+uint64_t Index::vhash() const {
+    return thorin::hash_combine(Def::vhash(), value());
 }
 
 uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
@@ -449,12 +463,20 @@ bool Def::equal(const Def* other) const {
     return result;
 }
 
+bool Arity::equal(const Def* other) const {
+    return Def::equal(other) && this->value() == other->as<Arity>()->value();
+}
+
 bool Axiom::equal(const Def* other) const {
     if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
         return this == other;
 
     return this->fields() == other->fields() && this->type() == other->type()
         && this->box_.get_u64() == other->as<Axiom>()->box().get_u64();
+}
+
+bool Index::equal(const Def* other) const {
+    return Def::equal(other) && this->value() == other->as<Index>()->value();
 }
 
 bool Var::equal(const Def* other) const {
@@ -469,6 +491,7 @@ bool Var::equal(const Def* other) const {
 
 const Def* Any           ::rebuild(World& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App           ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops[1], debug()); }
+const Def* Arity         ::rebuild(World& to, const Def* t, Defs    ) const { return to.arity(value(), t->op(0), debug()); }
 const Def* ArityKind     ::rebuild(World& to, const Def*  , Defs ops) const { return to.arity_kind(ops[0]); }
 const Def* Axiom         ::rebuild(World& to, const Def* t, Defs    ) const {
     assert(!is_nominal());
@@ -476,6 +499,7 @@ const Def* Axiom         ::rebuild(World& to, const Def* t, Defs    ) const {
 }
 const Def* Error         ::rebuild(World& to, const Def* t, Defs    ) const { return to.error(t); }
 const Def* Extract       ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
+const Def* Index         ::rebuild(World& to, const Def* t, Defs    ) const { return to.index(t->as<Arity>(), value(), debug()); }
 const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
 const Def* Intersection  ::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
 const Def* Lambda        ::rebuild(World& to, const Def* t, Defs ops) const {
@@ -583,8 +607,8 @@ bool Sigma::assignable(const Def* def) const {
         return true;
     Defs defs = def->ops(); // only correct when def is a tuple
     if (auto pack = def->isa<Pack>()) {
-        if (auto arity = pack->arity(); auto assume = arity->isa<Axiom>()) {
-            if (num_ops() != assume->box().get_u64())
+        if (auto arity = pack->arity()->isa<Arity>()) {
+            if (num_ops() != arity->value())
                 return false;
             defs = DefArray(num_ops(), [&](auto i) { return world().extract(def, i); });
         } else
@@ -615,13 +639,13 @@ bool Variadic::assignable(const Def* def) const {
     }
     // only need this because we don't normalize every variadic of constant arity to a sigma
     if (def->isa<Tuple>()) {
-        if (const Axiom* assume = arity()->isa<Axiom>()) {
-            auto size = assume->box().get_u64();
+        if (auto a_lit = arity()->isa<Arity>()) {
+            auto size = a_lit->value();
             if (size != def->num_ops())
                 return false;
             for (size_t i = 0; i != size; ++i) {
                 // body should actually not depend on index, but implemented for completeness
-                auto reduced_type = body()->reduce(world().index(i, size));
+                auto reduced_type = body()->reduce(world().index(size, i));
                 if (reduced_type->has_error() || !reduced_type->assignable(def->op(i)))
                     return false;
             }
@@ -738,6 +762,10 @@ std::ostream& App::stream(std::ostream& os) const {
     return arg()->name_stream(os) << ")";
 }
 
+std::ostream& Arity::stream(std::ostream& os) const {
+    return os << name();
+}
+
 std::ostream& ArityKind::stream(std::ostream& os) const {
     return os << name() << op(0);
 }
@@ -750,6 +778,10 @@ std::ostream& Error::stream(std::ostream& os) const { return os << "<error>"; }
 
 std::ostream& Extract::stream(std::ostream& os) const {
     return scrutinee()->name_stream(os) << "#" << index();
+}
+
+std::ostream& Index::stream(std::ostream& os) const {
+    return os << name();
 }
 
 std::ostream& Insert::stream(std::ostream& os) const {

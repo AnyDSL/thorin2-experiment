@@ -3,6 +3,7 @@
 
 #include "thorin/world.h"
 #include "thorin/reduce.h"
+#include "thorin/frontend/parser.h"
 
 namespace thorin {
 
@@ -149,14 +150,20 @@ World::World()
     }
 
     type_bool_ = arity(2);
-    type_nat_  = axiom(star(), {"nat" });
+    type_nat_  = axiom(star(), {"nat"});
 
-    val_bool_[0] = index(2, 0)->as<Axiom>();
-    val_bool_[1] = index(2, 1)->as<Axiom>();
+    val_bool_[0] = index(2, 0);
+    val_bool_[1] = index(2, 1);
 
     val_nat_0_   = val_nat(0);
     for (size_t j = 0; j != val_nat_.size(); ++j)
         val_nat_[j] = val_nat(1 << int64_t(j));
+
+    Env env;
+    arity_succ_ = axiom(parse(*this, "Π[q: ℚ, a: 𝔸(q)].a", env), {"Sₐ"});
+    env["ASucc"] = arity_succ_;
+    index_zero_ = axiom(parse(*this, "Πp:[q: ℚ, 𝔸(q)].ASucc p", env), {"0ⁱ"});
+    index_succ_ = axiom(parse(*this, "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p", env), {"Sⁱ"});
 }
 
 World::~World() {
@@ -176,10 +183,10 @@ const Def* World::any(const Def* type, const Def* def, Debug dbg) {
     return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
 }
 
-const Axiom* World::arity(size_t a, const Def* q, Location location) {
+const Arity* World::arity(size_t a, const Def* q, Location location) {
     assert(q->type() == qualifier_type());
     auto cur = Def::gid_counter();
-    auto result = assume(arity_kind(q), {u64(a)}, {location});
+    auto result = unify<Arity>(3, *this, arity_kind(q), a, location);
 
     if (result->gid() >= cur)
         result->debug().set(std::to_string(a) + "ₐ");
@@ -188,11 +195,10 @@ const Axiom* World::arity(size_t a, const Def* q, Location location) {
 }
 
 const Def* World::arity_succ(const Def* a, Debug dbg) {
-    if (auto axiom = a->isa<Axiom>()) {
-        auto val = axiom->box().get_u64();
-        return arity(val + 1, a->qualifier(), dbg);
+    if (auto a_lit = a->isa<Arity>()) {
+        return arity(a_lit->value() + 1, a->qualifier(), dbg);
     }
-    return app(arity_succ_, a, dbg);
+    return app(arity_succ_, tuple({a->qualifier(), a}), dbg);
 }
 
 const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
@@ -222,8 +228,8 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     auto type = def->type();
     assertf(arity, "arity unknown for {} of type {}, can only extract when arity is known", def, type);
     if (arity->assignable(index)) {
-        if (auto assume = index->isa<Axiom>()) {
-            auto i = assume->box().get_u64();
+        if (auto idx = index->isa<Index>()) {
+            auto i = idx->value();
             if (def->isa<Tuple>()) {
                 return def->op(i);
             }
@@ -248,7 +254,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             return pack->body()->reduce(index);
         }
         // here: index is const => type is variadic, index is var => type may be variadic/sigma, must not be dependent sigma
-        assert(!index->isa<Axiom>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
+        assert(!index->isa<Index>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
         const Def* result_type = nullptr;
         if (auto sigma = type->isa<Sigma>()) {
             assertf(!sigma->is_dependent(), "can't extract at {} from {} : {}, type is dependent", index, def, sigma);
@@ -269,8 +275,8 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     // not the same exact arity, but as long as it types, we can use indices from constant arity tuples, even of non-index type
     // can only extract if we can iteratively extract with each index in the multi-index
     // can only do that if we know how many elements there are
-    if (auto i_arity = index->arity(); auto assume = i_arity->isa<Axiom>()) {
-        auto a = assume->box().get_u64();
+    if (auto i_arity = index->arity()->isa<Arity>()) {
+        auto a = i_arity->value();
         if (a > 1) {
             auto extracted = def;
             for (size_t i = 0; i < a; ++i) {
@@ -285,45 +291,44 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
 }
 
 const Def* World::extract(const Def* def, size_t i, Debug dbg) {
-    assertf(def->arity()->isa<Axiom>(), "can only extract by size_t on constant arities");
-    return extract(def, index(def->arity()->as<Axiom>()->box().get_u64(), i, dbg), dbg);
+    assertf(def->arity()->isa<Arity>(), "can only extract by size_t on constant arities");
+    return extract(def, index(def->arity()->as<Arity>(), i, dbg), dbg);
 }
 
-const Def* World::index(size_t a, size_t i, Location location) {
-    if (i < a) {
-        auto cur = Def::gid_counter();
-        auto result = assume(arity(a), {u64(i)}, {location});
+const Index* World::index(const Arity* a, size_t i, Location location) {
+    auto arity_val = a->value();
+    assertf(i < arity_val, "Index literal {} does not fit within arity {}", i, a);
+    auto cur = Def::gid_counter();
+    auto result = unify<Index>(3, *this, a, i, location);
 
-        if (result->gid() >= cur) { // new assume -> build name
-            std::string s = std::to_string(i);
-            auto b = s.size();
+    if (result->gid() >= cur) { // new iassume -> build name
+        std::string s = std::to_string(i);
+        auto b = s.size();
 
-            // append utf-8 subscripts in reverse order
-            for (size_t aa = a; aa > 0; aa /= 10)
-                ((s += char(char(0x80) + char(aa % 10))) += char(0x82)) += char(0xe2);
+        // append utf-8 subscripts in reverse order
+        for (size_t aa = arity_val; aa > 0; aa /= 10)
+            ((s += char(char(0x80) + char(aa % 10))) += char(0x82)) += char(0xe2);
 
-            std::reverse(s.begin() + b, s.end());
-            result->debug().set(s);
-        }
-
-        return result;
+        std::reverse(s.begin() + b, s.end());
+        result->debug().set(s);
     }
 
-    return error(arity(a));
+    return result;
 }
 
 const Def* World::index_zero(const Def* arity, Location location) {
     assert(arity->type()->isa<ArityKind>());
-    return assume(arity_succ(arity), {0}, {location});
+    if (auto a = arity->isa<Arity>())
+        return index(a->value() + 1, 0, location);
+
+    return app(index_zero_, arity, {location});
 }
 
 const Def* World::index_succ(const Def* index, Debug dbg) {
     assert(index->type()->type()->isa<ArityKind>());
-    auto arity = arity_succ(index->type());
-    if (auto axiom = index->isa<Axiom>()) {
-        auto val = axiom->box().get_u64();
-        return assume(arity, {val + 1}, dbg);
-    }
+    if (auto idx = index->isa<Index>())
+        return this->index(idx->type(), idx->value() + 1, dbg);
+
     return app(app(index_succ_, index->type(), dbg), index, dbg);
 }
 
@@ -333,7 +338,7 @@ const Def* World::insert(const Def* def, const Def* i, const Def* value, Debug d
 }
 
 const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) {
-    auto idx = index(def->arity()->as<Axiom>()->box().get_u64(), i);
+    auto idx = index(def->arity()->as<Arity>()->value(), i);
     return insert(def, idx, value, dbg);
 }
 
@@ -403,9 +408,9 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
     }
 
     if (auto v = arity->isa<Variadic>()) {
-        if (auto axiom = v->arity()->isa<Axiom>()) {
+        if (auto a_literal = v->arity()->isa<Arity>()) {
             assert(!v->body()->free_vars().test(0));
-            auto a = axiom->box().get_u64();
+            auto a = a_literal->value();
             assert(a != 1);
             auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(a-1)));
             for (size_t i = a; i-- != 0;)
@@ -414,8 +419,8 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
         }
     }
 
-    if (auto axiom = arity->isa<Axiom>()) {
-        auto a = axiom->box().get_u64();
+    if (auto a_literal = arity->isa<Arity>()) {
+        auto a = a_literal->value();
         if (a == 0) {
             if (body->is_kind())
                 return unify<Variadic>(2, *this, universe(), this->arity(0), star(body->qualifier()), dbg);
@@ -500,9 +505,9 @@ const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
         return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
 
     if (auto v = arity->isa<Variadic>()) {
-        if (auto axiom = v->arity()->isa<Axiom>()) {
+        if (auto a_literal = v->arity()->isa<Arity>()) {
             assert(!v->body()->free_vars().test(0));
-            auto a = axiom->box().get_u64();
+            auto a = a_literal->value();
             assert(a != 1);
             auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(a-1)));
             for (size_t i = a; i-- != 0;)
@@ -511,8 +516,8 @@ const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
         }
     }
 
-    if (auto axiom = arity->isa<Axiom>()) {
-        auto a = axiom->box().get_u64();
+    if (auto a_literal = arity->isa<Arity>()) {
+        auto a = a_literal->value();
         if (a == 0) {
             if (body->is_type())
                 return unify<Pack>(1, *this, unit_kind(body->qualifier()), unit(body->qualifier()), dbg);
@@ -560,8 +565,8 @@ const Def* World::tuple(Defs defs, Debug dbg) {
                 }
 
                 if (same == extract->scrutinee()) {
-                    if (auto index = extract->index()->isa<Axiom>()) {
-                        if (index->box().get_u64() == i)
+                    if (auto index = extract->index()->isa<Index>()) {
+                        if (index->value() == i)
                             continue;
                     }
                 }

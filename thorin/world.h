@@ -168,16 +168,19 @@ public:
     //@}
 
     //@{ create Index
-    const Def* index(size_t arity, size_t index, Location location = {});
+    const Index* index(size_t arity, size_t idx, Location location = {}) {
+        return index(this->arity(arity), idx, location);
+    }
+    const Index* index(const Arity* arity, size_t index, Location location = {});
     const Def* index_zero(const Def* arity, Location location = {});
     const Def* index_succ(const Def* index, Debug dbg = {});
     //@}
 
     //@{ create Arity
-    const Axiom* arity(size_t a, QualifierTag q = QualifierTag::Unlimited, Location location = {}) {
+    const Arity* arity(size_t a, QualifierTag q = QualifierTag::Unlimited, Location location = {}) {
         return arity(a, qualifier(q), location);
     }
-    const Axiom* arity(size_t a, const Def* q, Location location = {});
+    const Arity* arity(size_t a, const Def* q, Location location = {});
     const Def* arity_succ(const Def* arity, Debug dbg = {});
     //@}
 
@@ -210,7 +213,7 @@ public:
     //@}
 
     //@{ bool and nat types
-    const Axiom* type_bool() { return type_bool_; }
+    const Arity* type_bool() { return type_bool_; }
     const Axiom* type_nat() { return type_nat_; }
     //@}
 
@@ -226,9 +229,9 @@ public:
     const Axiom* val_nat_32() { return val_nat_[5]; }
     const Axiom* val_nat_64() { return val_nat_[6]; }
 
-    const Axiom* val_bool(bool val) { return val_bool_[size_t(val)]; }
-    const Axiom* val_bool_bot() { return val_bool_[0]; }
-    const Axiom* val_bool_top() { return val_bool_[1]; }
+    const Index* val_bool(bool val) { return val_bool_[size_t(val)]; }
+    const Index* val_bool_bot() { return val_bool_[0]; }
+    const Index* val_bool_top() { return val_bool_[1]; }
     //@}
 
     const DefSet& defs() const { return defs_; }
@@ -356,6 +359,7 @@ protected:
     const Universe* universe_;
     const QualifierType* qualifier_type_;
     const Axiom* arity_succ_;
+    const Axiom* index_zero_;
     const Axiom* index_succ_;
     std::array<const Qualifier*, 4> qualifier_;
     std::array<const Star*,  4> star_;
@@ -365,10 +369,10 @@ protected:
     std::array<const Def*, 4> unit_kind_val_;
     std::array<const ArityKind*, 4> arity_kind_;
     std::array<const MultiArityKind*, 4> multi_arity_kind_;
-    const Axiom* type_bool_;
+    const Arity* type_bool_;
     const Axiom* type_nat_;
     const Axiom* val_nat_0_;
-    std::array<const Axiom*, 2> val_bool_;
+    std::array<const Index*, 2> val_bool_;
     std::array<const Axiom*, 7> val_nat_;
 };
 

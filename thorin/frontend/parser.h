@@ -50,7 +50,7 @@ private:
     const Pi*     parse_pi();
     const Def*    parse_sigma_or_variadic();
     const Def*    parse_lambda();
-    const Star*   parse_star();
+    const Def*    parse_qualified_kind();
     const Def*    parse_tuple_or_pack();
     const Axiom*  parse_assume();
     const Def*    parse_param();

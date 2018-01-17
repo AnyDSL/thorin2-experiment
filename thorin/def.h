@@ -106,10 +106,12 @@ public:
         All,
         Any,
         App,
+        Arity,
         ArityKind,
         Axiom,
         Error,
         Extract,
+        Index,
         Intersection,
         Insert,
         Lambda,
@@ -219,7 +221,7 @@ public:
             case Sort::Universe:
             case Sort::Kind: return false;
             case Sort::Type: return type()->has_values();
-            case Sort::Term: return true;
+            case Sort::Term: return type()->has_values();
         }
         THORIN_UNREACHABLE;
     }
@@ -382,6 +384,85 @@ const SortedDefSet set_flatten(Defs defs) {
     }
     return flat_defs;
 }
+
+//------------------------------------------------------------------------------
+
+class ArityKind : public Def {
+private:
+    ArityKind(World& world, const Def* qualifier);
+
+public:
+    const Def* arity() const override;
+    std::ostream& stream(std::ostream&) const override;
+    const Def* kind_qualifier() const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+class MultiArityKind : public Def {
+private:
+    MultiArityKind(World& world, const Def* qualifier);
+
+public:
+    const Def* arity() const override;
+    bool assignable(const Def* def) const override;
+    std::ostream& stream(std::ostream&) const override;
+    const Def* kind_qualifier() const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+class Arity : public Def {
+private:
+    Arity(World& world, const ArityKind* type, size_t arity, Debug dbg)
+        : Def(world, Tag::Arity, type, Defs(), ops_ptr<Arity>(), dbg)
+        , arity_(arity)
+    {}
+
+public:
+    const ArityKind* type() const { return Def::type()->as<ArityKind>(); }
+    size_t value() const { return arity_; }
+    const Def* arity() const override;
+    bool has_values() const override;
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    uint64_t vhash() const override;
+    bool equal(const Def*) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    size_t arity_;
+
+    friend class World;
+};
+
+class Index : public Def {
+private:
+    Index(World& world, const Arity* type, size_t index, Debug dbg)
+        : Def(world, Tag::Index, type, Defs(), ops_ptr<Index>(), dbg)
+        , index_(index)
+    {}
+
+public:
+    const Arity* type() const { return Def::type()->as<Arity>(); }
+    size_t value() const { return index_; }
+    std::ostream& stream(std::ostream&) const override;
+
+private:
+    uint64_t vhash() const override;
+    bool equal(const Def*) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    size_t index_;
+
+    friend class World;
+};
 
 //------------------------------------------------------------------------------
 
@@ -698,37 +779,6 @@ public:
     const Def* kind_qualifier() const override;
     bool has_values() const override;
     std::ostream& stream(std::ostream&) const override;
-
-private:
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
-    friend class World;
-};
-
-class ArityKind : public Def {
-private:
-    ArityKind(World& world, const Def* qualifier);
-
-public:
-    const Def* arity() const override;
-    std::ostream& stream(std::ostream&) const override;
-    const Def* kind_qualifier() const override;
-
-private:
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
-    friend class World;
-};
-
-class MultiArityKind : public Def {
-private:
-    MultiArityKind(World& world, const Def* qualifier);
-
-public:
-    const Def* arity() const override;
-    bool assignable(const Def* def) const override;
-    std::ostream& stream(std::ostream&) const override;
-    const Def* kind_qualifier() const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
