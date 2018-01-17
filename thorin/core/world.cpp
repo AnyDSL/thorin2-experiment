@@ -26,8 +26,8 @@ World::World() {
     for (size_t o = 0; o != Num_IArithOp; ++o) iarithop_[o] = axiom(i_type_arithop, {arithop2str(IArithop(o))});
     for (size_t o = 0; o != Num_RArithOp; ++o) rarithop_[o] = axiom(r_type_arithop, {arithop2str(RArithop(o))});
 
-    //auto i_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s; bool]", env);
-    auto r_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat]. Π[[s; real(q, w)], [s; real(q, w)]]. [s; bool]", env);
+    //auto i_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, w: nat]. Π[[s;  int(q, w)], [s;  int(q, w)]]. [s; bool]", env);
+    auto r_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, w: nat]. Π[[s; real(q, w)], [s; real(q, w)]]. [s; bool]", env);
     //op_icmp_  = axiom(i_type_cmp, {"icmp"});
     op_rcmp_  = axiom(r_type_cmp, {"rcmp"});
     op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)", env), {"lea"});
