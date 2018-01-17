@@ -10,7 +10,7 @@ class World;
 
 namespace core {
 
-const Def* normalize_iadd_shape(thorin::World& world, const Def*, const Def*, const Def*, Debug);
+const Def* normalize_iadd_flags(thorin::World& world, const Def*, const Def*, const Def*, Debug);
 
 }
 }

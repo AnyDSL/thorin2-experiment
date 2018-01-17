@@ -18,8 +18,9 @@ const Def* normalize_iadd(thorin::World& world, const Def*, const Def*, const De
     return nullptr;
 }
 
-const Def* normalize_iadd_flags(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_iadd,       type, callee, arg, dbg); }
-const Def* normalize_iadd_shape(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_iadd_flags, type, callee, arg, dbg); }
+const Def* normalize_iadd_type (thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_iadd,       type, callee, arg, dbg); }
+const Def* normalize_iadd_shape(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_iadd_type,  type, callee, arg, dbg); }
+const Def* normalize_iadd_flags(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_iadd_shape, type, callee, arg, dbg); }
 
 }
 }

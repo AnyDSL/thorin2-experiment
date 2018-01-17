@@ -36,7 +36,7 @@ World::World() {
     op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
     op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
 
-    //op<iadd>()->set_normalizer(normalize_iadd_shape);
+    op<iadd>()->set_normalizer(normalize_iadd_flags);
 }
 
 std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
