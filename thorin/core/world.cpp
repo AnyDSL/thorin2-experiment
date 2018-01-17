@@ -7,75 +7,52 @@ namespace thorin {
 namespace core {
 
 World::World() {
-    auto Q = qualifier_type();
-    auto S = star();
-    auto N = type_nat();
-
-    auto sigQNN = sigma({Q, N, N});
-    type_i_ = axiom(pi(sigQNN, star(extract(var(sigQNN, 0), 0))), {"int" });
-    type_r_ = axiom(pi(sigQNN, star(extract(var(sigQNN, 0), 0))), {"real"});
-
     Env env;
     env["nat"]  = type_nat();
     env["bool"] = type_bool();
+    env["int"]  = type_i_ = axiom(parse(*this, "Π[q: ℚ, nat]. *q", env), {"int"});
+    env["real"] = type_r_ = axiom(parse(*this, "Π[q: ℚ, nat]. *q", env), {"real"});
     env["ptr"]  = type_ptr_   = axiom(parse(*this, "Π[*, nat]. *", env), {"ptr"});
     env["M"]    = type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
-    env["F"]    = type_frame_ = axiom(S, {"F"});
-    env["int"]  = type_i();
-    env["real"] = type_r();
+    env["F"]    = type_frame_ = axiom(star(), {"F"});
 
-    auto i_type_arithop = parse(*this, "Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s;  int(q, f, w)]", env);
-    auto r_type_arithop = parse(*this, "Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; real(q, f, w)]", env);
+    auto w_type_arithop = parse(*this, "Πf: nat. Πs: 𝕄. Π[q: ℚ, w: nat]. Π[   [s;  int(q, w)], [s;  int(q, w)]].     [s;  int(q, w)] ", env);
+    auto m_type_arithop = parse(*this, "         Πs: 𝕄. Π[q: ℚ, w: nat]. Π[M, [s;  int(q, w)], [s;  int(q, w)]]. [M, [s;  int(q, w)]]", env);
+    auto i_type_arithop = parse(*this, "         Πs: 𝕄. Π[q: ℚ, w: nat]. Π[   [s;  int(q, w)], [s;  int(q, w)]].     [s;  int(q, w)] ", env);
+    auto r_type_arithop = parse(*this, "Πf: nat. Πs: 𝕄. Π[q: ℚ, w: nat]. Π[   [s; real(q, w)], [s; real(q, w)]].     [s; real(q, w)] ", env);
 
-    for (size_t o = 0; o != Num_IArithOp; ++o) iarithop_[o] = axiom(i_type_arithop, {iarithop2str(iarithop(o))});
-    for (size_t o = 0; o != Num_RArithOp; ++o) rarithop_[o] = axiom(r_type_arithop, {rarithop2str(rarithop(o))});
+    for (size_t o = 0; o != Num_WArithOp; ++o) warithop_[o] = axiom(w_type_arithop, {arithop2str(WArithop(o))});
+    for (size_t o = 0; o != Num_MArithOp; ++o) marithop_[o] = axiom(m_type_arithop, {arithop2str(MArithop(o))});
+    for (size_t o = 0; o != Num_IArithOp; ++o) iarithop_[o] = axiom(i_type_arithop, {arithop2str(IArithop(o))});
+    for (size_t o = 0; o != Num_RArithOp; ++o) rarithop_[o] = axiom(r_type_arithop, {arithop2str(RArithop(o))});
 
-    auto i_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s; bool]", env);
-    auto r_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; bool]", env);
-    op_icmp_  = axiom(i_type_cmp, {"icmp"});
-    op_rcmp_  = axiom(r_type_cmp, {"rcmp"});
+    //auto i_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s; bool]", env);
+    //auto r_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s; real(q, f, w)], [s; real(q, f, w)]]. [s; bool]", env);
+    //op_icmp_  = axiom(i_type_cmp, {"icmp"});
+    //op_rcmp_  = axiom(r_type_cmp, {"rcmp"});
     op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)", env), {"lea"});
     op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]", env), {"load"});
     op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});
     op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
     op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
 
-    op<iadd>()->set_normalizer(normalize_iadd_shape);
+    //op<iadd>()->set_normalizer(normalize_iadd_shape);
 }
 
-static std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
+std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
     if (auto variadic = def->isa<Variadic>())
         return {variadic->arity(), variadic->body()};
     return {def->world().arity(1), def};
 }
 
-template<iarithop O>
-const Def* World::op(const Def* a, const Def* b, Debug dbg) {
-    auto [shape, body] = shape_and_body(a->type());
-    return app(app(app(op<O>(), shape), app_arg(body)), {a, b}, dbg);
-}
-
-template<rarithop O>
-const Def* World::op(const Def* a, const Def* b, Debug dbg) {
-    auto [shape, body] = shape_and_body(a->type());
-    return app(app(app(op<O>(), shape), app_arg(body)), {a, b}, dbg);
-}
-
-const Def* World::op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
-    auto [shape, body] = shape_and_body(a->type());
-    return app(app(app(app(op_icmp(), rel), shape), app_arg(body)), {a, b}, dbg);
-}
-const Def* World::op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
-    auto [shape, body] = shape_and_body(a->type());
-    return app(app(app(app(op_rcmp(), rel), shape), app_arg(body)), {a, b}, dbg);
-}
-
-// instantiate templates
-#define CODE(O) \
-    template const Def* World::op<O>(const Def*, const Def*, Debug);
-THORIN_I_ARITHOP(CODE)
-THORIN_R_ARITHOP(CODE)
-#undef CODE
+//const Def* World::op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
+    //auto [shape, body] = shape_and_body(a->type());
+    //return app(app(app(app(op_icmp(), rel), shape), app_arg(body)), {a, b}, dbg);
+//}
+//const Def* World::op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
+    //auto [shape, body] = shape_and_body(a->type());
+    //return app(app(app(app(op_rcmp(), rel), shape), app_arg(body)), {a, b}, dbg);
+//}
 
 const Def* World::op_enter(const Def* mem, Debug dbg) {
     return app(op_enter_, mem, dbg);

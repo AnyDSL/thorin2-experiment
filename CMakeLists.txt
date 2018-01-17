@@ -48,8 +48,6 @@ add_executable(coc
     thorin/qualifier.h
     thorin/reduce.cpp
     thorin/reduce.h
-    thorin/traits.cpp
-    thorin/traits.h
     thorin/world.cpp
     thorin/world.h
     thorin/core/normalize.cpp

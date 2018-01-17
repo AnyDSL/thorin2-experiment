@@ -7,50 +7,38 @@ namespace thorin {
 TEST(Primop, Types) {
     core::World w;
 
-    //ASSERT_TRUE(is_primitive_type_constructor(w.type_i()));
-    //ASSERT_TRUE(is_primitive_type_constructor(w.type_r()));
+    ASSERT_EQ(w.type_i(16), w.app(w.type_i(), {w.unlimited(), w.val_nat_16()}));
+    ASSERT_EQ(w.type_i(64), w.app(w.type_i(), {w.unlimited(), w.val_nat_64()}));
 
-    //ASSERT_TRUE(is_primitive_type(w.type_bool()));
-    //ASSERT_TRUE(is_primitive_type(w.type_nat()));
-    //ASSERT_TRUE(is_primitive_type(w.type_i(iflags::uo, 16)));
-    //ASSERT_TRUE(is_primitive_type(w.type_i(iflags::uw, 32)));
-    //ASSERT_TRUE(is_primitive_type(w.type_r(rflags::f,  32)));
-    //ASSERT_TRUE(is_primitive_type(w.type_r(rflags::p,  64)));
+    ASSERT_EQ(w.type_i(16), w.type_i(QualifierTag::u, 16));
+    ASSERT_EQ(w.type_i(64), w.type_i(QualifierTag::u, 64));
 
-    ASSERT_EQ(w.type_i(iflags::uo, 16), w.app(w.type_i(), {w.unlimited(), w.val_nat(int64_t(iflags::uo)), w.val_nat_16()}));
-    ASSERT_EQ(w.type_i(iflags::uo, 16), w.app(w.type_i(), {w.unlimited(), w.val_nat(int64_t(iflags::uo)), w.val_nat_16()}));
-    ASSERT_EQ(w.type_i(iflags::uw, 64), w.app(w.type_i(), {w.unlimited(), w.val_nat(int64_t(iflags::uw)), w.val_nat_64()}));
-    ASSERT_EQ(w.type_i(iflags::uw, 64), w.app(w.type_i(), {w.unlimited(), w.val_nat(int64_t(iflags::uw)), w.val_nat_64()}));
+    ASSERT_EQ(w.affine(), w.type_i(QualifierTag::a, 64)->qualifier());
+    ASSERT_EQ(w.linear(), w.type_r(QualifierTag::l, 64)->qualifier());
 
-    ASSERT_EQ(w.type_i(iflags::uo, 16), w.type_i(QualifierTag::u, iflags::uo, 16));
-    ASSERT_EQ(w.type_i(iflags::uo, 16), w.type_i(QualifierTag::u, iflags::uo, 16));
-    ASSERT_EQ(w.type_i(iflags::uw, 64), w.type_i(QualifierTag::u, iflags::uw, 64));
-    ASSERT_EQ(w.type_i(iflags::uw, 64), w.type_i(QualifierTag::u, iflags::uw, 64));
+    ASSERT_EQ(w.type_r(64), w.app(w.type_r(), {w.unlimited(), w.val_nat_64()}));
+    ASSERT_EQ(w.type_r(16), w.app(w.type_r(), {w.unlimited(), w.val_nat_16()}));
 
-    ASSERT_EQ(w.affine(), w.type_i(QualifierTag::a, iflags::uw, 64)->qualifier());
-    ASSERT_EQ(w.linear(), w.type_r(QualifierTag::l, rflags::f, 64)->qualifier());
-
-    ASSERT_EQ(w.type_r(rflags::f, 64), w.app(w.type_r(), {w.unlimited(), w.val_nat(int64_t(rflags::f)), w.val_nat_64()}));
-    ASSERT_EQ(w.type_r(rflags::p, 16), w.app(w.type_r(), {w.unlimited(), w.val_nat(int64_t(rflags::p)), w.val_nat_16()}));
-
-    ASSERT_EQ(w.type_r(rflags::f, 64), w.type_r(QualifierTag::u, rflags::f, 64));
-    ASSERT_EQ(w.type_r(rflags::p, 16), w.type_r(QualifierTag::u, rflags::p, 16));
+    ASSERT_EQ(w.type_r(64), w.type_r(QualifierTag::u, 64));
+    ASSERT_EQ(w.type_r(16), w.type_r(QualifierTag::u, 16));
 }
 
 TEST(Primop, Arithop) {
     core::World w;
     w.op<iadd>()->type()->dump();
-    auto a = w.op<iadd>(w.val(iflags::uo, 23), w.val(iflags::uo, 42));
+    auto a = w.op<iadd>(w.val(23), w.val(42));
     a->dump();
     a->type()->dump();
-    ASSERT_EQ(a->type(), (w.type_i(iflags::uo, 32)));
+    ASSERT_EQ(a->type(), (w.type_i(32)));
 }
 
+#if 0
 TEST(Primop, Cmp) {
     core::World w;
     auto x = w.op_icmp(irel::lt, w.val(iflags::so, 23), w.val(iflags::so, 42));
     x->dump();
 }
+#endif
 
 TEST(Primop, Ptr) {
     core::World w;
@@ -58,19 +46,19 @@ TEST(Primop, Ptr) {
     auto e = w.op_enter(m);
     auto f = w.extract(e, 1);
     m = w.extract(e, 0_s);
-    auto p1 = w.op_slot(w.type_r(rflags::p, 32), f);
-    auto p2 = w.op_slot(w.type_r(rflags::p, 32), f);
+    auto p1 = w.op_slot(w.type_r(32), f);
+    auto p2 = w.op_slot(w.type_r(32), f);
     ASSERT_NE(p1, p2);
-    ASSERT_EQ(p1->type(), w.type_ptr(w.type_r(rflags::p, 32)));
-    ASSERT_EQ(p2->type(), w.type_ptr(w.type_r(rflags::p, 32)));
-    auto s1 = w.op_store(m, p1, w.val(rflags::p, 23.f));
-    auto s2 = w.op_store(m, p1, w.val(rflags::p, 23.f));
+    ASSERT_EQ(p1->type(), w.type_ptr(w.type_r(32)));
+    ASSERT_EQ(p2->type(), w.type_ptr(w.type_r(32)));
+    auto s1 = w.op_store(m, p1, w.val(23.f));
+    auto s2 = w.op_store(m, p1, w.val(23.f));
     ASSERT_NE(s1, s2);
     auto l1 = w.op_load(s1, p1);
     auto l2 = w.op_load(s1, p1);
     ASSERT_NE(l1, l2);
     ASSERT_EQ(w.extract(l1, 0_s)->type(), w.type_mem());
-    ASSERT_EQ(w.extract(l1, 1_s)->type(), w.type_r(rflags::p, 32));
+    ASSERT_EQ(w.extract(l1, 1_s)->type(), w.type_r(32));
 }
 
 }

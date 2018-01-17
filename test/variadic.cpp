@@ -9,7 +9,7 @@ TEST(Variadic, Unit) {
     core::World w;
     auto N = w.type_nat();
     ASSERT_EQ(w.variadic(0_s, N), w.unit());
-    ASSERT_EQ(w.variadic(0_s, w.type_i(QualifierTag::Affine, iflags::so, 32)), w.unit(w.affine()));
+    ASSERT_EQ(w.variadic(0_s, w.type_i(QualifierTag::Affine, 32)), w.unit(w.affine()));
 }
 
 TEST(Variadic, Misc) {

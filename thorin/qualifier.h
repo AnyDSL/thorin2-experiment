@@ -16,12 +16,11 @@ namespace thorin {
  * Where Linear is the largest element in the partial orders </<= and Unlimited the smallest.
  */
 enum class QualifierTag {
-    Unlimited,
-    Relevant = 1 << 0,
-    Affine   = 1 << 1,
+    Unlimited = 0,
+    Relevant  = 1 << 0,
+    Affine    = 1 << 1,
     Linear = Affine | Relevant,
     u = Unlimited, r = Relevant, a = Affine, l = Linear,
-    Num
 };
 
 /// Linear is the largest, Unlimited the smallest.

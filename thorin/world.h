@@ -5,7 +5,6 @@
 #include <string>
 
 #include "thorin/def.h"
-#include "thorin/traits.h"
 
 namespace thorin {
 

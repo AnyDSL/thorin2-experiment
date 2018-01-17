@@ -10,6 +10,8 @@
 namespace thorin {
 namespace core {
 
+std::tuple<const Def*, const Def*> shape_and_body(const Def* def);
+
 class World : public ::thorin::World {
 public:
     World();
@@ -17,20 +19,12 @@ public:
     //@{ types and type constructors
     const Axiom* type_i() { return type_i_; }
     const Axiom* type_r() { return type_r_; }
-    const App* type_i(iflags flags, int64_t width) { return type_i(QualifierTag::Unlimited, flags, width); }
-    const App* type_r(rflags flags, int64_t width) { return type_r(QualifierTag::Unlimited, flags, width); }
-    const App* type_i(QualifierTag q, iflags flags, int64_t width) {
-        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return type_i(qualifier(q), f, w);
-    }
-    const App* type_r(QualifierTag q, rflags flags, int64_t width) {
-        auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return type_r(qualifier(q), f, w);
-    }
-    const App* type_i(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
-        return app(type_i(), {q, flags, width}, dbg)->as<App>();
-    }
-    const App* type_r(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {
-        return app(type_r(), {q, flags, width}, dbg)->as<App>();
-    }
+    const App* type_i(int64_t width) { return type_i(QualifierTag::Unlimited, width); }
+    const App* type_r(int64_t width) { return type_r(QualifierTag::Unlimited, width); }
+    const App* type_i(QualifierTag q, int64_t width) { return type_i(qualifier(q), val_nat(width)); }
+    const App* type_r(QualifierTag q, int64_t width) { return type_r(qualifier(q), val_nat(width)); }
+    const App* type_i(const Def* q, const Def* width, Debug dbg = {}) { return app(type_i(), {q, width}, dbg)->as<App>(); }
+    const App* type_r(const Def* q, const Def* width, Debug dbg = {}) { return app(type_r(), {q, width}, dbg)->as<App>(); }
     const Axiom* type_mem() { return type_mem_; }
     const Axiom* type_frame() { return type_frame_; }
     const Axiom* type_ptr() { return type_ptr_; }
@@ -41,28 +35,48 @@ public:
     //@}
 
     //@{ values
-    const Axiom* val(iflags f,  uint8_t val) { return assume(type_i(f,  8), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, uint16_t val) { return assume(type_i(f, 16), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, uint32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, uint64_t val) { return assume(type_i(f, 64), {val}, {std::to_string(val)}); }
+    const Axiom* val(  int8_t val) { return assume(type_i( 8), {val}); }
+    const Axiom* val( uint8_t val) { return assume(type_i( 8), {val}); }
+    const Axiom* val( int16_t val) { return assume(type_i(16), {val}); }
+    const Axiom* val(uint16_t val) { return assume(type_i(16), {val}); }
+    const Axiom* val( int32_t val) { return assume(type_i(32), {val}); }
+    const Axiom* val(uint32_t val) { return assume(type_i(32), {val}); }
+    const Axiom* val( int64_t val) { return assume(type_i(64), {val}); }
+    const Axiom* val(uint64_t val) { return assume(type_i(64), {val}); }
 
-    const Axiom* val(iflags f,  int8_t val) { return assume(type_i(f,  8), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, int16_t val) { return assume(type_i(f, 16), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, int32_t val) { return assume(type_i(f, 32), {val}, {std::to_string(val)}); }
-    const Axiom* val(iflags f, int64_t val) { return assume(type_i(f, 64), {val}, {std::to_string(val)}); }
-
-    const Axiom* val(rflags f, half   val) { return assume(type_r(f, 16), {val}, {std::to_string(val)}); }
-    const Axiom* val(rflags f, float  val) { return assume(type_r(f, 32), {val}, {std::to_string(val)}); }
-    const Axiom* val(rflags f, double val) { return assume(type_r(f, 64), {val}, {std::to_string(val)}); }
+    const Axiom* val(half   val) { return assume(type_r(16), {val}); }
+    const Axiom* val(float  val) { return assume(type_r(32), {val}); }
+    const Axiom* val(double val) { return assume(type_r(64), {val}); }
     //@}
 
     //@{ arithmetic operations
-    template<iarithop O> const Axiom* op() { return iarithop_[O]; }
-    template<rarithop O> const Axiom* op() { return rarithop_[O]; }
-    template<iarithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {});
-    template<rarithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {});
+    template<WArithop O> const Axiom* op() { return warithop_[O]; }
+    template<MArithop O> const Axiom* op() { return marithop_[O]; }
+    template<IArithop O> const Axiom* op() { return iarithop_[O]; }
+    template<RArithop O> const Axiom* op() { return rarithop_[O]; }
+    template<WArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(WFlags::none, a, b, dbg); }
+    template<WArithop O> const Def* op(WFlags wflags, const Def* a, const Def* b, Debug dbg = {}) { return op<O>(val_nat(int64_t(wflags)), a, b, dbg); }
+    template<WArithop O> const Def* op(const Def* wflags, const Def* a, const Def* b, Debug dbg = {}) {
+        auto [shape, body] = shape_and_body(a->type());
+        return app(app(app(app(op<O>(), wflags), shape), app_arg(body)), {a, b}, dbg);
+    }
+    template<MArithop O> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
+        auto [shape, body] = shape_and_body(a->type());
+        return app(app(app(op<O>(), shape), app_arg(body)), {m, a, b}, dbg);
+    }
+    template<IArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
+        auto [shape, body] = shape_and_body(a->type());
+        return app(app(app(op<O>(), shape), app_arg(body)), {a, b}, dbg);
+    }
+    template<RArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(RFlags::none, a, b, dbg); }
+    template<RArithop O> const Def* op(RFlags f, const Def* a, const Def* b, Debug dbg = {}) { return op<O>(val_nat(int64_t(f)), a, b, dbg); }
+    template<RArithop O> const Def* op(const Def* rflags, const Def* a, const Def* b, Debug dbg = {}) {
+        auto [shape, body] = shape_and_body(a->type());
+        return app(app(app(app(op<O>(), rflags), shape), app_arg(body)), {a, b}, dbg);
+    }
     //@}
 
+#if 0
     //@{ relational operations
     const Axiom* op_icmp() { return op_icmp_; }
     const Axiom* op_rcmp() { return op_rcmp_; }
@@ -71,8 +85,9 @@ public:
     const Def* op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
     const Def* op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
     //@}
+#endif
 
-    //@{ tuple operations
+    //@{ lea - load effective address
     const Axiom* op_lea() { return op_lea_; }
     const Def* op_lea(const Def* ptr, const Def* index, Debug dbg = {});
     const Def* op_lea(const Def* ptr, size_t index, Debug dbg = {});
@@ -100,6 +115,8 @@ private:
     const Axiom* op_load_;
     const Axiom* op_slot_;
     const Axiom* op_store_;
+    std::array<const Axiom*, Num_WArithOp> warithop_;
+    std::array<const Axiom*, Num_MArithOp> marithop_;
     std::array<const Axiom*, Num_IArithOp> iarithop_;
     std::array<const Axiom*, Num_RArithOp> rarithop_;
     const Axiom* op_icmp_;

@@ -3,14 +3,37 @@
 
 #include "thorin/util/utility.h"
 
-#define THORIN_I_FLAGS(m) m(uo) /* o o */ /*unsigned overflow   */ \
-                          m(uw) /* o x */ /*unsigned wraparound */ \
-                          m(so) /* x o */ /*  signed overflow   */ \
-                          m(sw) /* x x */ /*  signed wraparound */
-#define THORIN_R_FLAGS(m) m(f) m(p) // fast, precise - more fine-grained flags are planned in the future
+namespace thorin {
 
-#define THORIN_I_ARITHOP(m) m(iadd) m(isub) m(imul) m(idiv) m(imod) m(ishl) m(ishr) m(iand) m(ior) m(ixor)
-#define THORIN_R_ARITHOP(m) m(radd) m(rsub) m(rmul) m(rdiv) m(rmod)
+enum class WFlags : int64_t {
+    none = 0,
+    nsw  = 1 << 0,
+    nuw  = 1 << 1,
+};
+
+enum class RFlags : int64_t {
+    none     = 0,
+    nnan     = 1 << 0, ///< No NaNs - Allow optimizations to assume the arguments and result are not NaN. Such optimizations are required to retain defined behavior over NaNs, but the value of the result is undefined.
+    ninf     = 1 << 1, ///< No Infs - Allow optimizations to assume the arguments and result are not +/-Inf. Such optimizations are required to retain defined behavior over +/-Inf, but the value of the result is undefined.
+    nsz      = 1 << 2, ///< No Signed Zeros - Allow optimizations to treat the sign of a zero argument or result as insignificant.
+    arcp     = 1 << 3, ///< Allow Reciprocal - Allow optimizations to use the reciprocal of an argument rather than perform division.
+    contract = 1 << 4, ///< Allow floating-point contraction (e.g. fusing a multiply followed by an addition into a fused multiply-and-add).
+    afn      = 1 << 5, ///< Approximate functions - Allow substitution of approximate calculations for functions (sin, log, sqrt, etc). See floating-point intrinsic definitions for places where this can apply to LLVM’s intrinsic math functions.
+    reassoc  = 1 << 6, ///< Allow reassociation transformations for floating-point instructions. This may dramatically change results in floating point.
+    fast = nnan | ninf | nsz | arcp | contract | afn | reassoc,
+};
+
+inline WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int64_t(b)); }
+inline RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
+
+/// integer instructions that take a @p wrap
+#define THORIN_W_ARITHOP(m) m(iadd) m(isub) m(imul) m(ishl)
+/// integer instructions that might produce a side effect (division by zero)
+#define THORIN_M_ARITHOP(m) m(sdiv) m(udiv) m(smod) m(umod)
+/// integer instructions neither take wflags nor do they produce a side effect
+#define THORIN_I_ARITHOP(m)  m(sshr) m(ushr) m(iand) m(ior) m(ixor)
+/// floating point (real) instructions that take rflags
+#define THORIN_R_ARITHOP(m)  m(radd) m(rsub) m(rmul) m(rdiv) m(rmod)
 
 #define THORIN_I_REL(m)   /* E G L                         */ \
                     m(t)  /* o o o - always true           */ \
@@ -40,37 +63,54 @@
                      m(oge) /* x x x o - ordered and greater than or equal  */ \
                      m(f)   /* x x x x - always false                       */
 
-namespace thorin {
 
-enum class iflags {
-#define CODE(f) f,
-    THORIN_I_FLAGS(CODE)
+enum WArithop : size_t {
+#define CODE(O) O,
+    THORIN_W_ARITHOP(CODE)
 #undef CODE
-    Num
+    Num_WArithOp
 };
 
-enum class rflags {
-#define CODE(f) f,
-    THORIN_R_FLAGS(CODE)
+enum MArithop : size_t {
+#define CODE(O) O,
+    THORIN_M_ARITHOP(CODE)
 #undef CODE
-    Num
+    Num_MArithOp
 };
 
-enum iarithop : size_t {
+enum IArithop : size_t {
 #define CODE(O) O,
     THORIN_I_ARITHOP(CODE)
 #undef CODE
     Num_IArithOp
 };
 
-enum rarithop : size_t {
+enum RArithop : size_t {
 #define CODE(O) O,
     THORIN_R_ARITHOP(CODE)
 #undef CODE
     Num_RArithOp
 };
 
-constexpr const char* iarithop2str(iarithop o) {
+constexpr const char* arithop2str(WArithop o) {
+    switch (o) {
+#define CODE(O) case O: return #O;
+    THORIN_W_ARITHOP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
+
+constexpr const char* arithop2str(MArithop o) {
+    switch (o) {
+#define CODE(O) case O: return #O;
+    THORIN_M_ARITHOP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
+
+constexpr const char* arithop2str(IArithop o) {
     switch (o) {
 #define CODE(O) case O: return #O;
     THORIN_I_ARITHOP(CODE)
@@ -79,7 +119,7 @@ constexpr const char* iarithop2str(iarithop o) {
     }
 }
 
-constexpr const char* rarithop2str(rarithop o) {
+constexpr const char* arithop2str(RArithop o) {
     switch (o) {
 #define CODE(O) case O: return #O;
     THORIN_R_ARITHOP(CODE)
@@ -88,14 +128,14 @@ constexpr const char* rarithop2str(rarithop o) {
     }
 }
 
-enum class irel {
+enum class IRel {
 #define CODE(f) f,
     THORIN_I_REL(CODE)
 #undef CODE
     Num
 };
 
-enum class rrel {
+enum class RRel {
 #define CODE(f) f,
     THORIN_R_REL(CODE)
 #undef CODE
