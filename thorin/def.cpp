@@ -198,7 +198,7 @@ Qualifier::Qualifier(World& world, QualifierTag q)
 {}
 
 QualifierType::QualifierType(World& world)
-    : Def(world, Tag::QualifierType, world.universe(), 0, ops_ptr<Universe>(), {"ℚ"})
+    : Def(world, Tag::QualifierType, world.universe(), 0, ops_ptr<QualifierType>(), {"ℚ"})
 {}
 
 Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
@@ -605,8 +605,7 @@ bool Sigma::assignable(const Def* def) const {
 
 bool Star::assignable(const Def* def) const {
     auto type = def->type();
-    return this == type || (kind_qualifier() == type->kind_qualifier()
-                            && (type->isa<MultiArityKind>() || type->isa<ArityKind>()));
+    return this == type || ((type->isa<MultiArityKind>() || type->isa<ArityKind>()) && op(0) == type->op(0));
 }
 
 bool Variadic::assignable(const Def* def) const {

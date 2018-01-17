@@ -231,8 +231,6 @@ public:
 
     //@{ get Qualifier
     const Def* qualifier() const;
-    /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
-    virtual const Def* kind_qualifier() const;
     bool maybe_affine() const;
     //@}
 
@@ -322,6 +320,8 @@ private:
 
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
     bool on_heap() const { return on_heap_; }
+    /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
+    virtual const Def* kind_qualifier() const;
     virtual bool v_subtype_of(const Def*) const { return false; }
 
     static size_t gid_counter_;
