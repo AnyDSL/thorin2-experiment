@@ -10,10 +10,10 @@ using namespace thorin;
 
 TEST(Qualifiers, Lattice) {
     World w;
-    auto U = Qualifier::Unlimited;
-    auto R = Qualifier::Relevant;
-    auto A = Qualifier::Affine;
-    auto L = Qualifier::Linear;
+    auto U = QualifierTag::Unlimited;
+    auto R = QualifierTag::Relevant;
+    auto A = QualifierTag::Affine;
+    auto L = QualifierTag::Linear;
 
     EXPECT_LT(U, A);
     EXPECT_LT(U, R);
@@ -30,10 +30,10 @@ TEST(Qualifiers, Lattice) {
     EXPECT_EQ(join(L, A), L);
     EXPECT_EQ(join(L, R), L);
 
-    EXPECT_EQ(w.qualifier(U)->box().get_qualifier(), U);
-    EXPECT_EQ(w.qualifier(R)->box().get_qualifier(), R);
-    EXPECT_EQ(w.qualifier(A)->box().get_qualifier(), A);
-    EXPECT_EQ(w.qualifier(L)->box().get_qualifier(), L);
+    EXPECT_EQ(w.qualifier(U)->qualifier_tag(), U);
+    EXPECT_EQ(w.qualifier(R)->qualifier_tag(), R);
+    EXPECT_EQ(w.qualifier(A)->qualifier_tag(), A);
+    EXPECT_EQ(w.qualifier(L)->qualifier_tag(), L);
 }
 
 TEST(Qualifiers, Variants) {
@@ -101,9 +101,9 @@ TEST(Qualifiers, Kinds) {
 #if 0
 TEST(Substructural, Misc) {
     World w;
-    //auto R = Qualifier::Relevant;
-    auto A = Qualifier::Affine;
-    auto L = Qualifier::Linear;
+    //auto R = QualifierTag::Relevant;
+    auto A = QualifierTag::Affine;
+    auto L = QualifierTag::Linear;
     auto a = w.affine();
     //auto l = w.linear();
     //auto r = w.relevant();

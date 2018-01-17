@@ -79,8 +79,8 @@ bool Def::maybe_affine() const {
         return false;
     const Def* q = qualifier();
     assert(q != nullptr);
-    if (auto qu = isa_const_qualifier(q)) {
-        return qu->box().get_qualifier() >= Qualifier::Affine;
+    if (auto qu = q->isa<Qualifier>()) {
+        return qu->qualifier_tag() >= QualifierTag::Affine;
     }
     return true;
 }
@@ -190,6 +190,11 @@ Pack::Pack(World& world, const Def* type, const Def* body, Debug dbg)
 
 Pi::Pi(World& world, const Def* type, const Def* domain, const Def* body, Debug dbg)
     : Def(world, Tag::Pi, type, {domain, body}, ops_ptr<Pi>(), dbg)
+{}
+
+Qualifier::Qualifier(World& world, QualifierTag q)
+    : Def(world, Tag::Qualifier, world.qualifier_type(), 0, ops_ptr<Qualifier>(), {qualifier2str(q)})
+    , qualifier_tag_(q)
 {}
 
 QualifierType::QualifierType(World& world)
@@ -362,6 +367,8 @@ const Def* MultiArityKind::arity() const { return world().arity(1); }
 
 const Def* Pi::arity() const { return world().arity(1); }
 
+const Def* Qualifier::arity() const { return world().arity(1); }
+
 const Def* QualifierType::arity() const { return world().arity(1); }
 
 const Def* Sigma::arity() const { return world().arity(num_ops()); }
@@ -483,6 +490,7 @@ const Def* Pick          ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
+const Def* Qualifier     ::rebuild(World& to, const Def*  , Defs    ) const { return to.qualifier(qualifier_tag_); }
 const Def* QualifierType ::rebuild(World& to, const Def*  , Defs    ) const { return to.qualifier_type(); }
 const Def* Sigma         ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
@@ -739,7 +747,7 @@ std::ostream& ArityKind::stream(std::ostream& os) const {
 }
 
 std::ostream& Axiom::stream(std::ostream& os) const {
-    return qualifier_stream(os) << (is_nominal() || type() == world().qualifier_type() || type() == world().qualifier_kind() ? name() : std::to_string(box().get_u64()));
+    return qualifier_stream(os) << (is_nominal() ? name() : std::to_string(box().get_u64()));
 }
 
 std::ostream& Error::stream(std::ostream& os) const { return os << "<error>"; }
@@ -789,6 +797,10 @@ std::ostream& Pick::stream(std::ostream& os) const {
     type()->name_stream(os);
     destructee()->name_stream(os << "(");
     return os << ")";
+}
+
+std::ostream& Qualifier::stream(std::ostream& os) const {
+    return os << name();
 }
 
 std::ostream& QualifierType::stream(std::ostream& os) const {

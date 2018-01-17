@@ -22,19 +22,19 @@ TEST(Primop, Types) {
     ASSERT_EQ(w.type_i(iflags::uw, 64), w.app(w.type_i(), {w.unlimited(), w.val_nat(int64_t(iflags::uw)), w.val_nat_64()}));
     ASSERT_EQ(w.type_i(iflags::uw, 64), w.app(w.type_i(), {w.unlimited(), w.val_nat(int64_t(iflags::uw)), w.val_nat_64()}));
 
-    ASSERT_EQ(w.type_i(iflags::uo, 16), w.type_i(Qualifier::u, iflags::uo, 16));
-    ASSERT_EQ(w.type_i(iflags::uo, 16), w.type_i(Qualifier::u, iflags::uo, 16));
-    ASSERT_EQ(w.type_i(iflags::uw, 64), w.type_i(Qualifier::u, iflags::uw, 64));
-    ASSERT_EQ(w.type_i(iflags::uw, 64), w.type_i(Qualifier::u, iflags::uw, 64));
+    ASSERT_EQ(w.type_i(iflags::uo, 16), w.type_i(QualifierTag::u, iflags::uo, 16));
+    ASSERT_EQ(w.type_i(iflags::uo, 16), w.type_i(QualifierTag::u, iflags::uo, 16));
+    ASSERT_EQ(w.type_i(iflags::uw, 64), w.type_i(QualifierTag::u, iflags::uw, 64));
+    ASSERT_EQ(w.type_i(iflags::uw, 64), w.type_i(QualifierTag::u, iflags::uw, 64));
 
-    ASSERT_EQ(w.affine(), w.type_i(Qualifier::a, iflags::uw, 64)->qualifier());
-    ASSERT_EQ(w.linear(), w.type_r(Qualifier::l, rflags::f, 64)->qualifier());
+    ASSERT_EQ(w.affine(), w.type_i(QualifierTag::a, iflags::uw, 64)->qualifier());
+    ASSERT_EQ(w.linear(), w.type_r(QualifierTag::l, rflags::f, 64)->qualifier());
 
     ASSERT_EQ(w.type_r(rflags::f, 64), w.app(w.type_r(), {w.unlimited(), w.val_nat(int64_t(rflags::f)), w.val_nat_64()}));
     ASSERT_EQ(w.type_r(rflags::p, 16), w.app(w.type_r(), {w.unlimited(), w.val_nat(int64_t(rflags::p)), w.val_nat_16()}));
 
-    ASSERT_EQ(w.type_r(rflags::f, 64), w.type_r(Qualifier::u, rflags::f, 64));
-    ASSERT_EQ(w.type_r(rflags::p, 16), w.type_r(Qualifier::u, rflags::p, 16));
+    ASSERT_EQ(w.type_r(rflags::f, 64), w.type_r(QualifierTag::u, rflags::f, 64));
+    ASSERT_EQ(w.type_r(rflags::p, 16), w.type_r(QualifierTag::u, rflags::p, 16));
 }
 
 TEST(Primop, Arithop) {

@@ -74,11 +74,11 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
             return max;
         } else {
 #ifndef NDEBUG
-            if (auto qual_axiom = isa_const_qualifier(inferred_q)) {
-                auto box_qual = qual_axiom->box().get_qualifier();
-                if (auto q_axiom = isa_const_qualifier(q)) {
-                    auto qual = q_axiom->box().get_qualifier();
-                    auto test = use_glb ? qual <= box_qual : qual >= box_qual;
+            if (auto i_qual = inferred_q->template isa<Qualifier>()) {
+                auto iq = i_qual->qualifier_tag();
+                if (auto q_qual = q->template isa<Qualifier>()) {
+                    auto qual = q_qual->qualifier_tag();
+                    auto test = use_glb ? qual <= iq : qual >= iq;
                     assertf(test, "qualifier must be {} than the {} of the operands' qualifiers",
                             use_glb ? "less" : "greater",
                             use_glb ? "greatest lower bound" : "least upper bound");
@@ -93,16 +93,16 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
 
 template<bool use_glb, class I>
 const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const SortedDefSet&)> unify_fn) {
-    auto const_elem = use_glb ? Qualifier::Unlimited : Qualifier::Linear;
-    auto ident_elem = use_glb ? Qualifier::Linear : Qualifier::Unlimited;
+    auto const_elem = use_glb ? QualifierTag::Unlimited : QualifierTag::Linear;
+    auto ident_elem = use_glb ? QualifierTag::Linear : QualifierTag::Unlimited;
     size_t num_defs = defs.distance();
     DefArray reduced(num_defs);
-    Qualifier accu = Qualifier::Unlimited;
+    QualifierTag accu = QualifierTag::Unlimited;
     size_t num_const = 0;
     I iter = defs.begin();
     for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
-        if (auto q = isa_const_qualifier(*iter)) {
-            auto qual = q->box().get_qualifier();
+        if (auto q = (*iter)->template isa<Qualifier>()) {
+            auto qual = q->qualifier_tag();
             accu = use_glb ? meet(accu, qual) : join(accu, qual);
             num_const++;
         } else {
@@ -139,8 +139,8 @@ World::World()
     universe_ = insert<Universe>(0, *this);
     qualifier_type_ = insert<QualifierType>(0, *this);
     for (size_t i = 0; i != 4; ++i) {
-        auto q = Qualifier(i);
-        qualifier_[i] = assume(qualifier_type(), {q}, {qualifier2str(q)});
+        auto q = QualifierTag(i);
+        qualifier_[i] = insert<Qualifier>(1, *this, q);
         star_[i] = insert<Star>(1, *this, qualifier_[i]);
         arity_kind_[i] = insert<ArityKind>(1, *this, qualifier_[i]);
         multi_arity_kind_[i] = insert<MultiArityKind>(1, *this, qualifier_[i]);
@@ -448,7 +448,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && is_homogeneous(defs)) {
         assert(q == nullptr || defs.front()->qualifier() == q);
-        return variadic(arity(defs.size(), Qualifier::Unlimited, dbg), defs.front()->shift_free_vars(-1), dbg);
+        return variadic(arity(defs.size(), QualifierTag::Unlimited, dbg), defs.front()->shift_free_vars(-1), dbg);
     }
 
     return unify<Sigma>(defs.size(), *this, type, defs, dbg);
@@ -566,7 +566,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
 
     if (size != 0) {
         if (is_homogeneous(defs))
-            return pack(arity(size, Qualifier::Unlimited, dbg), defs.front()->shift_free_vars(1), dbg);
+            return pack(arity(size, QualifierTag::Unlimited, dbg), defs.front()->shift_free_vars(1), dbg);
         else if (auto same = eta_property())
             return same;
     }

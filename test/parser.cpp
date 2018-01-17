@@ -43,9 +43,9 @@ TEST(Parser, Star) {
     World w;
     EXPECT_EQ(parse(w, "*"), w.star());
     EXPECT_EQ(parse(w, "*ᵁ"), w.star());
-    EXPECT_EQ(parse(w, "*ᴿ"), w.star(Qualifier::Relevant));
-    EXPECT_EQ(parse(w, "*ᴬ"), w.star(Qualifier::Affine));
-    EXPECT_EQ(parse(w, "*ᴸ"), w.star(Qualifier::Linear));
+    EXPECT_EQ(parse(w, "*ᴿ"), w.star(QualifierTag::Relevant));
+    EXPECT_EQ(parse(w, "*ᴬ"), w.star(QualifierTag::Affine));
+    EXPECT_EQ(parse(w, "*ᴸ"), w.star(QualifierTag::Linear));
     EXPECT_EQ(parse(w, "Πq:ℚ.*q"), w.pi(w.qualifier_type(), w.star(w.var(w.qualifier_type(), 0))));
 }
 

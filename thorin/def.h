@@ -120,6 +120,7 @@ public:
         Pack,
         Pi,
         Pick,
+        Qualifier,
         QualifierType,
         Sigma,
         Singleton,
@@ -737,19 +738,19 @@ private:
     friend class World;
 };
 
-
-class Star : public Def {
+class Qualifier : public Def {
 private:
-    Star(World& world, const Def* qualifier);
+    Qualifier(World& world, QualifierTag q);
 
 public:
+    QualifierTag qualifier_tag() const { return qualifier_tag_; }
     const Def* arity() const override;
-    bool assignable(const Def* def) const override;
     std::ostream& stream(std::ostream&) const override;
-    const Def* kind_qualifier() const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+
+    QualifierTag qualifier_tag_;
 
     friend class World;
 };
@@ -762,6 +763,22 @@ public:
     const Def* arity() const override;
     std::ostream& stream(std::ostream&) const override;
     bool has_values() const override;
+    const Def* kind_qualifier() const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+class Star : public Def {
+private:
+    Star(World& world, const Def* qualifier);
+
+public:
+    const Def* arity() const override;
+    bool assignable(const Def* def) const override;
+    std::ostream& stream(std::ostream&) const override;
     const Def* kind_qualifier() const override;
 
 private:

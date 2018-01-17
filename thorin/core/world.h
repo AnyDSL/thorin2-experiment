@@ -17,12 +17,12 @@ public:
     //@{ types and type constructors
     const Axiom* type_i() { return type_i_; }
     const Axiom* type_r() { return type_r_; }
-    const App* type_i(iflags flags, int64_t width) { return type_i(Qualifier::Unlimited, flags, width); }
-    const App* type_r(rflags flags, int64_t width) { return type_r(Qualifier::Unlimited, flags, width); }
-    const App* type_i(Qualifier q, iflags flags, int64_t width) {
+    const App* type_i(iflags flags, int64_t width) { return type_i(QualifierTag::Unlimited, flags, width); }
+    const App* type_r(rflags flags, int64_t width) { return type_r(QualifierTag::Unlimited, flags, width); }
+    const App* type_i(QualifierTag q, iflags flags, int64_t width) {
         auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return type_i(qualifier(q), f, w);
     }
-    const App* type_r(Qualifier q, rflags flags, int64_t width) {
+    const App* type_r(QualifierTag q, rflags flags, int64_t width) {
         auto f = val_nat(int64_t(flags)); auto w = val_nat(width); return type_r(qualifier(q), f, w);
     }
     const App* type_i(const Def* q, const Def* flags, const Def* width, Debug dbg = {}) {

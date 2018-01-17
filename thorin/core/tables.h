@@ -124,7 +124,7 @@ enum class rrel {
 typedef bool u1; typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t u64;
 typedef bool s1; typedef  int8_t s8; typedef  int16_t s16; typedef  int32_t s32; typedef  int64_t s64;
 /*                        */ typedef half_float::half r16; typedef    float r32; typedef   double r64;
-typedef Qualifier qualifier;
+typedef QualifierTag qualifier;
 
 #define THORIN_TYPES(m) \
     m(s8)   m(s16) m(s32) m(s64) \

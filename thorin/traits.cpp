@@ -2,13 +2,6 @@
 
 namespace thorin {
 
-const Axiom* isa_const_qualifier(const Def* def) {
-    assert(def != nullptr);
-    for (auto q : def->world().qualifiers())
-        if (q == def) return q;
-    return nullptr;
-}
-
 #if  0
 bool is_primitive_type(const Def* type) {
     auto& world = static_cast<World&>(type->world());

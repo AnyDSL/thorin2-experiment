@@ -19,7 +19,7 @@ World::World() {
     env["nat"]  = type_nat();
     env["bool"] = type_bool();
     env["ptr"]  = type_ptr_   = axiom(parse(*this, "Π[*, nat]. *", env), {"ptr"});
-    env["M"]    = type_mem_   = axiom(star(Qualifier::Linear), {"M"});
+    env["M"]    = type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
     env["F"]    = type_frame_ = axiom(S, {"F"});
     env["int"]  = type_i();
     env["real"] = type_r();
