@@ -376,6 +376,7 @@ protected:
     std::array<const Axiom*, 7> val_nat_;
 };
 
+inline const Def* app_callee(const Def* def) { return def->as<App>()->callee(); }
 inline const Def* app_arg(const Def* def) { return def->as<App>()->arg(); }
 inline const Def* app_arg(const Def* def, size_t i) { return def->world().extract(app_arg(def), i); }
 

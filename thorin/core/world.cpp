@@ -16,10 +16,10 @@ World::World() {
     env["M"]    = type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
     env["F"]    = type_frame_ = axiom(star(), {"F"});
 
-    auto w_type_arithop = parse(*this, "Πf: nat. Πs: 𝕄. Π[q: ℚ, w: nat]. Π[   [s;  int(q, w)], [s;  int(q, w)]].     [s;  int(q, w)] ", env);
-    auto m_type_arithop = parse(*this, "         Πs: 𝕄. Π[q: ℚ, w: nat]. Π[M, [s;  int(q, w)], [s;  int(q, w)]]. [M, [s;  int(q, w)]]", env);
-    auto i_type_arithop = parse(*this, "         Πs: 𝕄. Π[q: ℚ, w: nat]. Π[   [s;  int(q, w)], [s;  int(q, w)]].     [s;  int(q, w)] ", env);
-    auto r_type_arithop = parse(*this, "Πf: nat. Πs: 𝕄. Π[q: ℚ, w: nat]. Π[   [s; real(q, w)], [s; real(q, w)]].     [s; real(q, w)] ", env);
+    auto w_type_arithop = parse(*this, "Πf: nat. Π[q: ℚ, w: nat]. Πs: 𝕄. Π[   [s;  int(q, w)], [s;  int(q, w)]].     [s;  int(q, w)] ", env);
+    auto m_type_arithop = parse(*this, "         Π[q: ℚ, w: nat]. Πs: 𝕄. Π[M, [s;  int(q, w)], [s;  int(q, w)]]. [M, [s;  int(q, w)]]", env);
+    auto i_type_arithop = parse(*this, "         Π[q: ℚ, w: nat]. Πs: 𝕄. Π[   [s;  int(q, w)], [s;  int(q, w)]].     [s;  int(q, w)] ", env);
+    auto r_type_arithop = parse(*this, "Πf: nat. Π[q: ℚ, w: nat]. Πs: 𝕄. Π[   [s; real(q, w)], [s; real(q, w)]].     [s; real(q, w)] ", env);
 
     for (size_t o = 0; o != Num_WArithOp; ++o) warithop_[o] = axiom(w_type_arithop, {arithop2str(WArithop(o))});
     for (size_t o = 0; o != Num_MArithOp; ++o) marithop_[o] = axiom(m_type_arithop, {arithop2str(MArithop(o))});
@@ -36,7 +36,7 @@ World::World() {
     op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
     op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
 
-    op<iadd>()->set_normalizer(normalize_iadd_flags);
+    op<wadd>()->set_normalizer(normalize_wadd_flags);
 }
 
 std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {

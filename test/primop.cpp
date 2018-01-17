@@ -25,11 +25,19 @@ TEST(Primop, Types) {
 
 TEST(Primop, Arithop) {
     core::World w;
-    w.op<iadd>()->type()->dump();
-    auto a = w.op<iadd>(w.val(23), w.val(42));
+    w.op<wadd>()->type()->dump();
+    auto a = w.op<wadd>(w.val(23), w.val(42));
     a->dump();
     a->type()->dump();
     ASSERT_EQ(a->type(), (w.type_i(32)));
+
+
+#if 0
+    auto m1 = w.tuple({w.tuple({w.val(0), w.val(1), w.val(2)}), w.tuple({w.val(3), w.val(4), w.val(5)})});
+    auto m2 = w.tuple({w.tuple({w.val(6), w.val(7), w.val(8)}), w.tuple({w.val(9), w.val(10), w.val(11)})});
+
+    w.op<wadd>(m1, m2)->dump();
+#endif
 }
 
 #if 0

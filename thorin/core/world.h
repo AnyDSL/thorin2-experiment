@@ -58,21 +58,21 @@ public:
     template<WArithop O> const Def* op(WFlags wflags, const Def* a, const Def* b, Debug dbg = {}) { return op<O>(val_nat(int64_t(wflags)), a, b, dbg); }
     template<WArithop O> const Def* op(const Def* wflags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [shape, body] = shape_and_body(a->type());
-        return app(app(app(app(op<O>(), wflags), shape), app_arg(body)), {a, b}, dbg);
+        return app(app(app(app(op<O>(), wflags), app_arg(body)), shape), {a, b}, dbg);
     }
     template<MArithop O> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
         auto [shape, body] = shape_and_body(a->type());
-        return app(app(app(op<O>(), shape), app_arg(body)), {m, a, b}, dbg);
+        return app(app(app(op<O>(), app_arg(body)), shape), {m, a, b}, dbg);
     }
     template<IArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
         auto [shape, body] = shape_and_body(a->type());
-        return app(app(app(op<O>(), shape), app_arg(body)), {a, b}, dbg);
+        return app(app(app(op<O>(), app_arg(body)), shape), {a, b}, dbg);
     }
     template<RArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(RFlags::none, a, b, dbg); }
     template<RArithop O> const Def* op(RFlags f, const Def* a, const Def* b, Debug dbg = {}) { return op<O>(val_nat(int64_t(f)), a, b, dbg); }
     template<RArithop O> const Def* op(const Def* rflags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [shape, body] = shape_and_body(a->type());
-        return app(app(app(app(op<O>(), rflags), shape), app_arg(body)), {a, b}, dbg);
+        return app(app(app(app(op<O>(), rflags), app_arg(body)), shape), {a, b}, dbg);
     }
     //@}
 

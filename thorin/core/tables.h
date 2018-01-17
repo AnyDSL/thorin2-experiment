@@ -27,11 +27,11 @@ inline WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int64_t
 inline RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
 
 /// integer instructions that take a @p wrap
-#define THORIN_W_ARITHOP(m) m(iadd) m(isub) m(imul) m(ishl)
+#define THORIN_W_ARITHOP(m) m(wadd) m(wsub) m(wmul) m(wshl)
 /// integer instructions that might produce a side effect (division by zero)
 #define THORIN_M_ARITHOP(m) m(sdiv) m(udiv) m(smod) m(umod)
 /// integer instructions neither take wflags nor do they produce a side effect
-#define THORIN_I_ARITHOP(m)  m(sshr) m(ushr) m(iand) m(ior) m(ixor)
+#define THORIN_I_ARITHOP(m)  m(ashr) m(lshr) m(iand) m(ior) m(ixor)
 /// floating point (real) instructions that take rflags
 #define THORIN_R_ARITHOP(m)  m(radd) m(rsub) m(rmul) m(rdiv) m(rmod)
 
