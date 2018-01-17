@@ -21,14 +21,14 @@ TEST(Qualifiers, Lattice) {
     EXPECT_LT(A, L);
     EXPECT_LT(R, L);
 
-    EXPECT_EQ(join(U, U), U);
-    EXPECT_EQ(join(A, U), A);
-    EXPECT_EQ(join(R, U), R);
-    EXPECT_EQ(join(L, U), L);
-    EXPECT_EQ(join(A, A), A);
-    EXPECT_EQ(join(A, R), L);
-    EXPECT_EQ(join(L, A), L);
-    EXPECT_EQ(join(L, R), L);
+    EXPECT_EQ(lub(U, U), U);
+    EXPECT_EQ(lub(A, U), A);
+    EXPECT_EQ(lub(R, U), R);
+    EXPECT_EQ(lub(L, U), L);
+    EXPECT_EQ(lub(A, A), A);
+    EXPECT_EQ(lub(A, R), L);
+    EXPECT_EQ(lub(L, A), L);
+    EXPECT_EQ(lub(L, R), L);
 
     EXPECT_EQ(w.qualifier(U)->qualifier_tag(), U);
     EXPECT_EQ(w.qualifier(R)->qualifier_tag(), R);

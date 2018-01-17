@@ -103,7 +103,7 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
     for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
         if (auto q = (*iter)->template isa<Qualifier>()) {
             auto qual = q->qualifier_tag();
-            accu = use_glb ? meet(accu, qual) : join(accu, qual);
+            accu = use_glb ? thorin::glb(accu, qual) : thorin::lub(accu, qual);
             num_const++;
         } else {
             assert(is_qualifier(*iter));

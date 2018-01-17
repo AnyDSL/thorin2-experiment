@@ -1,6 +1,10 @@
 #ifndef THORIN_QUALIFIER_H
 #define THORIN_QUALIFIER_H
 
+#include <ostream>
+
+#include "thorin/util/utility.h"
+
 namespace thorin {
 
 /* This implements the substructural type qualifier lattice:
@@ -11,7 +15,7 @@ namespace thorin {
  *      Unlimited
  * Where Linear is the largest element in the partial orders </<= and Unlimited the smallest.
  */
-enum class QualifierTag : int32_t {
+enum class QualifierTag {
     Unlimited,
     Relevant = 1 << 0,
     Affine   = 1 << 1,
@@ -33,23 +37,26 @@ inline bool operator<=(QualifierTag lhs, QualifierTag rhs) {
 }
 
 constexpr const char* qualifier2str(QualifierTag q) {
-    return q == QualifierTag::Unlimited ? "ᵁ" :
-        q == QualifierTag::Relevant ? "ᴿ" :
-        q == QualifierTag::Affine ? "ᴬ" :
-        "ᴸ";
+    switch (q) {
+        case QualifierTag::u: return "ᵁ";
+        case QualifierTag::r: return "ᴿ";
+        case QualifierTag::a: return "ᴬ";
+        case QualifierTag::l: return "ᴸ";
+        default: THORIN_UNREACHABLE;
+    }
 }
 
 inline std::ostream& operator<<(std::ostream& ostream, const QualifierTag q) {
     return ostream << qualifier2str(q);
 }
 
-/// Also known as the least upper bound.
-inline QualifierTag join(QualifierTag lhs, QualifierTag rhs) {
+/// least upper bound
+inline QualifierTag lub(QualifierTag lhs, QualifierTag rhs) {
     return QualifierTag(static_cast<int>(lhs) | static_cast<int>(rhs));
 }
 
-/// Also known as the greatest lower bound.
-inline QualifierTag meet(QualifierTag lhs, QualifierTag rhs) {
+/// greatest lower bound
+inline QualifierTag glb(QualifierTag lhs, QualifierTag rhs) {
     return QualifierTag(static_cast<int>(lhs) & static_cast<int>(rhs));
 }
 
