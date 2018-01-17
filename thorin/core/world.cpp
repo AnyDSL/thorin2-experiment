@@ -29,7 +29,7 @@ World::World() {
     //auto i_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[[s;  int(q, f, w)], [s;  int(q, f, w)]]. [s; bool]", env);
     auto r_type_cmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, f: nat]. Π[[s; real(q, w)], [s; real(q, w)]]. [s; bool]", env);
     //op_icmp_  = axiom(i_type_cmp, {"icmp"});
-    //op_rcmp_  = axiom(r_type_cmp, {"rcmp"});
+    op_rcmp_  = axiom(r_type_cmp, {"rcmp"});
     op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)", env), {"lea"});
     op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]", env), {"load"});
     op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});

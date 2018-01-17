@@ -80,7 +80,7 @@ public:
     const Axiom* op_icmp() { return op_icmp_; }
     const Axiom* op_rcmp() { return op_rcmp_; }
     //const Def* op_icmp(irel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_icmp(val_nat(int64_t(rel)), a, b, dbg); }
-    const Def* op_rcmp(rrel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_rcmp(val_nat(int64_t(rel)), a, b, dbg); }
+    const Def* op_rcmp(RRel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_rcmp(val_nat(int64_t(rel)), a, b, dbg); }
     //const Def* op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
     const Def* op_rcmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {}) {
         auto [shape, body] = shape_and_body(a->type());
