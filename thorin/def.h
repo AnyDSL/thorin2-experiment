@@ -99,7 +99,7 @@ DefArray unique_gid_sorted(Defs defs);
 
 //------------------------------------------------------------------------------
 
-typedef const Def* (*Normalizer)(const App*);
+typedef const Def* (*Normalizer)(World&, const Def*, const Def*, const Def*, Debug);
 
 /// Base class for all Def%s.
 class Def : public RuntimeCast<Def>, public Streamable  {

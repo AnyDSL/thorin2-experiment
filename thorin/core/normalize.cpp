@@ -5,20 +5,21 @@ namespace core {
 
 //------------------------------------------------------------------------------
 
-const Def* normalize_iadd(const App* app) {
-    auto& w = (core::World&) app->world();
+const Def* normalize_iadd(thorin::World& world, const Def*, const Def*, const Def* arg, Debug dbg) {
+    auto a = world.extract(arg, 0, dbg);
+    auto b = world.extract(arg, 1, dbg);
 
-    auto a = app_arg(app, 0)->isa<Axiom>();
-    auto b = app_arg(app, 0)->isa<Axiom>();
+    auto aa = a->isa<Axiom>();
+    auto ab = b->isa<Axiom>();
 
-    if (a && b)
-        return w.assume(a->type(), Box(a->box().get_u64() + b->box().get_u64()));
+    if (aa && ab)
+        return world.assume(a->type(), Box(aa->box().get_u64() + ab->box().get_u64()), dbg);
 
-    return app;
+    return nullptr;
 }
 
-const Def* normalize_iadd_flags(const App* app) { return app->set_normalizer(normalize_iadd); }
-const Def* normalize_iadd_shape(const App* app) { return app->set_normalizer(normalize_iadd_flags); }
+const Def* normalize_iadd_flags(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_iadd,       type, callee, arg, dbg); }
+const Def* normalize_iadd_shape(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_iadd_flags, type, callee, arg, dbg); }
 
 }
 }

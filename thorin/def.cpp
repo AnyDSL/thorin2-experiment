@@ -558,9 +558,6 @@ const Def* App::try_reduce() const {
         }
     }
 
-    if (auto normalizer = callee()->normalizer())
-        return cache_ = normalizer(this);
-
     return cache_ = this;
 }
 

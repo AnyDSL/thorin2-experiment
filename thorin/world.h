@@ -234,6 +234,10 @@ public:
 
     const DefSet& defs() const { return defs_; }
 
+    const App* curry(Normalizer normalizer, const Def* type, const Def* callee, const Def* arg, Debug dbg) {
+        return unify<App>(2, *this, type, callee, arg, dbg)->set_normalizer(normalizer)->as<App>();
+    }
+
     friend void swap(World& w1, World& w2) {
         using std::swap;
         swap(w1.defs_, w2.defs_);
