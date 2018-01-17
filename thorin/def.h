@@ -829,6 +829,8 @@ private:
     friend class World;
 };
 
+// TODO seperate Axiom and Assume
+// TODO remember which field in the box was actually used to have a better output
 class Axiom : public Def {
 private:
     /// A @em nominal Axiom.
