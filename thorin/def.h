@@ -5,17 +5,15 @@
 #include <set>
 #include <stack>
 
-#include "thorin/core/tables.h" // TODO get rid of this dependency
 #include "thorin/util/array.h"
 #include "thorin/util/bitset.h"
+#include "thorin/util/box.h"
 #include "thorin/util/cast.h"
 #include "thorin/util/hash.h"
 #include "thorin/util/iterator.h"
 #include "thorin/util/location.h"
 #include "thorin/util/stream.h"
 #include "thorin/qualifier.h"
-
-// TODO do we need has_values and is_value?
 
 namespace thorin {
 
