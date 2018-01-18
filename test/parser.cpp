@@ -63,6 +63,7 @@ TEST(Parser, Kinds) {
 
 TEST(Parser, Arities) {
     World w;
+    EXPECT_EQ(parse(w, "0ₐ"), w.arity(0));
     EXPECT_EQ(parse(w, "0ₐᵁ"), w.arity(0));
     EXPECT_EQ(parse(w, "1ₐᴿ"), w.arity(1, w.relevant()));
     EXPECT_EQ(parse(w, "2ₐᴬ"), w.arity(2, w.affine()));
