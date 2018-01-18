@@ -102,3 +102,13 @@ TEST(Arity, PrefixExtract) {
     EXPECT_EQ(w.variadic(a3, w.variadic(a2, unit)), w.extract(v_marray, i1_2)->type());
     EXPECT_EQ(w.variadic(w.sigma({a3, a2}), unit), w.extract(v_marray, i1_2)->type());
 }
+
+TEST(Arity, Eliminators) {
+    World w;
+    auto lam_bool = w.lambda(w.arity_kind(), w.type_bool());
+    auto p0_true = w.lambda(w.arity_kind(), w.val_bool_top());
+    auto step_negate = w.lambda(w.arity_kind(), w.lambda(w.type_bool(), w.extract(w.tuple({w.val_bool_top(), w.val_bool_bot()}), w.var(w.type_bool(), 0))));
+    auto arity_is_even = w.app(w.app(w.app(w.app(w.arity_eliminator(), w.unlimited()), lam_bool), p0_true), step_negate);
+    auto a3_even = w.app(arity_is_even, w.arity(3));
+    EXPECT_EQ(w.val_bool_bot(), a3_even);
+}

@@ -361,6 +361,9 @@ protected:
     const QualifierType* qualifier_type_;
     const Axiom* arity_succ_;
     const Axiom* arity_eliminator_;
+    const Axiom* arity_eliminator_arity_;
+    const Axiom* arity_eliminator_multi_;
+    const Axiom* arity_eliminator_star_;
     const Axiom* index_zero_;
     const Axiom* index_succ_;
     std::array<const Qualifier*, 4> qualifier_;

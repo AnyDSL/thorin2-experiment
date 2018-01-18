@@ -394,6 +394,7 @@ private:
 public:
     const Def* arity() const override;
     std::ostream& stream(std::ostream&) const override;
+    std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
     const Def* kind_qualifier() const override;
 
 private:
@@ -410,6 +411,7 @@ public:
     const Def* arity() const override;
     bool assignable(const Def* def) const override;
     std::ostream& stream(std::ostream&) const override;
+    std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
     const Def* kind_qualifier() const override;
 
 private:
@@ -476,6 +478,7 @@ public:
     const Def* apply(const Def*) const;
 
     const Def* arity() const override;
+    bool assignable(const Def* def) const override;
     bool has_values() const override;
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 
@@ -828,6 +831,7 @@ public:
     const Def* arity() const override;
     bool assignable(const Def* def) const override;
     std::ostream& stream(std::ostream&) const override;
+    std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
     const Def* kind_qualifier() const override;
 
 private:

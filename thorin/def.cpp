@@ -606,6 +606,17 @@ bool MultiArityKind::assignable(const Def* def) const {
     return this == def->type() || def->type()->isa<ArityKind>();
 }
 
+bool Pi::assignable(const Def* def) const {
+    auto dtype = def->type();
+    if (dtype == this)
+        return true;
+    if (/*auto pi = */dtype->isa<Pi>()) {
+        // if (pi->domain() == domain() && pi->body()->is_subtype_of(body()))
+        //     return true;
+    }
+    return false;
+}
+
 bool Sigma::assignable(const Def* def) const {
     if (def->type() == this)
         return true;
@@ -826,7 +837,9 @@ std::ostream& Pack::stream(std::ostream& os) const {
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
-    qualifier_stream(os) << "Π";
+    if (qualifier() != world().unlimited())
+        qualifier_stream(os);
+    os  << "Π";
     domain()->name_stream(os);
     return body()->name_stream(os << ".");
 }
