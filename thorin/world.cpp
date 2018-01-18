@@ -165,7 +165,7 @@ World::World()
     index_zero_ = axiom(parse(*this, "Πp:[q: ℚ, 𝔸(q)].ASucc p", env), {"0ⁱ"});
     index_succ_ = axiom(parse(*this, "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p", env), {"Sⁱ"});
 
-    elim_arity_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a", env));
+    arity_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a", env));
 }
 
 World::~World() {

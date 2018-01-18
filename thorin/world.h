@@ -182,6 +182,7 @@ public:
     }
     const Arity* arity(size_t a, const Def* q, Location location = {});
     const Def* arity_succ(const Def* arity, Debug dbg = {});
+    const Def* arity_eliminator() const { return arity_eliminator_; }
     //@}
 
     //@{ misc factory methods
@@ -359,7 +360,7 @@ protected:
     const Universe* universe_;
     const QualifierType* qualifier_type_;
     const Axiom* arity_succ_;
-    const Axiom* elim_arity_;
+    const Axiom* arity_eliminator_;
     const Axiom* index_zero_;
     const Axiom* index_succ_;
     std::array<const Qualifier*, 4> qualifier_;
