@@ -776,6 +776,7 @@ private:
     }
 
 public:
+    const Def* arity() const override;
     const Def* kind_qualifier() const override;
     bool has_values() const override;
     std::ostream& stream(std::ostream&) const override;
@@ -923,6 +924,7 @@ private:
     {}
 
 public:
+    const Def* arity() const override;
     std::ostream& stream(std::ostream&) const override;
 
 private:

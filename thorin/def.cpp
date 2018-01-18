@@ -365,7 +365,11 @@ const Def* Axiom::arity() const {
     return world().arity(1); // TODO assumption: every axiom that is not a value has arity 1
 }
 
-// const Def* Error::arity() const { return TODO; }
+const Def* Error::arity() const {
+    if (is_value())
+        return type()->arity();
+    return world().arity(1);
+}
 
 // const Def* Intersection::arity() const { return TODO; }
 
@@ -379,7 +383,9 @@ const Def* QualifierType::arity() const { return world().arity(1); }
 
 const Def* Sigma::arity() const { return world().arity(num_ops()); }
 
-// const Def* Singleton::arity() const {
+const Def* Singleton::arity() const {
+    return op(0)->arity();
+}
 
 const Def* Star::arity() const { return world().arity(1); }
 
