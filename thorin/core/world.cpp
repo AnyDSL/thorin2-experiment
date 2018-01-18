@@ -6,6 +6,37 @@
 namespace thorin {
 namespace core {
 
+//------------------------------------------------------------------------------
+/*
+ * helpers
+ */
+
+std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
+    if (auto variadic = def->isa<Variadic>())
+        return {variadic->arity(), variadic->body()};
+    return {def->world().arity(1), def};
+}
+
+const Def* infer_q_width(const Def* def) {
+    auto app  = (def->type()->isa<Variadic>() ? def->as<Variadic>()->body() : def->type())->as<App>();
+    return app->arg();
+}
+
+std::tuple<const Def*, const Def*> infer_q_width_and_shape(const Def* def) {
+    if (auto variadic = def->type()->isa<Variadic>()) {
+        if (!variadic->body()->isa<Variadic>())
+            return {variadic->body()->as<App>()->arg(), variadic->arity()};
+        std::vector<const Def*> arities;
+        const Def* cur = variadic;
+        for (; cur->isa<Variadic>(); cur = cur->as<Variadic>()->body())
+            arities.emplace_back(cur->as<Variadic>()->arity());
+        return {cur->as<App>()->arg(), def->world().sigma(arities)};
+    }
+    return {def->type()->as<App>()->arg(), def->world().arity(1)};
+}
+
+//------------------------------------------------------------------------------
+
 World::World() {
     Env env;
     env["nat"]  = type_nat();
@@ -37,12 +68,6 @@ World::World() {
     op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
 
     op<wadd>()->set_normalizer(normalize_wadd_flags);
-}
-
-std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
-    if (auto variadic = def->isa<Variadic>())
-        return {variadic->arity(), variadic->body()};
-    return {def->world().arity(1), def};
 }
 
 //const Def* World::op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {

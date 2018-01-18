@@ -16,7 +16,7 @@ const Def* shrink_shape(thorin::World& world, const Def* def) {
 
 //auto v = app_arg(callee)->as<Variadic>();
 
-const Def* normalize_tuple(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
     auto a = world.extract(arg, 0, dbg);
     auto b = world.extract(arg, 1, dbg);
 
@@ -33,7 +33,7 @@ const Def* normalize_tuple(thorin::World& world, const Def*, const Def* callee, 
     return nullptr;
 }
 
-const Def* normalize_wadd(thorin::World& world, const Def*, const Def*, const Def* arg, Debug dbg) {
+const Def* normalize_wadd(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
     auto a = world.extract(arg, 0, dbg);
     auto b = world.extract(arg, 1, dbg);
 
@@ -42,6 +42,9 @@ const Def* normalize_wadd(thorin::World& world, const Def*, const Def*, const De
 
     auto ta = a->isa<Tuple>();
     auto tb = b->isa<Tuple>();
+
+    if (ta && tb)
+        return normalize_tuple(world, callee, arg, dbg);
 
     if (aa && ab)
         return world.assume(a->type(), Box(aa->box().get_u64() + ab->box().get_u64()), dbg);
