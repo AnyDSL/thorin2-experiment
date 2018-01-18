@@ -34,7 +34,13 @@ TEST(Primop, Arithop) {
 
     auto m1 = w.tuple({w.tuple({w.val(0), w.val(1), w.val(2)}), w.tuple({w.val(3), w.val(4), w.val(5)})});
     auto m2 = w.tuple({w.tuple({w.val(6), w.val(7), w.val(8)}), w.tuple({w.val(9), w.val(10), w.val(11)})});
+    auto p1 = w.pack(2, w.pack(3, w.val(23)));
+    auto p2 = w.pack(2, w.pack(3, w.val(42)));
+    p1->dump();
     w.op<wadd>(m1, m2)->dump();
+    w.op<wadd>(m1, p2)->dump();
+    w.op<wadd>(p1, m2)->dump();
+    w.op<wadd>(p1, p2)->dump();
 }
 
 #if 0

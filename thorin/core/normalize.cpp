@@ -5,47 +5,43 @@ namespace core {
 
 //------------------------------------------------------------------------------
 
-const Def* shrink_shape(thorin::World& world, const Def* def) {
+std::tuple<const Def*, const Def*> shrink_shape(thorin::World& world, const Def* def) {
     if (def->isa<Arity>())
-        return world.arity(1);
+        return {def, world.arity(1)};
     if (auto sigma = def->isa<Sigma>())
-        return world.sigma(sigma->ops().skip_front());
+        return {sigma->op(0), world.sigma(sigma->ops().skip_front())}; // TODO must reduce here
     auto variadic = def->as<Variadic>();
-    return world.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body());
+    return {variadic->arity(), world.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())};
 }
 
-//auto v = app_arg(callee)->as<Variadic>();
+const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+    auto ta = a->isa<Tuple>(), tb = b->isa<Tuple>();
+    auto pa = a->isa<Pack>(),  pb = b->isa<Pack>();
 
-const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
-    auto a = world.extract(arg, 0, dbg);
-    auto b = world.extract(arg, 1, dbg);
+    if ((ta || pa) && (tb || pb)) {
+        auto [head, tail] = shrink_shape(world, app_arg(callee));
+        auto new_callee = world.app(app_callee(callee), tail);
 
-    auto ta = a->isa<Tuple>();
-    auto tb = b->isa<Tuple>();
-
-    if (ta && tb) {
-        auto new_shape = shrink_shape(world, app_arg(callee));
-        auto new_callee = world.app(app_callee(callee), new_shape);
-
-        return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), tb->op(i)}); }));
+        if (ta && tb)
+            return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), tb->op(i)}, dbg); }));
+        if (ta && pb)
+            return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), pb->body()}, dbg); }));
+        if (pa && tb)
+            return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {pa->body(), tb->op(i)}, dbg); }));
+        assert(pa && pb);
+        return world.pack(head, world.app(new_callee, {pa->body(), pb->body()}, dbg), dbg);
     }
 
     return nullptr;
 }
 
 const Def* normalize_wadd(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
-    auto a = world.extract(arg, 0, dbg);
-    auto b = world.extract(arg, 1, dbg);
+    auto a = world.extract(arg, 0, dbg), b = world.extract(arg, 1, dbg);
 
-    auto aa = a->isa<Axiom>();
-    auto ab = b->isa<Axiom>();
+    if (auto result = normalize_tuple(world, callee, a, b, dbg))
+        return result;
 
-    auto ta = a->isa<Tuple>();
-    auto tb = b->isa<Tuple>();
-
-    if (ta && tb)
-        return normalize_tuple(world, callee, arg, dbg);
-
+    auto aa = a->isa<Axiom>(), ab = b->isa<Axiom>();
     if (aa && ab)
         return world.assume(a->type(), Box(aa->box().get_u64() + ab->box().get_u64()), dbg);
 
