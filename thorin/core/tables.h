@@ -35,15 +35,17 @@ inline RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t
 /// floating point (real) instructions that take rflags
 #define THORIN_R_ARITHOP(m)  m(radd) m(rsub) m(rmul) m(rdiv) m(rmod)
 
-#define THORIN_I_REL(m)   /* E G L                         */ \
-                    m(t)  /* o o o - always true           */ \
-                    m(lt) /* o o x - less than             */ \
-                    m(gt) /* o x o - greater than          */ \
-                    m(ne) /* o x x - not equal             */ \
-                    m(eq) /* x o o - equal                 */ \
-                    m(le) /* x o x - less than or equal    */ \
-                    m(ge) /* x x o - greater than or equal */ \
-                    m(f)  /* x x x - always false          */
+#define THORIN_I_REL(m)\
+    m(eq)  /* equal */ \
+    m(ne)  /* not equal */ \
+    m(ugt) /* unsigned greater than */ \
+    m(uge) /* unsigned greater or equal */ \
+    m(ult) /* unsigned less than */ \
+    m(ule) /* unsigned less or equal */ \
+    m(sgt) /* signed greater than */ \
+    m(sge) /* signed greater or equal */ \
+    m(slt) /* signed less than */ \
+    m(sle) /* signed less or equal */
 
 #define THORIN_R_REL(m)     /* O E G L                                      */ \
                      m(t)   /* o o o o - always true                        */ \
@@ -62,7 +64,6 @@ inline RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t
                      m(ole) /* x x o x - ordered and less than or equal     */ \
                      m(oge) /* x x x o - ordered and greater than or equal  */ \
                      m(f)   /* x x x x - always false                       */
-
 
 enum WArithop : size_t {
 #define CODE(O) O,
