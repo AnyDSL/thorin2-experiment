@@ -26,13 +26,13 @@ enum class RFlags : int64_t {
 inline WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int64_t(b)); }
 inline RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
 
-/// integer instructions that take a @p wrap
+/// Integer instructions that might wrap and, hence, take @p WFlags.
 #define THORIN_W_ARITHOP(m) m(wadd) m(wsub) m(wmul) m(wshl)
-/// integer instructions that might produce a side effect (division by zero)
+/// Integer instructions that might produce a side effect (division by zero).
 #define THORIN_M_ARITHOP(m) m(sdiv) m(udiv) m(smod) m(umod)
-/// integer instructions neither take wflags nor do they produce a side effect
+/// Integer instructions that neither take wflags nor do they produce a side effect.
 #define THORIN_I_ARITHOP(m)  m(ashr) m(lshr) m(iand) m(ior) m(ixor)
-/// floating point (real) instructions that take rflags
+/// Floating point (real) instructions that take @p RFlags.
 #define THORIN_R_ARITHOP(m)  m(radd) m(rsub) m(rmul) m(rdiv) m(rmod)
 
 #define THORIN_I_REL(m)\
@@ -129,14 +129,14 @@ constexpr const char* arithop2str(RArithop o) {
     }
 }
 
-enum class IRel {
+enum class IRel : int64_t {
 #define CODE(f) f,
     THORIN_I_REL(CODE)
 #undef CODE
     Num
 };
 
-enum class RRel {
+enum class RRel : int64_t {
 #define CODE(f) f,
     THORIN_R_REL(CODE)
 #undef CODE
