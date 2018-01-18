@@ -55,6 +55,7 @@ private:
     const Axiom*  parse_assume();
     const Def*    parse_param();
     const Def*    parse_extract_or_insert(Tracker, const Def*);
+    const Def*    parse_literal();
 
     struct Binder {
         std::string name;

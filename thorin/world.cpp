@@ -160,10 +160,12 @@ World::World()
         val_nat_[j] = val_nat(1 << int64_t(j));
 
     Env env;
-    arity_succ_ = axiom(parse(*this, "Π[q: ℚ, a: 𝔸(q)].a", env), {"Sₐ"});
+    arity_succ_ = axiom(parse(*this, "Π[q: ℚ, a: 𝔸(q)].𝔸(q)", env), {"Sₐ"});
     env["ASucc"] = arity_succ_;
     index_zero_ = axiom(parse(*this, "Πp:[q: ℚ, 𝔸(q)].ASucc p", env), {"0ⁱ"});
     index_succ_ = axiom(parse(*this, "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p", env), {"Sⁱ"});
+
+    elim_arity_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a", env));
 }
 
 World::~World() {

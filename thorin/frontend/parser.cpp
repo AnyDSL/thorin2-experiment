@@ -32,6 +32,7 @@ const Def* Parser::parse_def() {
              ahead().isa(Token::Tag::Identifier)) def = parse_var_or_binder();
     else if (ahead().isa(Token::Tag::L_Paren))    def = parse_tuple_or_pack();
     else if (ahead().isa(Token::Tag::L_Brace))    def = parse_assume();
+    else if (ahead().isa(Token::Tag::Literal))    def = parse_literal();
     else if (accept(Token::Tag::Qualifier_Type))    def = world_.qualifier_type();
     else if (accept(Token::Tag::QualifierU))        def = world_.unlimited();
     else if (accept(Token::Tag::QualifierR))        def = world_.relevant();
@@ -167,7 +168,7 @@ const Def* Parser::parse_lambda() {
 const Def* Parser::parse_qualified_kind() {
     auto kind_tag = ahead().tag();
     eat(kind_tag);
-    const Def* qualifier = nullptr;
+    const Def* qualifier = world_.unlimited();
     auto tag = ahead().tag();
     if (tag == Token::Tag::Backslash
         || tag == Token::Tag::Identifier
@@ -180,11 +181,11 @@ const Def* Parser::parse_qualified_kind() {
     }
     switch (kind_tag) {
         case Token::Tag::Star:
-            return qualifier == nullptr ? world_.star() : world_.star(qualifier);
+            return world_.star(qualifier);
         case Token::Tag::Arity_Kind:
-            return qualifier == nullptr ? world_.arity_kind() : world_.arity_kind(qualifier);
+            return world_.arity_kind(qualifier);
         case Token::Tag::Multi_Arity_Kind:
-            return qualifier == nullptr ? world_.multi_arity_kind() : world_.multi_arity_kind(qualifier);
+            return world_.multi_arity_kind(qualifier);
         default:
             THORIN_UNREACHABLE;
     }
@@ -235,6 +236,27 @@ const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {
     }
 
     return world_.extract(a, b, tracker.location());
+}
+
+const Def* Parser::parse_literal() {
+    assert(ahead().isa(Token::Tag::Literal));
+    auto literal = next().literal();
+    if (literal.tag == Literal::Tag::Lit_arity) {
+        auto tag = ahead().tag();
+        const Def* qualifier = world_.unlimited();
+        if (tag == Token::Tag::Backslash
+            || tag == Token::Tag::Identifier
+            || tag == Token::Tag::L_Paren
+            || tag == Token::Tag::QualifierU
+            || tag == Token::Tag::QualifierR
+            || tag == Token::Tag::QualifierA
+            || tag == Token::Tag::QualifierL) {
+            qualifier = parse_def();
+        }
+        return world_.arity(literal.box.get_u64(), qualifier);
+    }
+
+    assertf(false, "unhandled literal {}", literal.box.get_u64());
 }
 
 Token Parser::next() {

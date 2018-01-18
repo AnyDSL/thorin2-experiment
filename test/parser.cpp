@@ -39,7 +39,7 @@ TEST(Parser, SimpleVariadic) {
     ASSERT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. *"), v);
 }
 
-TEST(Parser, Star) {
+TEST(Parser, Kinds) {
     World w;
     EXPECT_EQ(parse(w, "*"), w.star());
     EXPECT_EQ(parse(w, "*ᵁ"), w.star());
@@ -47,6 +47,27 @@ TEST(Parser, Star) {
     EXPECT_EQ(parse(w, "*ᴬ"), w.star(QualifierTag::Affine));
     EXPECT_EQ(parse(w, "*ᴸ"), w.star(QualifierTag::Linear));
     EXPECT_EQ(parse(w, "Πq:ℚ.*q"), w.pi(w.qualifier_type(), w.star(w.var(w.qualifier_type(), 0))));
+    EXPECT_EQ(parse(w, "𝔸"), w.arity_kind());
+    EXPECT_EQ(parse(w, "𝔸ᵁ"), w.arity_kind());
+    EXPECT_EQ(parse(w, "𝔸ᴿ"), w.arity_kind(QualifierTag::Relevant));
+    EXPECT_EQ(parse(w, "𝔸ᴬ"), w.arity_kind(QualifierTag::Affine));
+    EXPECT_EQ(parse(w, "𝔸ᴸ"), w.arity_kind(QualifierTag::Linear));
+    EXPECT_EQ(parse(w, "Πq:ℚ.𝔸q"), w.pi(w.qualifier_type(), w.arity_kind(w.var(w.qualifier_type(), 0))));
+    EXPECT_EQ(parse(w, "𝕄"), w.multi_arity_kind());
+    EXPECT_EQ(parse(w, "𝕄ᵁ"), w.multi_arity_kind());
+    EXPECT_EQ(parse(w, "𝕄ᴿ"), w.multi_arity_kind(QualifierTag::Relevant));
+    EXPECT_EQ(parse(w, "𝕄ᴬ"), w.multi_arity_kind(QualifierTag::Affine));
+    EXPECT_EQ(parse(w, "𝕄ᴸ"), w.multi_arity_kind(QualifierTag::Linear));
+    EXPECT_EQ(parse(w, "Πq:ℚ.𝕄q"), w.pi(w.qualifier_type(), w.multi_arity_kind(w.var(w.qualifier_type(), 0))));
+}
+
+TEST(Parser, Arities) {
+    World w;
+    EXPECT_EQ(parse(w, "0ₐᵁ"), w.arity(0));
+    EXPECT_EQ(parse(w, "1ₐᴿ"), w.arity(1, w.relevant()));
+    EXPECT_EQ(parse(w, "2ₐᴬ"), w.arity(2, w.affine()));
+    EXPECT_EQ(parse(w, "3ₐᴸ"), w.arity(3, w.linear()));
+    EXPECT_EQ(parse(w, "Πq:ℚ.42ₐq"), w.pi(w.qualifier_type(), w.arity(42, w.var(w.qualifier_type(), 0))));
 }
 
 TEST(Parser, ComplexVariadics) {

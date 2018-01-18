@@ -222,6 +222,9 @@ Literal Lexer::parse_literal() {
             if (accept("32", false)) return {Literal::Tag::Lit_u32, u32( strtoul(str().c_str(), nullptr, base))};
             if (accept("64", false)) return {Literal::Tag::Lit_u64, u64(strtoull(str().c_str(), nullptr, base))};
         }
+
+        if (!sign && accept(0x002090))
+            return {Literal::Tag::Lit_arity, u64(strtoull(str().c_str(), nullptr, base))};
     }
 
     if (base == 10 && accept('r', false)) {

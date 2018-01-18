@@ -758,8 +758,13 @@ std::ostream& App::stream(std::ostream& os) const {
     if (domain->is_kind()) {
         qualifier_stream(os);
     }
-    callee()->name_stream(os) << "(";
-    return arg()->name_stream(os) << ")";
+    callee()->name_stream(os);
+    if (!arg()->isa<Tuple>() && !arg()->isa<Pack>())
+        os << "(";
+    arg()->name_stream(os);
+    if (!arg()->isa<Tuple>() && !arg()->isa<Pack>())
+        os << ")";
+    return os;
 }
 
 std::ostream& Arity::stream(std::ostream& os) const {
