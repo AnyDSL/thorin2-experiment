@@ -23,8 +23,8 @@ enum class RFlags : int64_t {
     fast = nnan | ninf | nsz | arcp | contract | afn | reassoc,
 };
 
-inline WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int64_t(b)); }
-inline RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
+constexpr WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int64_t(b)); }
+constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
 
 /// Integer instructions that might wrap and, hence, take @p WFlags.
 #define THORIN_W_ARITHOP(m) m(wadd) m(wsub) m(wmul) m(wshl)

@@ -156,6 +156,8 @@ private:
     const Axiom* op_store_;
 };
 
+inline int64_t get_nat(const Def* def) { return def->as<Axiom>()->box().get_s64(); }
+
 }
 }
 

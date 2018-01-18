@@ -67,7 +67,7 @@ World::World() {
     op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
     op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
 
-    op<wadd>()->set_normalizer(normalize_wadd_flags);
+    op<wadd>()->set_normalizer(normalize_wadd_0);
 }
 
 //const Def* World::op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
