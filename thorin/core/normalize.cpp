@@ -87,7 +87,6 @@ const Def* normalize_wadd(thorin::World& world, const Def*, const Def* callee, c
             }
         } catch (BottomException) {
         }
-        //switch (aa->type()->as<A
     }
 
     return nullptr;
