@@ -9,7 +9,7 @@ std::tuple<const Def*, const Def*> shrink_shape(thorin::World& world, const Def*
     if (def->isa<Arity>())
         return {def, world.arity(1)};
     if (auto sigma = def->isa<Sigma>())
-        return {sigma->op(0), world.sigma(sigma->ops().skip_front())}; // TODO must reduce here
+        return {sigma->op(0), world.sigma(sigma->ops().skip_front())->shift_free_vars(-1)};
     auto variadic = def->as<Variadic>();
     return {variadic->arity(), world.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())};
 }
