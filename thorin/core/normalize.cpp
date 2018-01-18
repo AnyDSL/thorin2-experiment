@@ -1,4 +1,5 @@
 #include "thorin/core/world.h"
+#include "thorin/util/fold.h"
 
 namespace thorin {
 namespace core {
@@ -42,8 +43,10 @@ const Def* normalize_wadd(thorin::World& world, const Def*, const Def* callee, c
         return result;
 
     auto aa = a->isa<Axiom>(), ab = b->isa<Axiom>();
-    if (aa && ab)
+    if (aa && ab) {
+        //switch (aa->type()->as<A
         return world.assume(a->type(), Box(aa->box().get_u64() + ab->box().get_u64()), dbg);
+    }
 
     return nullptr;
 }

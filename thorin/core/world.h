@@ -12,8 +12,8 @@ namespace core {
 
 std::tuple<const Def*, const Def*> shape_and_body(const Def* def);
 const Def* infer_shape(const Def* def);
-const Def* infer_q_width(const Def* def);
-std::tuple<const Def*, const Def*> infer_q_width_and_shape(const Def*);
+const Def* infer_width(const Def* def);
+std::tuple<const Def*, const Def*> infer_width_and_shape(const Def*);
 
 class World : public ::thorin::World {
 public:
@@ -22,12 +22,10 @@ public:
     //@{ types and type constructors
     const Axiom* type_i() { return type_i_; }
     const Axiom* type_r() { return type_r_; }
-    const App* type_i(int64_t width) { return type_i(QualifierTag::Unlimited, width); }
-    const App* type_r(int64_t width) { return type_r(QualifierTag::Unlimited, width); }
-    const App* type_i(QualifierTag q, int64_t width) { return type_i(qualifier(q), val_nat(width)); }
-    const App* type_r(QualifierTag q, int64_t width) { return type_r(qualifier(q), val_nat(width)); }
-    const App* type_i(const Def* q, const Def* width, Debug dbg = {}) { return app(type_i(), {q, width}, dbg)->as<App>(); }
-    const App* type_r(const Def* q, const Def* width, Debug dbg = {}) { return app(type_r(), {q, width}, dbg)->as<App>(); }
+    const App* type_i(int64_t width) { return type_i(val_nat(width)); }
+    const App* type_r(int64_t width) { return type_r(val_nat(width)); }
+    const App* type_i(const Def* width, Debug dbg = {}) { return app(type_i(), width, dbg)->as<App>(); }
+    const App* type_r(const Def* width, Debug dbg = {}) { return app(type_r(), width, dbg)->as<App>(); }
     const Axiom* type_mem() { return type_mem_; }
     const Axiom* type_frame() { return type_frame_; }
     const Axiom* type_ptr() { return type_ptr_; }
@@ -55,11 +53,11 @@ public:
     template<WArithop O> const Axiom* op() { return warithop_[O]; }
     template<WArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(WFlags::none, a, b, dbg); }
     template<WArithop O> const Def* op(WFlags wflags, const Def* a, const Def* b, Debug dbg = {}) {
-        auto [q_width, shape] = infer_q_width_and_shape(a);
-        return op<O>(wflags, q_width, shape, a, b, dbg);
+        auto [width, shape] = infer_width_and_shape(a);
+        return op<O>(wflags, width, shape, a, b, dbg);
     }
-    template<WArithop O> const Def* op(WFlags wflags, const Def* q_width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op<O>(), val_nat(int64_t(wflags))), q_width), shape), {a, b}, dbg);
+    template<WArithop O> const Def* op(WFlags wflags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(app(op<O>(), val_nat(int64_t(wflags))), width), shape), {a, b}, dbg);
     }
     //@}
 

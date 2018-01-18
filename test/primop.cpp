@@ -7,20 +7,11 @@ namespace thorin {
 TEST(Primop, Types) {
     core::World w;
 
-    ASSERT_EQ(w.type_i(16), w.app(w.type_i(), {w.unlimited(), w.val_nat_16()}));
-    ASSERT_EQ(w.type_i(64), w.app(w.type_i(), {w.unlimited(), w.val_nat_64()}));
+    ASSERT_EQ(w.type_i(16), w.app(w.type_i(), w.val_nat_16()));
+    ASSERT_EQ(w.type_i(64), w.app(w.type_i(), w.val_nat_64()));
 
-    ASSERT_EQ(w.type_i(16), w.type_i(QualifierTag::u, 16));
-    ASSERT_EQ(w.type_i(64), w.type_i(QualifierTag::u, 64));
-
-    ASSERT_EQ(w.affine(), w.type_i(QualifierTag::a, 64)->qualifier());
-    ASSERT_EQ(w.linear(), w.type_r(QualifierTag::l, 64)->qualifier());
-
-    ASSERT_EQ(w.type_r(64), w.app(w.type_r(), {w.unlimited(), w.val_nat_64()}));
-    ASSERT_EQ(w.type_r(16), w.app(w.type_r(), {w.unlimited(), w.val_nat_16()}));
-
-    ASSERT_EQ(w.type_r(64), w.type_r(QualifierTag::u, 64));
-    ASSERT_EQ(w.type_r(16), w.type_r(QualifierTag::u, 16));
+    ASSERT_EQ(w.type_r(64), w.app(w.type_r(), w.val_nat_64()));
+    ASSERT_EQ(w.type_r(16), w.app(w.type_r(), w.val_nat_16()));
 }
 
 TEST(Primop, Arithop) {

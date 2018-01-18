@@ -17,12 +17,12 @@ std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
     return {def->world().arity(1), def};
 }
 
-const Def* infer_q_width(const Def* def) {
+const Def* infer_width(const Def* def) {
     auto app  = (def->type()->isa<Variadic>() ? def->as<Variadic>()->body() : def->type())->as<App>();
     return app->arg();
 }
 
-std::tuple<const Def*, const Def*> infer_q_width_and_shape(const Def* def) {
+std::tuple<const Def*, const Def*> infer_width_and_shape(const Def* def) {
     if (auto variadic = def->type()->isa<Variadic>()) {
         if (!variadic->body()->isa<Variadic>())
             return {variadic->body()->as<App>()->arg(), variadic->arity()};
@@ -41,24 +41,24 @@ World::World() {
     Env env;
     env["nat"]  = type_nat();
     env["bool"] = type_bool();
-    env["int"]  = type_i_ = axiom(parse(*this, "Π[q: ℚ, nat]. *q", env), {"int"});
-    env["real"] = type_r_ = axiom(parse(*this, "Π[q: ℚ, nat]. *q", env), {"real"});
+    env["int"]  = type_i_ = axiom(parse(*this, "Πnat. *", env), {"int"});
+    env["real"] = type_r_ = axiom(parse(*this, "Πnat. *", env), {"real"});
     env["ptr"]  = type_ptr_   = axiom(parse(*this, "Π[*, nat]. *", env), {"ptr"});
     env["M"]    = type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
     env["F"]    = type_frame_ = axiom(star(), {"F"});
 
-    auto w_type_arithop = parse(*this, "Πf: nat. Π[q: ℚ, w: nat]. Πs: 𝕄. Π[   [s;  int(q, w)], [s;  int(q, w)]].     [s;  int(q, w)] ", env);
-    auto m_type_arithop = parse(*this, "         Π[q: ℚ, w: nat]. Πs: 𝕄. Π[M, [s;  int(q, w)], [s;  int(q, w)]]. [M, [s;  int(q, w)]]", env);
-    auto i_type_arithop = parse(*this, "         Π[q: ℚ, w: nat]. Πs: 𝕄. Π[   [s;  int(q, w)], [s;  int(q, w)]].     [s;  int(q, w)] ", env);
-    auto r_type_arithop = parse(*this, "Πf: nat. Π[q: ℚ, w: nat]. Πs: 𝕄. Π[   [s; real(q, w)], [s; real(q, w)]].     [s; real(q, w)] ", env);
+    auto w_type_arithop = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ", env);
+    auto m_type_arithop = parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]", env);
+    auto i_type_arithop = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ", env);
+    auto r_type_arithop = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ", env);
 
     for (size_t o = 0; o != Num_WArithOp; ++o) warithop_[o] = axiom(w_type_arithop, {arithop2str(WArithop(o))});
     for (size_t o = 0; o != Num_MArithOp; ++o) marithop_[o] = axiom(m_type_arithop, {arithop2str(MArithop(o))});
     for (size_t o = 0; o != Num_IArithOp; ++o) iarithop_[o] = axiom(i_type_arithop, {arithop2str(IArithop(o))});
     for (size_t o = 0; o != Num_RArithOp; ++o) rarithop_[o] = axiom(r_type_arithop, {arithop2str(RArithop(o))});
 
-    //auto type_icmp = parse(*this, "Πrel: nat. Πs: 𝕄. Π[q: ℚ, w: nat]. Π[[s;  int(q, w)], [s;  int(q, w)]]. [s; bool]", env);
-    auto type_rcmp = parse(*this, "Πf: nat. Πrel: nat. Πs: 𝕄. Π[q: ℚ, w: nat]. Π[[s; real(q, w)], [s; real(q, w)]]. [s; bool]", env);
+    //auto type_icmp = parse(*this, "Πrel: nat. Πs: 𝕄. Πw: nat. Π[[s;  int w], [s;  int w]]. [s; bool]", env);
+    auto type_rcmp = parse(*this, "Πf: nat. Πrel: nat. Πs: 𝕄. Πw: nat. Π[[s; real w], [s; real w]]. [s; bool]", env);
     //op_icmp_  = axiom(type_icmp, {"icmp"});
     op_rcmp_  = axiom(type_rcmp, {"rcmp"});
     op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)", env), {"lea"});
