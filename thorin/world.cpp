@@ -172,6 +172,7 @@ World::World()
 
     type_bool_ = arity(2);
     type_nat_  = axiom(star(), {"nat"});
+    type_bottom_  = axiom(star(), {"⊥"});
 
     val_bool_[0] = index(2, 0);
     val_bool_[1] = index(2, 1);
