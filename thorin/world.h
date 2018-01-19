@@ -181,6 +181,7 @@ public:
         return arity(a, qualifier(q), location);
     }
     const Arity* arity(size_t a, const Def* q, Location location = {});
+    const Def* arity_succ() { return arity_succ_; }
     const Def* arity_succ(const Def* arity, Debug dbg = {});
     const Def* arity_eliminator() const { return arity_eliminator_; }
     //@}

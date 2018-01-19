@@ -14,13 +14,6 @@ namespace thorin {
  * helpers
  */
 
-const Def* normalize_arity_eliminator(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) {
-    arg->dump();
-    if (callee->type()->op(1)->isa<Pi>())
-        return world.curry(normalize_arity_eliminator, type, callee, arg, dbg);
-    return nullptr;
-}
-
 static bool is_homogeneous(Defs defs) {
     return std::all_of(defs.begin() + 1, defs.end(), [&](auto def) { return def == defs.front(); });
 }
@@ -137,6 +130,26 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
     return unify_fn(set);
 }
 
+const Def* normalize_arity_eliminator(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) {
+    if (callee->type()->as<Pi>()->body()->isa<Pi>())
+        return world.curry(normalize_arity_eliminator, type, callee, arg, dbg);
+    arg->dump();
+    const Def* pred = nullptr;
+    if (auto arity = arg->isa<Arity>()) {
+        auto arity_val = arity->value();
+        if (arity_val == 0) {
+            // callee = E P base f
+            return callee->op(0)->op(1);
+        }
+        pred = world.arity(arity_val - 1);
+    } else if (auto arity_app = arg->isa<App>(); arity_app->callee() == world.arity_succ()) {
+        pred = arity_app->arg();
+    }
+    if (pred != nullptr)
+        return world.app(world.app(callee->op(1), pred), world.app(callee, pred));
+    return nullptr;
+}
+
 //------------------------------------------------------------------------------
 
 bool World::alloc_guard_ = false;
@@ -175,11 +188,11 @@ World::World()
     index_succ_ = axiom(parse(*this, "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p", env), {"Sⁱ"});
     env["IS"] = index_succ_;
 
-    arity_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a", env));
+    arity_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a", env), {"Eₐ"});
     arity_eliminator_->set_normalizer(normalize_arity_eliminator);
-    arity_eliminator_arity_ = axiom(parse(*this, "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q", env));
-    arity_eliminator_multi_ = axiom(parse(*this, "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q", env));
-    arity_eliminator_star_ = axiom(parse(*this, "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q", env));
+    arity_eliminator_arity_ = axiom(parse(*this, "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q", env), {"R𝔸ₐ"});
+    arity_eliminator_multi_ = axiom(parse(*this, "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q", env), {"R𝕄ₐ"});
+    arity_eliminator_star_ = axiom(parse(*this, "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q", env), {"R*ₐ"});
     // index_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a", env));
 }
 

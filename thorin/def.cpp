@@ -598,9 +598,21 @@ const Def* Def::shift_free_vars(size_t shift) const {
 //------------------------------------------------------------------------------
 
 /*
- * assignable
+ * assignable/subtype_of
  * TODO: qualifiers?
  */
+
+bool ArityKind::vsubtype_of(const Def* def) const {
+    auto q = qualifier();
+    auto other_q = def->qualifier();
+    return q == other_q && (def->isa<MultiArityKind>() || def->isa<Star>());
+}
+
+bool MultiArityKind::vsubtype_of(const Def* def) const {
+    auto q = qualifier();
+    auto other_q = def->qualifier();
+    return q == other_q && def->isa<Star>();
+}
 
 bool MultiArityKind::assignable(const Def* def) const {
     return this == def->type() || def->type()->isa<ArityKind>();
@@ -610,9 +622,9 @@ bool Pi::assignable(const Def* def) const {
     auto dtype = def->type();
     if (dtype == this)
         return true;
-    if (/*auto pi = */dtype->isa<Pi>()) {
-        // if (pi->domain() == domain() && pi->body()->is_subtype_of(body()))
-        //     return true;
+    if (auto pi = dtype->isa<Pi>()) {
+        if (pi->domain() == domain() && pi->body()->subtype_of(body()))
+            return true;
     }
     return false;
 }

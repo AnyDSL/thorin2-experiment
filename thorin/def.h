@@ -278,7 +278,8 @@ public:
     }
     bool subtype_of(const Def* def) const {
         auto s = sort();
-        return s >= Sort::Type && s < Sort::Universe && s == def->sort() && v_subtype_of(def);
+        return (!def->is_value() && s >= Sort::Type && s < Sort::Universe
+                && (this == def || (s == def->sort() && vsubtype_of(def))));
     }
 
     std::ostream& qualifier_stream(std::ostream& os) const {
@@ -322,7 +323,7 @@ private:
     bool on_heap() const { return on_heap_; }
     /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
     virtual const Def* kind_qualifier() const;
-    virtual bool v_subtype_of(const Def*) const { return false; }
+    virtual bool vsubtype_of(const Def*) const { return false; }
 
     static size_t gid_counter_;
 
@@ -399,6 +400,7 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    bool vsubtype_of(const Def*) const override;
 
     friend class World;
 };
@@ -416,6 +418,7 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    bool vsubtype_of(const Def*) const override;
 
     friend class World;
 };
