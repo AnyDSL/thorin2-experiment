@@ -3,7 +3,15 @@
 
 namespace thorin::core {
 
-//------------------------------------------------------------------------------
+/*
+ * helpers
+ */
+
+std::tuple<const Def*, const Def*> split(thorin::World& world, const Def* def) {
+    auto a = world.extract(def, 0);
+    auto b = world.extract(def, 1);
+    return {a, b};
+}
 
 std::tuple<const Def*, const Def*> shrink_shape(thorin::World& world, const Def* def) {
     if (def->isa<Arity>())
@@ -13,10 +21,6 @@ std::tuple<const Def*, const Def*> shrink_shape(thorin::World& world, const Def*
     auto variadic = def->as<Variadic>();
     return {variadic->arity(), world.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())};
 }
-
-/*
- * WArithop
- */
 
 const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
     auto ta = a->isa<Tuple>(), tb = b->isa<Tuple>();
@@ -39,12 +43,12 @@ const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a
     return nullptr;
 }
 
-const Def* normalize_wadd(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
-    auto a = world.extract(arg, 0, dbg), b = world.extract(arg, 1, dbg);
+/*
+ * WArithop
+ */
 
-    if (auto result = normalize_tuple(world, callee, a, b, dbg))
-        return result;
-
+template<template<int, bool, bool> class F>
+const Def* try_wfold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
     auto aa = a->isa<Axiom>(), ab = b->isa<Axiom>();
     if (aa && ab) {
         auto ba = aa->box(), bb = ab->box();
@@ -55,38 +59,43 @@ const Def* normalize_wadd(thorin::World& world, const Def*, const Def* callee, c
             switch (f) {
                 case int64_t(WFlags::none):
                     switch (w) {
-                        case  8: return world.assume(t, {UInt< u8>(ba. get_u8(), false) + UInt< u8>(bb. get_u8(), false)}, dbg);
-                        case 16: return world.assume(t, {UInt<u16>(ba.get_u16(), false) + UInt<u16>(bb.get_u16(), false)}, dbg);
-                        case 32: return world.assume(t, {UInt<u32>(ba.get_u32(), false) + UInt<u32>(bb.get_u32(), false)}, dbg);
-                        case 64: return world.assume(t, {UInt<u64>(ba.get_u64(), false) + UInt<u64>(bb.get_u64(), false)}, dbg);
+                        case  8: return world.assume(t, F< 8, false, false>::run(ba, bb));
+                        case 16: return world.assume(t, F<16, false, false>::run(ba, bb));
+                        case 32: return world.assume(t, F<32, false, false>::run(ba, bb));
+                        case 64: return world.assume(t, F<64, false, false>::run(ba, bb));
                     }
                 case int64_t(WFlags::nsw):
                     switch (w) {
-                        case  8: return world.assume(t, {SInt< s8>(ba. get_s8(),  true) + SInt< s8>(bb. get_s8(),  true)}, dbg);
-                        case 16: return world.assume(t, {SInt<s16>(ba.get_s16(),  true) + SInt<s16>(bb.get_s16(),  true)}, dbg);
-                        case 32: return world.assume(t, {SInt<s32>(ba.get_s32(),  true) + SInt<s32>(bb.get_s32(),  true)}, dbg);
-                        case 64: return world.assume(t, {SInt<s64>(ba.get_s64(),  true) + SInt<s64>(bb.get_s64(),  true)}, dbg);
+                        case  8: return world.assume(t, F< 8, true, false>::run(ba, bb));
+                        case 16: return world.assume(t, F<16, true, false>::run(ba, bb));
+                        case 32: return world.assume(t, F<32, true, false>::run(ba, bb));
+                        case 64: return world.assume(t, F<64, true, false>::run(ba, bb));
                     }
                 case int64_t(WFlags::nuw):
                     switch (w) {
-                        case  8: return world.assume(t, {UInt< u8>(ba. get_u8(),  true) + UInt< u8>(bb. get_u8(),  true)}, dbg);
-                        case 16: return world.assume(t, {UInt<u16>(ba.get_u16(),  true) + UInt<u16>(bb.get_u16(),  true)}, dbg);
-                        case 32: return world.assume(t, {UInt<u32>(ba.get_u32(),  true) + UInt<u32>(bb.get_u32(),  true)}, dbg);
-                        case 64: return world.assume(t, {UInt<u64>(ba.get_u64(),  true) + UInt<u64>(bb.get_u64(),  true)}, dbg);
+                        case  8: return world.assume(t, F< 8, false, true>::run(ba, bb));
+                        case 16: return world.assume(t, F<16, false, true>::run(ba, bb));
+                        case 32: return world.assume(t, F<32, false, true>::run(ba, bb));
+                        case 64: return world.assume(t, F<64, false, true>::run(ba, bb));
                     }
                 case int64_t(WFlags::nsw | WFlags::nuw):
-                        case  8:                                 SInt< s8>(ba. get_s8(),  true) + SInt< s8>(bb. get_s8(),  true);
-                                 return world.assume(t, {UInt< u8>(ba. get_u8(),  true) + UInt< u8>(bb. get_u8(),  true)}, dbg);
-                        case 16:                         SInt<s16>(ba.get_s16(),  true) + SInt<s16>(bb.get_s16(),  true);
-                                 return world.assume(t, {UInt<u16>(ba.get_u16(),  true) + UInt<u16>(bb.get_u16(),  true)}, dbg);
-                        case 32:                         SInt<s32>(ba.get_s32(),  true) + SInt<s32>(bb.get_s32(),  true);
-                                 return world.assume(t, {UInt<u32>(ba.get_u32(),  true) + UInt<u32>(bb.get_u32(),  true)}, dbg);
-                        case 64:                         SInt<s64>(ba.get_s64(),  true) + SInt<s64>(bb.get_s64(),  true);
-                                 return world.assume(t, {UInt<u64>(ba.get_u64(),  true) + UInt<u64>(bb.get_u64(),  true)}, dbg);
+                    switch (w) {
+                        case  8: return world.assume(t, F< 8, true, true>::run(ba, bb));
+                        case 16: return world.assume(t, F<16, true, true>::run(ba, bb));
+                        case 32: return world.assume(t, F<32, true, true>::run(ba, bb));
+                        case 64: return world.assume(t, F<64, true, true>::run(ba, bb));
+                    }
             }
         } catch (BottomException) {
         }
     }
+
+    return normalize_tuple(world, callee, a, b, dbg);
+}
+
+const Def* normalize_wadd(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_wfold<FoldWAdd>(world, callee, a, b, dbg)) return result;
 
     return nullptr;
 }
@@ -95,7 +104,10 @@ const Def* normalize_wsub(thorin::World&, const Def*, const Def*, const Def*, De
     return nullptr;
 }
 
-const Def* normalize_wmul(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_wmul(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_wfold<FoldWMul>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 
@@ -151,23 +163,58 @@ const Def* normalize_ixor(thorin::World&, const Def*, const Def*, const Def*, De
  * RArithop
  */
 
-const Def* normalize_radd(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+template<template<int> class F>
+const Def* try_rfold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+    auto aa = a->isa<Axiom>(), ab = b->isa<Axiom>();
+    if (aa && ab) {
+        auto ba = aa->box(), bb = ab->box();
+        auto t = a->type();
+        auto w = get_nat(app_arg(app_callee(callee)));
+        try {
+            switch (w) {
+                case 16: return world.assume(t, F<16>::run(ba, bb));
+                case 32: return world.assume(t, F<32>::run(ba, bb));
+                case 64: return world.assume(t, F<64>::run(ba, bb));
+            }
+        } catch (BottomException) {
+        }
+    }
+
+    return normalize_tuple(world, callee, a, b, dbg);
+}
+
+const Def* normalize_radd(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_rfold<FoldRAdd>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 
-const Def* normalize_rsub(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_rsub(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_rfold<FoldRSub>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 
-const Def* normalize_rmul(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_rmul(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_rfold<FoldRMul>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 
-const Def* normalize_rdiv(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_rdiv(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_rfold<FoldRDiv>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 
-const Def* normalize_rmod(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_rmod(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_rfold<FoldRRem>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 
