@@ -2,10 +2,10 @@
 
 #include "thorin/core/world.h"
 
-namespace thorin {
+namespace thorin::core {
 
 TEST(Primop, Types) {
-    core::World w;
+    World w;
 
     ASSERT_EQ(w.type_i(16), w.app(w.type_i(), w.val_nat_16()));
     ASSERT_EQ(w.type_i(64), w.app(w.type_i(), w.val_nat_64()));
@@ -15,7 +15,7 @@ TEST(Primop, Types) {
 }
 
 TEST(Primop, Arithop) {
-    core::World w;
+    World w;
     w.op<wadd>()->type()->dump();
     auto a = w.op<wadd>(w.val(23), w.val(42));
     a->dump();
@@ -36,14 +36,14 @@ TEST(Primop, Arithop) {
 
 #if 0
 TEST(Primop, Cmp) {
-    core::World w;
+    World w;
     auto x = w.op_icmp(irel::lt, w.val(iflags::so, 23), w.val(iflags::so, 42));
     x->dump();
 }
 #endif
 
 TEST(Primop, Ptr) {
-    core::World w;
+    World w;
     const Def* m = w.axiom(w.type_mem(), {"m"});
     auto e = w.op_enter(m);
     auto f = w.extract(e, 1);

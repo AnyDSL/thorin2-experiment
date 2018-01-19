@@ -7,8 +7,7 @@
 #include "thorin/world.h"
 #include "thorin/core/tables.h"
 
-namespace thorin {
-namespace core {
+namespace thorin::core {
 
 std::tuple<const Def*, const Def*> shape_and_body(const Def* def);
 const Def* infer_shape(const Def* def);
@@ -158,7 +157,6 @@ private:
 
 inline int64_t get_nat(const Def* def) { return def->as<Axiom>()->box().get_s64(); }
 
-}
 }
 
 #endif

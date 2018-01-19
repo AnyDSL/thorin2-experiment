@@ -3,7 +3,7 @@
 
 #include "thorin/util/utility.h"
 
-namespace thorin {
+namespace thorin::core {
 
 enum class WFlags : int64_t {
     none = 0,

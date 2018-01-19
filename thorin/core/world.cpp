@@ -3,8 +3,7 @@
 #include "thorin/core/normalize.h"
 #include "thorin/frontend/parser.h"
 
-namespace thorin {
-namespace core {
+namespace thorin::core {
 
 //------------------------------------------------------------------------------
 /*
@@ -111,5 +110,4 @@ const Def* World::op_store(const Def* mem, const Def* ptr, const Def* val, Debug
     return app(app(op_store_, ptr->type()->as<App>()->arg(), dbg), {mem, ptr, val}, dbg);
 }
 
-}
 }

@@ -1,8 +1,7 @@
 #include "thorin/core/world.h"
 #include "thorin/util/fold.h"
 
-namespace thorin {
-namespace core {
+namespace thorin::core {
 
 //------------------------------------------------------------------------------
 
@@ -191,5 +190,4 @@ const Def* normalize_rmod(thorin::World&, const Def*, const Def*, const Def*, De
     THORIN_I_ARITHOP(CODE)
 #undef CODE
 
-}
 }
