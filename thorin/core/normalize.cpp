@@ -139,6 +139,27 @@ const Def* normalize_umod(thorin::World&, const Def*, const Def*, const Def*, De
  * IArithop
  */
 
+template<template<int> class F>
+const Def* try_ifold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+    auto aa = a->isa<Axiom>(), ab = b->isa<Axiom>();
+    if (aa && ab) {
+        auto ba = aa->box(), bb = ab->box();
+        auto t = a->type();
+        auto w = get_nat(app_arg(app_callee(callee)));
+        try {
+            switch (w) {
+                case  8: return world.assume(t, F< 8>::run(ba, bb));
+                case 16: return world.assume(t, F<16>::run(ba, bb));
+                case 32: return world.assume(t, F<32>::run(ba, bb));
+                case 64: return world.assume(t, F<64>::run(ba, bb));
+            }
+        } catch (BottomException) {
+        }
+    }
+
+    return normalize_tuple(world, callee, a, b, dbg);
+}
+
 const Def* normalize_ashr(thorin::World&, const Def*, const Def*, const Def*, Debug) {
     return nullptr;
 }
@@ -147,15 +168,24 @@ const Def* normalize_lshr(thorin::World&, const Def*, const Def*, const Def*, De
     return nullptr;
 }
 
-const Def* normalize_iand(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_iand(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_ifold<FoldIAnd>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 
-const Def* normalize_ior(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_ior(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_ifold<FoldIOr>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 
-const Def* normalize_ixor(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_ixor(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_ifold<FoldIXor>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 
