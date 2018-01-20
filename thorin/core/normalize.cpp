@@ -160,11 +160,17 @@ const Def* try_ifold(thorin::World& world, const Def* callee, const Def* a, cons
     return normalize_tuple(world, callee, a, b, dbg);
 }
 
-const Def* normalize_ashr(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_ashr(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_ifold<FoldAShr>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 
-const Def* normalize_lshr(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_lshr(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_ifold<FoldLShr>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 

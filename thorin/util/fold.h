@@ -230,6 +230,8 @@ struct FoldWMul {
     }
 };
 
+template<int w> struct FoldAShr { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.template get<T>() >> b.template get<T>()); } };
+template<int w> struct FoldLShr { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.template get<T>() >> b.template get<T>()); } };
 template<int w> struct FoldIAnd { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.template get<T>() & b.template get<T>()); } };
 template<int w> struct FoldIOr  { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.template get<T>() | b.template get<T>()); } };
 template<int w> struct FoldIXor { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.template get<T>() ^ b.template get<T>()); } };
