@@ -66,7 +66,12 @@ World::World() {
     op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
     op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
 
-    op<wadd>()->set_normalizer(normalize_wadd_0);
+#define CODE(o) op<o>()->set_normalizer(normalize_ ## o ## _0);
+    THORIN_W_ARITHOP(CODE)
+    THORIN_I_ARITHOP(CODE)
+    THORIN_I_ARITHOP(CODE)
+    THORIN_R_ARITHOP(CODE)
+#undef CODE
 }
 
 //const Def* World::op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
