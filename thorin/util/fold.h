@@ -230,17 +230,17 @@ struct FoldWMul {
     }
 };
 
-template<int w> struct FoldAShr { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.template get<T>() >> b.template get<T>()); } };
-template<int w> struct FoldLShr { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.template get<T>() >> b.template get<T>()); } };
-template<int w> struct FoldIAnd { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.template get<T>() & b.template get<T>()); } };
-template<int w> struct FoldIOr  { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.template get<T>() | b.template get<T>()); } };
-template<int w> struct FoldIXor { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.template get<T>() ^ b.template get<T>()); } };
+template<int w> struct FoldAShr { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >> b.get<T>()); } };
+template<int w> struct FoldLShr { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() >> b.get<T>()); } };
+template<int w> struct FoldIAnd { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() & b.get<T>()); } };
+template<int w> struct FoldIOr  { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() | b.get<T>()); } };
+template<int w> struct FoldIXor { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() ^ b.get<T>()); } };
 
-template<int w> struct FoldRAdd { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.template get<T>() + b.template get<T>()); } };
-template<int w> struct FoldRSub { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.template get<T>() - b.template get<T>()); } };
-template<int w> struct FoldRMul { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.template get<T>() * b.template get<T>()); } };
-template<int w> struct FoldRDiv { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.template get<T>() / b.template get<T>()); } };
-template<int w> struct FoldRRem { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(rem(a.template get<T>(), b.template get<T>())); } };
+template<int w> struct FoldRAdd { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() + b.get<T>()); } };
+template<int w> struct FoldRSub { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() - b.get<T>()); } };
+template<int w> struct FoldRMul { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() * b.get<T>()); } };
+template<int w> struct FoldRDiv { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() / b.get<T>()); } };
+template<int w> struct FoldRRem { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(rem(a.get<T>(), b.get<T>())); } };
 
 }
 

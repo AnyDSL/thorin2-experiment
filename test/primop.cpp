@@ -33,7 +33,8 @@ TEST(Primop, Arithop) {
     w.op<wadd>(p1, m2)->dump();
     w.op<wadd>(p1, p2)->dump();
 
-    ASSERT_EQ(w.op<ashr>(w.val(uint8_t(-1)), w.val(uint8_t(1))), w.val(uint8_t(127)));
+    ASSERT_EQ(w.op<ashr>(w.val(uint8_t(-1)), w.val(uint8_t(1))), w.val(uint8_t(-1)));
+    ASSERT_EQ(w.op<lshr>(w.val(uint8_t(-1)), w.val(uint8_t(1))), w.val(uint8_t(127)));
 }
 
 #if 0

@@ -68,7 +68,7 @@ World::World() {
 
 #define CODE(o) op<o>()->set_normalizer(normalize_ ## o ## _0);
     THORIN_W_ARITHOP(CODE)
-    THORIN_I_ARITHOP(CODE)
+    THORIN_M_ARITHOP(CODE)
     THORIN_I_ARITHOP(CODE)
     THORIN_R_ARITHOP(CODE)
 #undef CODE

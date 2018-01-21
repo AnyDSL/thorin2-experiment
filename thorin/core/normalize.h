@@ -13,7 +13,7 @@ namespace core {
 
 #define CODE(o) const Def* normalize_ ## o ## _0(thorin::World& world, const Def*, const Def*, const Def*, Debug);
     THORIN_W_ARITHOP(CODE)
-    THORIN_I_ARITHOP(CODE)
+    THORIN_M_ARITHOP(CODE)
     THORIN_I_ARITHOP(CODE)
     THORIN_R_ARITHOP(CODE)
 #undef CODE
