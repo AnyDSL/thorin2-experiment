@@ -100,7 +100,9 @@ const Def* normalize_wadd(thorin::World& world, const Def*, const Def* callee, c
     return nullptr;
 }
 
-const Def* normalize_wsub(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_wsub(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_wfold<FoldWSub>(world, callee, a, b, dbg)) return result;
     return nullptr;
 }
 
@@ -111,7 +113,10 @@ const Def* normalize_wmul(thorin::World& world, const Def*, const Def* callee, c
     return nullptr;
 }
 
-const Def* normalize_wshl(thorin::World&, const Def*, const Def*, const Def*, Debug) {
+const Def* normalize_wshl(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_wfold<FoldWShl>(world, callee, a, b, dbg)) return result;
+
     return nullptr;
 }
 

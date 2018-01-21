@@ -218,6 +218,19 @@ struct FoldWAdd {
 };
 
 template<int w, bool nsw, bool nuw>
+struct FoldWSub {
+    static Box run(Box a, Box b) {
+        typedef typename w2u<w>::type UT;
+        auto x = a.template get<UT>();
+        auto y = b.template get<UT>();
+        decltype(x) res = x - y;
+        //if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
+        // TODO nsw
+        return {res};
+    }
+};
+
+template<int w, bool nsw, bool nuw>
 struct FoldWMul {
     static Box run(Box a, Box b) {
         typedef typename w2u<w>::type UT;
@@ -225,6 +238,19 @@ struct FoldWMul {
         auto y = b.template get<UT>();
         decltype(x) res = x * y;
         if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
+        // TODO nsw
+        return {res};
+    }
+};
+
+template<int w, bool nsw, bool nuw>
+struct FoldWShl {
+    static Box run(Box a, Box b) {
+        typedef typename w2u<w>::type UT;
+        auto x = a.template get<UT>();
+        auto y = b.template get<UT>();
+        decltype(x) res = x << y;
+        //if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
         // TODO nsw
         return {res};
     }
