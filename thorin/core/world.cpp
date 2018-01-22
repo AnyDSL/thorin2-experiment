@@ -56,10 +56,8 @@ World::World() {
     for (size_t o = 0; o != Num_IArithOp; ++o) iarithop_[o] = axiom(i_type_arithop, {arithop2str(IArithop(o))});
     for (size_t o = 0; o != Num_RArithOp; ++o) rarithop_[o] = axiom(r_type_arithop, {arithop2str(RArithop(o))});
 
-    //auto type_icmp = parse(*this, "Πrel: nat. Πs: 𝕄. Πw: nat. Π[[s;  int w], [s;  int w]]. [s; bool]", env);
-    auto type_rcmp = parse(*this, "Πf: nat. Πrel: nat. Πs: 𝕄. Πw: nat. Π[[s; real w], [s; real w]]. [s; bool]", env);
-    //op_icmp_  = axiom(type_icmp, {"icmp"});
-    op_rcmp_  = axiom(type_rcmp, {"rcmp"});
+    op_icmp_  = axiom(parse(*this, "         Πrel: nat. Πs: 𝕄. Πw: nat. Π[[s;  int w], [s;  int w]]. [s; bool]", env), {"icmp"});
+    op_rcmp_  = axiom(parse(*this, "Πf: nat. Πrel: nat. Πs: 𝕄. Πw: nat. Π[[s; real w], [s; real w]]. [s; bool]", env), {"icmp"});
     op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)", env), {"lea"});
     op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]", env), {"load"});
     op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});
@@ -72,6 +70,8 @@ World::World() {
     THORIN_I_ARITHOP(CODE)
     THORIN_R_ARITHOP(CODE)
 #undef CODE
+    op_icmp()->set_normalizer(normalize_icmp_0);
+    op_rcmp()->set_normalizer(normalize_rcmp_0);
 }
 
 //const Def* World::op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {

@@ -18,6 +18,9 @@ namespace core {
     THORIN_R_ARITHOP(CODE)
 #undef CODE
 
+const Def* normalize_icmp_0(thorin::World& world, const Def*, const Def*, const Def*, Debug);
+const Def* normalize_rcmp_0(thorin::World& world, const Def*, const Def*, const Def*, Debug);
+
 }
 }
 

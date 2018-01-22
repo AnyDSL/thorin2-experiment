@@ -260,6 +260,20 @@ const Def* normalize_rmod(thorin::World& world, const Def*, const Def* callee, c
 }
 
 /*
+ * icmp/rcmp
+ */
+
+const Def* normalize_icmp(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    return nullptr;
+}
+
+const Def* normalize_rcmp(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    return nullptr;
+}
+
+/*
  * curry normalizers
  */
 
@@ -277,5 +291,12 @@ const Def* normalize_rmod(thorin::World& world, const Def*, const Def* callee, c
     THORIN_M_ARITHOP(CODE)
     THORIN_I_ARITHOP(CODE)
 #undef CODE
+
+const Def* normalize_icmp_1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_icmp,   type, callee, arg, dbg); }
+const Def* normalize_icmp_0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_icmp_1, type, callee, arg, dbg); }
+
+const Def* normalize_rcmp_2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_rcmp,   type, callee, arg, dbg); }
+const Def* normalize_rcmp_1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_rcmp_2, type, callee, arg, dbg); }
+const Def* normalize_rcmp_0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_rcmp_1, type, callee, arg, dbg); }
 
 }
