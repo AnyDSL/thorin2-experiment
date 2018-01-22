@@ -313,8 +313,7 @@ const Def* Sigma::kind_qualifier() const {
 }
 
 const Def* Singleton::kind_qualifier() const {
-    assert(is_kind());
-    // TODO this might recur endlessly if op(0) has this as type, need to guarantee that doesn't occurr/errors early
+    assert(is_kind() && op(0)->type() != this);
     return op(0)->qualifier();
 }
 
