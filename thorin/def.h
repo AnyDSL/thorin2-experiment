@@ -148,7 +148,6 @@ protected:
         , debug_(dbg)
         , type_(type)
         , num_ops_(num_ops)
-        , ops_capacity_(num_ops)
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
         , closed_(num_ops == 0)
@@ -166,7 +165,6 @@ protected:
         , debug_(dbg)
         , type_(type)
         , num_ops_(ops.distance())
-        , ops_capacity_(ops.distance())
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
         , closed_(true)
@@ -188,7 +186,6 @@ protected:
     void unset(size_t i);
     void unregister_use(size_t i) const;
     void unregister_uses() const;
-    void resize(size_t num_ops);
 
 public:
     //@{ get operands
@@ -338,7 +335,6 @@ private:
     const Def* type_;
     mutable Normalizer normalizer_ = nullptr;
     uint32_t num_ops_;
-    uint32_t ops_capacity_;
     union {
         struct {
             unsigned gid_           : 22;
