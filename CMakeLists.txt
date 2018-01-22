@@ -64,9 +64,14 @@ add_executable(coc
     thorin/util/array.h
     thorin/util/bitset.cpp
     thorin/util/bitset.h
+    thorin/util/box.h
     thorin/util/cast.h
-    thorin/util/hash.h
+    thorin/util/fold.h
     thorin/util/hash.cpp
+    thorin/util/hash.h
+    thorin/util/indexmap.h
+    thorin/util/indexset.h
+    thorin/util/iterator.h
     thorin/util/location.cpp
     thorin/util/location.h
     thorin/util/log.cpp
