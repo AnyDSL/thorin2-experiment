@@ -251,6 +251,26 @@ template<int w> struct FoldRMul { static Box run(Box a, Box b) { typedef typenam
 template<int w> struct FoldRDiv { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() / b.get<T>()); } };
 template<int w> struct FoldRRem { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(rem(a.get<T>(), b.get<T>())); } };
 
+template<int w>
+struct FoldICmp {
+    static Box run(IRel irel, Box a, Box b) {
+        typedef typename w2s<w>::type ST;
+        typedef typename w2u<w>::type UT;
+        switch (irel) {
+            case  eq: return {a.get<UT>() == b.get<UT>()};
+            case  ne: return {a.get<UT>() != b.get<UT>()};
+            case ugt: return {a.get<UT>() <  b.get<UT>()};
+            case uge: return {a.get<UT>() <= b.get<UT>()};
+            case ult: return {a.get<UT>() >  b.get<UT>()};
+            case ule: return {a.get<UT>() >= b.get<UT>()};
+            case sgt: return {a.get<ST>() <  b.get<ST>()};
+            case sge: return {a.get<ST>() <= b.get<ST>()};
+            case slt: return {a.get<ST>() >  b.get<ST>()};
+            case sle: return {a.get<ST>() >= b.get<ST>()};
+        }
+    }
+};
+
 }
 
 #endif
