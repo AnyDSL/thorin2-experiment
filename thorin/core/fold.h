@@ -293,7 +293,7 @@ struct FoldRCmp {
             case RRel::oeq: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() == b.get<T>()};
             case RRel::ole: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() <= b.get<T>()};
             case RRel::oge: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() >= b.get<T>()};
-            case RRel::  f: return {true};
+            case RRel::  f: return {false};
             default: THORIN_UNREACHABLE;
         }
     }
