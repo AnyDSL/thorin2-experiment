@@ -133,7 +133,6 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
 const Def* normalize_arity_eliminator(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) {
     if (callee->type()->as<Pi>()->body()->isa<Pi>())
         return world.curry(normalize_arity_eliminator, type, callee, arg, dbg);
-    arg->dump();
     const Def* pred = nullptr;
     if (auto arity = arg->isa<Arity>()) {
         auto arity_val = arity->value();

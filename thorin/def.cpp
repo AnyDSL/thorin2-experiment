@@ -599,34 +599,40 @@ const Def* Def::shift_free_vars(size_t shift) const {
 
 /*
  * assignable/subtype_of
- * TODO: qualifiers?
+ * TODO: introduce subtyping by qualifiers? i.e. x:*u -> x:*a
  */
 
 bool ArityKind::vsubtype_of(const Def* def) const {
-    auto q = qualifier();
-    auto other_q = def->qualifier();
-    return q == other_q && (def->isa<MultiArityKind>() || def->isa<Star>());
+    return qualifier() == def->qualifier() && (def->isa<MultiArityKind>() || def->isa<Star>());
 }
 
 bool MultiArityKind::vsubtype_of(const Def* def) const {
-    auto q = qualifier();
-    auto other_q = def->qualifier();
-    return q == other_q && def->isa<Star>();
+    return qualifier() == def->qualifier() && def->isa<Star>();
 }
 
-bool MultiArityKind::assignable(const Def* def) const {
-    return this == def->type() || def->type()->isa<ArityKind>();
-}
-
-bool Pi::assignable(const Def* def) const {
-    auto dtype = def->type();
-    if (dtype == this)
-        return true;
-    if (auto pi = dtype->isa<Pi>()) {
-        if (pi->domain() == domain() && pi->body()->subtype_of(body()))
+bool Pi::vsubtype_of(const Def* def) const {
+    if (auto other_pi = def->isa<Pi>(); qualifier() == def->qualifier()) {
+        if (other_pi->domain() == domain() && body()->subtype_of(other_pi->body()))
             return true;
     }
     return false;
+}
+
+// bool Sigma::vsubtype_of(const Def* def) const {
+//     auto q = qualifier();
+//     auto other_q = def->qualifier();
+//     return nullptr; // TODO
+// }
+
+// bool Variadic::vsubtype_of(const Def* def) const {
+// }
+
+bool MultiArityKind::assignable(const Def* def) const {
+    return def->type()->subtype_of(this);
+}
+
+bool Pi::assignable(const Def* def) const {
+    return def->type()->subtype_of(this);
 }
 
 bool Sigma::assignable(const Def* def) const {
@@ -634,6 +640,10 @@ bool Sigma::assignable(const Def* def) const {
         return true;
     if (is_nominal() && num_ops() == 1 && def->type() == op(0))
         return true;
+    auto q = qualifier();
+    auto other_q = def->qualifier();
+    if (q != other_q)
+        return false;
     Defs defs = def->ops(); // only correct when def is a tuple
     if (auto pack = def->isa<Pack>()) {
         if (auto arity = pack->arity()->isa<Arity>()) {
@@ -654,6 +664,7 @@ bool Sigma::assignable(const Def* def) const {
 }
 
 bool Star::assignable(const Def* def) const {
+    return def->type()->subtype_of(this);
     auto type = def->type();
     return this == type || ((type->isa<MultiArityKind>() || type->isa<ArityKind>()) && op(0) == type->op(0));
 }

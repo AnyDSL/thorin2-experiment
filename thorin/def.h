@@ -488,6 +488,7 @@ public:
     std::ostream& stream(std::ostream&) const override;
 
 private:
+    bool vsubtype_of(const Def* def) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
