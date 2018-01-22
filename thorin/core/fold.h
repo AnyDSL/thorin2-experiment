@@ -1,6 +1,7 @@
 #ifndef THORIN_UTIL_FOLD_H
 #define THORIN_UTIL_FOLD_H
 
+#include "thorin/core/tables.h"
 #include "thorin/util/types.h"
 
 namespace thorin::core {
@@ -257,16 +258,16 @@ struct FoldICmp {
         typedef typename w2s<w>::type ST;
         typedef typename w2u<w>::type UT;
         switch (irel) {
-            case  eq: return {a.get<UT>() == b.get<UT>()};
-            case  ne: return {a.get<UT>() != b.get<UT>()};
-            case ugt: return {a.get<UT>() <  b.get<UT>()};
-            case uge: return {a.get<UT>() <= b.get<UT>()};
-            case ult: return {a.get<UT>() >  b.get<UT>()};
-            case ule: return {a.get<UT>() >= b.get<UT>()};
-            case sgt: return {a.get<ST>() <  b.get<ST>()};
-            case sge: return {a.get<ST>() <= b.get<ST>()};
-            case slt: return {a.get<ST>() >  b.get<ST>()};
-            case sle: return {a.get<ST>() >= b.get<ST>()};
+            case IRel:: eq: return {a.get<UT>() == b.get<UT>()};
+            case IRel:: ne: return {a.get<UT>() != b.get<UT>()};
+            case IRel::ugt: return {a.get<UT>() <  b.get<UT>()};
+            case IRel::uge: return {a.get<UT>() <= b.get<UT>()};
+            case IRel::ult: return {a.get<UT>() >  b.get<UT>()};
+            case IRel::ule: return {a.get<UT>() >= b.get<UT>()};
+            case IRel::sgt: return {a.get<ST>() <  b.get<ST>()};
+            case IRel::sge: return {a.get<ST>() <= b.get<ST>()};
+            case IRel::slt: return {a.get<ST>() >  b.get<ST>()};
+            case IRel::sle: return {a.get<ST>() >= b.get<ST>()};
         }
     }
 };
