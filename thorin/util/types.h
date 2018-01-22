@@ -60,6 +60,11 @@ inline /*constexpr*/ r16 operator""_r16(long double d) { return r16(d); } // wai
 constexpr r32 operator""_r32(long double d) { return r32(d); }
 constexpr r64 operator""_r64(long double d) { return r64(d); }
 
+inline half        rem(half a, half b)               { return      fmod(a, b); }
+inline float       rem(float a, float b)             { return std::fmod(a, b); }
+inline double      rem(double a, double b)           { return std::fmod(a, b); }
+inline long double rem(long double a, long double b) { return std::fmod(a, b); }
+
 union Box {
 public:
     Box() { u64_ = 0; }
