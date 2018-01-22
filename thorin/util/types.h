@@ -63,12 +63,13 @@ constexpr r64 operator""_r64(long double d) { return r64(d); }
 union Box {
 public:
     Box() { u64_ = 0; }
-
+    Box(bool val) { u64_ = 0; bool_ = val; }
 #define CODE(T) \
     Box(T val) { u64_ = 0; T ## _ = val; }
     THORIN_TYPES(CODE)
 #undef CODE
 
+    bool get_bool() const { return bool_; }
 #define CODE(T) \
     T get_ ## T() const { return T ## _; }
     THORIN_TYPES(CODE)
@@ -78,8 +79,8 @@ public:
     template<typename T> T& get() { return *((T*)this); }
 
 private:
-#define CODE(T) \
-    T T ## _;
+    bool bool_;
+#define CODE(T) T T ## _;
     THORIN_TYPES(CODE)
 #undef CODE
 };

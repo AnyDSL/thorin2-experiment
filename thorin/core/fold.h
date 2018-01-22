@@ -254,10 +254,10 @@ template<int w> struct FoldRRem { static Box run(Box a, Box b) { typedef typenam
 
 template<int w>
 struct FoldICmp {
-    static Box run(IRel irel, Box a, Box b) {
+    static Box run(IRel rel, Box a, Box b) {
         typedef typename w2s<w>::type ST;
         typedef typename w2u<w>::type UT;
-        switch (irel) {
+        switch (rel) {
             case IRel:: eq: return {a.get<UT>() == b.get<UT>()};
             case IRel:: ne: return {a.get<UT>() != b.get<UT>()};
             case IRel::ugt: return {a.get<UT>() <  b.get<UT>()};
@@ -268,6 +268,33 @@ struct FoldICmp {
             case IRel::sge: return {a.get<ST>() <= b.get<ST>()};
             case IRel::slt: return {a.get<ST>() >  b.get<ST>()};
             case IRel::sle: return {a.get<ST>() >= b.get<ST>()};
+            default: THORIN_UNREACHABLE;
+        }
+    }
+};
+
+template<int w>
+struct FoldRCmp {
+    static Box run(RRel rel, Box a, Box b) {
+        typedef typename w2r<w>::type T;
+        switch (rel) {
+            case RRel::  t: return {true};
+            case RRel::ult: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() <  b.get<T>()};
+            case RRel::ugt: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() >  b.get<T>()};
+            case RRel::une: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() != b.get<T>()};
+            case RRel::ueq: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() == b.get<T>()};
+            case RRel::ule: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() <= b.get<T>()};
+            case RRel::uge: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() >= b.get<T>()};
+            case RRel::uno: return { std::isunordered(a.get<T>(), b.get<T>())};
+            case RRel::ord: return {!std::isunordered(a.get<T>(), b.get<T>())};
+            case RRel::olt: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() <  b.get<T>()};
+            case RRel::ogt: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() >  b.get<T>()};
+            case RRel::one: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() != b.get<T>()};
+            case RRel::oeq: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() == b.get<T>()};
+            case RRel::ole: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() <= b.get<T>()};
+            case RRel::oge: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() >= b.get<T>()};
+            case RRel::  f: return {true};
+            default: THORIN_UNREACHABLE;
         }
     }
 };
