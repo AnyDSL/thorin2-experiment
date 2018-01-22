@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "thorin/util/box.h"
 #include "thorin/util/location.h"
+#include "thorin/util/types.h"
 #include "thorin/util/utility.h"
 
 namespace thorin {

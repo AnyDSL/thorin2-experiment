@@ -1,5 +1,5 @@
 #include "thorin/core/world.h"
-#include "thorin/util/fold.h"
+#include "thorin/core/fold.h"
 
 namespace thorin::core {
 

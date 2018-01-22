@@ -1,9 +1,9 @@
 #ifndef THORIN_UTIL_FOLD_H
 #define THORIN_UTIL_FOLD_H
 
-#include "thorin/util/box.h"
+#include "thorin/util/types.h"
 
-namespace thorin {
+namespace thorin::core {
 
 // This code assumes two-complement arithmetic for unsigned operations.
 // This is *implementation-defined* but *NOT* *undefined behavior*.
@@ -187,23 +187,6 @@ inline long double rem(long double a, long double b) { return std::fmod(a, b); }
         return res;
     }
 #endif
-
-template<int> struct w2u {};
-template<> struct w2u< 8> { typedef  u8 type; };
-template<> struct w2u<16> { typedef u16 type; };
-template<> struct w2u<32> { typedef u32 type; };
-template<> struct w2u<64> { typedef u64 type; };
-
-template<int> struct w2s {};
-template<> struct w2s< 8> { typedef  s8 type; };
-template<> struct w2s<16> { typedef s16 type; };
-template<> struct w2s<32> { typedef s32 type; };
-template<> struct w2s<64> { typedef s64 type; };
-
-template<int> struct w2r {};
-template<> struct w2r<16> { typedef r16 type; };
-template<> struct w2r<32> { typedef r32 type; };
-template<> struct w2r<64> { typedef r64 type; };
 
 template<int w, bool nsw, bool nuw>
 struct FoldWAdd {

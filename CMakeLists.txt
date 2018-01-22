@@ -50,6 +50,7 @@ add_executable(coc
     thorin/reduce.h
     thorin/world.cpp
     thorin/world.h
+    thorin/core/fold.h
     thorin/core/normalize.cpp
     thorin/core/normalize.h
     thorin/core/tables.h
@@ -64,9 +65,7 @@ add_executable(coc
     thorin/util/array.h
     thorin/util/bitset.cpp
     thorin/util/bitset.h
-    thorin/util/box.h
     thorin/util/cast.h
-    thorin/util/fold.h
     thorin/util/hash.cpp
     thorin/util/hash.h
     thorin/util/indexmap.h
@@ -78,6 +77,7 @@ add_executable(coc
     thorin/util/log.h
     thorin/util/stream.cpp
     thorin/util/stream.h
+    thorin/util/types.h
     thorin/util/utility.h
 )
 

@@ -130,8 +130,8 @@ Token Lexer::lex() {
         if (accept('\\')) {
             if (accept("lambda")) return {location(), Token::Tag::Lambda};
             if (accept("pi"))     return {location(), Token::Tag::Pi};
-            if (accept("true"))   return {location(), Literal(Literal::Tag::Lit_bool, Box(true))};
-            if (accept("false"))  return {location(), Literal(Literal::Tag::Lit_bool, Box(false))};
+            //if (accept("true"))   return {location(), Literal(Literal::Tag::Lit_bool, Box(true))};
+            //if (accept("false"))  return {location(), Literal(Literal::Tag::Lit_bool, Box(false))};
 
             return {location(), Token::Tag::Backslash};
         }
