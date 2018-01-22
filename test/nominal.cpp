@@ -10,13 +10,13 @@ using namespace thorin;
 TEST(Nominal, Sigma) {
     World w;
     auto nat = w.type_nat();
-    auto nat2 = w.sigma_type(2, {"Nat x Nat"})->set(0, nat)->set(1, nat);
+    auto nat2 = w.sigma_type(2, {"Nat x Nat"})->set(w, 0, nat)->set(w, 1, nat);
     ASSERT_TRUE(nat2->is_closed());
     ASSERT_TRUE(nat2->free_vars().none());
     ASSERT_EQ(w.pi(nat2, nat)->domain(),  nat2);
 
     auto n42 = w.val_nat(42);
-    ASSERT_FALSE(nat2->assignable(n42));
+    ASSERT_FALSE(nat2->assignable(w, n42));
 }
 
 TEST(Nominal, SigmaFreeVars) {
@@ -27,9 +27,7 @@ TEST(Nominal, SigmaFreeVars) {
     auto v0 = w.var(star, 0);
     auto v1 = w.var(star, 1);
     auto v3 = w.var(star, 3);
-    sig->set(0, v0);
-    sig->set(1, v3);
-    sig->set(2, v1);
+    sig->set(w, 0, v0)->set(w, 1, v3)->set(w, 2, v1);
     ASSERT_TRUE(sig->free_vars().test(0));
     ASSERT_FALSE(sig->free_vars().test(1));
     ASSERT_TRUE(sig->free_vars().test(2));
@@ -45,7 +43,7 @@ TEST(Nominal, ReduceWithNominals) {
 
     auto sig = w.sigma_type(1, {"sig"});
     auto v0 = w.var(star, 0);
-    sig->set(0, v0);
+    sig->set(w, 0, v0);
     ASSERT_TRUE(sig->is_closed());
     ASSERT_TRUE(sig->free_vars().test(0));
 
@@ -72,8 +70,8 @@ TEST(Nominal, PolymorphicListVariantNominal) {
     auto nil = w.unit();
     auto cons = w.sigma({w.var(star, 0), w.app(list, w.var(star, 1))});
     ASSERT_TRUE(cons->free_vars().any_end(1));
-    cons_or_nil->set(0, nil);
-    cons_or_nil->set(1, cons);
+    cons_or_nil->set(w, 0, nil);
+    cons_or_nil->set(w, 1, cons);
     print_value_type(cons);
     print_value_type(cons_or_nil);
     print_value_type(list);
@@ -89,10 +87,10 @@ TEST(Nominal, Nat) {
     auto star = w.star();
 
     auto variant = w.variant(star, 2, {"Nat"});
-    variant->set(0, w.sigma_type(0, {"0"}));
+    variant->set(w, 0, w.sigma_type(0, {"0"}));
     auto succ = w.sigma_type(1, {"Succ"});
-    succ->set(0, variant);
-    variant->set(1, succ);
+    succ->set(w, 0, variant);
+    variant->set(w, 1, succ);
     print_value_type(variant);
     print_value_type(succ);
     // TODO asserts, methods on nat

@@ -51,7 +51,7 @@ void Reducer::reduce_nominals() {
 
             for (size_t i = 0, e = subst->num_ops(); i != e; ++i) {
                 auto new_op = reduce_structurals(subst->op(i), subst.index() + subst->shift(i));
-                const_cast<Def*>(new_def)->set(i, new_op);
+                const_cast<Def*>(new_def)->set(world(), i, new_op);
             }
         }
     }
@@ -69,7 +69,7 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
     auto new_type = reduce_structurals(old_def->type(), offset);
 
     if (old_def->is_nominal()) {
-        auto new_def = old_def->stub(new_type); // TODO better location debug info for these
+        auto new_def = old_def->stub(world(), new_type); // TODO better location debug info for these
         map_[{old_def, offset}] = new_def;
         nominals_.emplace(old_def, offset);
         return new_def;
@@ -82,9 +82,9 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
                 // remember that the lowest index corresponds to the last element in args due to De Bruijn's
                 // way of counting
                 size_t arg_index = shift() - (var->index() - offset) - 1;
-                if (!new_type->assignable(args_[arg_index]))
+                if (!new_type->assignable(world(), args_[arg_index]))
                     return world().error(new_type); // use the expected type, not the one provided by the arg
-                return args_[arg_index]->shift_free_vars(-offset);
+                return args_[arg_index]->shift_free_vars(world(), -offset);
             }
         }
 
@@ -110,41 +110,39 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
 
 //------------------------------------------------------------------------------
 
-const Def* reduce(const Def* def, Defs args, size_t index) {
-    return reduce(def, args, [&] (const Def*) {}, index);
+const Def* reduce(World& world, const Def* def, Defs args, size_t index) {
+    return reduce(world, def, args, [&] (const Def*) {}, index);
 }
 
-const Def* reduce(const Def* def, Defs args, std::function<void(const Def*)> f, size_t index) {
+const Def* reduce(World& world, const Def* def, Defs args, std::function<void(const Def*)> f, size_t index) {
     if (def->free_vars().none_begin(index))
         return def;
 
-    Reducer reducer(def->world(), args);
+    Reducer reducer(world, args);
     auto result = reducer.reduce_structurals(def, index);
     f(result);
     reducer.reduce_nominals();
     return result;
 }
 
-const Def* unflatten(const Def* body, const Def* arg) {
-    auto& w = body->world();
-    auto arity = arg->arity()->as<Arity>();
+const Def* unflatten(World& world, const Def* body, const Def* arg) {
+    auto arity = arg->arity(world)->as<Arity>();
     assert(arity != nullptr);
     auto length = arity->value();
-    auto extracts = DefArray(length, [&](auto i) { return w.extract(arg, i); });
-    return reduce(body, extracts);
+    auto extracts = DefArray(length, [&](auto i) { return world.extract(arg, i); });
+    return reduce(world, body, extracts);
 }
 
-const Def* flatten(const Def* body, Defs args) {
-    auto& w = body->world();
-    auto t = w.tuple(DefArray(args.size(), [&](auto i) { return w.var(args[i], args.size()-1-i); }));
-    return reduce(body, {t});
+const Def* flatten(World& world, const Def* body, Defs args) {
+    auto t = world.tuple(DefArray(args.size(), [&](auto i) { return world.var(args[i], args.size()-1-i); }));
+    return reduce(world, body, {t});
 }
 
-const Def* shift_free_vars(const Def* def, int64_t shift) {
+const Def* shift_free_vars(World& world, const Def* def, int64_t shift) {
     if (shift == 0 || def->free_vars().none())
         return def;
 
-    Reducer reducer(def->world(), -shift);
+    Reducer reducer(world, -shift);
     auto result = reducer.reduce_structurals(def, 0);
     reducer.reduce_nominals();
     return result;

@@ -94,7 +94,7 @@ public:
     const Def* sigma(const Def* qualifier, Defs, Debug dbg = {});
     /// Nominal sigma types or kinds
     Sigma* sigma(const Def* type, size_t num_ops, Debug dbg = {}) {
-        return insert<Sigma>(num_ops, *this, type, num_ops, dbg);
+        return insert<Sigma>(num_ops, type, num_ops, dbg);
     }
     /// @em nominal Sigma of type Star
     Sigma* sigma_type(size_t num_ops, Debug dbg = {}) {
@@ -190,27 +190,27 @@ public:
     const Def* any(const Def* type, const Def* def, Debug dbg = {});
     /// @em nominal Axiom
     const Axiom* axiom(const Def* type, Debug dbg = {}) {
-        return insert<Axiom>(0, *this, type, dbg);
+        return insert<Axiom>(0, type, dbg);
     }
     /// @em structural Axiom
     const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
-        return unify<Axiom>(0, *this, type, box, dbg);
+        return unify<Axiom>(0, type, box, dbg);
     }
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
-    const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
+    const Error* error(const Def* type) { return unify<Error>(0, type); }
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
     const Def* pick(const Def* type, const Def* def, Debug dbg = {});
     const Def* singleton(const Def* def, Debug dbg = {});
     const Var* var(Defs types, size_t index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
     const Var* var(const Def* type, size_t index, Debug dbg = {}) {
-        return unify<Var>(0, *this, type, index, dbg);
+        return unify<Var>(0, type, index, dbg);
     }
     const Def* variant(Defs defs, Debug dbg = {});
     const Def* variant(const Def* type, Defs defs, Debug dbg = {});
     Variant* variant(const Def* type, size_t num_ops, Debug dbg = {}) {
         assert(num_ops > 1 && "it should not be necessary to build empty/unary variants");
-        return insert<Variant>(num_ops, *this, type, num_ops, dbg);
+        return insert<Variant>(num_ops, type, num_ops, dbg);
     }
     //@}
 
@@ -240,14 +240,12 @@ public:
     const DefSet& defs() const { return defs_; }
 
     const App* curry(Normalizer normalizer, const Def* type, const Def* callee, const Def* arg, Debug dbg) {
-        return unify<App>(2, *this, type, callee, arg, dbg)->set_normalizer(normalizer)->as<App>();
+        return unify<App>(2, type, callee, arg, dbg)->set_normalizer(normalizer)->as<App>();
     }
 
     friend void swap(World& w1, World& w2) {
         using std::swap;
         swap(w1.defs_, w2.defs_);
-        w1.fix();
-        w2.fix();
     }
 
 private:
@@ -289,8 +287,6 @@ private:
         return qualifier_glb(range(defs), f);
     }
 
-    void fix() { for (auto def : defs_) def->world_ = this; }
-
 protected:
     template<class T, class... Args>
     const T* unify(size_t num_ops, Args&&... args) {
@@ -298,7 +294,7 @@ protected:
         assert(!def->is_nominal());
         auto p = defs_.emplace(def);
         if (p.second) {
-            def->finalize();
+            def->finalize(*this);
             return def;
         }
 
@@ -386,7 +382,7 @@ protected:
 
 inline const Def* app_callee(const Def* def) { return def->as<App>()->callee(); }
 inline const Def* app_arg(const Def* def) { return def->as<App>()->arg(); }
-inline const Def* app_arg(const Def* def, size_t i) { return def->world().extract(app_arg(def), i); }
+inline const Def* app_arg(World& world, const Def* def, size_t i) { return world.extract(app_arg(def), i); }
 
 }
 

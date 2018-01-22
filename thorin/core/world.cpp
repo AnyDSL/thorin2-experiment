@@ -10,28 +10,23 @@ namespace thorin::core {
  * helpers
  */
 
-std::tuple<const Def*, const Def*> shape_and_body(const Def* def) {
+std::tuple<const Def*, const Def*> shape_and_body(World& world, const Def* def) {
     if (auto variadic = def->isa<Variadic>())
-        return {variadic->arity(), variadic->body()};
-    return {def->world().arity(1), def};
+        return {variadic->arity(world), variadic->body()};
+    return {world.arity(1), def};
 }
 
-const Def* infer_width(const Def* def) {
-    auto app  = (def->type()->isa<Variadic>() ? def->as<Variadic>()->body() : def->type())->as<App>();
-    return app->arg();
-}
-
-std::tuple<const Def*, const Def*> infer_width_and_shape(const Def* def) {
+std::tuple<const Def*, const Def*> infer_width_and_shape(World& world, const Def* def) {
     if (auto variadic = def->type()->isa<Variadic>()) {
         if (!variadic->body()->isa<Variadic>())
-            return {variadic->body()->as<App>()->arg(), variadic->arity()};
+            return {variadic->body()->as<App>()->arg(), variadic->arity(world)};
         std::vector<const Def*> arities;
         const Def* cur = variadic;
         for (; cur->isa<Variadic>(); cur = cur->as<Variadic>()->body())
-            arities.emplace_back(cur->as<Variadic>()->arity());
-        return {cur->as<App>()->arg(), def->world().sigma(arities)};
+            arities.emplace_back(cur->as<Variadic>()->arity(world));
+        return {cur->as<App>()->arg(), world.sigma(arities)};
     }
-    return {def->type()->as<App>()->arg(), def->world().arity(1)};
+    return {def->type()->as<App>()->arg(), world.arity(1)};
 }
 
 //------------------------------------------------------------------------------
@@ -76,7 +71,7 @@ World::World() {
 
 //const Def* World::op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg) {
     //auto [shape, body] = shape_and_body(a->type());
-    //return app(app(app(app(op_icmp(), rel), shape), app_arg(body)), {a, b}, dbg);
+    //return app(app(app(app(op_icmp(), rel), shape), app_arg(*this, body)), {a, b}, dbg);
 //}
 
 const Def* World::op_enter(const Def* mem, Debug dbg) {
@@ -87,20 +82,20 @@ const Def* types_from_tuple_type(World& w, const Def* type) {
     if (auto sig = type->isa<Sigma>()) {
         return w.tuple(sig->ops());
     } else if (auto var = type->isa<Variadic>()) {
-        return w.pack(var->arity(), var->body());
+        return w.pack(var->arity(w), var->body());
     }
     return type;
 }
 
 const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
-    auto types = types_from_tuple_type(*this, app_arg(ptr->type(), 0));
-    return app(app(op_lea_, {types->arity(), types, app_arg(ptr->type(), 1)}, dbg), {ptr, index}, dbg);
+    auto types = types_from_tuple_type(*this, app_arg(*this, ptr->type(), 0));
+    return app(app(op_lea_, {types->arity(*this), types, app_arg(*this, ptr->type(), 1)}, dbg), {ptr, index}, dbg);
 }
 
 const Def* World::op_lea(const Def* ptr, size_t i, Debug dbg) {
-    auto types = types_from_tuple_type(*this, app_arg(ptr->type(), 0));
-    auto idx = index(types->arity()->as<Arity>()->value(), i);
-    return app(app(op_lea_, {types->arity(), types, app_arg(ptr->type(), 1)}, dbg), {ptr, idx}, dbg);
+    auto types = types_from_tuple_type(*this, app_arg(*this, ptr->type(), 0));
+    auto idx = index(types->arity(*this)->as<Arity>()->value(), i);
+    return app(app(op_lea_, {types->arity(*this), types, app_arg(*this, ptr->type(), 1)}, dbg), {ptr, idx}, dbg);
 }
 
 const Def* World::op_load(const Def* mem, const Def* ptr, Debug dbg) {

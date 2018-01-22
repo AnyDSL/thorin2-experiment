@@ -74,15 +74,15 @@ TEST(Arity, Subkinding) {
     auto vA = w.var(A, 0);
     auto M = w.multi_arity_kind();
 
-    EXPECT_TRUE(A->assignable(a0));
-    EXPECT_TRUE(M->assignable(a0));
-    EXPECT_TRUE(A->assignable(a3));
-    EXPECT_TRUE(M->assignable(a3));
-    EXPECT_TRUE(A->assignable(vA));
-    EXPECT_TRUE(M->assignable(vA));
+    EXPECT_TRUE(A->assignable(w, a0));
+    EXPECT_TRUE(M->assignable(w, a0));
+    EXPECT_TRUE(A->assignable(w, a3));
+    EXPECT_TRUE(M->assignable(w, a3));
+    EXPECT_TRUE(A->assignable(w, vA));
+    EXPECT_TRUE(M->assignable(w, vA));
 
     auto sig = w.sigma({M, w.variadic(w.var(M, 0), w.star())});
-    EXPECT_TRUE(sig->assignable(w.tuple({a0, w.val_unit_kind()})));
+    EXPECT_TRUE(sig->assignable(w, w.tuple({a0, w.val_unit_kind()})));
 }
 
 TEST(Arity, PrefixExtract) {

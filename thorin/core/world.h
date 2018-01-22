@@ -9,10 +9,10 @@
 
 namespace thorin::core {
 
-std::tuple<const Def*, const Def*> shape_and_body(const Def* def);
-const Def* infer_shape(const Def* def);
-const Def* infer_width(const Def* def);
-std::tuple<const Def*, const Def*> infer_width_and_shape(const Def*);
+class World;
+std::tuple<const Def*, const Def*> shape_and_body(World&, const Def* def);
+const Def* infer_shape(World&, const Def* def);
+std::tuple<const Def*, const Def*> infer_width_and_shape(World&, const Def*);
 
 class World : public ::thorin::World {
 public:
@@ -52,7 +52,7 @@ public:
     template<WArithop O> const Axiom* op() { return warithop_[O]; }
     template<WArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(WFlags::none, a, b, dbg); }
     template<WArithop O> const Def* op(WFlags wflags, const Def* a, const Def* b, Debug dbg = {}) {
-        auto [width, shape] = infer_width_and_shape(a);
+        auto [width, shape] = infer_width_and_shape(*this, a);
         return op<O>(wflags, width, shape, a, b, dbg);
     }
     template<WArithop O> const Def* op(WFlags wflags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
@@ -63,7 +63,7 @@ public:
     //@{ arithmetic operations for MArithop
     template<MArithop O> const Axiom* op() { return marithop_[O]; }
     template<MArithop O> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
-        auto [shape, body] = shape_and_body(a->type());
+        auto [shape, body] = shape_and_body(*this, a->type());
         return app(app(app(op<O>(), app_arg(body)), shape), {m, a, b}, dbg);
     }
     //@}
@@ -71,7 +71,7 @@ public:
     //@{ arithmetic operations for IArithop
     template<IArithop O> const Axiom* op() { return iarithop_[O]; }
     template<IArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
-        auto [shape, body] = shape_and_body(a->type());
+        auto [shape, body] = shape_and_body(*this, a->type());
         return app(app(app(op<O>(), app_arg(body)), shape), {a, b}, dbg);
     }
     //@}
@@ -80,7 +80,7 @@ public:
     template<RArithop O> const Axiom* op() { return rarithop_[O]; }
     template<RArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(RFlags::none, a, b, dbg); }
     template<RArithop O> const Def* op(RFlags rflags, const Def* a, const Def* b, Debug dbg = {}) {
-        auto [shape, body] = shape_and_body(a->type());
+        auto [shape, body] = shape_and_body(*this, a->type());
         return app(app(app(app(op<O>(), val_nat(int64_t(rflags))), app_arg(body)), shape), {a, b}, dbg);
     }
     //@}
@@ -93,7 +93,7 @@ public:
     //const Def* op_rcmp(RRel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_rcmp(RFlags::none, rel, a, b, dbg); }
     //const Def* op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
     //const Def* op_rcmp(const Def* rflags, const Def* rel, const Def* a, const Def* b, Debug dbg = {}) {
-        //auto [shape, body] = shape_and_body(a->type());
+        //auto [shape, body] = shape_and_body(*this, a->type());
         //return app(app(app(app(app(op_rcmp(), rflags), rel), shape), app_arg(body)), {a, b}, dbg);
     //}
     //@}

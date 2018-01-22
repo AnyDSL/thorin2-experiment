@@ -22,7 +22,7 @@ TEST(Variadic, Misc) {
     auto p2_4b = w.index(4, 2);
     EXPECT_EQ(p2_4, p2_4b);
     auto v = w.variadic(5, N);
-    EXPECT_TRUE(v->arity() == w.arity(5));
+    EXPECT_TRUE(v->arity(w) == w.arity(5));
 
     auto t = w.tuple({w.val_nat_2(), w.val_nat_4()});
     EXPECT_TRUE(t->type()->isa<Variadic>());
