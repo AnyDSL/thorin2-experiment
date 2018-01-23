@@ -52,7 +52,7 @@ private:
     const Def*    parse_lambda();
     const Def*    parse_qualified_kind();
     const Def*    parse_tuple_or_pack();
-    const Axiom*  parse_assume();
+    const Lit*    parse_lit();
     const Def*    parse_param();
     const Def*    parse_extract_or_insert(Tracker, const Def*);
     const Def*    parse_literal();

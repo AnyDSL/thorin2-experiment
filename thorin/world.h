@@ -188,14 +188,8 @@ public:
 
     //@{ misc factory methods
     const Def* any(const Def* type, const Def* def, Debug dbg = {});
-    /// @em nominal Axiom
-    const Axiom* axiom(const Def* type, Debug dbg = {}) {
-        return insert<Axiom>(0, *this, type, dbg);
-    }
-    /// @em structural Axiom
-    const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
-        return unify<Axiom>(0, *this, type, box, dbg);
-    }
+    const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, *this, type, dbg); }
+    const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, *this, type, box, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
     const Error* error(const Def* type) { return unify<Error>(0, *this, type); }
@@ -222,19 +216,19 @@ public:
 
 
     //@{ values for bool and nat
-    const Axiom* val_nat(int64_t val, Location location = {});
-    const Axiom* val_nat_0() { return val_nat_0_; }
-    const Axiom* val_nat_1() { return val_nat_[0]; }
-    const Axiom* val_nat_2() { return val_nat_[1]; }
-    const Axiom* val_nat_4() { return val_nat_[2]; }
-    const Axiom* val_nat_8() { return val_nat_[3]; }
-    const Axiom* val_nat_16() { return val_nat_[4]; }
-    const Axiom* val_nat_32() { return val_nat_[5]; }
-    const Axiom* val_nat_64() { return val_nat_[6]; }
+    const Lit* lit_nat(int64_t val, Location location = {});
+    const Lit* lit_nat_0() { return lit_nat_0_; }
+    const Lit* lit_nat_1() { return lit_nat_[0]; }
+    const Lit* lit_nat_2() { return lit_nat_[1]; }
+    const Lit* lit_nat_4() { return lit_nat_[2]; }
+    const Lit* lit_nat_8() { return lit_nat_[3]; }
+    const Lit* lit_nat_16() { return lit_nat_[4]; }
+    const Lit* lit_nat_32() { return lit_nat_[5]; }
+    const Lit* lit_nat_64() { return lit_nat_[6]; }
 
-    const Index* val_bool(bool val) { return val_bool_[size_t(val)]; }
-    const Index* val_bool_bot() { return val_bool_[0]; }
-    const Index* val_bool_top() { return val_bool_[1]; }
+    const Index* lit_bool(bool val) { return lit_bool_[size_t(val)]; }
+    const Index* lit_bool_bot() { return lit_bool_[0]; }
+    const Index* lit_bool_top() { return lit_bool_[1]; }
     //@}
 
     const DefSet& defs() const { return defs_; }
@@ -379,9 +373,9 @@ protected:
     const Arity* type_bool_;
     const Axiom* type_nat_;
     const Axiom* type_bottom_;
-    const Axiom* val_nat_0_;
-    std::array<const Index*, 2> val_bool_;
-    std::array<const Axiom*, 7> val_nat_;
+    const Lit* lit_nat_0_;
+    std::array<const Index*, 2> lit_bool_;
+    std::array<const Lit*, 7> lit_nat_;
 };
 
 inline const Def* app_callee(const Def* def) { return def->as<App>()->callee(); }

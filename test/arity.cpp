@@ -106,8 +106,8 @@ TEST(Arity, PrefixExtract) {
 TEST(Arity, Eliminators) {
     World w;
     auto lam_bool = w.lambda(w.arity_kind(), w.type_bool());
-    auto step_negate = w.lambda(w.arity_kind(), w.lambda(w.type_bool(), w.extract(w.tuple({w.val_bool_top(), w.val_bool_bot()}), w.var(w.type_bool(), 0))));
-    auto arity_is_even = w.app(w.app(w.app(w.app(w.arity_eliminator(), w.unlimited()), lam_bool), w.val_bool_top()), step_negate);
-    EXPECT_EQ(w.val_bool_top(), w.app(arity_is_even, w.arity(0)));
-    EXPECT_EQ(w.val_bool_bot(), w.app(arity_is_even, w.arity(3)));
+    auto step_negate = w.lambda(w.arity_kind(), w.lambda(w.type_bool(), w.extract(w.tuple({w.lit_bool_top(), w.lit_bool_bot()}), w.var(w.type_bool(), 0))));
+    auto arity_is_even = w.app(w.app(w.app(w.app(w.arity_eliminator(), w.unlimited()), lam_bool), w.lit_bool_top()), step_negate);
+    EXPECT_EQ(w.lit_bool_top(), w.app(arity_is_even, w.arity(0)));
+    EXPECT_EQ(w.lit_bool_bot(), w.app(arity_is_even, w.arity(3)));
 }

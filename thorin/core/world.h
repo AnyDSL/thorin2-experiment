@@ -21,31 +21,31 @@ public:
     //@{ types and type constructors
     const Axiom* type_i() { return type_i_; }
     const Axiom* type_r() { return type_r_; }
-    const App* type_i(s64 width) { return type_i(val_nat(width)); }
-    const App* type_r(s64 width) { return type_r(val_nat(width)); }
+    const App* type_i(s64 width) { return type_i(lit_nat(width)); }
+    const App* type_r(s64 width) { return type_r(lit_nat(width)); }
     const App* type_i(const Def* width, Debug dbg = {}) { return app(type_i(), width, dbg)->as<App>(); }
     const App* type_r(const Def* width, Debug dbg = {}) { return app(type_r(), width, dbg)->as<App>(); }
     const Axiom* type_mem() { return type_mem_; }
     const Axiom* type_frame() { return type_frame_; }
     const Axiom* type_ptr() { return type_ptr_; }
-    const Def* type_ptr(const Def* pointee, Debug dbg = {}) { return type_ptr(pointee, val_nat_0(), dbg); }
+    const Def* type_ptr(const Def* pointee, Debug dbg = {}) { return type_ptr(pointee, lit_nat_0(), dbg); }
     const Def* type_ptr(const Def* pointee, const Def* addr_space, Debug dbg = {}) {
         return app(type_ptr_, {pointee, addr_space}, dbg);
     }
     //@}
 
-    //@{ values
-    const Axiom* val( s8 val) { return assume(type_i( 8), {val}); }
-    const Axiom* val(s16 val) { return assume(type_i(16), {val}); }
-    const Axiom* val(s32 val) { return assume(type_i(32), {val}); }
-    const Axiom* val(s64 val) { return assume(type_i(64), {val}); }
-    const Axiom* val( u8 val) { return assume(type_i( 8), {val}); }
-    const Axiom* val(u16 val) { return assume(type_i(16), {val}); }
-    const Axiom* val(u32 val) { return assume(type_i(32), {val}); }
-    const Axiom* val(u64 val) { return assume(type_i(64), {val}); }
-    const Axiom* val(r16 val) { return assume(type_r(16), {val}); }
-    const Axiom* val(r32 val) { return assume(type_r(32), {val}); }
-    const Axiom* val(r64 val) { return assume(type_r(64), {val}); }
+    //@{ @p Lit%erals
+    const Lit* lit_i( s8 val) { return lit(type_i( 8), {val}); }
+    const Lit* lit_i(s16 val) { return lit(type_i(16), {val}); }
+    const Lit* lit_i(s32 val) { return lit(type_i(32), {val}); }
+    const Lit* lit_i(s64 val) { return lit(type_i(64), {val}); }
+    const Lit* lit_i( u8 val) { return lit(type_i( 8), {val}); }
+    const Lit* lit_i(u16 val) { return lit(type_i(16), {val}); }
+    const Lit* lit_i(u32 val) { return lit(type_i(32), {val}); }
+    const Lit* lit_i(u64 val) { return lit(type_i(64), {val}); }
+    const Lit* lit_r(r16 val) { return lit(type_r(16), {val}); }
+    const Lit* lit_r(r32 val) { return lit(type_r(32), {val}); }
+    const Lit* lit_r(r64 val) { return lit(type_r(64), {val}); }
     //@}
 
     //@{ arithmetic operations for WArithop
@@ -56,7 +56,7 @@ public:
         return op<O>(flags, width, shape, a, b, dbg);
     }
     template<WArithop O> const Def* op(WFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op<O>(), val_nat(s64(flags))), width), shape), {a, b}, dbg);
+        return app(app(app(app(op<O>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
     //@}
 
@@ -90,7 +90,7 @@ public:
         return op<O>(flags, width, shape, a, b, dbg);
     }
     template<RArithop O> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op<O>(), val_nat(s64(flags))), width), shape), {a, b}, dbg);
+        return app(app(app(app(op<O>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
     //@}
 
@@ -101,7 +101,7 @@ public:
         return op_icmp(rel, width, shape, a, b, dbg);
     }
     const Def* op_icmp(IRel rel, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op_icmp(), val_nat(s64(rel))), width), shape), {a, b}, dbg);
+        return app(app(app(app(op_icmp(), lit_nat(s64(rel))), width), shape), {a, b}, dbg);
     }
     //@}
 
@@ -113,7 +113,7 @@ public:
         return op_rcmp(flags, rel, width, shape, a, b, dbg);
     }
     const Def* op_rcmp(RFlags flags, RRel rel, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(app(op_rcmp(), val_nat(s64(flags))), val_nat(s64(rel))), width), shape), {a, b}, dbg);
+        return app(app(app(app(app(op_rcmp(), lit_nat(s64(flags))), lit_nat(s64(rel))), width), shape), {a, b}, dbg);
     }
     //@}
 
@@ -174,7 +174,7 @@ private:
     const Axiom* op_store_;
 };
 
-inline s64 get_nat(const Def* def) { return def->as<Axiom>()->box().get_s64(); }
+inline s64 get_nat(const Def* def) { return def->as<Lit>()->box().get_s64(); }
 
 }
 

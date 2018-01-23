@@ -108,7 +108,7 @@ const Def* World::op_load(const Def* mem, const Def* ptr, Debug dbg) {
 }
 
 const Def* World::op_slot(const Def* type, const Def* frame, Debug dbg) {
-    return app(app(op_slot_, {type, val_nat_0()}, dbg), {frame, val_nat(Def::gid_counter())}, dbg);
+    return app(app(op_slot_, {type, lit_nat_0()}, dbg), {frame, lit_nat(Def::gid_counter())}, dbg);
 }
 
 const Def* World::op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg) {

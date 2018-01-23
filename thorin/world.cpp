@@ -173,12 +173,12 @@ World::World()
     type_nat_  = axiom(star(), {"nat"});
     type_bottom_  = axiom(star(), {"⊥"});
 
-    val_bool_[0] = index(2, 0);
-    val_bool_[1] = index(2, 1);
+    lit_bool_[0] = index(2, 0);
+    lit_bool_[1] = index(2, 1);
 
-    val_nat_0_   = val_nat(0);
-    for (size_t j = 0; j != val_nat_.size(); ++j)
-        val_nat_[j] = val_nat(1 << int64_t(j));
+    lit_nat_0_   = lit_nat(0);
+    for (size_t j = 0; j != lit_nat_.size(); ++j)
+        lit_nat_[j] = lit_nat(1 << int64_t(j));
 
     Env env;
     arity_succ_ = axiom(parse(*this, "Π[q: ℚ, a: 𝔸(q)].𝔸(q)", env), {"Sₐ"});
@@ -694,9 +694,9 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
     return unify<Match>(1, *this, type, def, sorted_handlers, dbg);
 }
 
-const Axiom* World::val_nat(int64_t val, Location location) {
+const Lit* World::lit_nat(int64_t val, Location location) {
     auto cur = Def::gid_counter();
-    auto result = assume(type_nat(), {val}, {location});
+    auto result = lit(type_nat(), {val}, {location});
     if (result->gid() >= cur)
         result->debug().set(std::to_string(val));
     return result;

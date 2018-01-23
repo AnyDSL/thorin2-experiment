@@ -9,20 +9,20 @@ TEST(Sigma, Assign) {
     World w;
     auto sig = w.sigma({w.star(), w.var(w.star(), 0)})->as<Sigma>();
     EXPECT_TRUE(sig->is_dependent());
-    EXPECT_TRUE(sig->assignable(w.tuple({w.type_nat(), w.val_nat(42)})));
-    EXPECT_FALSE(sig->assignable(w.tuple({w.type_nat(), w.val_bool_bot()})));
+    EXPECT_TRUE(sig->assignable(w.tuple({w.type_nat(), w.lit_nat(42)})));
+    EXPECT_FALSE(sig->assignable(w.tuple({w.type_nat(), w.lit_bool_bot()})));
 }
 
 TEST(Sigma, ExtractAndSingleton) {
     World w;
-    auto n23 = w.val_nat(23);
-    auto n42 = w.val_nat(42);
+    auto n23 = w.lit_nat(23);
+    auto n42 = w.lit_nat(42);
     auto NxN = w.sigma({w.type_nat(), w.type_nat()});
 
     auto fst = w.lambda(NxN, w.extract(w.var(NxN, 0), 0));
     auto snd = w.lambda(NxN, w.extract(w.var(NxN, 0), 1));
-    ASSERT_EQ(w.app(fst, {n23, n42}), w.val_nat(23));
-    ASSERT_EQ(w.app(snd, {n23, n42}), w.val_nat(42));
+    ASSERT_EQ(w.app(fst, {n23, n42}), w.lit_nat(23));
+    ASSERT_EQ(w.app(snd, {n23, n42}), w.lit_nat(42));
 
     auto poly = w.axiom(w.pi(w.star(), w.star()), {"Poly"});
     auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))}, {"sig"})->as<Sigma>();
@@ -63,7 +63,7 @@ TEST(Tuple, Error) {
 
 TEST(Sigma, EtaConversion) {
     World w;
-    auto v = w.val_nat_32();
+    auto v = w.lit_nat_32();
     auto N = w.type_nat();
     auto B = w.type_bool();
 

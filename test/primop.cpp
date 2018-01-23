@@ -7,32 +7,33 @@ namespace thorin::core {
 TEST(Primop, Types) {
     World w;
 
-    ASSERT_EQ(w.type_i(16), w.app(w.type_i(), w.val_nat_16()));
-    ASSERT_EQ(w.type_i(64), w.app(w.type_i(), w.val_nat_64()));
+    ASSERT_EQ(w.type_i(16), w.app(w.type_i(), w.lit_nat_16()));
+    ASSERT_EQ(w.type_i(64), w.app(w.type_i(), w.lit_nat_64()));
 
-    ASSERT_EQ(w.type_r(64), w.app(w.type_r(), w.val_nat_64()));
-    ASSERT_EQ(w.type_r(16), w.app(w.type_r(), w.val_nat_16()));
+    ASSERT_EQ(w.type_r(64), w.app(w.type_r(), w.lit_nat_64()));
+    ASSERT_EQ(w.type_r(16), w.app(w.type_r(), w.lit_nat_16()));
 }
 
 template<class T, class O, O o>
 void test_fold(World& w, const Def* type) {
-    auto a = w.op<o>(w.val(T(23)), w.val(T(42)));
-    ASSERT_EQ(a->type(), w.app(type, w.val_nat(sizeof(T)*8)));
-    ASSERT_EQ(a, w.val(T(65)));
+    auto t = w.app(type, w.lit_nat(sizeof(T)*8));
+    auto a = w.op<o>(w.lit(t, T(23)), w.lit(t, T(42)));
+    ASSERT_EQ(a->type(), t);
+    ASSERT_EQ(a, w.lit(t, T(65)));
 
-    auto m1 = w.tuple({w.tuple({w.val( T(0)), w.val( T(1)), w.val( T(2))}),
-                       w.tuple({w.val( T(3)), w.val( T(4)), w.val( T(5))})});
-    auto m2 = w.tuple({w.tuple({w.val( T(6)), w.val( T(7)), w.val( T(8))}),
-                       w.tuple({w.val( T(9)), w.val(T(10)), w.val(T(11))})});
-    auto p1 = w.pack(2, w.pack(3, w.val(T(23))));
-    auto p2 = w.pack(2, w.pack(3, w.val(T(42))));
-    ASSERT_EQ(w.op<o>(m1, m2), w.tuple({w.tuple({w.val(T(6)),  w.val( T(8)), w.val(T(10))}),
-                                        w.tuple({w.val(T(12)), w.val(T(14)), w.val(T(16))})}));
-    ASSERT_EQ(w.op<o>(p1, m2), w.tuple({w.tuple({w.val(T(29)), w.val(T(30)), w.val(T(31))}),
-                                        w.tuple({w.val(T(32)), w.val(T(33)), w.val(T(34))})}));
-    ASSERT_EQ(w.op<o>(m1, p2), w.tuple({w.tuple({w.val(T(42)), w.val(T(43)), w.val(T(44))}),
-                                        w.tuple({w.val(T(45)), w.val(T(46)), w.val(T(47))})}));
-    ASSERT_EQ(w.op<o>(p1, p2), w.pack({2, 3}, w.val(T(65))));
+    auto m1 = w.tuple({w.tuple({w.lit(t, T(0)), w.lit(t, T(1)), w.lit(t, T(2))}),
+                       w.tuple({w.lit(t, T(3)), w.lit(t, T(4)), w.lit(t, T(5))})});
+    auto m2 = w.tuple({w.tuple({w.lit(t, T(6)), w.lit(t, T(7)), w.lit(t, T(8))}),
+                       w.tuple({w.lit(t, T(9)), w.lit(t,T(10)), w.lit(t, T(11))})});
+    auto p1 = w.pack(2, w.pack(3, w.lit(t, T(23))));
+    auto p2 = w.pack(2, w.pack(3, w.lit(t, T(42))));
+    ASSERT_EQ(w.op<o>(m1, m2), w.tuple({w.tuple({w.lit(t, T(6)),  w.lit(t,  T(8)), w.lit(t, T(10))}),
+                                        w.tuple({w.lit(t, T(12)), w.lit(t, T(14)), w.lit(t, T(16))})}));
+    ASSERT_EQ(w.op<o>(p1, m2), w.tuple({w.tuple({w.lit(t, T(29)), w.lit(t, T(30)), w.lit(t, T(31))}),
+                                        w.tuple({w.lit(t, T(32)), w.lit(t, T(33)), w.lit(t, T(34))})}));
+    ASSERT_EQ(w.op<o>(m1, p2), w.tuple({w.tuple({w.lit(t, T(42)), w.lit(t, T(43)), w.lit(t, T(44))}),
+                                        w.tuple({w.lit(t, T(45)), w.lit(t, T(46)), w.lit(t, T(47))})}));
+    ASSERT_EQ(w.op<o>(p1, p2), w.pack({2, 3}, w.lit(t, T(65))));
 }
 
 TEST(Primop, ConstFolding) {
@@ -45,13 +46,13 @@ TEST(Primop, ConstFolding) {
     THORIN_R_TYPES(CODE)
 #undef CODE
 
-    ASSERT_EQ(w.op<ashr>(w.val(uint8_t(-1)), w.val(uint8_t(1))), w.val(uint8_t(-1)));
-    ASSERT_EQ(w.op<lshr>(w.val(uint8_t(-1)), w.val(uint8_t(1))), w.val(uint8_t(127)));
+    ASSERT_EQ(w.op<ashr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(u8(-1)));
+    ASSERT_EQ(w.op<lshr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(127_u8));
 }
 
 TEST(Primop, Cmp) {
     World w;
-    auto x = w.op_icmp(IRel::ule, w.val(23), w.val(42));
+    auto x = w.op_icmp(IRel::ule, w.lit_i(23), w.lit_i(42));
     x->dump();
 }
 
@@ -66,8 +67,8 @@ TEST(Primop, Ptr) {
     ASSERT_NE(p1, p2);
     ASSERT_EQ(p1->type(), w.type_ptr(w.type_r(32)));
     ASSERT_EQ(p2->type(), w.type_ptr(w.type_r(32)));
-    auto s1 = w.op_store(m, p1, w.val(23.f));
-    auto s2 = w.op_store(m, p1, w.val(23.f));
+    auto s1 = w.op_store(m, p1, w.lit_r(23.f));
+    auto s2 = w.op_store(m, p1, w.lit_r(23.f));
     ASSERT_NE(s1, s2);
     auto l1 = w.op_load(s1, p1);
     auto l2 = w.op_load(s1, p1);

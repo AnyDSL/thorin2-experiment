@@ -211,38 +211,17 @@ Variant::Variant(World& world, const Def* type, const SortedDefSet& ops, Debug d
  * has_values
  */
 
-bool Arity::has_values() const {
-    return true;
-}
-
-bool Axiom::has_values() const {
-    return sort() == Sort::Type && !type()->has_values();
-}
-
+bool Arity::has_values() const { return true; }
+bool Axiom::has_values() const { return sort() == Sort::Type && !type()->has_values(); }
 bool Intersection::has_values() const {
     return std::all_of(ops().begin(), ops().end(), [](auto op){ return op->has_values(); });
 }
-
-bool Pi::has_values() const {
-    return true;
-}
-
-bool QualifierType::has_values() const {
-    return true;
-}
-
-bool Sigma::has_values() const {
-    return true;
-}
-
-bool Singleton::has_values() const {
-    return op(0)->is_value();
-}
-
-bool Variadic::has_values() const {
-    return true;
-}
-
+bool Lit::has_values() const { return sort() == Sort::Type && !type()->has_values(); }
+bool Pi::has_values() const { return true; }
+bool QualifierType::has_values() const { return true; }
+bool Sigma::has_values() const { return true; }
+bool Singleton::has_values() const { return op(0)->is_value(); }
+bool Variadic::has_values() const { return true; }
 bool Variant::has_values() const {
     return std::any_of(ops().begin(), ops().end(), [](auto op){ return op->has_values(); });
 }
@@ -329,25 +308,13 @@ const Def* Variant::kind_qualifier() const {
  * arity
  */
 
-const Def* Def::arity() const {
-    if (is_value())
-        return type()->arity();
-    return nullptr;
-}
-
+const Def* Def::arity() const { return is_value() ? type()->arity() : nullptr; }
 const Def* Arity::arity() const { return world().arity(1); }
-
 const Def* ArityKind::arity() const { return world().arity(1); }
-
 // const Def* All::arity() const { return TODO; }
-
 // const Def* Any::arity() const { return TODO; }
-
-const Def* App::arity() const {
-    if (is_value())
-        return type()->arity();
-    return world().arity(1); // TODO assumption: all callees of non-folded apps that yield a type are (originally) axioms
-}
+// TODO assumption: all callees of non-folded apps that yield a type are (originally) axioms
+const Def* App::arity() const { return is_value() ? type()->arity() : world().arity(1); }
 
 const Def* Axiom::arity() const {
     if (is_value())
@@ -363,22 +330,20 @@ const Def* Error::arity() const {
 
 // const Def* Intersection::arity() const { return TODO; }
 
-const Def* MultiArityKind::arity() const { return world().arity(1); }
-
-const Def* Pi::arity() const { return world().arity(1); }
-
-const Def* Qualifier::arity() const { return world().arity(1); }
-
-const Def* QualifierType::arity() const { return world().arity(1); }
-
-const Def* Sigma::arity() const { return world().arity(num_ops()); }
-
-const Def* Singleton::arity() const {
-    return op(0)->arity();
+const Def* Lit::arity() const {
+    if (is_value())
+        return type()->arity();
+    return world().arity(1); // TODO assumption: every axiom that is not a value has arity 1
 }
 
-const Def* Star::arity() const { return world().arity(1); }
 
+const Def* MultiArityKind::arity() const { return world().arity(1); }
+const Def* Pi::arity() const { return world().arity(1); }
+const Def* Qualifier::arity() const { return world().arity(1); }
+const Def* QualifierType::arity() const { return world().arity(1); }
+const Def* Sigma::arity() const { return world().arity(num_ops()); }
+const Def* Singleton::arity() const { return op(0)->arity(); }
+const Def* Star::arity() const { return world().arity(1); }
 const Def* Universe::arity() const { THORIN_UNREACHABLE; }
 
 const Def* Var::arity() const {
@@ -422,23 +387,10 @@ uint64_t Def::vhash() const {
     return seed;
 }
 
-uint64_t Arity::vhash() const {
-    return thorin::hash_combine(Def::vhash(), value());
-}
-
-uint64_t Axiom::vhash() const {
-    auto seed = Def::vhash();
-    if (is_nominal())
-        return seed;
-
-    return thorin::hash_combine(seed, box_.get_u64());
-}
-
-uint64_t Index::vhash() const {
-    return thorin::hash_combine(Def::vhash(), value());
-}
-
-uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
+uint64_t Arity::vhash() const { return thorin::hash_combine(Def::vhash(), value()); }
+uint64_t Lit  ::vhash() const { return thorin::hash_combine(Def::vhash(), box_.get_u64()); }
+uint64_t Index::vhash() const { return thorin::hash_combine(Def::vhash(), value()); }
+uint64_t Var  ::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 
 //------------------------------------------------------------------------------
 
@@ -459,25 +411,10 @@ bool Def::equal(const Def* other) const {
     return result;
 }
 
-bool Arity::equal(const Def* other) const {
-    return Def::equal(other) && this->value() == other->as<Arity>()->value();
-}
-
-bool Axiom::equal(const Def* other) const {
-    if (is_nominal() || maybe_affine())
-        return this == other;
-
-    return this->fields() == other->fields() && this->type() == other->type()
-        && this->box_.get_u64() == other->as<Axiom>()->box().get_u64();
-}
-
-bool Index::equal(const Def* other) const {
-    return Def::equal(other) && this->value() == other->as<Index>()->value();
-}
-
-bool Var::equal(const Def* other) const {
-    return Def::equal(other) && this->index() == other->as<Var>()->index();
-}
+bool Arity::equal(const Def* other) const { return Def::equal(other) && this->value() == other->as<Arity>()->value(); }
+bool Lit  ::equal(const Def* other) const { return Def::equal(other) && this->box().get_u64() == other->as<Lit>()->box().get_u64(); }
+bool Index::equal(const Def* other) const { return Def::equal(other) && this->value() == other->as<Index>()->value(); }
+bool Var  ::equal(const Def* other) const { return Def::equal(other) && this->index() == other->as<Var>()->index(); }
 
 //------------------------------------------------------------------------------
 
@@ -489,10 +426,7 @@ const Def* Any           ::rebuild(World& to, const Def* t, Defs ops) const { re
 const Def* App           ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops[1], debug()); }
 const Def* Arity         ::rebuild(World& to, const Def* t, Defs    ) const { return to.arity(value(), t->op(0), debug()); }
 const Def* ArityKind     ::rebuild(World& to, const Def*  , Defs ops) const { return to.arity_kind(ops[0]); }
-const Def* Axiom         ::rebuild(World& to, const Def* t, Defs    ) const {
-    assert(!is_nominal());
-    return to.assume(t, box(), debug());
-}
+const Def* Axiom         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Error         ::rebuild(World& to, const Def* t, Defs    ) const { return to.error(t); }
 const Def* Extract       ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Index         ::rebuild(World& to, const Def* t, Defs    ) const { return to.index(t->as<Arity>(), value(), debug()); }
@@ -502,6 +436,7 @@ const Def* Lambda        ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.lambda(t->as<Pi>()->domain(), ops.front(), debug());
 }
+const Def* Lit           ::rebuild(World& to, const Def* t, Defs    ) const { return to.lit(t, box(), debug()); }
 const Def* Match         ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* MultiArityKind::rebuild(World& to, const Def*  , Defs ops) const { return to.multi_arity_kind(ops[0]); }
 const Def* Pack          ::rebuild(World& to, const Def*  , Defs ops) const { return to.pack(arity(), ops[0], debug()); }
@@ -530,17 +465,9 @@ const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { re
  * stub
  */
 
-Axiom* Axiom::stub(World& to, const Def*, Debug) const {
-    assert(&world() != &to);
-    assert(is_nominal());
-    return const_cast<Axiom*>(this);
-}
-Sigma* Sigma::stub(World& to, const Def* type, Debug dbg) const {
-    return to.sigma(type, num_ops(), dbg);
-}
-Variant* Variant::stub(World& to, const Def* type, Debug dbg) const {
-    return to.variant(type, num_ops(), dbg);
-}
+Axiom*   Axiom  ::stub(World& to, const Def*, Debug) const { assert(&world() != &to); return const_cast<Axiom*>(this); }
+Sigma*   Sigma  ::stub(World& to, const Def* type, Debug dbg) const { return to.sigma(type, num_ops(), dbg); }
+Variant* Variant::stub(World& to, const Def* type, Debug dbg) const { return to.variant(type, num_ops(), dbg); }
 
 //------------------------------------------------------------------------------
 
@@ -799,7 +726,7 @@ std::ostream& ArityKind::stream(std::ostream& os) const {
 }
 
 std::ostream& Axiom::stream(std::ostream& os) const {
-    return qualifier_stream(os) << (is_nominal() ? name() : std::to_string(box().get_u64()));
+    return qualifier_stream(os) << name();
 }
 
 std::ostream& Error::stream(std::ostream& os) const { return os << "<error>"; }
@@ -819,6 +746,10 @@ std::ostream& Insert::stream(std::ostream& os) const {
 std::ostream& Intersection::stream(std::ostream& os) const {
     return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
                        " ∩ ");
+}
+
+std::ostream& Lit::stream(std::ostream& os) const {
+    return qualifier_stream(os) << std::to_string(box().get_u64());
 }
 
 std::ostream& Match::stream(std::ostream& os) const {

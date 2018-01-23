@@ -88,7 +88,7 @@ TEST(Qualifiers, Kinds) {
 
     auto anat = w.axiom(w.star(a), {"nat"});
     auto rnat = w.axiom(w.star(r), {"nat"});
-    auto vtype = w.assume(w.star(v), {0}, {"nat"});
+    auto vtype = w.lit(w.star(v), {0}, {"nat"});
     EXPECT_EQ(w.sigma({anat, w.star()})->qualifier(), a);
     EXPECT_EQ(w.sigma({anat, rnat})->qualifier(), l);
     EXPECT_EQ(w.sigma({vtype, rnat})->qualifier(), lub({v, r}));
@@ -161,7 +161,7 @@ TEST(Substructural, UnlimitedRefs) {
     auto Star = w.star();
     auto Nat = w.axiom(Star, {"Nat"});
     env["Nat"] = Nat;
-    auto n42 = w.assume(Nat, 42);
+    auto n42 = w.lit(Nat, 42);
     env["n42"] = n42;
 
     auto Ref = w.axiom(w.pi(Star, Star), {"Ref"});
@@ -208,7 +208,7 @@ TEST(Substructural, AffineCapabilityRefs) {
     auto a = w.affine();
     auto Star = w.star();
     auto Nat = w.axiom(Star, {"Nat"});
-    auto n42 = w.assume(Nat, 42);
+    auto n42 = w.lit(Nat, 42);
 
     auto Ref = w.axiom(w.pi(w.sigma({Star, Star}), w.star(a)), {"CRef"});
     env["CRef"] = Ref;
@@ -244,8 +244,8 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
     auto a = w.affine();
     auto Star = w.star();
     auto Nat = w.axiom(Star, {"Nat"});
-    auto n42 = w.assume(Nat, 42);
-    auto n0 = w.assume(Nat, 0);
+    auto n42 = w.lit(Nat, 42);
+    auto n0 = w.lit(Nat, 0);
 
     auto Ref = w.axiom(w.pi(w.sigma({Star, Star}), Star), {"FRef"});
     env["FRef"] = Ref;

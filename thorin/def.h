@@ -115,6 +115,7 @@ public:
         Intersection,
         Insert,
         Lambda,
+        Lit,
         Match,
         MultiArityKind,
         Pack,
@@ -875,30 +876,40 @@ private:
     friend class World;
 };
 
-// TODO seperate Axiom and Assume
-// TODO remember which field in the box was actually used to have a better output
 class Axiom : public Def {
 private:
-    /// A @em nominal Axiom.
     Axiom(World& world, const Def* type, Debug dbg)
         : Def(world, Tag::Axiom, type, 0, ops_ptr<Axiom>(), dbg)
     {
         assert(type->free_vars().none());
     }
 
-    /// A @em structural Axiom (aka assumption).
-    Axiom(World& world, const Def* type, Box box, Debug dbg)
+public:
+    const Def* arity() const override;
+
+    std::ostream& stream(std::ostream&) const override;
+    Axiom* stub(World&, const Def*, Debug) const override;
+    bool has_values() const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+// TODO remember which field in the box was actually used to have a better output
+class Lit : public Def {
+private:
+    Lit(World& world, const Def* type, Box box, Debug dbg)
         : Def(world, Tag::Axiom, type, Defs(), ops_ptr<Axiom>(), dbg)
         , box_(box)
     {}
 
 public:
     const Def* arity() const override;
-    Box box() const { assert(!is_nominal()); return box_; }
-    bool is_assumption() const { return !is_nominal(); }
+    Box box() const { return box_; }
 
     std::ostream& stream(std::ostream&) const override;
-    Axiom* stub(World&, const Def*, Debug) const override;
     bool has_values() const override;
 
 private:
@@ -910,6 +921,7 @@ private:
 
     friend class World;
 };
+
 
 class Error : public Def {
 private:

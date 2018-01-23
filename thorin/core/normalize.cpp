@@ -49,9 +49,9 @@ const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a
 
 template<template<int, bool, bool> class F>
 const Def* try_wfold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    auto aa = a->isa<Axiom>(), ab = b->isa<Axiom>();
-    if (aa && ab) {
-        auto ba = aa->box(), bb = ab->box();
+    auto la = a->isa<Lit>(), lb = b->isa<Lit>();
+    if (la && lb) {
+        auto ba = la->box(), bb = lb->box();
         auto t = a->type();
         auto w = get_nat(app_arg(app_callee(callee)));
         auto f = get_nat(app_arg(app_callee(app_callee(callee))));
@@ -59,31 +59,31 @@ const Def* try_wfold(thorin::World& world, const Def* callee, const Def* a, cons
             switch (f) {
                 case int64_t(WFlags::none):
                     switch (w) {
-                        case  8: return world.assume(t, F< 8, false, false>::run(ba, bb));
-                        case 16: return world.assume(t, F<16, false, false>::run(ba, bb));
-                        case 32: return world.assume(t, F<32, false, false>::run(ba, bb));
-                        case 64: return world.assume(t, F<64, false, false>::run(ba, bb));
+                        case  8: return world.lit(t, F< 8, false, false>::run(ba, bb));
+                        case 16: return world.lit(t, F<16, false, false>::run(ba, bb));
+                        case 32: return world.lit(t, F<32, false, false>::run(ba, bb));
+                        case 64: return world.lit(t, F<64, false, false>::run(ba, bb));
                     }
                 case int64_t(WFlags::nsw):
                     switch (w) {
-                        case  8: return world.assume(t, F< 8, true, false>::run(ba, bb));
-                        case 16: return world.assume(t, F<16, true, false>::run(ba, bb));
-                        case 32: return world.assume(t, F<32, true, false>::run(ba, bb));
-                        case 64: return world.assume(t, F<64, true, false>::run(ba, bb));
+                        case  8: return world.lit(t, F< 8, true, false>::run(ba, bb));
+                        case 16: return world.lit(t, F<16, true, false>::run(ba, bb));
+                        case 32: return world.lit(t, F<32, true, false>::run(ba, bb));
+                        case 64: return world.lit(t, F<64, true, false>::run(ba, bb));
                     }
                 case int64_t(WFlags::nuw):
                     switch (w) {
-                        case  8: return world.assume(t, F< 8, false, true>::run(ba, bb));
-                        case 16: return world.assume(t, F<16, false, true>::run(ba, bb));
-                        case 32: return world.assume(t, F<32, false, true>::run(ba, bb));
-                        case 64: return world.assume(t, F<64, false, true>::run(ba, bb));
+                        case  8: return world.lit(t, F< 8, false, true>::run(ba, bb));
+                        case 16: return world.lit(t, F<16, false, true>::run(ba, bb));
+                        case 32: return world.lit(t, F<32, false, true>::run(ba, bb));
+                        case 64: return world.lit(t, F<64, false, true>::run(ba, bb));
                     }
                 case int64_t(WFlags::nsw | WFlags::nuw):
                     switch (w) {
-                        case  8: return world.assume(t, F< 8, true, true>::run(ba, bb));
-                        case 16: return world.assume(t, F<16, true, true>::run(ba, bb));
-                        case 32: return world.assume(t, F<32, true, true>::run(ba, bb));
-                        case 64: return world.assume(t, F<64, true, true>::run(ba, bb));
+                        case  8: return world.lit(t, F< 8, true, true>::run(ba, bb));
+                        case 16: return world.lit(t, F<16, true, true>::run(ba, bb));
+                        case 32: return world.lit(t, F<32, true, true>::run(ba, bb));
+                        case 64: return world.lit(t, F<64, true, true>::run(ba, bb));
                     }
             }
         } catch (BottomException) {
@@ -146,17 +146,17 @@ const Def* normalize_umod(thorin::World&, const Def*, const Def*, const Def*, De
 
 template<template<int> class F>
 const Def* try_ifold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    auto aa = a->isa<Axiom>(), ab = b->isa<Axiom>();
-    if (aa && ab) {
-        auto ba = aa->box(), bb = ab->box();
+    auto la = a->isa<Lit>(), lb = b->isa<Lit>();
+    if (la && lb) {
+        auto ba = la->box(), bb = lb->box();
         auto t = a->type();
         auto w = get_nat(app_arg(app_callee(callee)));
         try {
             switch (w) {
-                case  8: return world.assume(t, F< 8>::run(ba, bb));
-                case 16: return world.assume(t, F<16>::run(ba, bb));
-                case 32: return world.assume(t, F<32>::run(ba, bb));
-                case 64: return world.assume(t, F<64>::run(ba, bb));
+                case  8: return world.lit(t, F< 8>::run(ba, bb));
+                case 16: return world.lit(t, F<16>::run(ba, bb));
+                case 32: return world.lit(t, F<32>::run(ba, bb));
+                case 64: return world.lit(t, F<64>::run(ba, bb));
             }
         } catch (BottomException) {
         }
@@ -206,16 +206,16 @@ const Def* normalize_ixor(thorin::World& world, const Def*, const Def* callee, c
 
 template<template<int> class F>
 const Def* try_rfold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    auto aa = a->isa<Axiom>(), ab = b->isa<Axiom>();
-    if (aa && ab) {
-        auto ba = aa->box(), bb = ab->box();
+    auto la = a->isa<Lit>(), lb = b->isa<Lit>();
+    if (la && lb) {
+        auto ba = la->box(), bb = lb->box();
         auto t = a->type();
         auto w = get_nat(app_arg(app_callee(callee)));
         try {
             switch (w) {
-                case 16: return world.assume(t, F<16>::run(ba, bb));
-                case 32: return world.assume(t, F<32>::run(ba, bb));
-                case 64: return world.assume(t, F<64>::run(ba, bb));
+                case 16: return world.lit(t, F<16>::run(ba, bb));
+                case 32: return world.lit(t, F<32>::run(ba, bb));
+                case 64: return world.lit(t, F<64>::run(ba, bb));
             }
         } catch (BottomException) {
         }

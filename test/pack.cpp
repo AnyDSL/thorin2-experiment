@@ -7,7 +7,7 @@ using namespace thorin;
 TEST(Pack, Multi) {
     World w;
     auto N = w.type_nat();
-    auto n16 = w.val_nat_16();
+    auto n16 = w.lit_nat_16();
 
     auto p = w.pack({3, 8, 5}, n16);
     ASSERT_EQ(w.pack(1, n16), n16);
