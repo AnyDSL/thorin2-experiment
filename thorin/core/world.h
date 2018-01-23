@@ -21,8 +21,8 @@ public:
     //@{ types and type constructors
     const Axiom* type_i() { return type_i_; }
     const Axiom* type_r() { return type_r_; }
-    const App* type_i(int64_t width) { return type_i(val_nat(width)); }
-    const App* type_r(int64_t width) { return type_r(val_nat(width)); }
+    const App* type_i(s64 width) { return type_i(val_nat(width)); }
+    const App* type_r(s64 width) { return type_r(val_nat(width)); }
     const App* type_i(const Def* width, Debug dbg = {}) { return app(type_i(), width, dbg)->as<App>(); }
     const App* type_r(const Def* width, Debug dbg = {}) { return app(type_r(), width, dbg)->as<App>(); }
     const Axiom* type_mem() { return type_mem_; }
@@ -51,51 +51,70 @@ public:
     //@{ arithmetic operations for WArithop
     template<WArithop O> const Axiom* op() { return warithop_[O]; }
     template<WArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(WFlags::none, a, b, dbg); }
-    template<WArithop O> const Def* op(WFlags wflags, const Def* a, const Def* b, Debug dbg = {}) {
+    template<WArithop O> const Def* op(WFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
-        return op<O>(wflags, width, shape, a, b, dbg);
+        return op<O>(flags, width, shape, a, b, dbg);
     }
-    template<WArithop O> const Def* op(WFlags wflags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op<O>(), val_nat(int64_t(wflags))), width), shape), {a, b}, dbg);
+    template<WArithop O> const Def* op(WFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(app(op<O>(), val_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
     //@}
 
     //@{ arithmetic operations for MArithop
     template<MArithop O> const Axiom* op() { return marithop_[O]; }
     template<MArithop O> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
-        auto [shape, body] = shape_and_body(a->type());
-        return app(app(app(op<O>(), app_arg(body)), shape), {m, a, b}, dbg);
+        auto [width, shape] = infer_width_and_shape(a);
+        return op<O>(width, shape, m, a, b, dbg);
+    }
+    template<MArithop O> const Def* op(const Def* width, const Def* shape, const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(op<O>(), width), shape), {m, a, b}, dbg);
     }
     //@}
 
     //@{ arithmetic operations for IArithop
     template<IArithop O> const Axiom* op() { return iarithop_[O]; }
     template<IArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
-        auto [shape, body] = shape_and_body(a->type());
-        return app(app(app(op<O>(), app_arg(body)), shape), {a, b}, dbg);
+        auto [width, shape] = infer_width_and_shape(a);
+        return op<O>(width, shape, a, b, dbg);
+    }
+    template<IArithop O> const Def* op(const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(op<O>(), width), shape), {a, b}, dbg);
     }
     //@}
 
     //@{ arithmetic operations for RArithop
     template<RArithop O> const Axiom* op() { return rarithop_[O]; }
     template<RArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(RFlags::none, a, b, dbg); }
-    template<RArithop O> const Def* op(RFlags rflags, const Def* a, const Def* b, Debug dbg = {}) {
-        auto [shape, body] = shape_and_body(a->type());
-        return app(app(app(app(op<O>(), val_nat(int64_t(rflags))), app_arg(body)), shape), {a, b}, dbg);
+    template<RArithop O> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
+        auto [width, shape] = infer_width_and_shape(a);
+        return op<O>(flags, width, shape, a, b, dbg);
+    }
+    template<RArithop O> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(app(op<O>(), val_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
     //@}
 
-    //@{ relational operations
+    //@{ icmp
     const Axiom* op_icmp() { return op_icmp_; }
+    const Def* op_icmp(IRel rel, const Def* a, const Def* b, Debug dbg = {}) {
+        auto [width, shape] = infer_width_and_shape(a);
+        return op_icmp(rel, width, shape, a, b, dbg);
+    }
+    const Def* op_icmp(IRel rel, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(app(op_icmp(), val_nat(s64(rel))), width), shape), {a, b}, dbg);
+    }
+    //@}
+
+    //@{ rcmp
     const Axiom* op_rcmp() { return op_rcmp_; }
-    //const Def* op_icmp(IRel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_icmp(val_nat(int64_t(rel)), a, b, dbg); }
-    //const Def* op_rcmp(RFlags f, RRel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_rcmp(val_nat(int64_t(f)), val_nat(int64_t(rel)), a, b, dbg); }
-    //const Def* op_rcmp(RRel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_rcmp(RFlags::none, rel, a, b, dbg); }
-    //const Def* op_icmp(const Def* rel, const Def* a, const Def* b, Debug dbg = {});
-    //const Def* op_rcmp(const Def* rflags, const Def* rel, const Def* a, const Def* b, Debug dbg = {}) {
-        //auto [shape, body] = shape_and_body(a->type());
-        //return app(app(app(app(app(op_rcmp(), rflags), rel), shape), app_arg(body)), {a, b}, dbg);
-    //}
+    const Def* op_rcmp(RRel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_rcmp(RFlags::none, rel, a, b, dbg); }
+    const Def* op_rcmp(RFlags flags, RRel rel, const Def* a, const Def* b, Debug dbg = {}) {
+        auto [width, shape] = infer_width_and_shape(a);
+        return op_rcmp(flags, rel, width, shape, a, b, dbg);
+    }
+    const Def* op_rcmp(RFlags flags, RRel rel, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(app(app(op_rcmp(), val_nat(s64(flags))), val_nat(s64(rel))), width), shape), {a, b}, dbg);
+    }
     //@}
 
     //@{ conversions
@@ -155,7 +174,7 @@ private:
     const Axiom* op_store_;
 };
 
-inline int64_t get_nat(const Def* def) { return def->as<Axiom>()->box().get_s64(); }
+inline s64 get_nat(const Def* def) { return def->as<Axiom>()->box().get_s64(); }
 
 }
 
