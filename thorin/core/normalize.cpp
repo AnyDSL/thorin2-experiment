@@ -281,15 +281,15 @@ const Def* normalize_rcmp(thorin::World& world, const Def*, const Def* callee, c
     const Def* normalize_ ## o ## _2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o,       type, callee, arg, dbg); } \
     const Def* normalize_ ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _2, type, callee, arg, dbg); } \
     const Def* normalize_ ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _1, type, callee, arg, dbg); }
-    THORIN_W_ARITHOP(CODE)
-    THORIN_R_ARITHOP(CODE)
+    THORIN_W_OP(CODE)
+    THORIN_R_OP(CODE)
 #undef CODE
 
 #define CODE(o) \
     const Def* normalize_ ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o,       type, callee, arg, dbg); } \
     const Def* normalize_ ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _1, type, callee, arg, dbg); }
-    THORIN_M_ARITHOP(CODE)
-    THORIN_I_ARITHOP(CODE)
+    THORIN_M_OP(CODE)
+    THORIN_I_OP(CODE)
 #undef CODE
 
 const Def* normalize_icmp_2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_icmp,   type, callee, arg, dbg); }

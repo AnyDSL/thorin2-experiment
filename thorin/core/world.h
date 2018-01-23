@@ -48,48 +48,48 @@ public:
     const Lit* lit_r(r64 val) { return lit(type_r(64), {val}); }
     //@}
 
-    //@{ arithmetic operations for WArithop
-    template<WArithop O> const Axiom* op() { return warithop_[O]; }
-    template<WArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(WFlags::none, a, b, dbg); }
-    template<WArithop O> const Def* op(WFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
+    //@{ arithmetic operations for WOp
+    template<WOp O> const Axiom* op() { return wop_[O]; }
+    template<WOp O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(WFlags::none, a, b, dbg); }
+    template<WOp O> const Def* op(WFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
         return op<O>(flags, width, shape, a, b, dbg);
     }
-    template<WArithop O> const Def* op(WFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+    template<WOp O> const Def* op(WFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
         return app(app(app(app(op<O>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
     //@}
 
-    //@{ arithmetic operations for MArithop
-    template<MArithop O> const Axiom* op() { return marithop_[O]; }
-    template<MArithop O> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
+    //@{ arithmetic operations for MOp
+    template<MOp O> const Axiom* op() { return mop_[O]; }
+    template<MOp O> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
         return op<O>(width, shape, m, a, b, dbg);
     }
-    template<MArithop O> const Def* op(const Def* width, const Def* shape, const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
+    template<MOp O> const Def* op(const Def* width, const Def* shape, const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
         return app(app(app(op<O>(), width), shape), {m, a, b}, dbg);
     }
     //@}
 
-    //@{ arithmetic operations for IArithop
-    template<IArithop O> const Axiom* op() { return iarithop_[O]; }
-    template<IArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
+    //@{ arithmetic operations for IOp
+    template<IOp O> const Axiom* op() { return iop_[O]; }
+    template<IOp O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
         return op<O>(width, shape, a, b, dbg);
     }
-    template<IArithop O> const Def* op(const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+    template<IOp O> const Def* op(const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
         return app(app(app(op<O>(), width), shape), {a, b}, dbg);
     }
     //@}
 
-    //@{ arithmetic operations for RArithop
-    template<RArithop O> const Axiom* op() { return rarithop_[O]; }
-    template<RArithop O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(RFlags::none, a, b, dbg); }
-    template<RArithop O> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
+    //@{ arithmetic operations for ROp
+    template<ROp O> const Axiom* op() { return rop_[O]; }
+    template<ROp O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(RFlags::none, a, b, dbg); }
+    template<ROp O> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
         return op<O>(flags, width, shape, a, b, dbg);
     }
-    template<RArithop O> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+    template<ROp O> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
         return app(app(app(app(op<O>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
     //@}
@@ -152,10 +152,10 @@ private:
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
-    std::array<const Axiom*, Num_WArithOp> warithop_;
-    std::array<const Axiom*, Num_MArithOp> marithop_;
-    std::array<const Axiom*, Num_IArithOp> iarithop_;
-    std::array<const Axiom*, Num_RArithOp> rarithop_;
+    std::array<const Axiom*, Num_WArithOp> wop_;
+    std::array<const Axiom*, Num_MArithOp> mop_;
+    std::array<const Axiom*, Num_IArithOp> iop_;
+    std::array<const Axiom*, Num_RArithOp> rop_;
     const Axiom* op_icmp_;
     const Axiom* op_rcmp_;
     const Axiom* op_trunc_;

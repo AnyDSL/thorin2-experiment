@@ -27,13 +27,13 @@ constexpr WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int6
 constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
 
 /// Integer instructions that might wrap and, hence, take @p WFlags.
-#define THORIN_W_ARITHOP(m) m(wadd) m(wsub) m(wmul) m(wshl)
+#define THORIN_W_OP(m) m(wadd) m(wsub) m(wmul) m(wshl)
 /// Integer instructions that might produce a side effect (division by zero).
-#define THORIN_M_ARITHOP(m) m(sdiv) m(udiv) m(smod) m(umod)
+#define THORIN_M_OP(m) m(sdiv) m(udiv) m(smod) m(umod)
 /// Integer instructions that neither take wflags nor do they produce a side effect.
-#define THORIN_I_ARITHOP(m)  m(ashr) m(lshr) m(iand) m(ior) m(ixor)
+#define THORIN_I_OP(m)  m(ashr) m(lshr) m(iand) m(ior) m(ixor)
 /// Floating point (real) instructions that take @p RFlags.
-#define THORIN_R_ARITHOP(m)  m(radd) m(rsub) m(rmul) m(rdiv) m(rmod)
+#define THORIN_R_OP(m)  m(radd) m(rsub) m(rmul) m(rdiv) m(rmod)
 
 #define THORIN_I_REL(m)\
     m(eq)  /* equal */ \
@@ -65,65 +65,65 @@ constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int6
                      m(oge) /* x x x o - ordered and greater than or equal  */ \
                      m(f)   /* x x x x - always false                       */
 
-enum WArithop : size_t {
+enum WOp : size_t {
 #define CODE(O) O,
-    THORIN_W_ARITHOP(CODE)
+    THORIN_W_OP(CODE)
 #undef CODE
     Num_WArithOp
 };
 
-enum MArithop : size_t {
+enum MOp : size_t {
 #define CODE(O) O,
-    THORIN_M_ARITHOP(CODE)
+    THORIN_M_OP(CODE)
 #undef CODE
     Num_MArithOp
 };
 
-enum IArithop : size_t {
+enum IOp : size_t {
 #define CODE(O) O,
-    THORIN_I_ARITHOP(CODE)
+    THORIN_I_OP(CODE)
 #undef CODE
     Num_IArithOp
 };
 
-enum RArithop : size_t {
+enum ROp : size_t {
 #define CODE(O) O,
-    THORIN_R_ARITHOP(CODE)
+    THORIN_R_OP(CODE)
 #undef CODE
     Num_RArithOp
 };
 
-constexpr const char* arithop2str(WArithop o) {
+constexpr const char* op2str(WOp o) {
     switch (o) {
 #define CODE(O) case O: return #O;
-    THORIN_W_ARITHOP(CODE)
+    THORIN_W_OP(CODE)
 #undef CODE
         default: THORIN_UNREACHABLE;
     }
 }
 
-constexpr const char* arithop2str(MArithop o) {
+constexpr const char* op2str(MOp o) {
     switch (o) {
 #define CODE(O) case O: return #O;
-    THORIN_M_ARITHOP(CODE)
+    THORIN_M_OP(CODE)
 #undef CODE
         default: THORIN_UNREACHABLE;
     }
 }
 
-constexpr const char* arithop2str(IArithop o) {
+constexpr const char* op2str(IOp o) {
     switch (o) {
 #define CODE(O) case O: return #O;
-    THORIN_I_ARITHOP(CODE)
+    THORIN_I_OP(CODE)
 #undef CODE
         default: THORIN_UNREACHABLE;
     }
 }
 
-constexpr const char* arithop2str(RArithop o) {
+constexpr const char* op2str(ROp o) {
     switch (o) {
 #define CODE(O) case O: return #O;
-    THORIN_R_ARITHOP(CODE)
+    THORIN_R_OP(CODE)
 #undef CODE
         default: THORIN_UNREACHABLE;
     }

@@ -46,15 +46,15 @@ World::World() {
     env["M"]    = type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
     env["F"]    = type_frame_ = axiom(star(), {"F"});
 
-    auto w_type_arithop = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ", env);
-    auto m_type_arithop = parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]", env);
-    auto i_type_arithop = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ", env);
-    auto r_type_arithop = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ", env);
+    auto w_type_op = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ", env);
+    auto m_type_op = parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]", env);
+    auto i_type_op = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ", env);
+    auto r_type_op = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ", env);
 
-    for (size_t o = 0; o != Num_WArithOp; ++o) warithop_[o] = axiom(w_type_arithop, {arithop2str(WArithop(o))});
-    for (size_t o = 0; o != Num_MArithOp; ++o) marithop_[o] = axiom(m_type_arithop, {arithop2str(MArithop(o))});
-    for (size_t o = 0; o != Num_IArithOp; ++o) iarithop_[o] = axiom(i_type_arithop, {arithop2str(IArithop(o))});
-    for (size_t o = 0; o != Num_RArithOp; ++o) rarithop_[o] = axiom(r_type_arithop, {arithop2str(RArithop(o))});
+    for (size_t o = 0; o != Num_WArithOp; ++o) wop_[o] = axiom(w_type_op, {op2str(WOp(o))});
+    for (size_t o = 0; o != Num_MArithOp; ++o) mop_[o] = axiom(m_type_op, {op2str(MOp(o))});
+    for (size_t o = 0; o != Num_IArithOp; ++o) iop_[o] = axiom(i_type_op, {op2str(IOp(o))});
+    for (size_t o = 0; o != Num_RArithOp; ++o) rop_[o] = axiom(r_type_op, {op2str(ROp(o))});
 
     op_icmp_  = axiom(parse(*this, "         Πrel: nat. Πw: nat. Πs: 𝕄. Π[[s;  int w], [s;  int w]]. [s; bool]", env), {"icmp"});
     op_rcmp_  = axiom(parse(*this, "Πf: nat. Πrel: nat. Πw: nat. Πs: 𝕄. Π[[s; real w], [s; real w]]. [s; bool]", env), {"icmp"});
@@ -65,10 +65,10 @@ World::World() {
     op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
 
 #define CODE(o) op<o>()->set_normalizer(normalize_ ## o ## _0);
-    THORIN_W_ARITHOP(CODE)
-    THORIN_M_ARITHOP(CODE)
-    THORIN_I_ARITHOP(CODE)
-    THORIN_R_ARITHOP(CODE)
+    THORIN_W_OP(CODE)
+    THORIN_M_OP(CODE)
+    THORIN_I_OP(CODE)
+    THORIN_R_OP(CODE)
 #undef CODE
     op_icmp()->set_normalizer(normalize_icmp_0);
     op_rcmp()->set_normalizer(normalize_rcmp_0);

@@ -39,10 +39,10 @@ void test_fold(World& w, const Def* type) {
 TEST(Primop, ConstFolding) {
     World w;
 
-#define CODE(T) test_fold<T, WArithop, wadd>(w, w.type_i());
+#define CODE(T) test_fold<T, WOp, wadd>(w, w.type_i());
     THORIN_U_TYPES(CODE)
 #undef CODE
-#define CODE(T) test_fold<T, RArithop, radd>(w, w.type_r());
+#define CODE(T) test_fold<T, ROp, radd>(w, w.type_r());
     THORIN_R_TYPES(CODE)
 #undef CODE
 
