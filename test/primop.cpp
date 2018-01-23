@@ -49,13 +49,11 @@ TEST(Primop, ConstFolding) {
     ASSERT_EQ(w.op<lshr>(w.val(uint8_t(-1)), w.val(uint8_t(1))), w.val(uint8_t(127)));
 }
 
-#if 0
 TEST(Primop, Cmp) {
     World w;
-    auto x = w.op_icmp(irel::lt, w.val(iflags::so, 23), w.val(iflags::so, 42));
+    auto x = w.op_icmp(IRel::ule, w.val(23), w.val(42));
     x->dump();
 }
-#endif
 
 TEST(Primop, Ptr) {
     World w;

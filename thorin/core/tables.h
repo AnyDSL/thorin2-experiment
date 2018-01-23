@@ -133,14 +133,12 @@ enum class IRel : int64_t {
 #define CODE(f) f,
     THORIN_I_REL(CODE)
 #undef CODE
-    Num
 };
 
 enum class RRel : int64_t {
 #define CODE(f) f,
     THORIN_R_REL(CODE)
 #undef CODE
-    Num
 };
 
 }

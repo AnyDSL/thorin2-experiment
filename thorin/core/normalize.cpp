@@ -292,7 +292,8 @@ const Def* normalize_rcmp(thorin::World& world, const Def*, const Def* callee, c
     THORIN_I_ARITHOP(CODE)
 #undef CODE
 
-const Def* normalize_icmp_1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_icmp,   type, callee, arg, dbg); }
+const Def* normalize_icmp_2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_icmp,   type, callee, arg, dbg); }
+const Def* normalize_icmp_1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_icmp_2, type, callee, arg, dbg); }
 const Def* normalize_icmp_0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_icmp_1, type, callee, arg, dbg); }
 
 const Def* normalize_rcmp_2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_rcmp,   type, callee, arg, dbg); }
