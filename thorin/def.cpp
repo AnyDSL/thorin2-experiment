@@ -75,7 +75,9 @@ Def::Sort Def::sort() const {
 }
 
 bool Def::maybe_affine() const {
-    if (type() == world().qualifier_type())
+    if (!is_value())
+        return false;
+    if (type()->isa<QualifierType>())
         return false;
     const Def* q = qualifier();
     assert(q != nullptr);
@@ -280,6 +282,12 @@ const Def* Intersection::kind_qualifier() const {
     return world().intersection(world().qualifier_type(), qualifiers);
 }
 
+const Def* Pi::kind_qualifier() const {
+    assert(is_kind());
+    // TODO the qualifier of a Pi is upper bounded by the qualifiers of the free variables within it
+    return world().unlimited();
+}
+
 const Def* QualifierType::kind_qualifier() const {
     return world().unlimited();
 }
@@ -405,7 +413,7 @@ size_t Variadic::shift(size_t i) const { return i; }
  */
 
 uint64_t Def::vhash() const {
-    if (is_nominal() || (is_value() && maybe_affine()))
+    if (is_nominal() || maybe_affine())
         return murmur3(gid());
 
     uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type()->gid());
@@ -439,7 +447,7 @@ uint64_t Var::vhash() const { return thorin::hash_combine(Def::vhash(), index())
  */
 
 bool Def::equal(const Def* other) const {
-    if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
+    if (is_nominal() || maybe_affine())
         return this == other;
 
     bool result = this->fields() == other->fields() && this->type() == other->type();
@@ -456,7 +464,7 @@ bool Arity::equal(const Def* other) const {
 }
 
 bool Axiom::equal(const Def* other) const {
-    if (is_nominal() || (sort() == Sort::Term && maybe_affine()))
+    if (is_nominal() || maybe_affine())
         return this == other;
 
     return this->fields() == other->fields() && this->type() == other->type()
@@ -566,25 +574,28 @@ const Def* Def::shift_free_vars(size_t shift) const {
  */
 
 bool ArityKind::vsubtype_of(const Def* def) const {
-    return qualifier() == def->qualifier() && (def->isa<MultiArityKind>() || def->isa<Star>());
+    return (def->isa<MultiArityKind>() || def->isa<Star>()) && op(0) == def->op(0);
 }
 
 bool MultiArityKind::vsubtype_of(const Def* def) const {
-    return qualifier() == def->qualifier() && def->isa<Star>();
+    return def->isa<Star>() && op(0) == def->op(0);
 }
 
 bool Pi::vsubtype_of(const Def* def) const {
-    if (auto other_pi = def->isa<Pi>(); qualifier() == def->qualifier()) {
-        if (other_pi->domain() == domain() && body()->subtype_of(other_pi->body()))
-            return true;
+    if (type()->subtype_of(def->type())) {
+        if (auto other_pi = def->isa<Pi>()) {
+            if (other_pi->domain() == domain() && body()->subtype_of(other_pi->body()))
+                return true;
+        }
     }
     return false;
 }
 
+// TODO is there subtyping on sigmas?
 // bool Sigma::vsubtype_of(const Def* def) const {
-//     auto q = qualifier();
-//     auto other_q = def->qualifier();
-//     return nullptr; // TODO
+//     if (type()->subtype_of(def->type())) {
+//     }
+//     return false;
 // }
 
 // bool Variadic::vsubtype_of(const Def* def) const {
@@ -603,9 +614,7 @@ bool Sigma::assignable(const Def* def) const {
         return true;
     if (is_nominal() && num_ops() == 1 && def->type() == op(0))
         return true;
-    auto q = qualifier();
-    auto other_q = def->qualifier();
-    if (q != other_q)
+    if (!def->type()->type()->subtype_of(type()))
         return false;
     Defs defs = def->ops(); // only correct when def is a tuple
     if (auto pack = def->isa<Pack>()) {
@@ -749,6 +758,17 @@ void Variadic::typecheck_vars(Environment& types, EnvDefSet& checked) const {
  * stream
  */
 
+std::ostream& Def::qualifier_stream(std::ostream& os) const {
+    if (!has_values() || tag() == Tag::QualifierType)
+        return os;
+    if (type()->is_kind()) {
+        auto q = type()->op(0)->isa<Qualifier>();
+        if(q->qualifier_tag() != QualifierTag::u)
+            os << q;
+    }
+    return os;
+}
+
 std::ostream& Any::stream(std::ostream& os) const {
     os << "∨:";
     type()->name_stream(os);
@@ -813,18 +833,23 @@ std::ostream& MultiArityKind::stream(std::ostream& os) const {
 }
 
 std::ostream& Lambda::stream(std::ostream& os) const {
-    qualifier_stream(os) << "λ";
-    domain()->name_stream(os);
+    domain()->name_stream(os << "λ");
     return body()->name_stream(os << ".");
 }
 
 std::ostream& Pack::stream(std::ostream& os) const {
-    return streamf(os, "({}; {})", arity(), body());
+    os << "(";
+    if (auto var = type()->isa<Variadic>())
+        os << var->op(0);
+    else {
+        assert(type()->isa<Sigma>());
+        os << type()->num_ops() << "ₐ";
+    }
+    return streamf(os, "; {})", body());
 }
 
 std::ostream& Pi::stream(std::ostream& os) const {
-    if (qualifier() != world().unlimited())
-        qualifier_stream(os);
+    qualifier_stream(os);
     os  << "Π";
     domain()->name_stream(os);
     return body()->name_stream(os << ".");
@@ -846,8 +871,6 @@ std::ostream& QualifierType::stream(std::ostream& os) const {
 }
 
 std::ostream& Sigma::stream(std::ostream& os) const {
-    if (num_ops() == 0 && is_kind())
-        return os << "[]*";
     return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "[", "]");
 }
 
@@ -860,7 +883,7 @@ std::ostream& Star::stream(std::ostream& os) const {
 }
 
 std::ostream& Universe::stream(std::ostream& os) const {
-    return qualifier_stream(os) << name();
+    return os << name();
 }
 
 std::ostream& Tuple::stream(std::ostream& os) const {
@@ -873,7 +896,7 @@ std::ostream& Var::stream(std::ostream& os) const {
 }
 
 std::ostream& Variadic::stream(std::ostream& os) const {
-    return streamf(os, "[{}; {}]", arity(), body());
+    return streamf(os, "[{}; {}]", op(0), body());
 }
 
 std::ostream& Variant::stream(std::ostream& os) const {

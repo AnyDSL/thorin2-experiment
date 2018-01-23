@@ -272,15 +272,11 @@ public:
     }
     bool subtype_of(const Def* def) const {
         auto s = sort();
-        return (!def->is_value() && s >= Sort::Type && s < Sort::Universe
-                && (this == def || (s == def->sort() && vsubtype_of(def))));
+        return (!def->is_value() && s >= Sort::Type && (this == def || (s == def->sort() && vsubtype_of(def))));
     }
 
-    std::ostream& qualifier_stream(std::ostream& os) const {
-        if (!has_values() || tag() == Tag::QualifierType)
-            return os;
-        return os << qualifier();
-    }
+    std::ostream& qualifier_stream(std::ostream& os) const;
+
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "" || is_nominal()) {
             qualifier_stream(os);
@@ -475,6 +471,7 @@ public:
     bool assignable(const Def* def) const override;
     bool has_values() const override;
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
+    const Def* kind_qualifier() const override;
 
     std::ostream& stream(std::ostream&) const override;
 
