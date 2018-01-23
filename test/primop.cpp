@@ -14,24 +14,20 @@ TEST(Primop, Types) {
     ASSERT_EQ(w.type_r(16), w.app(w.type_r(), w.val_nat_16()));
 }
 
-TEST(Primop, Arithop) {
+TEST(Primop, ConstFolding) {
     World w;
-    w.op<wadd>()->type()->dump();
     auto a = w.op<wadd>(w.val(23), w.val(42));
-    a->dump();
-    a->type()->dump();
     ASSERT_EQ(a->type(), (w.type_i(32)));
-
+    ASSERT_EQ(a, (w.val(65)));
 
     auto m1 = w.tuple({w.tuple({w.val(0), w.val(1), w.val(2)}), w.tuple({w.val(3), w.val(4), w.val(5)})});
     auto m2 = w.tuple({w.tuple({w.val(6), w.val(7), w.val(8)}), w.tuple({w.val(9), w.val(10), w.val(11)})});
     auto p1 = w.pack(2, w.pack(3, w.val(23)));
     auto p2 = w.pack(2, w.pack(3, w.val(42)));
-    p1->dump();
-    w.op<wadd>(m1, m2)->dump();
-    w.op<wadd>(m1, p2)->dump();
-    w.op<wadd>(p1, m2)->dump();
-    w.op<wadd>(p1, p2)->dump();
+    ASSERT_EQ(w.op<wadd>(m1, m2), w.tuple({w.tuple({w.val(6), w.val(8), w.val(10)}), w.tuple({w.val(12), w.val(14), w.val(16)})}));
+    ASSERT_EQ(w.op<wadd>(p1, m2), w.tuple({w.tuple({w.val(29), w.val(30), w.val(31)}), w.tuple({w.val(32), w.val(33), w.val(34)})}));
+    ASSERT_EQ(w.op<wadd>(m1, p2), w.tuple({w.tuple({w.val(42), w.val(43), w.val(44)}), w.tuple({w.val(45), w.val(46), w.val(47)})}));
+    ASSERT_EQ(w.op<wadd>(p1, p2), w.pack({2, 3}, w.val(65)));
 
     ASSERT_EQ(w.op<ashr>(w.val(uint8_t(-1)), w.val(uint8_t(1))), w.val(uint8_t(-1)));
     ASSERT_EQ(w.op<lshr>(w.val(uint8_t(-1)), w.val(uint8_t(1))), w.val(uint8_t(127)));
