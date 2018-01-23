@@ -14,20 +14,36 @@ TEST(Primop, Types) {
     ASSERT_EQ(w.type_r(16), w.app(w.type_r(), w.val_nat_16()));
 }
 
+template<class T, class O, O o>
+void test_fold(World& w, const Def* type) {
+    auto a = w.op<o>(w.val(T(23)), w.val(T(42)));
+    ASSERT_EQ(a->type(), w.app(type, w.val_nat(sizeof(T)*8)));
+    ASSERT_EQ(a, w.val(T(65)));
+
+    auto m1 = w.tuple({w.tuple({w.val( T(0)), w.val( T(1)), w.val( T(2))}),
+                       w.tuple({w.val( T(3)), w.val( T(4)), w.val( T(5))})});
+    auto m2 = w.tuple({w.tuple({w.val( T(6)), w.val( T(7)), w.val( T(8))}),
+                       w.tuple({w.val( T(9)), w.val(T(10)), w.val(T(11))})});
+    auto p1 = w.pack(2, w.pack(3, w.val(T(23))));
+    auto p2 = w.pack(2, w.pack(3, w.val(T(42))));
+    ASSERT_EQ(w.op<o>(m1, m2), w.tuple({w.tuple({w.val(T(6)),  w.val( T(8)), w.val(T(10))}),
+                                        w.tuple({w.val(T(12)), w.val(T(14)), w.val(T(16))})}));
+    ASSERT_EQ(w.op<o>(p1, m2), w.tuple({w.tuple({w.val(T(29)), w.val(T(30)), w.val(T(31))}),
+                                        w.tuple({w.val(T(32)), w.val(T(33)), w.val(T(34))})}));
+    ASSERT_EQ(w.op<o>(m1, p2), w.tuple({w.tuple({w.val(T(42)), w.val(T(43)), w.val(T(44))}),
+                                        w.tuple({w.val(T(45)), w.val(T(46)), w.val(T(47))})}));
+    ASSERT_EQ(w.op<o>(p1, p2), w.pack({2, 3}, w.val(T(65))));
+}
+
 TEST(Primop, ConstFolding) {
     World w;
-    auto a = w.op<wadd>(w.val(23), w.val(42));
-    ASSERT_EQ(a->type(), (w.type_i(32)));
-    ASSERT_EQ(a, (w.val(65)));
 
-    auto m1 = w.tuple({w.tuple({w.val(0), w.val(1), w.val(2)}), w.tuple({w.val(3), w.val(4), w.val(5)})});
-    auto m2 = w.tuple({w.tuple({w.val(6), w.val(7), w.val(8)}), w.tuple({w.val(9), w.val(10), w.val(11)})});
-    auto p1 = w.pack(2, w.pack(3, w.val(23)));
-    auto p2 = w.pack(2, w.pack(3, w.val(42)));
-    ASSERT_EQ(w.op<wadd>(m1, m2), w.tuple({w.tuple({w.val(6), w.val(8), w.val(10)}), w.tuple({w.val(12), w.val(14), w.val(16)})}));
-    ASSERT_EQ(w.op<wadd>(p1, m2), w.tuple({w.tuple({w.val(29), w.val(30), w.val(31)}), w.tuple({w.val(32), w.val(33), w.val(34)})}));
-    ASSERT_EQ(w.op<wadd>(m1, p2), w.tuple({w.tuple({w.val(42), w.val(43), w.val(44)}), w.tuple({w.val(45), w.val(46), w.val(47)})}));
-    ASSERT_EQ(w.op<wadd>(p1, p2), w.pack({2, 3}, w.val(65)));
+#define CODE(T) test_fold<T, WArithop, wadd>(w, w.type_i());
+    THORIN_U_TYPES(CODE)
+#undef CODE
+#define CODE(T) test_fold<T, RArithop, radd>(w, w.type_r());
+    THORIN_R_TYPES(CODE)
+#undef CODE
 
     ASSERT_EQ(w.op<ashr>(w.val(uint8_t(-1)), w.val(uint8_t(1))), w.val(uint8_t(-1)));
     ASSERT_EQ(w.op<lshr>(w.val(uint8_t(-1)), w.val(uint8_t(1))), w.val(uint8_t(127)));
