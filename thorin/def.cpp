@@ -559,25 +559,6 @@ const Def* Lambda::apply(const Def* arg) const {
     return world().app(this, arg);
 }
 
-const Def* App::try_reduce() const {
-    if (cache_)
-        return cache_;
-
-    if (auto lambda = callee()->isa<Lambda>()) {
-        auto pi_type = callee()->type()->as<Pi>();
-        // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
-        if (!pi_type->maybe_affine() && !pi_type->body()->maybe_affine() &&
-            (!lambda->is_nominal() || arg()->free_vars().none())) {
-            if (!lambda->is_closed()) // don't set cache as long lambda is unclosed
-                return this;
-
-            return thorin::reduce(lambda->body(), {arg()}, [&] (const Def* def) { cache_ = def; });
-        }
-    }
-
-    return cache_ = this;
-}
-
 const Def* Def::shift_free_vars(size_t shift) const {
     return thorin::shift_free_vars(this, shift);
 }

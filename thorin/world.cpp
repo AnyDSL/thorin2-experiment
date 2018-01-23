@@ -246,7 +246,22 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     auto app = unify<App>(2, *this, type, callee, arg, dbg);
     assert(app->callee() == callee);
 
-    return app->try_reduce();
+    if (auto cache = app->cache_)
+        return cache;
+
+    if (auto lambda = app->callee()->isa<Lambda>()) {
+        auto pi_type = app->callee()->type()->as<Pi>();
+        // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
+        if (!pi_type->maybe_affine() && !pi_type->body()->maybe_affine() &&
+            (!lambda->is_nominal() || app->arg()->free_vars().none())) {
+            if (!lambda->is_closed()) // don't set cache as long lambda is unclosed
+                return app;
+
+            return thorin::reduce(lambda->body(), {app->arg()}, [&] (const Def* def) { app->cache_ = def; });
+        }
+    }
+
+    return app->cache_ = app;
 }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {

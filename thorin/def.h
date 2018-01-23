@@ -524,7 +524,6 @@ public:
     const Def* arity() const override;
     std::ostream& stream(std::ostream&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
-    const Def* try_reduce() const;
 
 private:
     mutable const Def* cache_ = nullptr;
