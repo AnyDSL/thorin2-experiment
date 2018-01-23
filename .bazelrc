@@ -1,0 +1,4 @@
+test -c dbg --test_output=errors --action_env="GTEST_COLOR=1"
+test:opt -c opt --test_output=errors --action_env="GTEST_COLOR=1"
+build -c dbg
+build:opt -c opt
