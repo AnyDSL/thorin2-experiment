@@ -153,7 +153,6 @@ protected:
         , closed_(num_ops == 0)
         , nominal_(true)
         , has_error_(false)
-        , on_heap_(false)
         , ops_(ops_ptr)
     {
         std::fill_n(ops_, num_ops, nullptr);
@@ -170,7 +169,6 @@ protected:
         , closed_(true)
         , nominal_(false)
         , has_error_(false)
-        , on_heap_(false)
         , ops_(ops_ptr)
     {
         std::copy(ops.begin(), ops.end(), ops_);
@@ -179,7 +177,6 @@ protected:
     Def(World& world, Tag tag, const Def* type, Defs ops, const Def** ops_ptr, Debug dbg)
         : Def(world, tag, type, range(ops), ops_ptr, dbg)
     {}
-    ~Def() override;
 
     Def* set(size_t i, const Def*);
     void finalize();
@@ -317,7 +314,6 @@ private:
     virtual size_t shift(size_t i) const;
 
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
-    bool on_heap() const { return on_heap_; }
     /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
     virtual const Def* kind_qualifier() const;
     virtual bool vsubtype_of(const Def*) const { return false; }
@@ -337,12 +333,11 @@ private:
     uint32_t num_ops_;
     union {
         struct {
-            unsigned gid_           : 22;
+            unsigned gid_           : 23;
             unsigned tag_           :  6;
             unsigned closed_        :  1;
             unsigned nominal_       :  1;
             unsigned has_error_     :  1;
-            unsigned on_heap_       :  1;
             // this sum must be 32   ^^^
         };
         uint32_t fields_;

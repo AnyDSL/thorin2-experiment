@@ -149,11 +149,6 @@ std::string Def::unique_name() const { return name() + '_' + std::to_string(gid(
  * constructors/destructor
  */
 
-Def::~Def() {
-    if (on_heap())
-        delete[] ops_;
-}
-
 ArityKind::ArityKind(World& world, const Def* qualifier)
     : Def(world, Tag::ArityKind, world.universe(), {qualifier}, ops_ptr<ArityKind>(), {"𝔸"})
 {}
