@@ -354,7 +354,7 @@ private:
 };
 
 uint64_t UseHash::hash(Use use) {
-    return murmur3(uint64_t(use.index()) << 48ull | uint64_t(use->gid()));
+    return murmur3(uint64_t(use.index()) << 48_u64 | uint64_t(use->gid()));
 }
 
 uint64_t EnvDefHash::hash(const EnvDef& p) {
