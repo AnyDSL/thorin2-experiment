@@ -35,17 +35,17 @@ public:
     //@}
 
     //@{ values
-    const Axiom* val(  int8_t val) { return assume(type_i( 8), {val}); }
-    const Axiom* val( uint8_t val) { return assume(type_i( 8), {val}); }
-    const Axiom* val( int16_t val) { return assume(type_i(16), {val}); }
-    const Axiom* val(uint16_t val) { return assume(type_i(16), {val}); }
-    const Axiom* val( int32_t val) { return assume(type_i(32), {val}); }
-    const Axiom* val(uint32_t val) { return assume(type_i(32), {val}); }
-    const Axiom* val( int64_t val) { return assume(type_i(64), {val}); }
-    const Axiom* val(uint64_t val) { return assume(type_i(64), {val}); }
-    const Axiom* val(    half val) { return assume(type_r(16), {val}); }
-    const Axiom* val(   float val) { return assume(type_r(32), {val}); }
-    const Axiom* val(  double val) { return assume(type_r(64), {val}); }
+    const Axiom* val( s8 val) { return assume(type_i( 8), {val}); }
+    const Axiom* val(s16 val) { return assume(type_i(16), {val}); }
+    const Axiom* val(s32 val) { return assume(type_i(32), {val}); }
+    const Axiom* val(s64 val) { return assume(type_i(64), {val}); }
+    const Axiom* val( u8 val) { return assume(type_i( 8), {val}); }
+    const Axiom* val(u16 val) { return assume(type_i(16), {val}); }
+    const Axiom* val(u32 val) { return assume(type_i(32), {val}); }
+    const Axiom* val(u64 val) { return assume(type_i(64), {val}); }
+    const Axiom* val(r16 val) { return assume(type_r(16), {val}); }
+    const Axiom* val(r32 val) { return assume(type_r(32), {val}); }
+    const Axiom* val(r64 val) { return assume(type_r(64), {val}); }
     //@}
 
     //@{ arithmetic operations for WArithop
