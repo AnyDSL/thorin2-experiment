@@ -147,13 +147,11 @@ protected:
         : debug_(dbg)
         , type_(type)
         , num_ops_(num_ops)
-        , ops_capacity_(num_ops)
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
         , closed_(num_ops == 0)
         , nominal_(true)
         , has_error_(false)
-        , on_heap_(false)
         , ops_(ops_ptr)
     {
         std::fill_n(ops_, num_ops, nullptr);
@@ -164,13 +162,11 @@ protected:
         : debug_(dbg)
         , type_(type)
         , num_ops_(ops.distance())
-        , ops_capacity_(ops.distance())
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
         , closed_(true)
         , nominal_(false)
         , has_error_(false)
-        , on_heap_(false)
         , ops_(ops_ptr)
     {
         std::copy(ops.begin(), ops.end(), ops_);
@@ -179,14 +175,12 @@ protected:
     Def(Tag tag, const Def* type, Defs ops, const Def** ops_ptr, Debug dbg)
         : Def(tag, type, range(ops), ops_ptr, dbg)
     {}
-    ~Def() override;
 
     Def* set(World&, size_t i, const Def*);
     void finalize(World&);
     void unset(size_t i);
     void unregister_use(size_t i) const;
     void unregister_uses() const;
-    void resize(size_t num_ops);
 
 public:
     //@{ get operands
@@ -315,7 +309,6 @@ private:
     virtual size_t shift(size_t i) const;
 
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
-    bool on_heap() const { return on_heap_; }
     /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
     virtual const Def* kind_qualifier(World&) const;
     virtual bool vsubtype_of(World&, const Def*) const { return false; }
@@ -332,15 +325,13 @@ private:
     const Def* type_;
     mutable Normalizer normalizer_ = nullptr;
     uint32_t num_ops_;
-    uint32_t ops_capacity_;
     union {
         struct {
-            unsigned gid_           : 22;
+            unsigned gid_           : 23;
             unsigned tag_           :  6;
             unsigned closed_        :  1;
             unsigned nominal_       :  1;
             unsigned has_error_     :  1;
-            unsigned on_heap_       :  1;
             // this sum must be 32   ^^^
         };
         uint32_t fields_;
@@ -357,7 +348,7 @@ private:
 };
 
 uint64_t UseHash::hash(Use use) {
-    return murmur3(uint64_t(use.index()) << 48ull | uint64_t(use->gid()));
+    return murmur3(uint64_t(use.index()) << 48_u64 | uint64_t(use->gid()));
 }
 
 uint64_t EnvDefHash::hash(const EnvDef& p) {

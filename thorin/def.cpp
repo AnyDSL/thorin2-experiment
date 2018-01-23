@@ -85,18 +85,6 @@ bool Def::maybe_affine(World& world) const {
     return true;
 }
 
-void Def::resize(size_t num_ops) {
-    num_ops_ = num_ops;
-    if (num_ops_ > ops_capacity_) {
-        if (on_heap())
-            delete[] ops_;
-        else
-            on_heap_ = true;
-        ops_capacity_ *= size_t(2);
-        ops_ = new const Def*[ops_capacity_]();
-    }
-}
-
 Def* Def::set(World& world, size_t i, const Def* def) {
     assert(!is_closed() && is_nominal());
     assert(!op(i) && "already set");
@@ -160,11 +148,6 @@ std::string Def::unique_name() const { return name() + '_' + std::to_string(gid(
 /*
  * constructors/destructor
  */
-
-Def::~Def() {
-    if (on_heap())
-        delete[] ops_;
-}
 
 ArityKind::ArityKind(World& world, const Def* qualifier)
     : Def(Tag::ArityKind, world.universe(), {qualifier}, ops_ptr<ArityKind>(), {"𝔸"})
