@@ -51,6 +51,7 @@ TEST(Tuple, TypeExtract) {
     EXPECT_EQ(ex_var_tup, w.star());
 
     auto sig = w.sigma({w.pi(w.star(), w.star()), w.star()});
+    // TODO can we remove DEATH tests?
     EXPECT_DEATH(w.extract(w.var(sig, 1), w.var(arity2, 0))->type(), ".*");
 }
 
