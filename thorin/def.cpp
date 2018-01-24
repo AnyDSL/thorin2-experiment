@@ -378,7 +378,7 @@ size_t Variadic::shift(size_t i) const { return i; }
  */
 
 uint64_t Def::vhash() const {
-    if (is_nominal() /*|| maybe_affine()*/)
+    if (is_nominal())
         return murmur3(gid());
 
     uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type()->gid());
@@ -398,7 +398,7 @@ uint64_t Var  ::vhash() const { return thorin::hash_combine(Def::vhash(), index(
  */
 
 bool Def::equal(const Def* other) const {
-    if (is_nominal() /*|| maybe_affine()*/)
+    if (is_nominal())
         return this == other;
 
     bool result = this->fields() == other->fields() && this->type() == other->type();
