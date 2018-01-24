@@ -256,7 +256,12 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
             if (!lambda->is_closed()) // don't set cache as long lambda is unclosed
                 return app;
 
-            return reduce(*this, lambda->body(), {app->arg()}, [&] (const Def* def) { app->cache_ = def; });
+            if (lambda->is_nominal())
+                app->cache_ = app;
+            app->cache_ = reduce(lambda->body(), {app->arg()});
+            if (lambda->is_nominal())
+                return app;
+            return app->cache_;
         }
     }
 

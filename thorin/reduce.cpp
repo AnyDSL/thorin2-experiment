@@ -30,34 +30,16 @@ public:
     size_t shift() const { return shift_; }
     bool is_shift_only() const { return args_.empty(); }
     World& world() const { return world_; }
-    const Def* reduce_structurals(const Def* def, size_t index = 0);
-    void reduce_nominals();
+    const Def* reduce(const Def* def, size_t index = 0);
 
 private:
     World& world_;
     DefArray args_;
     int64_t shift_;
     thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
-    std::stack<DefIndex> nominals_;
 };
 
-void Reducer::reduce_nominals() {
-    while (!nominals_.empty()) {
-        auto subst = nominals_.top();
-        nominals_.pop();
-        if (auto new_def = find(map_, subst)) {
-            if (new_def == subst || new_def->is_closed())
-                continue;
-
-            for (size_t i = 0, e = subst->num_ops(); i != e; ++i) {
-                auto new_op = reduce_structurals(subst->op(i), subst.index() + subst->shift(i));
-                const_cast<Def*>(new_def)->set(world(), i, new_op);
-            }
-        }
-    }
-}
-
-const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
+const Def* Reducer::reduce(const Def* old_def, size_t offset) {
     if (old_def->free_vars().none_begin(offset)) {
         map_[{old_def, offset}] = old_def;
         return old_def;
@@ -66,14 +48,12 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
     if (auto new_def = find(map_, {old_def, offset}))
         return new_def;
 
-    auto new_type = reduce_structurals(old_def->type(), offset);
-
     if (old_def->is_nominal()) {
-        auto new_def = old_def->stub(world(), new_type); // TODO better location debug info for these
-        map_[{old_def, offset}] = new_def;
-        nominals_.emplace(old_def, offset);
-        return new_def;
+        assert(old_def->free_vars().none());
+        return old_def;
     }
+
+    auto new_type = reduce(old_def->type(), offset);
 
     if (auto var = old_def->isa<Var>()) {
         if (!is_shift_only()) {
@@ -101,7 +81,7 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
     // rebuild all other defs
     DefArray new_ops(old_def->num_ops());
     for (size_t i = 0, e = old_def->num_ops(); i != e; ++i) {
-        new_ops[i] = reduce_structurals(old_def->op(i), offset + old_def->shift(i));
+        new_ops[i] = reduce(old_def->op(i), offset + old_def->shift(i));
     }
 
     auto new_def = old_def->rebuild(world(), new_type, new_ops);
@@ -111,18 +91,11 @@ const Def* Reducer::reduce_structurals(const Def* old_def, size_t offset) {
 //------------------------------------------------------------------------------
 
 const Def* reduce(World& world, const Def* def, Defs args, size_t index) {
-    return reduce(world, def, args, [&] (const Def*) {}, index);
-}
-
-const Def* reduce(World& world, const Def* def, Defs args, std::function<void(const Def*)> f, size_t index) {
     if (def->free_vars().none_begin(index))
         return def;
 
-    Reducer reducer(world, args);
-    auto result = reducer.reduce_structurals(def, index);
-    f(result);
-    reducer.reduce_nominals();
-    return result;
+    Reducer reducer(world, def, args);
+    return reducer.reduce(def, index);
 }
 
 const Def* unflatten(World& world, const Def* body, const Def* arg) {
@@ -141,11 +114,11 @@ const Def* flatten(World& world, const Def* body, Defs args) {
 const Def* shift_free_vars(World& world, const Def* def, int64_t shift) {
     if (shift == 0 || def->free_vars().none())
         return def;
+    assertf(shift > 0 || def->free_vars().none_end(-shift),
+            "can't shift {} by {}, there are variables with index <= {}", def, shift, -shift);
 
     Reducer reducer(world, -shift);
-    auto result = reducer.reduce_structurals(def, 0);
-    reducer.reduce_nominals();
-    return result;
+    return reducer.reduce(def, 0);
 }
 
 }

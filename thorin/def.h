@@ -270,13 +270,19 @@ public:
     }
 
     std::ostream& qualifier_stream(std::ostream& os) const;
-
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "" || is_nominal()) {
             qualifier_stream(os);
             return os << name();
         }
         return stream(os);
+    }
+    std::ostream& stream(std::ostream& os) const {
+        if (is_nominal()) {
+            qualifier_stream(os);
+            return os << name();
+        }
+        return vstream(os);
     }
 
 protected:
@@ -303,6 +309,7 @@ private:
     /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
     virtual const Def* kind_qualifier(World&) const;
     virtual bool vsubtype_of(World&, const Def*) const { return false; }
+    virtual std::ostream& vstream(std::ostream& os) const = 0;
 
     static size_t gid_counter_;
 
@@ -373,13 +380,13 @@ private:
 
 public:
     const Def* arity(World&) const override;
-    std::ostream& stream(std::ostream&) const override;
-    std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
+    std::ostream& name_stream(std::ostream& os) const override { return vstream(os); }
     const Def* kind_qualifier(World&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
     bool vsubtype_of(World&, const Def*) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -391,13 +398,13 @@ private:
 public:
     const Def* arity(World&) const override;
     bool assignable(World&, const Def* def) const override;
-    std::ostream& stream(std::ostream&) const override;
-    std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
+    std::ostream& name_stream(std::ostream& os) const override { return vstream(os); }
     const Def* kind_qualifier(World&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
     bool vsubtype_of(World&, const Def*) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -414,12 +421,12 @@ public:
     u64 value() const { return arity_; }
     const Def* arity(World&) const override;
     bool has_values() const override;
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     u64 arity_;
 
@@ -443,12 +450,12 @@ public:
     void typecheck_vars(World&, DefVector&, EnvDefSet& checked) const override;
     const Def* kind_qualifier(World&) const override;
 
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     bool vsubtype_of(World&, const Def* def) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -456,19 +463,20 @@ private:
 class Lambda : public Def {
 private:
     Lambda(const Pi* type, const Def* body, Debug dbg);
+    Lambda(const Pi* type, Debug dbg);
 
 public:
+    Lambda* set(const Def* body) { return Def::set(0, body)->as<Lambda>(); }
     const Def* domain() const { return type()->domain(); }
     const Def* body() const { return op(0); }
     const Def* apply(World&, const Def*) const;
     const Pi* type() const { return Def::type()->as<Pi>(); }
     void typecheck_vars(World&, DefVector&, EnvDefSet& checked) const override;
 
-    std::ostream& stream(std::ostream&) const override;
-
 private:
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -484,11 +492,12 @@ public:
     const Def* arg() const { return op(1); }
 
     const Def* arity(World&) const override;
-    std::ostream& stream(std::ostream&) const override;
+
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
     mutable const Def* cache_ = nullptr;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -526,7 +535,6 @@ public:
     bool is_dependent() const;
     Sigma* set(World& world, size_t i, const Def* def) { return Def::set(world, i, def)->as<Sigma>(); };
 
-    std::ostream& stream(std::ostream&) const override;
     Sigma* stub(World&, const Def*, Debug) const override;
     void typecheck_vars(World&, DefVector&, EnvDefSet& checked) const override;
 
@@ -534,6 +542,7 @@ private:
     static const Def* max_type(World& world, Defs ops, const Def* qualifier);
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -550,11 +559,11 @@ public:
     bool has_values() const override;
     bool assignable(World&, const Def* def) const override;
     void typecheck_vars(World&, DefVector&, EnvDefSet& checked) const override;
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -572,11 +581,8 @@ private:
         : TupleBase(Tag::Tuple, type, ops, dbg)
     {}
 
-public:
-    std::ostream& stream(std::ostream&) const override;
-
-private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -588,11 +594,11 @@ private:
 public:
     const Def* body() const { return op(0); }
     void typecheck_vars(World&, DefVector&, EnvDefSet& checked) const override;
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -606,10 +612,10 @@ private:
 public:
     const Def* scrutinee() const { return op(0); }
     const Def* index() const { return op(1); }
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -624,10 +630,10 @@ public:
     const Def* scrutinee() const { return op(0); }
     const Def* index() const { return op(1); }
     const Def* value() const { return op(2); }
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -639,10 +645,10 @@ private:
 public:
     const Def* kind_qualifier(World&) const override;
     bool has_values() const override;
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -655,10 +661,10 @@ private:
 
 public:
     const Def* destructee() const { return op(0); }
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -676,10 +682,10 @@ public:
     Variant* set(World& world, size_t i, const Def* def) { return Def::set(world, i, def)->as<Variant>(); };
     const Def* kind_qualifier(World&) const override;
     bool has_values() const override;
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
     Variant* stub(World&, const Def*, Debug) const override;
 
     friend class World;
@@ -703,10 +709,9 @@ public:
         THORIN_UNREACHABLE;
     }
 
-    std::ostream& stream(std::ostream&) const override;
-
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -723,10 +728,9 @@ public:
     const Def* handler(size_t i) const { return handlers()[i]; }
     size_t num_handlers() const { return handlers().size(); }
 
-    std::ostream& stream(std::ostream&) const override;
-
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -743,10 +747,10 @@ public:
     const Def* arity(World&) const override;
     const Def* kind_qualifier(World&) const override;
     bool has_values() const override;
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -758,10 +762,10 @@ private:
 public:
     QualifierTag qualifier_tag() const { return qualifier_tag_; }
     const Def* arity(World&) const override;
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     QualifierTag qualifier_tag_;
 
@@ -774,12 +778,12 @@ private:
 
 public:
     const Def* arity(World&) const override;
-    std::ostream& stream(std::ostream&) const override;
     bool has_values() const override;
     const Def* kind_qualifier(World&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -791,12 +795,12 @@ private:
 public:
     const Def* arity(World&) const override;
     bool assignable(World&, const Def* def) const override;
-    std::ostream& stream(std::ostream&) const override;
-    std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
+    std::ostream& name_stream(std::ostream& os) const override { return vstream(os); }
     const Def* kind_qualifier(World&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -809,10 +813,10 @@ private:
 
 public:
     const Def* arity(World&) const override;
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -830,15 +834,15 @@ private:
 public:
     const Def* arity(World&) const override;
     u64 index() const { return index_; }
-    std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
-    std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
+    std::ostream& name_stream(std::ostream& os) const override { return vstream(os); }
     void typecheck_vars(World&, DefVector&, EnvDefSet& checked) const override;
 
 private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     u64 index_;
 
@@ -861,6 +865,7 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };
@@ -877,13 +882,13 @@ public:
     const Def* arity(World&) const override;
     Box box() const { return box_; }
 
-    std::ostream& stream(std::ostream&) const override;
     bool has_values() const override;
 
 private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     Box box_;
 
@@ -905,10 +910,10 @@ private:
 
 public:
     const Def* arity(World&) const override;
-    std::ostream& stream(std::ostream&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
 };

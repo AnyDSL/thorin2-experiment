@@ -68,6 +68,12 @@ public:
         return lambda(domain, body, unlimited(), dbg);
     }
     const Def* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {});
+    /// @em nominal lambda --- may be recursive
+    Lambda* lambda(const Pi* type, Debug dbg = {}) {
+        assertf(type->free_vars().none_begin(1),
+                "function type {} of a nominal lambda may not contain free variables", type);
+        return insert<Lambda>(1, *this, type, dbg);
+    }
     //@}
 
     //@{ create App

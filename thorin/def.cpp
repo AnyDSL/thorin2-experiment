@@ -122,6 +122,8 @@ void Def::finalize(World& world) {
 #ifndef NDEBUG
     if (free_vars().none())
         typecheck(world);
+    else
+        assertf(!is_nominal(), "nominal expression {} may not have free variables", this);
 #endif
 }
 
@@ -161,6 +163,9 @@ Intersection::Intersection(const Def* type, const SortedDefSet& ops, Debug dbg)
     assert(check_same_sorted_ops(sort(), this->ops()));
 }
 
+Lambda::Lambda(const Pi* type, Debug dbg)
+    : Def(world, Tag::Lambda, type, 1, THORIN_OPS_PTR, dbg)
+{}
 Lambda::Lambda(const Pi* type, const Def* body, Debug dbg)
     : Def(Tag::Lambda, type, {body}, THORIN_OPS_PTR, dbg)
 {}
@@ -658,14 +663,14 @@ std::ostream& Def::qualifier_stream(std::ostream& os) const {
     return os;
 }
 
-std::ostream& Any::stream(std::ostream& os) const {
+std::ostream& Any::vstream(std::ostream& os) const {
     os << "∨:";
     type()->name_stream(os);
     def()->name_stream(os << "(");
     return os << ")";
 }
 
-std::ostream& App::stream(std::ostream& os) const {
+std::ostream& App::vstream(std::ostream& os) const {
     auto domain = callee()->type()->as<Pi>()->domain();
     if (domain->is_kind()) {
         qualifier_stream(os);
@@ -679,54 +684,62 @@ std::ostream& App::stream(std::ostream& os) const {
     return os;
 }
 
-std::ostream& Arity::stream(std::ostream& os) const {
+std::ostream& Arity::vstream(std::ostream& os) const {
     return os << name();
 }
 
-std::ostream& ArityKind::stream(std::ostream& os) const {
-    return os << name() << op(0);
+std::ostream& ArityKind::vstream(std::ostream& os) const {
+    os << name();
+    if (auto q = op(0)->isa<Qualifier>())
+        if (q->qualifier_tag() == QualifierTag::u)
+            return os;
+    return os << op(0);
 }
 
-std::ostream& Axiom::stream(std::ostream& os) const {
+std::ostream& Axiom::vstream(std::ostream& os) const {
     return qualifier_stream(os) << name();
 }
 
-std::ostream& Error::stream(std::ostream& os) const { return os << "<error>"; }
+std::ostream& Error::vstream(std::ostream& os) const { return os << "<error>"; }
 
-std::ostream& Extract::stream(std::ostream& os) const {
+std::ostream& Extract::vstream(std::ostream& os) const {
     return scrutinee()->name_stream(os) << "#" << index();
 }
 
-std::ostream& Insert::stream(std::ostream& os) const {
+std::ostream& Insert::vstream(std::ostream& os) const {
     return scrutinee()->name_stream(os) << "." << index() << "=" << value();
 }
 
-std::ostream& Intersection::stream(std::ostream& os) const {
+std::ostream& Intersection::vstream(std::ostream& os) const {
     return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
                        " ∩ ");
 }
 
-std::ostream& Lit::stream(std::ostream& os) const {
+std::ostream& Lit::vstream(std::ostream& os) const {
     return qualifier_stream(os) << std::to_string(box().get_u64());
 }
 
-std::ostream& Match::stream(std::ostream& os) const {
+std::ostream& Match::vstream(std::ostream& os) const {
     os << "match ";
     destructee()->name_stream(os);
     os << " with ";
     return stream_list(os, handlers(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
 }
 
-std::ostream& MultiArityKind::stream(std::ostream& os) const {
-    return os << name() << op(0);
+std::ostream& MultiArityKind::vstream(std::ostream& os) const {
+    os << name();
+    if (auto q = op(0)->isa<Qualifier>())
+        if (q->qualifier_tag() == QualifierTag::u)
+            return os;
+    return os << op(0);
 }
 
-std::ostream& Lambda::stream(std::ostream& os) const {
+std::ostream& Lambda::vstream(std::ostream& os) const {
     domain()->name_stream(os << "λ");
     return body()->name_stream(os << ".");
 }
 
-std::ostream& Pack::stream(std::ostream& os) const {
+std::ostream& Pack::vstream(std::ostream& os) const {
     os << "(";
     if (auto var = type()->isa<Variadic>())
         os << var->op(0);
@@ -737,58 +750,62 @@ std::ostream& Pack::stream(std::ostream& os) const {
     return streamf(os, "; {})", body());
 }
 
-std::ostream& Pi::stream(std::ostream& os) const {
+std::ostream& Pi::vstream(std::ostream& os) const {
     qualifier_stream(os);
     os  << "Π";
     domain()->name_stream(os);
     return body()->name_stream(os << ".");
 }
 
-std::ostream& Pick::stream(std::ostream& os) const {
+std::ostream& Pick::vstream(std::ostream& os) const {
     os << "pick:";
     type()->name_stream(os);
     destructee()->name_stream(os << "(");
     return os << ")";
 }
 
-std::ostream& Qualifier::stream(std::ostream& os) const {
+std::ostream& Qualifier::vstream(std::ostream& os) const {
     return os << name();
 }
 
-std::ostream& QualifierType::stream(std::ostream& os) const {
+std::ostream& QualifierType::vstream(std::ostream& os) const {
     return os << name();
 }
 
-std::ostream& Sigma::stream(std::ostream& os) const {
+std::ostream& Sigma::vstream(std::ostream& os) const {
     return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "[", "]");
 }
 
-std::ostream& Singleton::stream(std::ostream& os) const {
+std::ostream& Singleton::vstream(std::ostream& os) const {
     return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "S(", ")");
 }
 
-std::ostream& Star::stream(std::ostream& os) const {
-    return os << name() << op(0);
+std::ostream& Star::vstream(std::ostream& os) const {
+    os << name();
+    if (auto q = op(0)->isa<Qualifier>())
+        if (q->qualifier_tag() == QualifierTag::u)
+            return os;
+    return os << op(0);
 }
 
-std::ostream& Universe::stream(std::ostream& os) const {
+std::ostream& Universe::vstream(std::ostream& os) const {
     return os << name();
 }
 
-std::ostream& Tuple::stream(std::ostream& os) const {
+std::ostream& Tuple::vstream(std::ostream& os) const {
     return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
 }
 
-std::ostream& Var::stream(std::ostream& os) const {
+std::ostream& Var::vstream(std::ostream& os) const {
     os << "<" << index() << ":";
     return type()->name_stream(os) << ">";
 }
 
-std::ostream& Variadic::stream(std::ostream& os) const {
+std::ostream& Variadic::vstream(std::ostream& os) const {
     return streamf(os, "[{}; {}]", op(0), body());
 }
 
-std::ostream& Variant::stream(std::ostream& os) const {
+std::ostream& Variant::vstream(std::ostream& os) const {
     return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
                        " ∪ ");
 }
