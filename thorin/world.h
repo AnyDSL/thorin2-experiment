@@ -235,8 +235,8 @@ public:
 
     const DefSet& defs() const { return defs_; }
 
-    const App* curry(Normalizer normalizer, const Def* type, const Def* callee, const Def* arg, Debug dbg) {
-        return unify<App>(2, type, callee, arg, dbg)->set_normalizer(normalizer)->as<App>();
+    const App* curry(Normalizer normalizer, const Def* callee, const Def* arg, Debug dbg) {
+        return raw_app(callee, arg, dbg)->set_normalizer(normalizer)->as<App>();
     }
 
     friend void swap(World& w1, World& w2) {

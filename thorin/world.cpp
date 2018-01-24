@@ -130,9 +130,9 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
     return unify_fn(set);
 }
 
-const Def* normalize_arity_eliminator(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_arity_eliminator(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
     if (callee->type()->as<Pi>()->body()->isa<Pi>())
-        return world.curry(normalize_arity_eliminator, type, callee, arg, dbg);
+        return world.curry(normalize_arity_eliminator, callee, arg, dbg);
     const Def* pred = nullptr;
     if (auto arity = arg->isa<Arity>()) {
         auto arity_val = arity->value();
@@ -235,13 +235,12 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     assertf(callee_type->domain()->assignable(*this, arg),
             "callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
 
-    auto type = callee_type->apply(*this, arg);
-
     if (auto normalizer = callee->normalizer()) {
-        if (auto result = normalizer(*this, type, callee, arg, dbg))
+        if (auto result = normalizer(*this, callee, arg, dbg))
             return result;
     }
 
+    auto type = callee_type->apply(*this, arg);
     auto app = unify<App>(2, type, callee, arg, dbg);
     assert(app->callee() == callee);
 

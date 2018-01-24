@@ -11,7 +11,7 @@ class World;
 
 namespace core {
 
-#define CODE(T, o) const Def* normalize_ ## T ## o ## _0(thorin::World& world, const Def*, const Def*, const Def*, Debug);
+#define CODE(T, o) const Def* normalize_ ## T ## o ## _0(thorin::World& world, const Def*, const Def*, Debug);
     THORIN_W_OP (CODE)
     THORIN_M_OP (CODE)
     THORIN_I_OP (CODE)
