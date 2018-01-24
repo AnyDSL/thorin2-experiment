@@ -69,50 +69,52 @@ enum class WOp : size_t {
 #define CODE(T, o) o,
     THORIN_W_OP(CODE)
 #undef CODE
-    Num
 };
 
 enum class MOp : size_t {
 #define CODE(T, o) o,
     THORIN_M_OP(CODE)
 #undef CODE
-    Num
 };
 
 enum class IOp : size_t {
 #define CODE(T, o) o,
     THORIN_I_OP(CODE)
 #undef CODE
-    Num
 };
 
 enum class ROp : size_t {
 #define CODE(T, o) o,
     THORIN_R_OP(CODE)
 #undef CODE
-    Num
 };
 
 enum class ICmp : size_t {
 #define CODE(T, o) o,
     THORIN_I_CMP(CODE)
 #undef CODE
-    Num
 };
 
 enum class RCmp : size_t {
 #define CODE(T, o) o,
     THORIN_R_CMP(CODE)
 #undef CODE
-    Num
 };
+
+#define CODE(T, o) + 1_s
+constexpr auto Num_WOp  = 0_s THORIN_W_OP (CODE);
+constexpr auto Num_MOp  = 0_s THORIN_M_OP (CODE);
+constexpr auto Num_IOp  = 0_s THORIN_I_OP (CODE);
+constexpr auto Num_ROp  = 0_s THORIN_R_OP (CODE);
+constexpr auto Num_ICmp = 0_s THORIN_I_CMP(CODE);
+constexpr auto Num_RCmp = 0_s THORIN_R_CMP(CODE);
+#undef CODE
 
 constexpr const char* op2str(WOp o) {
     switch (o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_W_OP(CODE)
 #undef CODE
-        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -121,7 +123,6 @@ constexpr const char* op2str(MOp o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_M_OP(CODE)
 #undef CODE
-        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -130,7 +131,6 @@ constexpr const char* op2str(IOp o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_I_OP(CODE)
 #undef CODE
-        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -139,7 +139,6 @@ constexpr const char* op2str(ROp o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_R_OP(CODE)
 #undef CODE
-        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -148,7 +147,6 @@ constexpr const char* cmp2str(ICmp o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_I_CMP(CODE)
 #undef CODE
-        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -157,7 +155,6 @@ constexpr const char* cmp2str(RCmp o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_R_CMP(CODE)
 #undef CODE
-        default: THORIN_UNREACHABLE;
     }
 }
 

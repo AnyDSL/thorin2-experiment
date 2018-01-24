@@ -117,15 +117,15 @@ public:
     }
 
     //@{ conversions
-    const Axiom* op_trunc() const { return op_trunc_; }
-    const Axiom* op_zext() const { return  op_zext_; }
-    const Axiom* op_sext() const { return  op_sext_; }
-    const Axiom* op_rtrunc() const { return op_rtrunc_; }
-    const Axiom* op_rext() const { return op_rext_; }
-    const Axiom* op_r2s() const { return op_r2s_; }
-    const Axiom* op_r2u() const { return op_r2u_; }
-    const Axiom* op_s2r() const { return op_s2r_; }
-    const Axiom* op_u2r() const { return op_u2r_; }
+    //const Axiom* op_trunc() const { return op_trunc_; }
+    //const Axiom* op_zext() const { return  op_zext_; }
+    //const Axiom* op_sext() const { return  op_sext_; }
+    //const Axiom* op_rtrunc() const { return op_rtrunc_; }
+    //const Axiom* op_rext() const { return op_rext_; }
+    //const Axiom* op_r2s() const { return op_r2s_; }
+    //const Axiom* op_r2u() const { return op_r2u_; }
+    //const Axiom* op_s2r() const { return op_s2r_; }
+    //const Axiom* op_u2r() const { return op_u2r_; }
     //@}
 
     //@{ lea - load effective address
@@ -151,17 +151,15 @@ private:
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
-    std::array<const Axiom*, size_t(WOp ::Num)> wop_;
-    std::array<const Axiom*, size_t(MOp ::Num)> mop_;
-    std::array<const Axiom*, size_t(IOp ::Num)> iop_;
-    std::array<const Axiom*, size_t(ROp ::Num)> rop_;
-    std::array<const Axiom*, size_t(ICmp::Num)> icmp_;
-    std::array<const Axiom*, size_t(RCmp::Num)> rcmp_;
-    const Axiom* op_trunc_;
-    const Axiom* op_zext_;
-    const Axiom* op_sext_;
-    const Axiom* op_rtrunc_;
-    const Axiom* op_rext_;
+    std::array<const Axiom*, Num_WOp > wop_;
+    std::array<const Axiom*, Num_MOp > mop_;
+    std::array<const Axiom*, Num_IOp > iop_;
+    std::array<const Axiom*, Num_ROp > rop_;
+    std::array<const Axiom*, Num_ICmp> icmp_;
+    std::array<const Axiom*, Num_RCmp> rcmp_;
+    const Axiom* op_scast_;
+    const Axiom* op_ucast_;
+    const Axiom* op_rcast_;
     const Axiom* op_r2s_;
     const Axiom* op_r2u_;
     const Axiom* op_s2r_;

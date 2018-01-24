@@ -53,12 +53,20 @@ World::World() {
     auto type_icmp = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]", env);
     auto type_rcmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]", env);
 
-    for (size_t o = 0; o != size_t(WOp ::Num); ++o) wop_ [o] = axiom(type_wop,  { op2str( WOp(o))});
-    for (size_t o = 0; o != size_t(MOp ::Num); ++o) mop_ [o] = axiom(type_mop,  { op2str( MOp(o))});
-    for (size_t o = 0; o != size_t(IOp ::Num); ++o) iop_ [o] = axiom(type_iop,  { op2str( IOp(o))});
-    for (size_t o = 0; o != size_t(ROp ::Num); ++o) rop_ [o] = axiom(type_rop,  { op2str( ROp(o))});
-    for (size_t o = 0; o != size_t(ICmp::Num); ++o) icmp_[o] = axiom(type_icmp, {cmp2str(ICmp(o))});
-    for (size_t o = 0; o != size_t(RCmp::Num); ++o) rcmp_[o] = axiom(type_rcmp, {cmp2str(RCmp(o))});
+    for (size_t o = 0; o != Num_WOp ; ++o) wop_ [o] = axiom(type_wop,  { op2str( WOp(o))});
+    for (size_t o = 0; o != Num_MOp ; ++o) mop_ [o] = axiom(type_mop,  { op2str( MOp(o))});
+    for (size_t o = 0; o != Num_IOp ; ++o) iop_ [o] = axiom(type_iop,  { op2str( IOp(o))});
+    for (size_t o = 0; o != Num_ROp ; ++o) rop_ [o] = axiom(type_rop,  { op2str( ROp(o))});
+    for (size_t o = 0; o != Num_ICmp; ++o) icmp_[o] = axiom(type_icmp, {cmp2str(ICmp(o))});
+    for (size_t o = 0; o != Num_RCmp; ++o) rcmp_[o] = axiom(type_rcmp, {cmp2str(RCmp(o))});
+
+    op_scast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]", env));
+    op_ucast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]", env));
+    op_rcast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s; real v]", env));
+    op_s2r_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]", env));
+    op_u2r_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]", env));
+    op_r2s_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]", env));
+    op_r2u_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]", env));
 
     op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)", env), {"lea"});
     op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]", env), {"load"});
