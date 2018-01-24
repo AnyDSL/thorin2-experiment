@@ -345,7 +345,7 @@ const Lit* World::index(const Arity* a, u64 i, Location location) {
     auto cur = Def::gid_counter();
     auto result = lit(a, i, location);
 
-    if (result->gid() >= cur) { // new iassume -> build name
+    if (result->gid() >= cur) { // new literal -> build name
         std::string s = std::to_string(i);
         auto b = s.size();
 
