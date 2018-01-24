@@ -266,53 +266,16 @@ const Def* normalize_rmod(thorin::World& world, const Def*, const Def* callee, c
 template<ICmp op>
 const Def* normalize_icmp(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(world, arg);
-    const Def* result = nullptr;
-    switch (op) {
-        case i_eq: result = try_ifold<Fold_i_eq>(world, callee, a, b, dbg); break;
-        case i_ne: result = try_ifold<Fold_i_ne>(world, callee, a, b, dbg); break;
-        case iugt: result = try_ifold<Fold_iugt>(world, callee, a, b, dbg); break;
-        case iuge: result = try_ifold<Fold_iuge>(world, callee, a, b, dbg); break;
-        case iult: result = try_ifold<Fold_iult>(world, callee, a, b, dbg); break;
-        case iule: result = try_ifold<Fold_iule>(world, callee, a, b, dbg); break;
-        case isgt: result = try_ifold<Fold_isgt>(world, callee, a, b, dbg); break;
-        case isge: result = try_ifold<Fold_isge>(world, callee, a, b, dbg); break;
-        case islt: result = try_ifold<Fold_islt>(world, callee, a, b, dbg); break;
-        case isle: result = try_ifold<Fold_isle>(world, callee, a, b, dbg); break;
-        default: THORIN_UNREACHABLE;
-    }
-
-    if (result)
-        return result;
+    if (auto result = try_rfold<FoldICmp<op>::template Fold>(world, callee, a, b, dbg)) return result;
 
     return nullptr;
 }
 
+
 template<RCmp op>
 const Def* normalize_rcmp(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(world, arg);
-    const Def* result = nullptr;
-    switch (op) {
-        case rt  : result = try_rfold<Fold_rt  >(world, callee, a, b, dbg); break;
-        case rult: result = try_rfold<Fold_rult>(world, callee, a, b, dbg); break;
-        case rugt: result = try_rfold<Fold_rugt>(world, callee, a, b, dbg); break;
-        case rune: result = try_rfold<Fold_rune>(world, callee, a, b, dbg); break;
-        case rueq: result = try_rfold<Fold_rueq>(world, callee, a, b, dbg); break;
-        case rule: result = try_rfold<Fold_rule>(world, callee, a, b, dbg); break;
-        case ruge: result = try_rfold<Fold_ruge>(world, callee, a, b, dbg); break;
-        case runo: result = try_rfold<Fold_runo>(world, callee, a, b, dbg); break;
-        case rord: result = try_rfold<Fold_rord>(world, callee, a, b, dbg); break;
-        case rolt: result = try_rfold<Fold_rolt>(world, callee, a, b, dbg); break;
-        case rogt: result = try_rfold<Fold_rogt>(world, callee, a, b, dbg); break;
-        case rone: result = try_rfold<Fold_rone>(world, callee, a, b, dbg); break;
-        case roeq: result = try_rfold<Fold_roeq>(world, callee, a, b, dbg); break;
-        case role: result = try_rfold<Fold_role>(world, callee, a, b, dbg); break;
-        case roge: result = try_rfold<Fold_roge>(world, callee, a, b, dbg); break;
-        case rf  : result = try_rfold<Fold_rf  >(world, callee, a, b, dbg); break;
-        default: THORIN_UNREACHABLE;
-    }
-
-    if (result)
-        return result;
+    if (auto result = try_rfold<FoldRCmp<op>::template Fold>(world, callee, a, b, dbg)) return result;
 
     return nullptr;
 }

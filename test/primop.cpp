@@ -51,9 +51,13 @@ TEST(Primop, ConstFolding) {
 }
 
 TEST(Primop, Cmp) {
-    //World w;
-    //auto x = w.op_icmp(IRel::ule, w.lit_i(23), w.lit_i(42));
-    //x->dump();
+    World w;
+    auto x = w.op<iule>(w.lit_i(23), w.lit_i(42));
+    auto y = w.op<i_eq>(w.lit_i(23), w.lit_i(42));
+    auto z = w.op<i_ne>(w.lit_i(23), w.lit_i(42));
+    x->dump();
+    y->dump();
+    z->dump();
 }
 
 TEST(Primop, Ptr) {
