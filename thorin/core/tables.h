@@ -101,14 +101,23 @@ enum class RCmp : size_t {
 #undef CODE
 };
 
+template<class T> constexpr auto Num = size_t(-1);
+
 #define CODE(T, o) + 1_s
-constexpr auto Num_WOp  = 0_s THORIN_W_OP (CODE);
-constexpr auto Num_MOp  = 0_s THORIN_M_OP (CODE);
-constexpr auto Num_IOp  = 0_s THORIN_I_OP (CODE);
-constexpr auto Num_ROp  = 0_s THORIN_R_OP (CODE);
-constexpr auto Num_ICmp = 0_s THORIN_I_CMP(CODE);
-constexpr auto Num_RCmp = 0_s THORIN_R_CMP(CODE);
+template<> constexpr auto Num<WOp>  = 0_s THORIN_W_OP (CODE);
+template<> constexpr auto Num<MOp>  = 0_s THORIN_M_OP (CODE);
+template<> constexpr auto Num<IOp>  = 0_s THORIN_I_OP (CODE);
+template<> constexpr auto Num<ROp>  = 0_s THORIN_R_OP (CODE);
+template<> constexpr auto Num<ICmp> = 0_s THORIN_I_CMP(CODE);
+template<> constexpr auto Num<RCmp> = 0_s THORIN_R_CMP(CODE);
 #undef CODE
+
+THORIN_ENUM_ITERATOR(WOp)
+THORIN_ENUM_ITERATOR(MOp)
+THORIN_ENUM_ITERATOR(IOp)
+THORIN_ENUM_ITERATOR(ROp)
+THORIN_ENUM_ITERATOR(ICmp)
+THORIN_ENUM_ITERATOR(RCmp)
 
 constexpr const char* op2str(WOp o) {
     switch (o) {

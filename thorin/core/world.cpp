@@ -48,12 +48,12 @@ World::World() {
     auto type_icmp = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]", env);
     auto type_rcmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]", env);
 
-    for (size_t o = 0; o != Num_WOp ; ++o) wop_ [o] = axiom(type_wop,  { op2str( WOp(o))});
-    for (size_t o = 0; o != Num_MOp ; ++o) mop_ [o] = axiom(type_mop,  { op2str( MOp(o))});
-    for (size_t o = 0; o != Num_IOp ; ++o) iop_ [o] = axiom(type_iop,  { op2str( IOp(o))});
-    for (size_t o = 0; o != Num_ROp ; ++o) rop_ [o] = axiom(type_rop,  { op2str( ROp(o))});
-    for (size_t o = 0; o != Num_ICmp; ++o) icmp_[o] = axiom(type_icmp, {cmp2str(ICmp(o))});
-    for (size_t o = 0; o != Num_RCmp; ++o) rcmp_[o] = axiom(type_rcmp, {cmp2str(RCmp(o))});
+    for (auto o : WOp ()) wop_ [size_t(o)] = axiom(type_wop,  { op2str(o)});
+    for (auto o : MOp ()) mop_ [size_t(o)] = axiom(type_mop,  { op2str(o)});
+    for (auto o : IOp ()) iop_ [size_t(o)] = axiom(type_iop,  { op2str(o)});
+    for (auto o : ROp ()) rop_ [size_t(o)] = axiom(type_rop,  { op2str(o)});
+    for (auto o : ICmp()) icmp_[size_t(o)] = axiom(type_icmp, {cmp2str(o)});
+    for (auto o : RCmp()) rcmp_[size_t(o)] = axiom(type_rcmp, {cmp2str(o)});
 
     op_scast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]", env));
     op_ucast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]", env));

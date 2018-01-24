@@ -149,12 +149,12 @@ private:
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
-    std::array<const Axiom*, Num_WOp > wop_;
-    std::array<const Axiom*, Num_MOp > mop_;
-    std::array<const Axiom*, Num_IOp > iop_;
-    std::array<const Axiom*, Num_ROp > rop_;
-    std::array<const Axiom*, Num_ICmp> icmp_;
-    std::array<const Axiom*, Num_RCmp> rcmp_;
+    std::array<const Axiom*, Num<WOp >> wop_;
+    std::array<const Axiom*, Num<MOp >> mop_;
+    std::array<const Axiom*, Num<IOp >> iop_;
+    std::array<const Axiom*, Num<ROp >> rop_;
+    std::array<const Axiom*, Num<ICmp>> icmp_;
+    std::array<const Axiom*, Num<RCmp>> rcmp_;
     const Axiom* op_scast_;
     const Axiom* op_ucast_;
     const Axiom* op_rcast_;
