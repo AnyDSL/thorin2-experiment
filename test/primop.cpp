@@ -136,9 +136,14 @@ TEST(Primop, Cmp) {
 
 TEST(Primop, Normalize) {
     World w;
-    auto a = w.axiom(w.type_i(8));
-    auto b = w.axiom(w.type_i(8));
+    auto a = w.axiom(w.type_i(8), {"a"});
+    auto b = w.axiom(w.type_i(8), {"b"});
+    auto z = w.lit_i(0_u8);
+    ASSERT_EQ(w.op<WOp::add>(a, z), a);
+    ASSERT_EQ(w.op<WOp::add>(z, a), a);
+    ASSERT_EQ(w.op<WOp::add>(a, a), w.op<WOp::mul>(a, w.lit_i(2_u8)));
     ASSERT_EQ(w.op<WOp::add>(a, b), w.op<WOp::add>(b, a));
+    ASSERT_EQ(w.op<WOp::sub>(a, a), z);
 }
 
 TEST(Primop, Ptr) {

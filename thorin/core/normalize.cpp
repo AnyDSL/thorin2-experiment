@@ -43,10 +43,19 @@ const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a
     return nullptr;
 }
 
+const Lit* const_to_left(const Def*& a, const Def*& b) {
+    if (auto lb = b->isa<Lit>()) {
+        std::swap(a, b);
+        return a->as<Lit>();
+    }
+
+    return a->isa<Lit>();
+}
+
 const Def* commute(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    if (a->gid() > b->gid())
-        return world.app(callee, {b, a}, dbg);
-    return nullptr;
+    if (a->gid() > b->gid() && !a->isa<Lit>())
+        return world.raw_app(callee, {b, a}, dbg);
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
 /*
@@ -100,9 +109,19 @@ const Def* try_wfold(thorin::World& world, const Def* callee, const Def* a, cons
     return normalize_tuple(world, callee, a, b, dbg);
 }
 
-const Def* normalize_add(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_mul(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg);
+
+const Def* normalize_add(thorin::World& world, const Def* t, const Def* callee, const Def* arg, Debug dbg) {
+    auto& w = static_cast<World&>(world);
     auto [a, b] = split(world, arg);
     if (auto result = try_wfold<Fold_add>(world, callee, a, b, dbg)) return result;
+
+    if (auto la = const_to_left(a, b)) {
+        if (get_u64(la) == 0_u64) return b;
+    }
+
+    if (a == b)
+        return w.op<WOp::mul>(world.lit(a->type(), {2_u64}), a, dbg);
 
     return commute(world, callee, a, b, dbg);
 }
@@ -110,12 +129,20 @@ const Def* normalize_add(thorin::World& world, const Def*, const Def* callee, co
 const Def* normalize_sub(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(world, arg);
     if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
+
+    if (a == b)
+        return world.lit(a->type(), {0_u64});
     return nullptr;
 }
 
 const Def* normalize_mul(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(world, arg);
     if (auto result = try_wfold<Fold_mul>(world, callee, a, b, dbg)) return result;
+
+    if (auto la = const_to_left(a, b)) {
+        if (get_u64(la) == 0_u64) return la;
+        if (get_u64(la) == 1_u64) return b;
+    }
 
     return commute(world, callee, a, b, dbg);
 }

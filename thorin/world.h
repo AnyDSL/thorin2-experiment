@@ -81,6 +81,11 @@ public:
         return app(callee, tuple(args, dbg), dbg);
     }
     const Def* app(const Def* callee, const Def* arg, Debug dbg = {});
+    const Def* raw_app(const Def* callee, Defs args, Debug dbg = {}) { return raw_app(callee, tuple(args, dbg), dbg); }
+    const Def* raw_app(const Def* callee, const Def* arg, Debug dbg = {}) {
+        auto type = callee->type()->as<Pi>()->apply(*this, arg);
+        return unify<App>(2, type, callee, arg, dbg);
+    }
     //@}
 
     //@{ create Units
