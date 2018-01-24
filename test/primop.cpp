@@ -150,7 +150,7 @@ TEST(Primop, Normalize) {
 
     ASSERT_EQ(w.op<WOp::add>(w.op<WOp::add>(b, l3), a), w.op<WOp::add>(l3, w.op<WOp::add>(a, b)));
     ASSERT_EQ(w.op<WOp::add>(b, w.op<WOp::add>(a, l3)), w.op<WOp::add>(l3, w.op<WOp::add>(a, b)));
-    //ASSERT_EQ(w.op<WOp::add>(w.op<WOp::add>(b, l2), w.op<WOp::add>(a, l3)), w.op<WOp::add>(l5, w.op<WOp::add>(a, b)));
+    ASSERT_EQ(w.op<WOp::add>(w.op<WOp::add>(b, l2), w.op<WOp::add>(a, l3)), w.op<WOp::add>(b, w.op<WOp::add>(a, l5)));
 }
 
 TEST(Primop, Ptr) {

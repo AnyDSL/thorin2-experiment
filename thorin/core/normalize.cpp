@@ -86,7 +86,7 @@ static const Def* associate_commute(thorin::World& world, const Def* callee, con
 
     if (laa && lba) {
         auto lit = world.app(callee, {laa, lba}, dbg)->as<Lit>();
-        return world.app(callee, {lit, world.app(callee, {a, bb}, dbg)}, dbg);
+        return world.app(callee, {lit, world.app(callee, {ab, bb}, dbg)}, dbg);
     }
 
     if (laa) return world.app(callee, {laa, world.app(callee, {ab, b}, dbg)}, dbg);
