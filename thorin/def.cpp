@@ -148,7 +148,7 @@ std::string Def::unique_name() const { return name() + '_' + std::to_string(gid(
 //------------------------------------------------------------------------------
 
 /*
- * constructors/destructor
+ * constructors
  */
 
 ArityKind::ArityKind(World& world, const Def* qualifier)
@@ -247,13 +247,8 @@ const Def* Def::kind_qualifier(World& world) const {
     return world.unlimited();
 }
 
-const Def* ArityKind::kind_qualifier(World&) const {
-    return op(0);
-}
-
-const Def* MultiArityKind::kind_qualifier(World&) const {
-    return op(0);
-}
+const Def* ArityKind::kind_qualifier(World&) const { return op(0); }
+const Def* MultiArityKind::kind_qualifier(World&) const { return op(0); }
 
 const Def* Intersection::kind_qualifier(World& world) const {
     assert(is_kind());
@@ -267,9 +262,7 @@ const Def* Pi::kind_qualifier(World& world) const {
     return world.unlimited();
 }
 
-const Def* QualifierType::kind_qualifier(World& world) const {
-    return world.unlimited();
-}
+const Def* QualifierType::kind_qualifier(World& world) const { return world.unlimited(); }
 
 const Def* Sigma::kind_qualifier(World& world) const {
     assert(is_kind());
@@ -287,9 +280,7 @@ const Def* Singleton::kind_qualifier(World& world) const {
     return op(0)->qualifier(world);
 }
 
-const Def* Star::kind_qualifier(World&) const {
-    return op(0);
-}
+const Def* Star::kind_qualifier(World&) const { return op(0); }
 
 const Def* Variadic::kind_qualifier(World& world) const {
     assert(is_kind());
@@ -307,56 +298,30 @@ const Def* Variant::kind_qualifier(World& world) const {
 /*
  * arity
  */
+//
+// TODO assumption: every axiom that is not a value has arity 1
+// TODO assumption: all callees of non-folded apps that yield a type are (originally) axioms
 
-const Def* Def::arity(World& w) const { return is_value() ? type()->arity(w) : nullptr; }
-const Def* Arity::arity(World& w) const { return w.arity(1); }
-const Def* ArityKind::arity(World& w) const { return w.arity(1); }
+const Def* Def           ::arity(World& w) const { return is_value() ? type()->arity(w) : nullptr; }
+const Def* Arity         ::arity(World& w) const { return w.arity(1); }
+const Def* ArityKind     ::arity(World& w) const { return w.arity(1); }
 // const Def* All::arity(World& w) const { return TODO; }
 // const Def* Any::arity(World& w) const { return TODO; }
-// TODO assumption: all callees of non-folded apps that yield a type are (originally) axioms
-const Def* App::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
-
-const Def* Axiom::arity(World& w) const {
-    if (is_value())
-        return type()->arity(w);
-    return w.arity(1); // TODO assumption: every axiom that is not a value has arity 1
-}
-
-const Def* Error::arity(World& w) const {
-    if (is_value())
-        return type()->arity(w);
-    return w.arity(1);
-}
-
+const Def* App           ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
+const Def* Axiom         ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
+const Def* Error         ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
 // const Def* Intersection::arity(World& world) const { return TODO; }
-
-const Def* Lit::arity(World& w) const {
-    if (is_value())
-        return type()->arity(w);
-    return w.arity(1); // TODO assumption: every axiom that is not a value has arity 1
-}
-
-
+const Def* Lit           ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
 const Def* MultiArityKind::arity(World& w) const { return w.arity(1); }
-const Def* Pi::arity(World& w) const { return w.arity(1); }
-const Def* Qualifier::arity(World& w) const { return w.arity(1); }
-const Def* QualifierType::arity(World& w) const { return w.arity(1); }
-const Def* Sigma::arity(World& w) const { return w.arity(num_ops()); }
-const Def* Singleton::arity(World& w) const { return op(0)->arity(w); }
-const Def* Star::arity(World& w) const { return w.arity(1); }
-const Def* Universe::arity(World& w) const { THORIN_UNREACHABLE; }
-
-const Def* Var::arity(World& world) const {
-    if (is_value())
-        return type()->arity(world);
-    return nullptr; // unknown arity
-}
-
-const Def* Variant::arity(World& world) const {
-    DefArray arities(num_ops(), [&](auto i) { return op(i)->arity(world); });
-    return world.variant(arities);
-}
-
+const Def* Pi            ::arity(World& w) const { return w.arity(1); }
+const Def* Qualifier     ::arity(World& w) const { return w.arity(1); }
+const Def* QualifierType ::arity(World& w) const { return w.arity(1); }
+const Def* Sigma         ::arity(World& w) const { return w.arity(num_ops()); }
+const Def* Singleton     ::arity(World& w) const { return op(0)->arity(w); }
+const Def* Star          ::arity(World& w) const { return w.arity(1); }
+const Def* Universe      ::arity(World& w) const { THORIN_UNREACHABLE; }
+const Def* Var           ::arity(World& w) const { return is_value() ? type()->arity(w) : nullptr; }
+const Def* Variant       ::arity(World& w) const { return w.variant(DefArray(num_ops(), [&](auto i) { return op(i)->arity(w); })); }
 
 //------------------------------------------------------------------------------
 
@@ -364,11 +329,11 @@ const Def* Variant::arity(World& world) const {
  * shift
  */
 
-size_t Def::shift(size_t) const { return 0; }
-size_t Lambda::shift(size_t i) const { assert_unused(i == 0); return 1; }
-size_t Pack::shift(size_t i) const { assert_unused(i == 0); return 1; }
-size_t Pi::shift(size_t i) const { return i; }
-size_t Sigma::shift(size_t i) const { return i; }
+size_t Def     ::shift(size_t  ) const { return 0; }
+size_t Lambda  ::shift(size_t i) const { assert_unused(i == 0); return 1; }
+size_t Pack    ::shift(size_t i) const { assert_unused(i == 0); return 1; }
+size_t Pi      ::shift(size_t i) const { return i; }
+size_t Sigma   ::shift(size_t i) const { return i; }
 size_t Variadic::shift(size_t i) const { return i; }
 
 //------------------------------------------------------------------------------
