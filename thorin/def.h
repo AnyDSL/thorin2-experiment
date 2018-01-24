@@ -293,10 +293,6 @@ protected:
     virtual bool equal(const Def*) const;
     //@}
 
-    /// Use this to caclulate the @c ops_ptr when invoking this class's constructor in a subclass @p T.
-    template<class T>
-    inline const Def** ops_ptr() { return reinterpret_cast<const Def**>(reinterpret_cast<char*>(this) + sizeof(T)); }
-
 private:
     /**
      * The amount to shift De Bruijn indices when descending into this Def's @p i's Def::op.
@@ -349,6 +345,9 @@ private:
     friend class Scope;
     friend class World;
 };
+
+#define THORIN_OPS_PTR reinterpret_cast<const Def**>(reinterpret_cast<char*>(this+1))
+
 
 uint64_t UseHash::hash(Use use) {
     return murmur3(uint64_t(use.index()) << 48_u64 | uint64_t(use->gid()));
@@ -414,7 +413,7 @@ private:
 class Arity : public Def {
 private:
     Arity(World& world, const ArityKind* type, size_t arity, Debug dbg)
-        : Def(world, Tag::Arity, type, Defs(), ops_ptr<Arity>(), dbg)
+        : Def(world, Tag::Arity, type, Defs(), THORIN_OPS_PTR, dbg)
         , arity_(arity)
     {}
 
@@ -438,7 +437,7 @@ private:
 class Index : public Def {
 private:
     Index(World& world, const Arity* type, size_t index, Debug dbg)
-        : Def(world, Tag::Index, type, Defs(), ops_ptr<Index>(), dbg)
+        : Def(world, Tag::Index, type, Defs(), THORIN_OPS_PTR, dbg)
         , index_(index)
     {}
 
@@ -507,7 +506,7 @@ private:
 class App : public Def {
 private:
     App(World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg)
-        : Def(world, Tag::App, type, {callee, arg}, ops_ptr<App>(), dbg)
+        : Def(world, Tag::App, type, {callee, arg}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -529,10 +528,10 @@ private:
 class SigmaBase : public Def {
 protected:
     SigmaBase(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(world, tag, type, ops, ops_ptr<SigmaBase>(), dbg)
+        : Def(world, tag, type, ops, THORIN_OPS_PTR, dbg)
     {}
     SigmaBase(World& world, Tag tag, const Def* type, size_t num_ops, Debug dbg)
-        : Def(world, tag, type, num_ops, ops_ptr<SigmaBase>(), dbg)
+        : Def(world, tag, type, num_ops, THORIN_OPS_PTR, dbg)
     {}
 };
 
@@ -593,7 +592,7 @@ private:
 class TupleBase : public Def {
 protected:
     TupleBase(World& world, Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(world, tag, type, ops, ops_ptr<TupleBase>(), dbg)
+        : Def(world, tag, type, ops, THORIN_OPS_PTR, dbg)
     {}
 };
 
@@ -631,7 +630,7 @@ private:
 class Extract : public Def {
 private:
     Extract(World& world, const Def* type, const Def* tuple, const Def* index, Debug dbg)
-        : Def(world, Tag::Extract, type, {tuple, index}, ops_ptr<Extract>(), dbg)
+        : Def(world, Tag::Extract, type, {tuple, index}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -648,7 +647,7 @@ private:
 class Insert : public Def {
 private:
     Insert(World& world, const Def* type, const Def* tuple, const Def* index, const Def* value, Debug dbg)
-        : Def(world, Tag::Insert, type, {tuple, index, value}, ops_ptr<Insert>(), dbg)
+        : Def(world, Tag::Insert, type, {tuple, index, value}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -681,7 +680,7 @@ private:
 class Pick : public Def {
 private:
     Pick(World& world, const Def* type, const Def* def, Debug dbg)
-        : Def(world, Tag::Pick, type, {def}, ops_ptr<Pick>(), dbg)
+        : Def(world, Tag::Pick, type, {def}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -699,7 +698,7 @@ private:
     Variant(World& world, const Def* type, const SortedDefSet& ops, Debug dbg);
     // Nominal Variant
     Variant(World& world, const Def* type, size_t num_ops, Debug dbg)
-        : Def(world, Tag::Variant, type, num_ops, ops_ptr<Variant>(), dbg)
+        : Def(world, Tag::Variant, type, num_ops, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -720,7 +719,7 @@ private:
 class Any : public Def {
 private:
     Any(World& world, const Variant* type, const Def* def, Debug dbg)
-        : Def(world, Tag::Any, type, {def}, ops_ptr<Any>(), dbg)
+        : Def(world, Tag::Any, type, {def}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -745,7 +744,7 @@ private:
 class Match : public Def {
 private:
     Match(World& world, const Def* type, const Def* def, const Defs handlers, Debug dbg)
-        : Def(world, Tag::Match, type, concat(def, handlers), ops_ptr<Match>(), dbg)
+        : Def(world, Tag::Match, type, concat(def, handlers), THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -765,7 +764,7 @@ private:
 class Singleton : public Def {
 private:
     Singleton(World& world, const Def* def, Debug dbg)
-        : Def(world, Tag::Singleton, def->type()->type(), {def}, ops_ptr<Singleton>(), dbg)
+        : Def(world, Tag::Singleton, def->type()->type(), {def}, THORIN_OPS_PTR, dbg)
     {
         assert((def->is_term() || def->is_type()) && "No singleton type universes allowed.");
     }
@@ -835,7 +834,7 @@ private:
 class Universe : public Def {
 private:
     Universe(World& world)
-        : Def(world, Tag::Universe, nullptr, 0, ops_ptr<Universe>(), {"□"})
+        : Def(world, Tag::Universe, nullptr, 0, THORIN_OPS_PTR, {"□"})
     {}
 
 public:
@@ -851,7 +850,7 @@ private:
 class Var : public Def {
 private:
     Var(World& world, const Def* type, size_t index, Debug dbg)
-        : Def(world, Tag::Var, type, Defs(), ops_ptr<Var>(), dbg)
+        : Def(world, Tag::Var, type, Defs(), THORIN_OPS_PTR, dbg)
     {
         assert(!type->is_universe());
         index_ = index;
@@ -879,7 +878,7 @@ private:
 class Axiom : public Def {
 private:
     Axiom(World& world, const Def* type, Debug dbg)
-        : Def(world, Tag::Axiom, type, 0, ops_ptr<Axiom>(), dbg)
+        : Def(world, Tag::Axiom, type, 0, THORIN_OPS_PTR, dbg)
     {
         assert(type->free_vars().none());
     }
@@ -901,7 +900,7 @@ private:
 class Lit : public Def {
 private:
     Lit(World& world, const Def* type, Box box, Debug dbg)
-        : Def(world, Tag::Axiom, type, Defs(), ops_ptr<Axiom>(), dbg)
+        : Def(world, Tag::Axiom, type, Defs(), THORIN_OPS_PTR, dbg)
         , box_(box)
     {}
 
@@ -927,7 +926,7 @@ class Error : public Def {
 private:
     // TODO additional error message with more precise information
     Error(World& world, const Def* type)
-        : Def(world, Tag::Error, type, Defs(), ops_ptr<Error>(), {"<error>"})
+        : Def(world, Tag::Error, type, Defs(), THORIN_OPS_PTR, {"<error>"})
     {}
 
 public:
