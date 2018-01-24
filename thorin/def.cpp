@@ -152,21 +152,21 @@ std::string Def::unique_name() const { return name() + '_' + std::to_string(gid(
  */
 
 ArityKind::ArityKind(World& world, const Def* qualifier)
-    : Def(world, Tag::ArityKind, world.universe(), {qualifier}, ops_ptr<ArityKind>(), {"𝔸"})
+    : Def(world, Tag::ArityKind, world.universe(), {qualifier}, THORIN_OPS_PTR, {"𝔸"})
 {}
 
 Intersection::Intersection(World& world, const Def* type, const SortedDefSet& ops, Debug dbg)
-    : Def(world, Tag::Intersection, type, range(ops), ops_ptr<Intersection>(), dbg)
+    : Def(world, Tag::Intersection, type, range(ops), THORIN_OPS_PTR, dbg)
 {
     assert(check_same_sorted_ops(sort(), this->ops()));
 }
 
 Lambda::Lambda(World& world, const Pi* type, const Def* body, Debug dbg)
-    : Def(world, Tag::Lambda, type, {body}, ops_ptr<Lambda>(), dbg)
+    : Def(world, Tag::Lambda, type, {body}, THORIN_OPS_PTR, dbg)
 {}
 
 MultiArityKind::MultiArityKind(World& world, const Def* qualifier)
-    : Def(world, Tag::MultiArityKind, world.universe(), {qualifier}, ops_ptr<MultiArityKind>(), {"𝕄"})
+    : Def(world, Tag::MultiArityKind, world.universe(), {qualifier}, THORIN_OPS_PTR, {"𝕄"})
 {}
 
 Pack::Pack(World& world, const Def* type, const Def* body, Debug dbg)
@@ -174,16 +174,16 @@ Pack::Pack(World& world, const Def* type, const Def* body, Debug dbg)
 {}
 
 Pi::Pi(World& world, const Def* type, const Def* domain, const Def* body, Debug dbg)
-    : Def(world, Tag::Pi, type, {domain, body}, ops_ptr<Pi>(), dbg)
+    : Def(world, Tag::Pi, type, {domain, body}, THORIN_OPS_PTR, dbg)
 {}
 
 Qualifier::Qualifier(World& world, QualifierTag q)
-    : Def(world, Tag::Qualifier, world.qualifier_type(), 0, ops_ptr<Qualifier>(), {qualifier2str(q)})
+    : Def(world, Tag::Qualifier, world.qualifier_type(), 0, THORIN_OPS_PTR, {qualifier2str(q)})
     , qualifier_tag_(q)
 {}
 
 QualifierType::QualifierType(World& world)
-    : Def(world, Tag::QualifierType, world.universe(), 0, ops_ptr<QualifierType>(), {"ℚ"})
+    : Def(world, Tag::QualifierType, world.universe(), 0, THORIN_OPS_PTR, {"ℚ"})
 {}
 
 Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
@@ -191,7 +191,7 @@ Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
 {}
 
 Star::Star(World& world, const Def* qualifier)
-    : Def(world, Tag::Star, world.universe(), {qualifier}, ops_ptr<Star>(), {"*"})
+    : Def(world, Tag::Star, world.universe(), {qualifier}, THORIN_OPS_PTR, {"*"})
 {}
 
 Variadic::Variadic(World& world, const Def* type, const Def* arity, const Def* body, Debug dbg)
@@ -199,7 +199,7 @@ Variadic::Variadic(World& world, const Def* type, const Def* arity, const Def* b
 {}
 
 Variant::Variant(World& world, const Def* type, const SortedDefSet& ops, Debug dbg)
-    : Def(world, Tag::Variant, type, range(ops), ops_ptr<Variant>(), dbg)
+    : Def(world, Tag::Variant, type, range(ops), THORIN_OPS_PTR, dbg)
 {
     // TODO does same sorted ops really hold? ex: matches that return different sorted stuff? allowed?
     assert(check_same_sorted_ops(sort(), this->ops()));

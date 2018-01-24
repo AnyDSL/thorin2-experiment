@@ -23,7 +23,7 @@ enum class QualifierTag {
     u = Unlimited, r = Relevant, a = Affine, l = Linear,
 };
 
-const std::array<QualifierTag, 4> QualifierTags = {QualifierTag::u, QualifierTag::r, QualifierTag::a, QualifierTag::l};
+const std::array<QualifierTag, 4> QualifierTags = {{QualifierTag::u, QualifierTag::r, QualifierTag::a, QualifierTag::l}};
 
 /// Linear is the largest, Unlimited the smallest.
 inline bool operator<(QualifierTag lhs, QualifierTag rhs) {

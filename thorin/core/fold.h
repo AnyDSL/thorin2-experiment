@@ -12,7 +12,7 @@ namespace thorin::core {
 struct BottomException {};
 
 template<int w, bool nsw, bool nuw>
-struct FoldWAdd {
+struct Fold_wadd {
     static Box run(Box a, Box b) {
         auto x = a.template get<typename w2u<w>::type>();
         auto y = b.template get<typename w2u<w>::type>();
@@ -24,7 +24,7 @@ struct FoldWAdd {
 };
 
 template<int w, bool nsw, bool nuw>
-struct FoldWSub {
+struct Fold_wsub {
     static Box run(Box a, Box b) {
         typedef typename w2u<w>::type UT;
         auto x = a.template get<UT>();
@@ -37,7 +37,7 @@ struct FoldWSub {
 };
 
 template<int w, bool nsw, bool nuw>
-struct FoldWMul {
+struct Fold_wmul {
     static Box run(Box a, Box b) {
         typedef typename w2u<w>::type UT;
         auto x = a.template get<UT>();
@@ -50,7 +50,7 @@ struct FoldWMul {
 };
 
 template<int w, bool nsw, bool nuw>
-struct FoldWShl {
+struct Fold_wshl {
     static Box run(Box a, Box b) {
         typedef typename w2u<w>::type UT;
         auto x = a.template get<UT>();
@@ -62,64 +62,48 @@ struct FoldWShl {
     }
 };
 
-template<int w> struct FoldAShr { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >> b.get<T>()); } };
-template<int w> struct FoldLShr { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() >> b.get<T>()); } };
-template<int w> struct FoldIAnd { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() & b.get<T>()); } };
-template<int w> struct FoldIOr  { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() | b.get<T>()); } };
-template<int w> struct FoldIXor { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() ^ b.get<T>()); } };
+template<int w> struct Fold_ashr { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >> b.get<T>()); } };
+template<int w> struct Fold_lshr { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() >> b.get<T>()); } };
+template<int w> struct Fold_iand { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() &  b.get<T>()); } };
+template<int w> struct Fold_ior  { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() |  b.get<T>()); } };
+template<int w> struct Fold_ixor { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() ^  b.get<T>()); } };
 
-template<int w> struct FoldRAdd { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() + b.get<T>()); } };
-template<int w> struct FoldRSub { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() - b.get<T>()); } };
-template<int w> struct FoldRMul { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() * b.get<T>()); } };
-template<int w> struct FoldRDiv { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() / b.get<T>()); } };
-template<int w> struct FoldRRem { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(rem(a.get<T>(), b.get<T>())); } };
+template<int w> struct Fold_radd { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() +  b.get<T>()); } };
+template<int w> struct Fold_rsub { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() -  b.get<T>()); } };
+template<int w> struct Fold_rmul { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() *  b.get<T>()); } };
+template<int w> struct Fold_rdiv { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() /  b.get<T>()); } };
+template<int w> struct Fold_rrem { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(rem(a.get<T>(), b.get<T>())); } };
 
-template<int w>
-struct FoldICmp {
-    static Box run(IRel rel, Box a, Box b) {
-        typedef typename w2s<w>::type ST;
-        typedef typename w2u<w>::type UT;
-        switch (rel) {
-            case IRel:: eq: return {a.get<UT>() == b.get<UT>()};
-            case IRel:: ne: return {a.get<UT>() != b.get<UT>()};
-            case IRel::ugt: return {a.get<UT>() <  b.get<UT>()};
-            case IRel::uge: return {a.get<UT>() <= b.get<UT>()};
-            case IRel::ult: return {a.get<UT>() >  b.get<UT>()};
-            case IRel::ule: return {a.get<UT>() >= b.get<UT>()};
-            case IRel::sgt: return {a.get<ST>() <  b.get<ST>()};
-            case IRel::sge: return {a.get<ST>() <= b.get<ST>()};
-            case IRel::slt: return {a.get<ST>() >  b.get<ST>()};
-            case IRel::sle: return {a.get<ST>() >= b.get<ST>()};
-            default: THORIN_UNREACHABLE;
-        }
-    }
-};
+template<ICmp> struct FoldICmp {};
+template<> struct FoldICmp<i_eq> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() == b.get<T>()); } }; };
+template<> struct FoldICmp<i_ne> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() != b.get<T>()); } }; };
+template<> struct FoldICmp<iugt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() <  b.get<T>()); } }; };
+template<> struct FoldICmp<iuge> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() <= b.get<T>()); } }; };
+template<> struct FoldICmp<iult> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() >  b.get<T>()); } }; };
+template<> struct FoldICmp<iule> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() >= b.get<T>()); } }; };
+template<> struct FoldICmp<isgt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() <  b.get<T>()); } }; };
+template<> struct FoldICmp<isge> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() <= b.get<T>()); } }; };
+template<> struct FoldICmp<islt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >  b.get<T>()); } }; };
+template<> struct FoldICmp<isle> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >= b.get<T>()); } }; };
 
-template<int w>
-struct FoldRCmp {
-    static Box run(RRel rel, Box a, Box b) {
-        typedef typename w2r<w>::type T;
-        switch (rel) {
-            case RRel::  t: return {true};
-            case RRel::ult: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() <  b.get<T>()};
-            case RRel::ugt: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() >  b.get<T>()};
-            case RRel::une: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() != b.get<T>()};
-            case RRel::ueq: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() == b.get<T>()};
-            case RRel::ule: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() <= b.get<T>()};
-            case RRel::uge: return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() >= b.get<T>()};
-            case RRel::uno: return { std::isunordered(a.get<T>(), b.get<T>())};
-            case RRel::ord: return {!std::isunordered(a.get<T>(), b.get<T>())};
-            case RRel::olt: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() <  b.get<T>()};
-            case RRel::ogt: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() >  b.get<T>()};
-            case RRel::one: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() != b.get<T>()};
-            case RRel::oeq: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() == b.get<T>()};
-            case RRel::ole: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() <= b.get<T>()};
-            case RRel::oge: return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() >= b.get<T>()};
-            case RRel::  f: return {false};
-            default: THORIN_UNREACHABLE;
-        }
-    }
-};
+
+template<RCmp> struct FoldRCmp {};
+template<> struct FoldRCmp<rt  > { template<int w> struct Fold { static Box run(Box  , Box  ) { return {true}; } }; };
+template<> struct FoldRCmp<rult> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() <  b.get<T>()}; } }; };
+template<> struct FoldRCmp<rugt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() >  b.get<T>()}; } }; };
+template<> struct FoldRCmp<rune> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() != b.get<T>()}; } }; };
+template<> struct FoldRCmp<rueq> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() == b.get<T>()}; } }; };
+template<> struct FoldRCmp<rule> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() <= b.get<T>()}; } }; };
+template<> struct FoldRCmp<ruge> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() >= b.get<T>()}; } }; };
+template<> struct FoldRCmp<runo> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return { std::isunordered(a.get<T>(), b.get<T>())}; } }; };
+template<> struct FoldRCmp<rord> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return {!std::isunordered(a.get<T>(), b.get<T>())}; } }; };
+template<> struct FoldRCmp<rolt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() <  b.get<T>()}; } }; };
+template<> struct FoldRCmp<rogt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() >  b.get<T>()}; } }; };
+template<> struct FoldRCmp<rone> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() != b.get<T>()}; } }; };
+template<> struct FoldRCmp<roeq> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() == b.get<T>()}; } }; };
+template<> struct FoldRCmp<role> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() <= b.get<T>()}; } }; };
+template<> struct FoldRCmp<roge> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return {!std::isunordered(a.get<T>(), b.get<T>()) && a.get<T>() >= b.get<T>()}; } }; };
+template<> struct FoldRCmp<rf  > { template<int w> struct Fold { static Box run(Box  , Box  ) { return {false}; } }; };
 
 }
 

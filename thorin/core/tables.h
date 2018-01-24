@@ -27,119 +27,139 @@ constexpr WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int6
 constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
 
 /// Integer instructions that might wrap and, hence, take @p WFlags.
-#define THORIN_W_ARITHOP(m) m(wadd) m(wsub) m(wmul) m(wshl)
+#define THORIN_W_OP(m) m(wadd) m(wsub) m(wmul) m(wshl)
 /// Integer instructions that might produce a side effect (division by zero).
-#define THORIN_M_ARITHOP(m) m(sdiv) m(udiv) m(smod) m(umod)
+#define THORIN_M_OP(m) m(sdiv) m(udiv) m(smod) m(umod)
 /// Integer instructions that neither take wflags nor do they produce a side effect.
-#define THORIN_I_ARITHOP(m)  m(ashr) m(lshr) m(iand) m(ior) m(ixor)
+#define THORIN_I_OP(m) m(ashr) m(lshr) m(iand) m(ior) m(ixor)
 /// Floating point (real) instructions that take @p RFlags.
-#define THORIN_R_ARITHOP(m)  m(radd) m(rsub) m(rmul) m(rdiv) m(rmod)
+#define THORIN_R_OP(m) m(radd) m(rsub) m(rmul) m(rdiv) m(rmod)
 
-#define THORIN_I_REL(m)\
-    m(eq)  /* equal */ \
-    m(ne)  /* not equal */ \
-    m(ugt) /* unsigned greater than */ \
-    m(uge) /* unsigned greater or equal */ \
-    m(ult) /* unsigned less than */ \
-    m(ule) /* unsigned less or equal */ \
-    m(sgt) /* signed greater than */ \
-    m(sge) /* signed greater or equal */ \
-    m(slt) /* signed less than */ \
-    m(sle) /* signed less or equal */
+#define THORIN_I_CMP(m)\
+    m(i_eq)  /* equal */ \
+    m(i_ne)  /* not equal */ \
+    m(iugt) /* unsigned greater than */ \
+    m(iuge) /* unsigned greater or equal */ \
+    m(iult) /* unsigned less than */ \
+    m(iule) /* unsigned less or equal */ \
+    m(isgt) /* signed greater than */ \
+    m(isge) /* signed greater or equal */ \
+    m(islt) /* signed less than */ \
+    m(isle) /* signed less or equal */
 
-#define THORIN_R_REL(m)     /* O E G L                                      */ \
-                     m(t)   /* o o o o - always true                        */ \
-                     m(ult) /* o o o x - unordered or less than             */ \
-                     m(ugt) /* o o x o - unordered or greater than          */ \
-                     m(une) /* o o x x - unordered or not equal             */ \
-                     m(ueq) /* o x o o - unordered or equal                 */ \
-                     m(ule) /* o x o x - unordered or less than or equal    */ \
-                     m(uge) /* o x x o - unordered or greater than or equal */ \
-                     m(uno) /* o x x x - unordered (either NaNs)            */ \
-                     m(ord) /* x o o o - ordered (no NaNs)                  */ \
-                     m(olt) /* x o o x - ordered and less than              */ \
-                     m(ogt) /* x o x o - ordered and greater than           */ \
-                     m(one) /* x o x x - ordered and not equal              */ \
-                     m(oeq) /* x x o o - ordered and equal                  */ \
-                     m(ole) /* x x o x - ordered and less than or equal     */ \
-                     m(oge) /* x x x o - ordered and greater than or equal  */ \
-                     m(f)   /* x x x x - always false                       */
+#define THORIN_R_CMP(m)      /* O E G L                                      */ \
+                     m(rt)   /* o o o o - always true                        */ \
+                     m(rult) /* o o o x - unordered or less than             */ \
+                     m(rugt) /* o o x o - unordered or greater than          */ \
+                     m(rune) /* o o x x - unordered or not equal             */ \
+                     m(rueq) /* o x o o - unordered or equal                 */ \
+                     m(rule) /* o x o x - unordered or less than or equal    */ \
+                     m(ruge) /* o x x o - unordered or greater than or equal */ \
+                     m(runo) /* o x x x - unordered (either NaNs)            */ \
+                     m(rord) /* x o o o - ordered (no NaNs)                  */ \
+                     m(rolt) /* x o o x - ordered and less than              */ \
+                     m(rogt) /* x o x o - ordered and greater than           */ \
+                     m(rone) /* x o x x - ordered and not equal              */ \
+                     m(roeq) /* x x o o - ordered and equal                  */ \
+                     m(role) /* x x o x - ordered and less than or equal     */ \
+                     m(roge) /* x x x o - ordered and greater than or equal  */ \
+                     m(rf)   /* x x x x - always false                       */
 
-enum WArithop : size_t {
+enum WOp : size_t {
 #define CODE(O) O,
-    THORIN_W_ARITHOP(CODE)
+    THORIN_W_OP(CODE)
 #undef CODE
-    Num_WArithOp
+    Num_WOp
 };
 
-enum MArithop : size_t {
+enum MOp : size_t {
 #define CODE(O) O,
-    THORIN_M_ARITHOP(CODE)
+    THORIN_M_OP(CODE)
 #undef CODE
-    Num_MArithOp
+    Num_MOp
 };
 
-enum IArithop : size_t {
+enum IOp : size_t {
 #define CODE(O) O,
-    THORIN_I_ARITHOP(CODE)
+    THORIN_I_OP(CODE)
 #undef CODE
-    Num_IArithOp
+    Num_IOp
 };
 
-enum RArithop : size_t {
+enum ROp : size_t {
 #define CODE(O) O,
-    THORIN_R_ARITHOP(CODE)
+    THORIN_R_OP(CODE)
 #undef CODE
-    Num_RArithOp
+    Num_ROp
 };
 
-constexpr const char* arithop2str(WArithop o) {
-    switch (o) {
-#define CODE(O) case O: return #O;
-    THORIN_W_ARITHOP(CODE)
-#undef CODE
-        default: THORIN_UNREACHABLE;
-    }
-}
-
-constexpr const char* arithop2str(MArithop o) {
-    switch (o) {
-#define CODE(O) case O: return #O;
-    THORIN_M_ARITHOP(CODE)
-#undef CODE
-        default: THORIN_UNREACHABLE;
-    }
-}
-
-constexpr const char* arithop2str(IArithop o) {
-    switch (o) {
-#define CODE(O) case O: return #O;
-    THORIN_I_ARITHOP(CODE)
-#undef CODE
-        default: THORIN_UNREACHABLE;
-    }
-}
-
-constexpr const char* arithop2str(RArithop o) {
-    switch (o) {
-#define CODE(O) case O: return #O;
-    THORIN_R_ARITHOP(CODE)
-#undef CODE
-        default: THORIN_UNREACHABLE;
-    }
-}
-
-enum class IRel : int64_t {
+enum ICmp : size_t {
 #define CODE(f) f,
-    THORIN_I_REL(CODE)
+    THORIN_I_CMP(CODE)
 #undef CODE
+    Num_ICmp
 };
 
-enum class RRel : int64_t {
+enum RCmp : size_t {
 #define CODE(f) f,
-    THORIN_R_REL(CODE)
+    THORIN_R_CMP(CODE)
 #undef CODE
+    Num_RCmp
 };
+
+constexpr const char* op2str(WOp o) {
+    switch (o) {
+#define CODE(O) case O: return #O;
+    THORIN_W_OP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
+
+constexpr const char* op2str(MOp o) {
+    switch (o) {
+#define CODE(O) case O: return #O;
+    THORIN_M_OP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
+
+constexpr const char* op2str(IOp o) {
+    switch (o) {
+#define CODE(O) case O: return #O;
+    THORIN_I_OP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
+
+constexpr const char* op2str(ROp o) {
+    switch (o) {
+#define CODE(O) case O: return #O;
+    THORIN_R_OP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
+
+constexpr const char* cmp2str(ICmp o) {
+    switch (o) {
+#define CODE(O) case O: return #O;
+    THORIN_I_CMP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
+
+constexpr const char* cmp2str(RCmp o) {
+    switch (o) {
+#define CODE(O) case O: return #O;
+    THORIN_R_CMP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
 
 }
 
