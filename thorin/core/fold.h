@@ -62,6 +62,8 @@ struct Fold_shl {
     }
 };
 
+template<int w> struct Fold_sdiv { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() /  b.get<T>()); } };
+
 template<int w> struct Fold_ashr { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >> b.get<T>()); } };
 template<int w> struct Fold_lshr { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() >> b.get<T>()); } };
 template<int w> struct Fold_iand { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() &  b.get<T>()); } };

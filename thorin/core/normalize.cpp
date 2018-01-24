@@ -53,6 +53,25 @@ static const Def* normalize_tuple(thorin::World& world, const Def* callee, const
     return nullptr;
 }
 
+static const Def* normalize_mtuple(thorin::World& world, const Def* callee, const Def* m, const Def* a, const Def* b, Debug dbg) {
+    // TODO
+    auto ta = a->isa<Tuple>(), tb = b->isa<Tuple>();
+    auto pa = a->isa<Pack>(),  pb = b->isa<Pack>();
+
+    if ((ta || pa) && (tb || pb)) {
+        auto [head, tail] = shrink_shape(world, app_arg(callee));
+        auto new_callee = world.app(app_callee(callee), tail);
+
+        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i), tb->op(i)}, dbg); }));
+        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i), pb->body()}, dbg); }));
+        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {m, pa->body(), tb->op(i)}, dbg); }));
+        assert(pa && pb);
+        return world.pack(head, world.app(new_callee, {m, pa->body(), pb->body()}, dbg), dbg);
+    }
+
+    return nullptr;
+}
+
 static const Lit* const_to_left(const Def*& a, const Def*& b) {
     if (b->isa<Lit>()) {
         std::swap(a, b);
@@ -200,11 +219,45 @@ const Def* normalize_shl(thorin::World& world, const Def* callee, const Def* arg
  * MArithop
  */
 
+template<template<int> class F>
+static const Def* just_try_ifold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+    auto la = a->isa<Lit>(), lb = b->isa<Lit>();
+    if (la && lb) {
+        auto ba = la->box(), bb = lb->box();
+        auto t = callee->type()->template as<Pi>()->body();
+        auto w = get_nat(app_arg(app_callee(callee)));
+        try {
+            switch (w) {
+                case  8: return world.lit(t, F< 8>::run(ba, bb));
+                case 16: return world.lit(t, F<16>::run(ba, bb));
+                case 32: return world.lit(t, F<32>::run(ba, bb));
+                case 64: return world.lit(t, F<64>::run(ba, bb));
+            }
+        } catch (ErrorException) {
+            return world.error(t);
+        }
+    }
+
+    return normalize_tuple(world, callee, a, b, dbg);
+}
+
+template<template<int> class F>
+static const Def* try_ifold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+    if (auto result = just_try_ifold<F>(world, callee, a, b, dbg)) return result;
+    return normalize_tuple(world, callee, a, b, dbg);
+}
+
+template<template<int> class F>
+static const Def* try_mfold(thorin::World& world, const Def* callee, const Def* m, const Def* a, const Def* b, Debug dbg) {
+    if (auto result = just_try_ifold<F>(world, callee, a, b, dbg)) return world.tuple({m, result});
+    return normalize_mtuple(world, callee, m, a, b, dbg);
+}
+
 const Def* normalize_sdiv(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
     if (auto result = check_callee(normalize_sdiv, world, callee, arg, dbg)) return result;
 
     auto [m, a, b] = msplit(world, arg);
-    //if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
+    if (auto result = try_mfold<Fold_sdiv>(world, callee, m, a, b, dbg)) return result;
 
     return world.raw_app(callee, {m, a, b}, dbg);
 }
@@ -239,28 +292,6 @@ const Def* normalize_umod(thorin::World& world, const Def* callee, const Def* ar
 /*
  * IArithop
  */
-
-template<template<int> class F>
-static const Def* try_ifold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    auto la = a->isa<Lit>(), lb = b->isa<Lit>();
-    if (la && lb) {
-        auto ba = la->box(), bb = lb->box();
-        auto t = callee->type()->template as<Pi>()->body();
-        auto w = get_nat(app_arg(app_callee(callee)));
-        try {
-            switch (w) {
-                case  8: return world.lit(t, F< 8>::run(ba, bb));
-                case 16: return world.lit(t, F<16>::run(ba, bb));
-                case 32: return world.lit(t, F<32>::run(ba, bb));
-                case 64: return world.lit(t, F<64>::run(ba, bb));
-            }
-        } catch (ErrorException) {
-            return world.error(t);
-        }
-    }
-
-    return normalize_tuple(world, callee, a, b, dbg);
-}
 
 const Def* normalize_ashr(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
     if (auto result = check_callee(normalize_ashr, world, callee, arg, dbg)) return result;
