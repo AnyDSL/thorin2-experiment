@@ -92,11 +92,11 @@ TEST(Lambda, EtaConversion) {
     auto g = w.axiom(w.pi(w.sigma({N, N}), N), {"g"});
     auto NxN = w.sigma({N, N});
     auto NxNxN = w.sigma({N, N, N});
-    EXPECT_EQ(w.lambda(NxN, w.app(g, w.tuple({w.extract(w.var(NxN, 0), 0), w.extract(w.var(NxN, 0), 1)}))), g);
-    EXPECT_NE(w.lambda(NxN, w.app(g, w.tuple({w.extract(w.var(NxN, 0), 1), w.extract(w.var(NxN, 0), 0)}))), g);
-    EXPECT_NE(w.lambda(NxNxN, w.app(g, w.tuple({w.extract(w.var(NxNxN, 0), 0), w.extract(w.var(NxNxN, 0), 1)}))), g);
+    EXPECT_EQ(w.lambda(NxN, w.app(g, w.tuple({w.extract(w.var(NxN, 0), 0_u64), w.extract(w.var(NxN, 0), 1)}))), g);
+    EXPECT_NE(w.lambda(NxN, w.app(g, w.tuple({w.extract(w.var(NxN, 0), 1), w.extract(w.var(NxN, 0), 0_u64)}))), g);
+    EXPECT_NE(w.lambda(NxNxN, w.app(g, w.tuple({w.extract(w.var(NxNxN, 0), 0_u64), w.extract(w.var(NxNxN, 0), 1)}))), g);
 
     auto h = w.axiom(w.pi(w.sigma({N, N, N}), N), {"h"});
-    EXPECT_EQ(w.lambda(NxNxN, w.app(h, w.tuple({w.extract(w.var(NxNxN, 0), 0), w.extract(w.var(NxNxN, 0), 1), w.extract(w.var(NxNxN, 0), 2)}))), h);
-    EXPECT_NE(w.lambda(NxNxN, w.app(h, w.tuple({w.extract(w.var(NxNxN, 0), 2), w.extract(w.var(NxNxN, 0), 1), w.extract(w.var(NxNxN, 0), 0)}))), h);
+    EXPECT_EQ(w.lambda(NxNxN, w.app(h, w.tuple({w.extract(w.var(NxNxN, 0), 0_u64), w.extract(w.var(NxNxN, 0), 1_u64), w.extract(w.var(NxNxN, 0), 2_u64)}))), h);
+    EXPECT_NE(w.lambda(NxNxN, w.app(h, w.tuple({w.extract(w.var(NxNxN, 0), 2_u64), w.extract(w.var(NxNxN, 0), 1_u64), w.extract(w.var(NxNxN, 0), 0_u64)}))), h);
 }

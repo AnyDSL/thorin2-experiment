@@ -8,8 +8,8 @@ namespace thorin::core {
  */
 
 std::tuple<const Def*, const Def*> split(thorin::World& world, const Def* def) {
-    auto a = world.extract(def, 0);
-    auto b = world.extract(def, 1);
+    auto a = world.extract(def, 0_u64);
+    auto b = world.extract(def, 1_u64);
     return {a, b};
 }
 
@@ -52,7 +52,7 @@ const Def* try_wfold(thorin::World& world, const Def* callee, const Def* a, cons
     auto la = a->isa<Lit>(), lb = b->isa<Lit>();
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
-        auto t = a->type();
+        auto t = callee->type()->template as<Pi>()->body();
         auto w = get_nat(app_arg(app_callee(callee)));
         auto f = get_nat(app_arg(app_callee(app_callee(callee))));
         try {
@@ -150,7 +150,7 @@ const Def* try_ifold(thorin::World& world, const Def* callee, const Def* a, cons
     auto la = a->isa<Lit>(), lb = b->isa<Lit>();
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
-        auto t = a->type();
+        auto t = callee->type()->template as<Pi>()->body();
         auto w = get_nat(app_arg(app_callee(callee)));
         try {
             switch (w) {
@@ -211,7 +211,7 @@ const Def* try_rfold(thorin::World& world, const Def* callee, const Def* a, cons
     auto la = a->isa<Lit>(), lb = b->isa<Lit>();
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
-        auto t = a->type();
+        auto t = callee->type()->template as<Pi>()->body();
         auto w = get_nat(app_arg(app_callee(callee)));
         try {
             switch (w) {
@@ -269,7 +269,7 @@ const Def* normalize_rmod(thorin::World& world, const Def*, const Def* callee, c
 template<ICmp op>
 const Def* normalize_icmp(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(world, arg);
-    if (auto result = try_rfold<FoldICmp<op>::template Fold>(world, callee, a, b, dbg)) return result;
+    if (auto result = try_ifold<FoldICmp<op>::template Fold>(world, callee, a, b, dbg)) return result;
 
     return nullptr;
 }

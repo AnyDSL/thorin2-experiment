@@ -77,14 +77,14 @@ template<int w> struct Fold_rrem { static Box run(Box a, Box b) { typedef typena
 template<ICmp> struct FoldICmp {};
 template<> struct FoldICmp<ICmp::eq > { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() == b.get<T>()); } }; };
 template<> struct FoldICmp<ICmp::ne > { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() != b.get<T>()); } }; };
-template<> struct FoldICmp<ICmp::ugt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() <  b.get<T>()); } }; };
-template<> struct FoldICmp<ICmp::uge> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() <= b.get<T>()); } }; };
-template<> struct FoldICmp<ICmp::ult> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() >  b.get<T>()); } }; };
-template<> struct FoldICmp<ICmp::ule> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() >= b.get<T>()); } }; };
-template<> struct FoldICmp<ICmp::sgt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() <  b.get<T>()); } }; };
-template<> struct FoldICmp<ICmp::sge> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() <= b.get<T>()); } }; };
-template<> struct FoldICmp<ICmp::slt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >  b.get<T>()); } }; };
-template<> struct FoldICmp<ICmp::sle> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >= b.get<T>()); } }; };
+template<> struct FoldICmp<ICmp::ugt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() >  b.get<T>()); } }; };
+template<> struct FoldICmp<ICmp::uge> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() >= b.get<T>()); } }; };
+template<> struct FoldICmp<ICmp::ult> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() <  b.get<T>()); } }; };
+template<> struct FoldICmp<ICmp::ule> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() <= b.get<T>()); } }; };
+template<> struct FoldICmp<ICmp::sgt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >  b.get<T>()); } }; };
+template<> struct FoldICmp<ICmp::sge> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >= b.get<T>()); } }; };
+template<> struct FoldICmp<ICmp::slt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() <  b.get<T>()); } }; };
+template<> struct FoldICmp<ICmp::sle> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() <= b.get<T>()); } }; };
 
 template<RCmp> struct FoldRCmp {};
 template<> struct FoldRCmp<RCmp::t  > { template<int w> struct Fold { static Box run(Box  , Box  ) { return {true}; } }; };

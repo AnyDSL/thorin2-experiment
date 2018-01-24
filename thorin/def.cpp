@@ -389,7 +389,6 @@ uint64_t Def::vhash() const {
 
 uint64_t Arity::vhash() const { return thorin::hash_combine(Def::vhash(), value()); }
 uint64_t Lit  ::vhash() const { return thorin::hash_combine(Def::vhash(), box_.get_u64()); }
-uint64_t Index::vhash() const { return thorin::hash_combine(Def::vhash(), value()); }
 uint64_t Var  ::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 
 //------------------------------------------------------------------------------
@@ -413,7 +412,6 @@ bool Def::equal(const Def* other) const {
 
 bool Arity::equal(const Def* other) const { return Def::equal(other) && this->value() == other->as<Arity>()->value(); }
 bool Lit  ::equal(const Def* other) const { return Def::equal(other) && this->box().get_u64() == other->as<Lit>()->box().get_u64(); }
-bool Index::equal(const Def* other) const { return Def::equal(other) && this->value() == other->as<Index>()->value(); }
 bool Var  ::equal(const Def* other) const { return Def::equal(other) && this->index() == other->as<Var>()->index(); }
 
 //------------------------------------------------------------------------------
@@ -429,7 +427,6 @@ const Def* ArityKind     ::rebuild(World& to, const Def*  , Defs ops) const { re
 const Def* Axiom         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Error         ::rebuild(World& to, const Def* t, Defs    ) const { return to.error(t); }
 const Def* Extract       ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
-const Def* Index         ::rebuild(World& to, const Def* t, Defs    ) const { return to.index(t->as<Arity>(), value(), debug()); }
 const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
 const Def* Intersection  ::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
 const Def* Lambda        ::rebuild(World& to, const Def* t, Defs ops) const {
@@ -733,10 +730,6 @@ std::ostream& Error::stream(std::ostream& os) const { return os << "<error>"; }
 
 std::ostream& Extract::stream(std::ostream& os) const {
     return scrutinee()->name_stream(os) << "#" << index();
-}
-
-std::ostream& Index::stream(std::ostream& os) const {
-    return os << name();
 }
 
 std::ostream& Insert::stream(std::ostream& os) const {

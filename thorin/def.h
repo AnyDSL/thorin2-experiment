@@ -412,14 +412,14 @@ private:
 
 class Arity : public Def {
 private:
-    Arity(World& world, const ArityKind* type, size_t arity, Debug dbg)
+    Arity(World& world, const ArityKind* type, u64 arity, Debug dbg)
         : Def(world, Tag::Arity, type, Defs(), THORIN_OPS_PTR, dbg)
         , arity_(arity)
     {}
 
 public:
     const ArityKind* type() const { return Def::type()->as<ArityKind>(); }
-    size_t value() const { return arity_; }
+    u64 value() const { return arity_; }
     const Def* arity() const override;
     bool has_values() const override;
     std::ostream& stream(std::ostream&) const override;
@@ -429,29 +429,7 @@ private:
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
-    size_t arity_;
-
-    friend class World;
-};
-
-class Index : public Def {
-private:
-    Index(World& world, const Arity* type, size_t index, Debug dbg)
-        : Def(world, Tag::Index, type, Defs(), THORIN_OPS_PTR, dbg)
-        , index_(index)
-    {}
-
-public:
-    const Arity* type() const { return Def::type()->as<Arity>(); }
-    size_t value() const { return index_; }
-    std::ostream& stream(std::ostream&) const override;
-
-private:
-    uint64_t vhash() const override;
-    bool equal(const Def*) const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
-    size_t index_;
+    u64 arity_;
 
     friend class World;
 };
@@ -849,7 +827,7 @@ private:
 
 class Var : public Def {
 private:
-    Var(World& world, const Def* type, size_t index, Debug dbg)
+    Var(World& world, const Def* type, u64 index, Debug dbg)
         : Def(world, Tag::Var, type, Defs(), THORIN_OPS_PTR, dbg)
     {
         assert(!type->is_universe());
@@ -859,7 +837,7 @@ private:
 
 public:
     const Def* arity() const override;
-    size_t index() const { return index_; }
+    u64 index() const { return index_; }
     std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
     std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
@@ -870,7 +848,7 @@ private:
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
-    size_t index_;
+    u64 index_;
 
     friend class World;
 };
@@ -921,6 +899,11 @@ private:
     friend class World;
 };
 
+#define CODE(T) inline T get_ ## T(const Def* def) { return def->as<Lit>()->box().get_ ## T(); }
+THORIN_TYPES(CODE)
+#undef CODE
+inline s64 get_nat(const Def* def) { return get_s64(def); }
+inline u64 get_index(const Def* def) { return get_u64(def); }
 
 class Error : public Def {
 private:

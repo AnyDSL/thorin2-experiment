@@ -272,8 +272,8 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     auto type = def->type();
     assertf(arity, "arity unknown for {} of type {}, can only extract when arity is known", def, type);
     if (arity->assignable(index)) {
-        if (auto idx = index->isa<Index>()) {
-            auto i = idx->value();
+        if (auto idx = index->isa<Lit>()) {
+            auto i = get_index(idx);
             if (def->isa<Tuple>()) {
                 return def->op(i);
             }
@@ -298,7 +298,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             return pack->body()->reduce(index);
         }
         // here: index is const => type is variadic, index is var => type may be variadic/sigma, must not be dependent sigma
-        assert(!index->isa<Index>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
+        assert(!index->isa<Lit>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
         const Def* result_type = nullptr;
         if (auto sigma = type->isa<Sigma>()) {
             assertf(!sigma->is_dependent(), "can't extract at {} from {} : {}, type is dependent", index, def, sigma);
@@ -339,11 +339,11 @@ const Def* World::extract(const Def* def, size_t i, Debug dbg) {
     return extract(def, index(def->arity()->as<Arity>(), i, dbg), dbg);
 }
 
-const Index* World::index(const Arity* a, size_t i, Location location) {
+const Lit* World::index(const Arity* a, u64 i, Location location) {
     auto arity_val = a->value();
     assertf(i < arity_val, "Index literal {} does not fit within arity {}", i, a);
     auto cur = Def::gid_counter();
-    auto result = unify<Index>(3, *this, a, i, location);
+    auto result = lit(a, i, location);
 
     if (result->gid() >= cur) { // new iassume -> build name
         std::string s = std::to_string(i);
@@ -370,8 +370,8 @@ const Def* World::index_zero(const Def* arity, Location location) {
 
 const Def* World::index_succ(const Def* index, Debug dbg) {
     assert(index->type()->type()->isa<ArityKind>());
-    if (auto idx = index->isa<Index>())
-        return this->index(idx->type(), idx->value() + 1, dbg);
+    if (auto idx = index->isa<Lit>())
+        return this->index(idx->type()->as<Arity>(), get_index(idx) + 1_u64, dbg);
 
     return app(app(index_succ_, index->type(), dbg), index, dbg);
 }
@@ -609,8 +609,8 @@ const Def* World::tuple(Defs defs, Debug dbg) {
                 }
 
                 if (same == extract->scrutinee()) {
-                    if (auto index = extract->index()->isa<Index>()) {
-                        if (index->value() == i)
+                    if (auto index = extract->index()->isa<Lit>()) {
+                        if (get_index(index) == i)
                             continue;
                     }
                 }

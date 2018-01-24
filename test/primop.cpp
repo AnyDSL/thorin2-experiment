@@ -52,14 +52,86 @@ TEST(Primop, ConstFolding) {
     ASSERT_EQ(w.op<WOp::wadd>(WFlags::nuw, w.lit_i(0xff_u8), w.lit_i(1_u8)), w.error(w.type_i(8)));
 }
 
+template<class T>
+void test_icmp(World& w) {
+    auto t = w.type_i(sizeof(T)*8);
+    auto l23 = w.lit(t, T(-23));
+    auto l42 = w.lit(t, T(42));
+    auto lt = w.lit_true();
+    auto lf = w.lit_false();
+
+    ASSERT_EQ(w.op<ICmp::eq >(l23, l23), lt);
+    ASSERT_EQ(w.op<ICmp::ne >(l23, l23), lf);
+    ASSERT_EQ(w.op<ICmp::sge>(l23, l23), lt);
+    ASSERT_EQ(w.op<ICmp::sgt>(l23, l23), lf);
+    ASSERT_EQ(w.op<ICmp::sle>(l23, l23), lt);
+    ASSERT_EQ(w.op<ICmp::slt>(l23, l23), lf);
+    ASSERT_EQ(w.op<ICmp::uge>(l23, l23), lt);
+    ASSERT_EQ(w.op<ICmp::ugt>(l23, l23), lf);
+    ASSERT_EQ(w.op<ICmp::ule>(l23, l23), lt);
+    ASSERT_EQ(w.op<ICmp::ult>(l23, l23), lf);
+
+    ASSERT_EQ(w.op<ICmp::eq >(l23, l42), lf);
+    ASSERT_EQ(w.op<ICmp::ne >(l23, l42), lt);
+    ASSERT_EQ(w.op<ICmp::sge>(l23, l42), lf);
+    ASSERT_EQ(w.op<ICmp::sgt>(l23, l42), lf);
+    ASSERT_EQ(w.op<ICmp::sle>(l23, l42), lt);
+    ASSERT_EQ(w.op<ICmp::slt>(l23, l42), lt);
+    ASSERT_EQ(w.op<ICmp::uge>(l23, l42), lt);
+    ASSERT_EQ(w.op<ICmp::ugt>(l23, l42), lt);
+    ASSERT_EQ(w.op<ICmp::ule>(l23, l42), lf);
+    ASSERT_EQ(w.op<ICmp::ult>(l23, l42), lf);
+
+    ASSERT_EQ(w.op<ICmp::eq >(l42, l23), lf);
+    ASSERT_EQ(w.op<ICmp::ne >(l42, l23), lt);
+    ASSERT_EQ(w.op<ICmp::sge>(l42, l23), lt);
+    ASSERT_EQ(w.op<ICmp::sgt>(l42, l23), lt);
+    ASSERT_EQ(w.op<ICmp::sle>(l42, l23), lf);
+    ASSERT_EQ(w.op<ICmp::slt>(l42, l23), lf);
+    ASSERT_EQ(w.op<ICmp::uge>(l42, l23), lf);
+    ASSERT_EQ(w.op<ICmp::ugt>(l42, l23), lf);
+    ASSERT_EQ(w.op<ICmp::ule>(l42, l23), lt);
+    ASSERT_EQ(w.op<ICmp::ult>(l42, l23), lt);
+}
+
+template<class T>
+void test_rcmp(World& w) {
+    auto t = w.type_r(sizeof(T)*8);
+    auto l23 = w.lit(t, T(-23));
+    auto l42 = w.lit(t, T(42));
+    auto lt = w.lit_true();
+    auto lf = w.lit_false();
+
+    ASSERT_EQ(w.op<RCmp::oeq>(l23, l23), lt);
+    ASSERT_EQ(w.op<RCmp::one>(l23, l23), lf);
+    ASSERT_EQ(w.op<RCmp::oge>(l23, l23), lt);
+    ASSERT_EQ(w.op<RCmp::ogt>(l23, l23), lf);
+    ASSERT_EQ(w.op<RCmp::ole>(l23, l23), lt);
+    ASSERT_EQ(w.op<RCmp::olt>(l23, l23), lf);
+
+    ASSERT_EQ(w.op<RCmp::oeq>(l23, l42), lf);
+    ASSERT_EQ(w.op<RCmp::one>(l23, l42), lt);
+    ASSERT_EQ(w.op<RCmp::oge>(l23, l42), lf);
+    ASSERT_EQ(w.op<RCmp::ogt>(l23, l42), lf);
+    ASSERT_EQ(w.op<RCmp::ole>(l23, l42), lt);
+    ASSERT_EQ(w.op<RCmp::olt>(l23, l42), lt);
+
+    ASSERT_EQ(w.op<RCmp::oeq>(l42, l23), lf);
+    ASSERT_EQ(w.op<RCmp::one>(l42, l23), lt);
+    ASSERT_EQ(w.op<RCmp::oge>(l42, l23), lt);
+    ASSERT_EQ(w.op<RCmp::ogt>(l42, l23), lt);
+    ASSERT_EQ(w.op<RCmp::ole>(l42, l23), lf);
+    ASSERT_EQ(w.op<RCmp::olt>(l42, l23), lf);
+}
+
 TEST(Primop, Cmp) {
     World w;
-    auto x = w.op<ICmp::ule>(w.lit_i(23), w.lit_i(42));
-    auto y = w.op<ICmp::eq >(w.lit_i(23), w.lit_i(42));
-    auto z = w.op<ICmp::ne >(w.lit_i(23), w.lit_i(42));
-    x->dump();
-    y->dump();
-    z->dump();
+#define CODE(T) test_icmp<T>(w);
+    THORIN_U_TYPES(CODE)
+#undef CODE
+#define CODE(T) test_rcmp<T>(w);
+    THORIN_R_TYPES(CODE)
+#undef CODE
 }
 
 TEST(Primop, Ptr) {

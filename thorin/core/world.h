@@ -117,15 +117,13 @@ public:
     }
 
     //@{ conversions
-    //const Axiom* op_trunc() const { return op_trunc_; }
-    //const Axiom* op_zext() const { return  op_zext_; }
-    //const Axiom* op_sext() const { return  op_sext_; }
-    //const Axiom* op_rtrunc() const { return op_rtrunc_; }
-    //const Axiom* op_rext() const { return op_rext_; }
-    //const Axiom* op_r2s() const { return op_r2s_; }
-    //const Axiom* op_r2u() const { return op_r2u_; }
-    //const Axiom* op_s2r() const { return op_s2r_; }
-    //const Axiom* op_u2r() const { return op_u2r_; }
+    const Axiom* op_scast() const { return op_scast_; }
+    const Axiom* op_ucast() const { return op_ucast_; }
+    const Axiom* op_rcast() const { return op_rcast_; }
+    const Axiom* op_r2s() const { return op_r2s_; }
+    const Axiom* op_r2u() const { return op_r2u_; }
+    const Axiom* op_s2r() const { return op_s2r_; }
+    const Axiom* op_u2r() const { return op_u2r_; }
     //@}
 
     //@{ lea - load effective address
@@ -170,8 +168,6 @@ private:
     const Axiom* op_slot_;
     const Axiom* op_store_;
 };
-
-inline s64 get_nat(const Def* def) { return def->as<Lit>()->box().get_s64(); }
 
 }
 
