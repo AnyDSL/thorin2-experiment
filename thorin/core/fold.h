@@ -86,7 +86,6 @@ template<> struct FoldICmp<isge> { template<int w> struct Fold { static Box run(
 template<> struct FoldICmp<islt> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >  b.get<T>()); } }; };
 template<> struct FoldICmp<isle> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >= b.get<T>()); } }; };
 
-
 template<RCmp> struct FoldRCmp {};
 template<> struct FoldRCmp<rt  > { template<int w> struct Fold { static Box run(Box  , Box  ) { return {true}; } }; };
 template<> struct FoldRCmp<rult> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return { std::isunordered(a.get<T>(), b.get<T>()) || a.get<T>() <  b.get<T>()}; } }; };
