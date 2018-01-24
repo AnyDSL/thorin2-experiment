@@ -287,31 +287,31 @@ const Def* normalize_rcmp(thorin::World& world, const Def*, const Def* callee, c
  * curry normalizers
  */
 
-#define CODE(o) \
-    const Def* normalize_ ## o ## _2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o,       type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _2, type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _1, type, callee, arg, dbg); }
+#define CODE(T, o) \
+    const Def* normalize_ ## T ## o ## _2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o,       type, callee, arg, dbg); } \
+    const Def* normalize_ ## T ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## T ## o ## _2, type, callee, arg, dbg); } \
+    const Def* normalize_ ## T ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## T ## o ## _1, type, callee, arg, dbg); }
     THORIN_W_OP(CODE)
     THORIN_R_OP(CODE)
 #undef CODE
 
-#define CODE(o) \
-    const Def* normalize_ ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o,       type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _1, type, callee, arg, dbg); }
+#define CODE(T, o) \
+    const Def* normalize_ ## T ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o,       type, callee, arg, dbg); } \
+    const Def* normalize_ ## T ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## T ## o ## _1, type, callee, arg, dbg); }
     THORIN_M_OP(CODE)
     THORIN_I_OP(CODE)
 #undef CODE
 
-#define CODE(o) \
-    const Def* normalize_ ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_icmp<o>,    type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _1, type, callee, arg, dbg); }
+#define CODE(T, o) \
+    const Def* normalize_ ## T ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_icmp<T::o>,    type, callee, arg, dbg); } \
+    const Def* normalize_ ## T ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## T ## o ## _1, type, callee, arg, dbg); }
     THORIN_I_CMP(CODE)
 #undef CODE
 
-#define CODE(o) \
-    const Def* normalize_ ## o ## _2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_rcmp<o>,    type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _2, type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _1, type, callee, arg, dbg); }
+#define CODE(T, o) \
+    const Def* normalize_ ## T ## o ## _2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_rcmp<T::o>, type, callee, arg, dbg); } \
+    const Def* normalize_ ## T ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## T ## o ## _2, type, callee, arg, dbg); } \
+    const Def* normalize_ ## T ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## T ## o ## _1, type, callee, arg, dbg); }
     THORIN_R_CMP(CODE)
 #undef CODE
 

@@ -49,71 +49,71 @@ public:
     //@}
 
     //@{ arithmetic operations for WOp
-    template<WOp O> const Axiom* op() { return wop_[O]; }
-    template<WOp O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(WFlags::none, a, b, dbg); }
-    template<WOp O> const Def* op(WFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
+    template<WOp o> const Axiom* op() { return wop_[size_t(o)]; }
+    template<WOp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<o>(WFlags::none, a, b, dbg); }
+    template<WOp o> const Def* op(WFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
-        return op<O>(flags, width, shape, a, b, dbg);
+        return op<o>(flags, width, shape, a, b, dbg);
     }
-    template<WOp O> const Def* op(WFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op<O>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
+    template<WOp o> const Def* op(WFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
     //@}
 
     //@{ arithmetic operations for MOp
-    template<MOp O> const Axiom* op() { return mop_[O]; }
-    template<MOp O> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
+    template<MOp o> const Axiom* op() { return mop_[size_t(o)]; }
+    template<MOp o> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
-        return op<O>(width, shape, m, a, b, dbg);
+        return op<o>(width, shape, m, a, b, dbg);
     }
-    template<MOp O> const Def* op(const Def* width, const Def* shape, const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(op<O>(), width), shape), {m, a, b}, dbg);
+    template<MOp o> const Def* op(const Def* width, const Def* shape, const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(op<o>(), width), shape), {m, a, b}, dbg);
     }
     //@}
 
     //@{ arithmetic operations for IOp
-    template<IOp O> const Axiom* op() { return iop_[O]; }
-    template<IOp O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
+    template<IOp o> const Axiom* op() { return iop_[size_t(o)]; }
+    template<IOp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
-        return op<O>(width, shape, a, b, dbg);
+        return op<o>(width, shape, a, b, dbg);
     }
-    template<IOp O> const Def* op(const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(op<O>(), width), shape), {a, b}, dbg);
+    template<IOp o> const Def* op(const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(op<o>(), width), shape), {a, b}, dbg);
     }
     //@}
 
     //@{ arithmetic operations for ROp
-    template<ROp O> const Axiom* op() { return rop_[O]; }
-    template<ROp O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(RFlags::none, a, b, dbg); }
-    template<ROp O> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
+    template<ROp o> const Axiom* op() { return rop_[size_t(o)]; }
+    template<ROp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<o>(RFlags::none, a, b, dbg); }
+    template<ROp o> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
-        return op<O>(flags, width, shape, a, b, dbg);
+        return op<o>(flags, width, shape, a, b, dbg);
     }
-    template<ROp O> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op<O>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
+    template<ROp o> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
     //@}
 
     //@{ icmp
-    template<ICmp O> const Axiom* op() { return icmp_[O]; }
-    template<ICmp O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
+    template<ICmp o> const Axiom* op() { return icmp_[size_t(o)]; }
+    template<ICmp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
-        return op<O>(width, shape, a, b, dbg);
+        return op<o>(width, shape, a, b, dbg);
     }
-    template<ICmp O> const Def* op(const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(op<O>(), width), shape), {a, b}, dbg);
+    template<ICmp o> const Def* op(const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(op<o>(), width), shape), {a, b}, dbg);
     }
     //@}
 
     //@{ rcmp
-    template<RCmp O> const Axiom* op() { return rcmp_[O]; }
-    template<RCmp O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(RFlags::none, a, b, dbg); }
-    template<RCmp O> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
+    template<RCmp o> const Axiom* op() { return rcmp_[size_t(o)]; }
+    template<RCmp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<o>(RFlags::none, a, b, dbg); }
+    template<RCmp o> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
-        return op<O>(flags, width, shape, a, b, dbg);
+        return op<o>(flags, width, shape, a, b, dbg);
     }
-    template<RCmp O> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op<O>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
+    template<RCmp o> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
 
     //@{ conversions
@@ -151,12 +151,12 @@ private:
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
-    std::array<const Axiom*, Num_WOp > wop_;
-    std::array<const Axiom*, Num_MOp > mop_;
-    std::array<const Axiom*, Num_IOp > iop_;
-    std::array<const Axiom*, Num_ROp > rop_;
-    std::array<const Axiom*, Num_ICmp> icmp_;
-    std::array<const Axiom*, Num_RCmp> rcmp_;
+    std::array<const Axiom*, size_t(WOp ::Num)> wop_;
+    std::array<const Axiom*, size_t(MOp ::Num)> mop_;
+    std::array<const Axiom*, size_t(IOp ::Num)> iop_;
+    std::array<const Axiom*, size_t(ROp ::Num)> rop_;
+    std::array<const Axiom*, size_t(ICmp::Num)> icmp_;
+    std::array<const Axiom*, size_t(RCmp::Num)> rcmp_;
     const Axiom* op_trunc_;
     const Axiom* op_zext_;
     const Axiom* op_sext_;
