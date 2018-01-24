@@ -39,21 +39,21 @@ void test_fold(World& w, const Def* type) {
 TEST(Primop, ConstFolding) {
     World w;
 
-#define CODE(T) test_fold<T, WOp, wadd>(w, w.type_i());
+#define CODE(T) test_fold<T, WOp, WOp::wadd>(w, w.type_i());
     THORIN_U_TYPES(CODE)
 #undef CODE
-#define CODE(T) test_fold<T, ROp, radd>(w, w.type_r());
+#define CODE(T) test_fold<T, ROp, ROp::radd>(w, w.type_r());
     THORIN_R_TYPES(CODE)
 #undef CODE
 
-    ASSERT_EQ(w.op<ashr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(u8(-1)));
-    ASSERT_EQ(w.op<lshr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(127_u8));
+    ASSERT_EQ(w.op<IOp::ashr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(u8(-1)));
+    ASSERT_EQ(w.op<IOp::lshr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(127_u8));
 }
 
 TEST(Primop, Cmp) {
-    World w;
-    auto x = w.op_icmp(IRel::ule, w.lit_i(23), w.lit_i(42));
-    x->dump();
+    //World w;
+    //auto x = w.op_icmp(IRel::ule, w.lit_i(23), w.lit_i(42));
+    //x->dump();
 }
 
 TEST(Primop, Ptr) {

@@ -95,27 +95,26 @@ public:
     //@}
 
     //@{ icmp
-    const Axiom* op_icmp() { return op_icmp_; }
-    const Def* op_icmp(IRel rel, const Def* a, const Def* b, Debug dbg = {}) {
+    template<ICmp O> const Axiom* op() { return icmp_[O]; }
+    template<ICmp O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
-        return op_icmp(rel, width, shape, a, b, dbg);
+        return op<O>(width, shape, a, b, dbg);
     }
-    const Def* op_icmp(IRel rel, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op_icmp(), lit_nat(s64(rel))), width), shape), {a, b}, dbg);
+    template<ICmp O> const Def* op(const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(op<O>(), width), shape), {a, b}, dbg);
     }
     //@}
 
     //@{ rcmp
-    const Axiom* op_rcmp() { return op_rcmp_; }
-    const Def* op_rcmp(RRel rel, const Def* a, const Def* b, Debug dbg = {}) { return op_rcmp(RFlags::none, rel, a, b, dbg); }
-    const Def* op_rcmp(RFlags flags, RRel rel, const Def* a, const Def* b, Debug dbg = {}) {
+    template<RCmp O> const Axiom* op() { return rcmp_[O]; }
+    template<RCmp O> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<O>(RFlags::none, a, b, dbg); }
+    template<RCmp O> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(a);
-        return op_rcmp(flags, rel, width, shape, a, b, dbg);
+        return op<O>(flags, width, shape, a, b, dbg);
     }
-    const Def* op_rcmp(RFlags flags, RRel rel, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(app(op_rcmp(), lit_nat(s64(flags))), lit_nat(s64(rel))), width), shape), {a, b}, dbg);
+    template<RCmp O> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(app(app(op<O>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
-    //@}
 
     //@{ conversions
     const Axiom* op_trunc() const { return op_trunc_; }
@@ -152,12 +151,12 @@ private:
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
-    std::array<const Axiom*, Num_WArithOp> wop_;
-    std::array<const Axiom*, Num_MArithOp> mop_;
-    std::array<const Axiom*, Num_IArithOp> iop_;
-    std::array<const Axiom*, Num_RArithOp> rop_;
-    const Axiom* op_icmp_;
-    const Axiom* op_rcmp_;
+    std::array<const Axiom*, Num_WOp > wop_;
+    std::array<const Axiom*, Num_MOp > mop_;
+    std::array<const Axiom*, Num_IOp > iop_;
+    std::array<const Axiom*, Num_ROp > rop_;
+    std::array<const Axiom*, Num_ICmp> icmp_;
+    std::array<const Axiom*, Num_RCmp> rcmp_;
     const Axiom* op_trunc_;
     const Axiom* op_zext_;
     const Axiom* op_sext_;
