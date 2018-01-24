@@ -130,8 +130,7 @@ const Def* normalize_add(thorin::World& world, const Def* callee, const Def* arg
         if (get_u64(la) == 0_u64) return b;
     }
 
-    if (a == b)
-        return w.op<WOp::mul>(world.lit(a->type(), {2_u64}), a, dbg);
+    if (a == b) return w.op<WOp::mul>(world.lit(a->type(), {2_u64}), a, dbg);
 
     return commute(world, callee, a, b, dbg);
 }
@@ -142,8 +141,8 @@ const Def* normalize_sub(thorin::World& world, const Def* callee, const Def* arg
     auto [a, b] = split(world, arg);
     if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
 
-    if (a == b)
-        return world.lit(a->type(), {0_u64});
+    if (a == b) return world.lit(a->type(), {0_u64});
+
     return world.raw_app(callee, {a, b}, dbg);
 }
 
