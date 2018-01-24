@@ -57,7 +57,7 @@ const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a
 }
 
 const Lit* const_to_left(const Def*& a, const Def*& b) {
-    if (auto lb = b->isa<Lit>()) {
+    if (b->isa<Lit>()) {
         std::swap(a, b);
         return a->as<Lit>();
     }
@@ -315,6 +315,10 @@ const Def* normalize_radd(thorin::World& world, const Def* callee, const Def* ar
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_radd>(world, callee, a, b, dbg)) return result;
 
+    if (auto la = const_to_left(a, b)) {
+        la->box();
+    }
+
     return commute(world, callee, a, b, dbg);
 }
 
@@ -332,6 +336,10 @@ const Def* normalize_rmul(thorin::World& world, const Def* callee, const Def* ar
 
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_rmul>(world, callee, a, b, dbg)) return result;
+
+    if (auto la = const_to_left(a, b)) {
+        la->box();
+    }
 
     return commute(world, callee, a, b, dbg);
 }

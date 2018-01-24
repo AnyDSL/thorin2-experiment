@@ -43,6 +43,7 @@ constexpr const char* qualifier2str(QualifierTag q) {
         case QualifierTag::r: return "ᴿ";
         case QualifierTag::a: return "ᴬ";
         case QualifierTag::l: return "ᴸ";
+        default: THORIN_UNREACHABLE;
     }
 }
 

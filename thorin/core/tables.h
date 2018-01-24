@@ -115,6 +115,7 @@ constexpr const char* op2str(WOp o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_W_OP(CODE)
 #undef CODE
+        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -123,6 +124,7 @@ constexpr const char* op2str(MOp o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_M_OP(CODE)
 #undef CODE
+        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -131,6 +133,7 @@ constexpr const char* op2str(IOp o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_I_OP(CODE)
 #undef CODE
+        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -139,6 +142,7 @@ constexpr const char* op2str(ROp o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_R_OP(CODE)
 #undef CODE
+        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -147,6 +151,7 @@ constexpr const char* cmp2str(ICmp o) {
 #define CODE(T, o) case T::o: return "icmp_" #o;
     THORIN_I_CMP(CODE)
 #undef CODE
+        default: THORIN_UNREACHABLE;
     }
 }
 
@@ -155,6 +160,7 @@ constexpr const char* cmp2str(RCmp o) {
 #define CODE(T, o) case T::o: return "rcmp_" #o;
     THORIN_R_CMP(CODE)
 #undef CODE
+        default: THORIN_UNREACHABLE;
     }
 }
 
