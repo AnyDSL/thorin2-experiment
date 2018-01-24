@@ -466,7 +466,7 @@ private:
     Lambda(const Pi* type, Debug dbg);
 
 public:
-    Lambda* set(const Def* body) { return Def::set(0, body)->as<Lambda>(); }
+    Lambda* set(World& world, const Def* body) { return Def::set(world, 0, body)->as<Lambda>(); }
     const Def* domain() const { return type()->domain(); }
     const Def* body() const { return op(0); }
     const Def* apply(World&, const Def*) const;
@@ -859,7 +859,6 @@ private:
 
 public:
     const Def* arity(World&) const override;
-    std::ostream& stream(std::ostream&) const override;
     Axiom* stub(World&, const Def*, Debug) const override;
     bool has_values() const override;
 

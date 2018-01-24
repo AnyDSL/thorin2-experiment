@@ -72,7 +72,7 @@ public:
     Lambda* lambda(const Pi* type, Debug dbg = {}) {
         assertf(type->free_vars().none_begin(1),
                 "function type {} of a nominal lambda may not contain free variables", type);
-        return insert<Lambda>(1, *this, type, dbg);
+        return insert<Lambda>(1, type, dbg);
     }
     //@}
 

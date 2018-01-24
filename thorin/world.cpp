@@ -258,7 +258,7 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
 
             if (lambda->is_nominal())
                 app->cache_ = app;
-            app->cache_ = reduce(lambda->body(), {app->arg()});
+            app->cache_ = reduce(*this, lambda->body(), {app->arg()});
             if (lambda->is_nominal())
                 return app;
             return app->cache_;

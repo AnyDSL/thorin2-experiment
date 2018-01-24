@@ -164,7 +164,7 @@ Intersection::Intersection(const Def* type, const SortedDefSet& ops, Debug dbg)
 }
 
 Lambda::Lambda(const Pi* type, Debug dbg)
-    : Def(world, Tag::Lambda, type, 1, THORIN_OPS_PTR, dbg)
+    : Def(Tag::Lambda, type, 1, THORIN_OPS_PTR, dbg)
 {}
 Lambda::Lambda(const Pi* type, const Def* body, Debug dbg)
     : Def(Tag::Lambda, type, {body}, THORIN_OPS_PTR, dbg)
@@ -324,7 +324,7 @@ const Def* QualifierType ::arity(World& w) const { return w.arity(1); }
 const Def* Sigma         ::arity(World& w) const { return w.arity(num_ops()); }
 const Def* Singleton     ::arity(World& w) const { return op(0)->arity(w); }
 const Def* Star          ::arity(World& w) const { return w.arity(1); }
-const Def* Universe      ::arity(World& w) const { THORIN_UNREACHABLE; }
+const Def* Universe      ::arity(World&  ) const { THORIN_UNREACHABLE; }
 const Def* Var           ::arity(World& w) const { return is_value() ? type()->arity(w) : nullptr; }
 const Def* Variant       ::arity(World& w) const { return w.variant(DefArray(num_ops(), [&](auto i) { return op(i)->arity(w); })); }
 
@@ -467,11 +467,11 @@ const Def* Def::shift_free_vars(World& world, size_t shift) const {
  * TODO: introduce subtyping by qualifiers? i.e. x:*u -> x:*a
  */
 
-bool ArityKind::vsubtype_of(World& world, const Def* def) const {
+bool ArityKind::vsubtype_of(World&, const Def* def) const {
     return (def->isa<MultiArityKind>() || def->isa<Star>()) && op(0) == def->op(0);
 }
 
-bool MultiArityKind::vsubtype_of(World& world, const Def* def) const {
+bool MultiArityKind::vsubtype_of(World&, const Def* def) const {
     return def->isa<Star>() && op(0) == def->op(0);
 }
 

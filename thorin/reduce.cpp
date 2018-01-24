@@ -94,7 +94,7 @@ const Def* reduce(World& world, const Def* def, Defs args, size_t index) {
     if (def->free_vars().none_begin(index))
         return def;
 
-    Reducer reducer(world, def, args);
+    Reducer reducer(world, args);
     return reducer.reduce(def, index);
 }
 
