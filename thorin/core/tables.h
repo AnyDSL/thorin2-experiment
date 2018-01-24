@@ -27,7 +27,7 @@ constexpr WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int6
 constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
 
 /// Integer instructions that might wrap and, hence, take @p WFlags.
-#define THORIN_W_OP(m) m(WOp, wadd) m(WOp, wsub) m(WOp, wmul) m(WOp, wshl)
+#define THORIN_W_OP(m) m(WOp, add) m(WOp, sub) m(WOp, mul) m(WOp, shl)
 /// Integer instructions that might produce a side effect (division by zero).
 #define THORIN_M_OP(m) m(MOp, sdiv) m(MOp, udiv) m(MOp, smod) m(MOp, umod)
 /// Integer instructions that neither take wflags nor do they produce a side effect.
@@ -144,7 +144,7 @@ constexpr const char* op2str(ROp o) {
 
 constexpr const char* cmp2str(ICmp o) {
     switch (o) {
-#define CODE(T, o) case T::o: return #o;
+#define CODE(T, o) case T::o: return "icmp_" #o;
     THORIN_I_CMP(CODE)
 #undef CODE
     }
@@ -152,7 +152,7 @@ constexpr const char* cmp2str(ICmp o) {
 
 constexpr const char* cmp2str(RCmp o) {
     switch (o) {
-#define CODE(T, o) case T::o: return #o;
+#define CODE(T, o) case T::o: return "rcmp_" #o;
     THORIN_R_CMP(CODE)
 #undef CODE
     }

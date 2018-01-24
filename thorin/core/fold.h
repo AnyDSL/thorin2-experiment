@@ -12,7 +12,7 @@ namespace thorin::core {
 struct ErrorException {};
 
 template<int w, bool nsw, bool nuw>
-struct Fold_wadd {
+struct Fold_add {
     static Box run(Box a, Box b) {
         auto x = a.template get<typename w2u<w>::type>();
         auto y = b.template get<typename w2u<w>::type>();
@@ -24,7 +24,7 @@ struct Fold_wadd {
 };
 
 template<int w, bool nsw, bool nuw>
-struct Fold_wsub {
+struct Fold_sub {
     static Box run(Box a, Box b) {
         typedef typename w2u<w>::type UT;
         auto x = a.template get<UT>();
@@ -37,7 +37,7 @@ struct Fold_wsub {
 };
 
 template<int w, bool nsw, bool nuw>
-struct Fold_wmul {
+struct Fold_mul {
     static Box run(Box a, Box b) {
         typedef typename w2u<w>::type UT;
         auto x = a.template get<UT>();
@@ -50,7 +50,7 @@ struct Fold_wmul {
 };
 
 template<int w, bool nsw, bool nuw>
-struct Fold_wshl {
+struct Fold_shl {
     static Box run(Box a, Box b) {
         typedef typename w2u<w>::type UT;
         auto x = a.template get<UT>();

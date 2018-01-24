@@ -43,6 +43,12 @@ const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a
     return nullptr;
 }
 
+const Def* commute(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+    if (a->gid() > b->gid())
+        return world.app(callee, {b, a}, dbg);
+    return nullptr;
+}
+
 /*
  * WArithop
  */
@@ -94,29 +100,29 @@ const Def* try_wfold(thorin::World& world, const Def* callee, const Def* a, cons
     return normalize_tuple(world, callee, a, b, dbg);
 }
 
-const Def* normalize_wadd(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_add(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(world, arg);
-    if (auto result = try_wfold<Fold_wadd>(world, callee, a, b, dbg)) return result;
+    if (auto result = try_wfold<Fold_add>(world, callee, a, b, dbg)) return result;
+
+    return commute(world, callee, a, b, dbg);
+}
+
+const Def* normalize_sub(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
+    return nullptr;
+}
+
+const Def* normalize_mul(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+    auto [a, b] = split(world, arg);
+    if (auto result = try_wfold<Fold_mul>(world, callee, a, b, dbg)) return result;
 
     return nullptr;
 }
 
-const Def* normalize_wsub(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_shl(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(world, arg);
-    if (auto result = try_wfold<Fold_wsub>(world, callee, a, b, dbg)) return result;
-    return nullptr;
-}
-
-const Def* normalize_wmul(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(world, arg);
-    if (auto result = try_wfold<Fold_wmul>(world, callee, a, b, dbg)) return result;
-
-    return nullptr;
-}
-
-const Def* normalize_wshl(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(world, arg);
-    if (auto result = try_wfold<Fold_wshl>(world, callee, a, b, dbg)) return result;
+    if (auto result = try_wfold<Fold_shl>(world, callee, a, b, dbg)) return result;
 
     return nullptr;
 }

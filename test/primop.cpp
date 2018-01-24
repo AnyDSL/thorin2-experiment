@@ -39,7 +39,7 @@ void test_fold(World& w, const Def* type) {
 TEST(Primop, ConstFolding) {
     World w;
 
-#define CODE(T) test_fold<T, WOp, WOp::wadd>(w, w.type_i());
+#define CODE(T) test_fold<T, WOp, WOp::add>(w, w.type_i());
     THORIN_U_TYPES(CODE)
 #undef CODE
 #define CODE(T) test_fold<T, ROp, ROp::radd>(w, w.type_r());
@@ -49,7 +49,7 @@ TEST(Primop, ConstFolding) {
     ASSERT_EQ(w.op<IOp::ashr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(u8(-1)));
     ASSERT_EQ(w.op<IOp::lshr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(127_u8));
 
-    ASSERT_EQ(w.op<WOp::wadd>(WFlags::nuw, w.lit_i(0xff_u8), w.lit_i(1_u8)), w.error(w.type_i(8)));
+    ASSERT_EQ(w.op<WOp::add>(WFlags::nuw, w.lit_i(0xff_u8), w.lit_i(1_u8)), w.error(w.type_i(8)));
 }
 
 template<class T>
@@ -133,6 +133,14 @@ TEST(Primop, Cmp) {
     THORIN_R_TYPES(CODE)
 #undef CODE
 }
+
+TEST(Primop, Normalize) {
+    World w;
+    auto a = w.axiom(w.type_i(8));
+    auto b = w.axiom(w.type_i(8));
+    ASSERT_EQ(w.op<WOp::add>(a, b), w.op<WOp::add>(b, a));
+}
+
 
 TEST(Primop, Ptr) {
     World w;
