@@ -141,7 +141,6 @@ TEST(Primop, Normalize) {
     ASSERT_EQ(w.op<WOp::add>(a, b), w.op<WOp::add>(b, a));
 }
 
-
 TEST(Primop, Ptr) {
     World w;
     const Def* m = w.axiom(w.type_mem(), {"m"});
