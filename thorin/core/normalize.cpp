@@ -117,7 +117,7 @@ const Def* normalize_mul(thorin::World& world, const Def*, const Def* callee, co
     auto [a, b] = split(world, arg);
     if (auto result = try_wfold<Fold_mul>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return commute(world, callee, a, b, dbg);
 }
 
 const Def* normalize_shl(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
@@ -191,21 +191,21 @@ const Def* normalize_iand(thorin::World& world, const Def*, const Def* callee, c
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_iand>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return commute(world, callee, a, b, dbg);
 }
 
 const Def* normalize_ior(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_ior>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return commute(world, callee, a, b, dbg);
 }
 
 const Def* normalize_ixor(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_ixor>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return commute(world, callee, a, b, dbg);
 }
 
 /*
@@ -237,7 +237,7 @@ const Def* normalize_radd(thorin::World& world, const Def*, const Def* callee, c
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_radd>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return commute(world, callee, a, b, dbg);
 }
 
 const Def* normalize_rsub(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
@@ -251,7 +251,7 @@ const Def* normalize_rmul(thorin::World& world, const Def*, const Def* callee, c
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_rmul>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return commute(world, callee, a, b, dbg);
 }
 
 const Def* normalize_rdiv(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
