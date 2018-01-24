@@ -19,6 +19,13 @@ std::tuple<const Def*, const Def*> split(thorin::World& world, const Def* def) {
     return {a, b};
 }
 
+std::tuple<const Def*, const Def*, const Def*> msplit(thorin::World& world, const Def* def) {
+    auto a = world.extract(def, 0_u64);
+    auto b = world.extract(def, 1_u64);
+    auto m = world.extract(def, 2_u64);
+    return {a, b, m};
+}
+
 std::tuple<const Def*, const Def*> shrink_shape(thorin::World& world, const Def* def) {
     if (def->isa<Arity>())
         return {def, world.arity(1)};
@@ -173,37 +180,37 @@ const Def* normalize_shl(thorin::World& world, const Def* callee, const Def* arg
 const Def* normalize_sdiv(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
     if (auto result = check_callee(normalize_sdiv, world, callee, arg, dbg)) return result;
 
-    auto [a, b] = split(world, arg);
+    auto [m, a, b] = msplit(world, arg);
     //if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
 
-    return world.raw_app(callee, {a, b}, dbg);
+    return world.raw_app(callee, {m, a, b}, dbg);
 }
 
 const Def* normalize_udiv(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
     if (auto result = check_callee(normalize_udiv, world, callee, arg, dbg)) return result;
 
-    auto [a, b] = split(world, arg);
+    auto [m, a, b] = msplit(world, arg);
     //if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
 
-    return world.raw_app(callee, {a, b}, dbg);
+    return world.raw_app(callee, {m, a, b}, dbg);
 }
 
 const Def* normalize_smod(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
     if (auto result = check_callee(normalize_smod, world, callee, arg, dbg)) return result;
 
-    auto [a, b] = split(world, arg);
+    auto [m, a, b] = msplit(world, arg);
     //if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
 
-    return world.raw_app(callee, {a, b}, dbg);
+    return world.raw_app(callee, {m, a, b}, dbg);
 }
 
 const Def* normalize_umod(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
     if (auto result = check_callee(normalize_umod, world, callee, arg, dbg)) return result;
 
-    auto [a, b] = split(world, arg);
+    auto [m, a, b] = msplit(world, arg);
     //if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
 
-    return world.raw_app(callee, {a, b}, dbg);
+    return world.raw_app(callee, {m, a, b}, dbg);
 }
 
 /*
