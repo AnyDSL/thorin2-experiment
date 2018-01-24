@@ -211,7 +211,6 @@ public:
     //@{ bool and nat types
     const Arity* type_bool() { return type_bool_; }
     const Axiom* type_nat() { return type_nat_; }
-    const Axiom* type_bottom() { return type_bottom_; }
     //@}
 
 
@@ -372,7 +371,6 @@ protected:
     std::array<const MultiArityKind*, 4> multi_arity_kind_;
     const Arity* type_bool_;
     const Axiom* type_nat_;
-    const Axiom* type_bottom_;
     const Lit* lit_nat_0_;
     std::array<const Index*, 2> lit_bool_;
     std::array<const Lit*, 7> lit_nat_;
