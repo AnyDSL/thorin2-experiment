@@ -43,12 +43,9 @@ const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a
         auto [head, tail] = shrink_shape(world, app_arg(callee));
         auto new_callee = world.app(app_callee(callee), tail);
 
-        if (ta && tb)
-            return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), tb->op(i)}, dbg); }));
-        if (ta && pb)
-            return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), pb->body()}, dbg); }));
-        if (pa && tb)
-            return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {pa->body(), tb->op(i)}, dbg); }));
+        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), tb->op(i)}, dbg); }));
+        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), pb->body()}, dbg); }));
+        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {pa->body(), tb->op(i)}, dbg); }));
         assert(pa && pb);
         return world.pack(head, world.app(new_callee, {pa->body(), pb->body()}, dbg), dbg);
     }
