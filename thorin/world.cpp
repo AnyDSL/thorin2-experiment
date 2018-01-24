@@ -171,14 +171,13 @@ World::World()
 
     type_bool_ = arity(2);
     type_nat_  = axiom(star(), {"nat"});
-    type_bottom_  = axiom(star(), {"⊥"});
 
-    val_bool_[0] = index(2, 0);
-    val_bool_[1] = index(2, 1);
+    lit_bool_[0] = index(2, 0);
+    lit_bool_[1] = index(2, 1);
 
-    val_nat_0_   = val_nat(0);
-    for (size_t j = 0; j != val_nat_.size(); ++j)
-        val_nat_[j] = val_nat(1 << int64_t(j));
+    lit_nat_0_   = lit_nat(0);
+    for (size_t j = 0; j != lit_nat_.size(); ++j)
+        lit_nat_[j] = lit_nat(1 << int64_t(j));
 
     Env env;
     arity_succ_ = axiom(parse(*this, "Π[q: ℚ, a: 𝔸(q)].𝔸(q)", env), {"Sₐ"});
@@ -273,8 +272,8 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     auto type = def->type();
     assertf(arity, "arity unknown for {} of type {}, can only extract when arity is known", def, type);
     if (arity->assignable(*this, index)) {
-        if (auto idx = index->isa<Index>()) {
-            auto i = idx->value();
+        if (auto idx = index->isa<Lit>()) {
+            auto i = get_index(idx);
             if (def->isa<Tuple>()) {
                 return def->op(i);
             }
@@ -299,7 +298,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             return pack->body()->reduce(*this, index);
         }
         // here: index is const => type is variadic, index is var => type may be variadic/sigma, must not be dependent sigma
-        assert(!index->isa<Index>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
+        assert(!index->isa<Lit>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
         const Def* result_type = nullptr;
         if (auto sigma = type->isa<Sigma>()) {
             assertf(!sigma->is_dependent(), "can't extract at {} from {} : {}, type is dependent", index, def, sigma);
@@ -340,11 +339,11 @@ const Def* World::extract(const Def* def, size_t i, Debug dbg) {
     return extract(def, index(def->arity(*this)->as<Arity>(), i, dbg), dbg);
 }
 
-const Index* World::index(const Arity* a, size_t i, Location location) {
+const Lit* World::index(const Arity* a, u64 i, Location location) {
     auto arity_val = a->value();
     assertf(i < arity_val, "Index literal {} does not fit within arity {}", i, a);
     auto cur = Def::gid_counter();
-    auto result = unify<Index>(3, a, i, location);
+    auto result = lit(a, i, location);
 
     if (result->gid() >= cur) { // new iassume -> build name
         std::string s = std::to_string(i);
@@ -371,8 +370,8 @@ const Def* World::index_zero(const Def* arity, Location location) {
 
 const Def* World::index_succ(const Def* index, Debug dbg) {
     assert(index->type()->type()->isa<ArityKind>());
-    if (auto idx = index->isa<Index>())
-        return this->index(idx->type(), idx->value() + 1, dbg);
+    if (auto idx = index->isa<Lit>())
+        return this->index(idx->type()->as<Arity>(), get_index(idx) + 1_u64, dbg);
 
     return app(app(index_succ_, index->type(), dbg), index, dbg);
 }
@@ -610,8 +609,8 @@ const Def* World::tuple(Defs defs, Debug dbg) {
                 }
 
                 if (same == extract->scrutinee()) {
-                    if (auto index = extract->index()->isa<Index>()) {
-                        if (index->value() == i)
+                    if (auto index = extract->index()->isa<Lit>()) {
+                        if (get_index(index) == i)
                             continue;
                     }
                 }
@@ -694,9 +693,9 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
     return unify<Match>(1, type, def, sorted_handlers, dbg);
 }
 
-const Axiom* World::val_nat(int64_t val, Location location) {
+const Lit* World::lit_nat(int64_t val, Location location) {
     auto cur = Def::gid_counter();
-    auto result = assume(type_nat(), {val}, {location});
+    auto result = lit(type_nat(), {val}, {location});
     if (result->gid() >= cur)
         result->debug().set(std::to_string(val));
     return result;

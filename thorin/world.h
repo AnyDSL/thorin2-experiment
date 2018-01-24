@@ -113,10 +113,10 @@ public:
     //@{ create Variadic
     const Def* variadic(const Def* arities, const Def* body, Debug dbg = {});
     const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
-    const Def* variadic(size_t a, const Def* body, Debug dbg = {}) {
+    const Def* variadic(u64 a, const Def* body, Debug dbg = {}) {
         return variadic(arity(a, QualifierTag::Unlimited, dbg), body, dbg);
     }
-    const Def* variadic(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
+    const Def* variadic(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
         return variadic(DefArray(a.size(), [&](auto i) {
                     return this->arity(a[i], QualifierTag::Unlimited, dbg);
                 }), body, dbg);
@@ -141,10 +141,10 @@ public:
     //@{ create Pack
     const Def* pack(const Def* arities, const Def* body, Debug dbg = {});
     const Def* pack(Defs arities, const Def* body, Debug dbg = {});
-    const Def* pack(size_t a, const Def* body, Debug dbg = {}) {
+    const Def* pack(u64 a, const Def* body, Debug dbg = {}) {
         return pack(arity(a, QualifierTag::Unlimited, dbg), body, dbg);
     }
-    const Def* pack(ArrayRef<size_t> a, const Def* body, Debug dbg = {}) {
+    const Def* pack(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
         return pack(DefArray(a.size(), [&](auto i) {
                     return this->arity(a[i], QualifierTag::Unlimited, dbg);
                 }), body, dbg);
@@ -153,34 +153,28 @@ public:
 
     //@{ create Extract
     const Def* extract(const Def* def, const Def* index, Debug dbg = {});
-    const Def* extract(const Def* def, int index, Debug dbg = {}) {
-        return extract(def, size_t(index), dbg);
-    }
-    const Def* extract(const Def* def, size_t index, Debug dbg = {});
+    const Def* extract(const Def* def, u64 index, Debug dbg = {});
     //@}
 
     //@{ create Insert
     const Def* insert(const Def* def, const Def* index, const Def* value, Debug dbg = {});
-    const Def* insert(const Def* def, int index, const Def* value, Debug dbg = {}) {
-        return insert(def, size_t(index), value, dbg);
-    }
-    const Def* insert(const Def* def, size_t index, const Def* value, Debug dbg = {});
+    const Def* insert(const Def* def, u64 index, const Def* value, Debug dbg = {});
     //@}
 
     //@{ create Index
-    const Index* index(size_t arity, size_t idx, Location location = {}) {
+    const Lit* index(u64 arity, u64 idx, Location location = {}) {
         return index(this->arity(arity), idx, location);
     }
-    const Index* index(const Arity* arity, size_t index, Location location = {});
+    const Lit* index(const Arity* arity, u64 index, Location location = {});
     const Def* index_zero(const Def* arity, Location location = {});
     const Def* index_succ(const Def* index, Debug dbg = {});
     //@}
 
     //@{ create Arity
-    const Arity* arity(size_t a, QualifierTag q = QualifierTag::Unlimited, Location location = {}) {
+    const Arity* arity(u64 a, QualifierTag q = QualifierTag::Unlimited, Location location = {}) {
         return arity(a, qualifier(q), location);
     }
-    const Arity* arity(size_t a, const Def* q, Location location = {});
+    const Arity* arity(u64 a, const Def* q, Location location = {});
     const Def* arity_succ() { return arity_succ_; }
     const Def* arity_succ(const Def* arity, Debug dbg = {});
     const Def* arity_eliminator() const { return arity_eliminator_; }
@@ -188,24 +182,16 @@ public:
 
     //@{ misc factory methods
     const Def* any(const Def* type, const Def* def, Debug dbg = {});
-    /// @em nominal Axiom
-    const Axiom* axiom(const Def* type, Debug dbg = {}) {
-        return insert<Axiom>(0, type, dbg);
-    }
-    /// @em structural Axiom
-    const Axiom* assume(const Def* type, Box box, Debug dbg = {}) {
-        return unify<Axiom>(0, type, box, dbg);
-    }
+    const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, type, dbg); }
+    const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
     const Error* error(const Def* type) { return unify<Error>(0, type); }
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
     const Def* pick(const Def* type, const Def* def, Debug dbg = {});
     const Def* singleton(const Def* def, Debug dbg = {});
-    const Var* var(Defs types, size_t index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
-    const Var* var(const Def* type, size_t index, Debug dbg = {}) {
-        return unify<Var>(0, type, index, dbg);
-    }
+    const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
+    const Var* var(const Def* type, u64 index, Debug dbg = {}) { return unify<Var>(0, type, index, dbg); }
     const Def* variant(Defs defs, Debug dbg = {});
     const Def* variant(const Def* type, Defs defs, Debug dbg = {});
     Variant* variant(const Def* type, size_t num_ops, Debug dbg = {}) {
@@ -217,24 +203,23 @@ public:
     //@{ bool and nat types
     const Arity* type_bool() { return type_bool_; }
     const Axiom* type_nat() { return type_nat_; }
-    const Axiom* type_bottom() { return type_bottom_; }
     //@}
 
 
     //@{ values for bool and nat
-    const Axiom* val_nat(int64_t val, Location location = {});
-    const Axiom* val_nat_0() { return val_nat_0_; }
-    const Axiom* val_nat_1() { return val_nat_[0]; }
-    const Axiom* val_nat_2() { return val_nat_[1]; }
-    const Axiom* val_nat_4() { return val_nat_[2]; }
-    const Axiom* val_nat_8() { return val_nat_[3]; }
-    const Axiom* val_nat_16() { return val_nat_[4]; }
-    const Axiom* val_nat_32() { return val_nat_[5]; }
-    const Axiom* val_nat_64() { return val_nat_[6]; }
+    const Lit* lit_nat(int64_t val, Location location = {});
+    const Lit* lit_nat_0() { return lit_nat_0_; }
+    const Lit* lit_nat_1() { return lit_nat_[0]; }
+    const Lit* lit_nat_2() { return lit_nat_[1]; }
+    const Lit* lit_nat_4() { return lit_nat_[2]; }
+    const Lit* lit_nat_8() { return lit_nat_[3]; }
+    const Lit* lit_nat_16() { return lit_nat_[4]; }
+    const Lit* lit_nat_32() { return lit_nat_[5]; }
+    const Lit* lit_nat_64() { return lit_nat_[6]; }
 
-    const Index* val_bool(bool val) { return val_bool_[size_t(val)]; }
-    const Index* val_bool_bot() { return val_bool_[0]; }
-    const Index* val_bool_top() { return val_bool_[1]; }
+    const Lit* lit(bool val) { return lit_bool_[size_t(val)]; }
+    const Lit* lit_false() { return lit_bool_[0]; }
+    const Lit* lit_true()  { return lit_bool_[1]; }
     //@}
 
     const DefSet& defs() const { return defs_; }
@@ -374,10 +359,9 @@ protected:
     std::array<const MultiArityKind*, 4> multi_arity_kind_;
     const Arity* type_bool_;
     const Axiom* type_nat_;
-    const Axiom* type_bottom_;
-    const Axiom* val_nat_0_;
-    std::array<const Index*, 2> val_bool_;
-    std::array<const Axiom*, 7> val_nat_;
+    const Lit* lit_nat_0_;
+    std::array<const Lit*, 2> lit_bool_;
+    std::array<const Lit*, 7> lit_nat_;
 };
 
 inline const Def* app_callee(const Def* def) { return def->as<App>()->callee(); }

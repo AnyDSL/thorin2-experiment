@@ -15,7 +15,7 @@ TEST(Nominal, Sigma) {
     ASSERT_TRUE(nat2->free_vars().none());
     ASSERT_EQ(w.pi(nat2, nat)->domain(),  nat2);
 
-    auto n42 = w.val_nat(42);
+    auto n42 = w.lit_nat(42);
     ASSERT_FALSE(nat2->assignable(w, n42));
 }
 

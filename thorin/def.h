@@ -115,6 +115,7 @@ public:
         Intersection,
         Insert,
         Lambda,
+        Lit,
         Match,
         MultiArityKind,
         Pack,
@@ -265,17 +266,11 @@ public:
     virtual bool assignable(World&, const Def* def) const { return this == def->type(); }
     bool subtype_of(World& world, const Def* def) const {
         auto s = sort();
-        return (!def->is_value() && s >= Sort::Type && s < Sort::Universe
-                && (this == def || (s == def->sort() && vsubtype_of(world, def))));
+        return (!def->is_value() && s >= Sort::Type && (this == def || (s == def->sort() && vsubtype_of(world, def))));
     }
 
-    std::ostream& qualifier_stream(std::ostream& os) const {
-        if (!has_values() || tag() == Tag::QualifierType)
-            return os;
-        // TODO
-        return os;
-        //return os << qualifier();
-    }
+    std::ostream& qualifier_stream(std::ostream& os) const;
+
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "" || is_nominal()) {
             qualifier_stream(os);
@@ -290,10 +285,6 @@ protected:
     virtual uint64_t vhash() const;
     virtual bool equal(const Def*) const;
     //@}
-
-    /// Use this to caclulate the @c ops_ptr when invoking this class's constructor in a subclass @p T.
-    template<class T>
-    inline const Def** ops_ptr() { return reinterpret_cast<const Def**>(reinterpret_cast<char*>(this) + sizeof(T)); }
 
 private:
     /**
@@ -346,6 +337,9 @@ private:
     friend class Scope;
     friend class World;
 };
+
+#define THORIN_OPS_PTR reinterpret_cast<const Def**>(reinterpret_cast<char*>(this+1))
+
 
 uint64_t UseHash::hash(Use use) {
     return murmur3(uint64_t(use.index()) << 48_u64 | uint64_t(use->gid()));
@@ -410,14 +404,14 @@ private:
 
 class Arity : public Def {
 private:
-    Arity(const ArityKind* type, size_t arity, Debug dbg)
-        : Def(Tag::Arity, type, Defs(), ops_ptr<Arity>(), dbg)
+    Arity(const ArityKind* type, u64 arity, Debug dbg)
+        : Def(Tag::Arity, type, Defs(), THORIN_OPS_PTR, dbg)
         , arity_(arity)
     {}
 
 public:
     const ArityKind* type() const { return Def::type()->as<ArityKind>(); }
-    size_t value() const { return arity_; }
+    u64 value() const { return arity_; }
     const Def* arity(World&) const override;
     bool has_values() const override;
     std::ostream& stream(std::ostream&) const override;
@@ -427,29 +421,7 @@ private:
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
-    size_t arity_;
-
-    friend class World;
-};
-
-class Index : public Def {
-private:
-    Index(const Arity* type, size_t index, Debug dbg)
-        : Def(Tag::Index, type, Defs(), ops_ptr<Index>(), dbg)
-        , index_(index)
-    {}
-
-public:
-    const Arity* type() const { return Def::type()->as<Arity>(); }
-    size_t value() const { return index_; }
-    std::ostream& stream(std::ostream&) const override;
-
-private:
-    uint64_t vhash() const override;
-    bool equal(const Def*) const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
-    size_t index_;
+    u64 arity_;
 
     friend class World;
 };
@@ -469,6 +441,7 @@ public:
     bool assignable(World&, const Def* def) const override;
     bool has_values() const override;
     void typecheck_vars(World&, DefVector&, EnvDefSet& checked) const override;
+    const Def* kind_qualifier(World&) const override;
 
     std::ostream& stream(std::ostream&) const override;
 
@@ -503,7 +476,7 @@ private:
 class App : public Def {
 private:
     App(const Def* type, const Def* callee, const Def* arg, Debug dbg)
-        : Def(Tag::App, type, {callee, arg}, ops_ptr<App>(), dbg)
+        : Def(Tag::App, type, {callee, arg}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -525,10 +498,10 @@ private:
 class SigmaBase : public Def {
 protected:
     SigmaBase(Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(tag, type, ops, ops_ptr<SigmaBase>(), dbg)
+        : Def(tag, type, ops, THORIN_OPS_PTR, dbg)
     {}
     SigmaBase(Tag tag, const Def* type, size_t num_ops, Debug dbg)
-        : Def(tag, type, num_ops, ops_ptr<SigmaBase>(), dbg)
+        : Def(tag, type, num_ops, THORIN_OPS_PTR, dbg)
     {}
 };
 
@@ -589,7 +562,7 @@ private:
 class TupleBase : public Def {
 protected:
     TupleBase(Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(tag, type, ops, ops_ptr<TupleBase>(), dbg)
+        : Def(tag, type, ops, THORIN_OPS_PTR, dbg)
     {}
 };
 
@@ -627,7 +600,7 @@ private:
 class Extract : public Def {
 private:
     Extract(const Def* type, const Def* tuple, const Def* index, Debug dbg)
-        : Def(Tag::Extract, type, {tuple, index}, ops_ptr<Extract>(), dbg)
+        : Def(Tag::Extract, type, {tuple, index}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -644,7 +617,7 @@ private:
 class Insert : public Def {
 private:
     Insert(const Def* type, const Def* tuple, const Def* index, const Def* value, Debug dbg)
-        : Def(Tag::Insert, type, {tuple, index, value}, ops_ptr<Insert>(), dbg)
+        : Def(Tag::Insert, type, {tuple, index, value}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -677,7 +650,7 @@ private:
 class Pick : public Def {
 private:
     Pick(const Def* type, const Def* def, Debug dbg)
-        : Def(Tag::Pick, type, {def}, ops_ptr<Pick>(), dbg)
+        : Def(Tag::Pick, type, {def}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -695,7 +668,7 @@ private:
     Variant(const Def* type, const SortedDefSet& ops, Debug dbg);
     // Nominal Variant
     Variant(const Def* type, size_t num_ops, Debug dbg)
-        : Def(Tag::Variant, type, num_ops, ops_ptr<Variant>(), dbg)
+        : Def(Tag::Variant, type, num_ops, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -716,7 +689,7 @@ private:
 class Any : public Def {
 private:
     Any(const Variant* type, const Def* def, Debug dbg)
-        : Def(Tag::Any, type, {def}, ops_ptr<Any>(), dbg)
+        : Def(Tag::Any, type, {def}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -741,7 +714,7 @@ private:
 class Match : public Def {
 private:
     Match(const Def* type, const Def* def, const Defs handlers, Debug dbg)
-        : Def(Tag::Match, type, concat(def, handlers), ops_ptr<Match>(), dbg)
+        : Def(Tag::Match, type, concat(def, handlers), THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -761,7 +734,7 @@ private:
 class Singleton : public Def {
 private:
     Singleton(const Def* def, Debug dbg)
-        : Def(Tag::Singleton, def->type()->type(), {def}, ops_ptr<Singleton>(), dbg)
+        : Def(Tag::Singleton, def->type()->type(), {def}, THORIN_OPS_PTR, dbg)
     {
         assert((def->is_term() || def->is_type()) && "No singleton type universes allowed.");
     }
@@ -831,7 +804,7 @@ private:
 class Universe : public Def {
 private:
     Universe()
-        : Def(Tag::Universe, nullptr, 0, ops_ptr<Universe>(), {"□"})
+        : Def(Tag::Universe, nullptr, 0, THORIN_OPS_PTR, {"□"})
     {}
 
 public:
@@ -846,8 +819,8 @@ private:
 
 class Var : public Def {
 private:
-    Var(const Def* type, size_t index, Debug dbg)
-        : Def(Tag::Var, type, Defs(), ops_ptr<Var>(), dbg)
+    Var(const Def* type, u64 index, Debug dbg)
+        : Def(Tag::Var, type, Defs(), THORIN_OPS_PTR, dbg)
     {
         assert(!type->is_universe());
         index_ = index;
@@ -856,7 +829,7 @@ private:
 
 public:
     const Def* arity(World&) const override;
-    size_t index() const { return index_; }
+    u64 index() const { return index_; }
     std::ostream& stream(std::ostream&) const override;
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
     std::ostream& name_stream(std::ostream& os) const override { return stream(os); }
@@ -867,35 +840,44 @@ private:
     bool equal(const Def*) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
-    size_t index_;
+    u64 index_;
 
     friend class World;
 };
 
-// TODO seperate Axiom and Assume
-// TODO remember which field in the box was actually used to have a better output
 class Axiom : public Def {
 private:
-    /// A @em nominal Axiom.
     Axiom(const Def* type, Debug dbg)
-        : Def(Tag::Axiom, type, 0, ops_ptr<Axiom>(), dbg)
+        : Def(Tag::Axiom, type, 0, THORIN_OPS_PTR, dbg)
     {
         assert(type->free_vars().none());
     }
 
-    /// A @em structural Axiom (aka assumption).
-    Axiom(const Def* type, Box box, Debug dbg)
-        : Def(Tag::Axiom, type, Defs(), ops_ptr<Axiom>(), dbg)
+public:
+    const Def* arity(World&) const override;
+    std::ostream& stream(std::ostream&) const override;
+    Axiom* stub(World&, const Def*, Debug) const override;
+    bool has_values() const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+    friend class World;
+};
+
+// TODO remember which field in the box was actually used to have a better output
+class Lit : public Def {
+private:
+    Lit(const Def* type, Box box, Debug dbg)
+        : Def(Tag::Axiom, type, Defs(), THORIN_OPS_PTR, dbg)
         , box_(box)
     {}
 
 public:
     const Def* arity(World&) const override;
-    Box box() const { assert(!is_nominal()); return box_; }
-    bool is_assumption() const { return !is_nominal(); }
+    Box box() const { return box_; }
 
     std::ostream& stream(std::ostream&) const override;
-    Axiom* stub(World&, const Def*, Debug) const override;
     bool has_values() const override;
 
 private:
@@ -908,11 +890,17 @@ private:
     friend class World;
 };
 
+#define CODE(T) inline T get_ ## T(const Def* def) { return def->as<Lit>()->box().get_ ## T(); }
+THORIN_TYPES(CODE)
+#undef CODE
+inline s64 get_nat(const Def* def) { return get_s64(def); }
+inline u64 get_index(const Def* def) { return get_u64(def); }
+
 class Error : public Def {
 private:
     // TODO additional error message with more precise information
     Error(const Def* type)
-        : Def(Tag::Error, type, Defs(), ops_ptr<Error>(), {"<error>"})
+        : Def(Tag::Error, type, Defs(), THORIN_OPS_PTR, {"<error>"})
     {}
 
 public:

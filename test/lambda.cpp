@@ -15,13 +15,13 @@ TEST(Pi, Kinds) {
 
 TEST(Lambda, PolyId) {
     World w;
-    auto n16 = w.val_nat_16();
-    auto n23 = w.val_nat(23);
-    auto n42 = w.val_nat(42);
+    auto n16 = w.lit_nat_16();
+    auto n23 = w.lit_nat(23);
+    auto n42 = w.lit_nat(42);
 
-    EXPECT_EQ(n16, w.val_nat(16));
-    EXPECT_EQ(n23, w.val_nat(23));
-    EXPECT_EQ(n42, w.val_nat(42));
+    EXPECT_EQ(n16, w.lit_nat(16));
+    EXPECT_EQ(n23, w.lit_nat(23));
+    EXPECT_EQ(n42, w.lit_nat(42));
 
     auto bb = w.var(w.type_nat(), 0);
     EXPECT_TRUE(bb->free_vars().test(0));
@@ -65,21 +65,21 @@ static const int test_num_vars = 1000;
 
 TEST(Lambda, AppCurry) {
     World w;
-    const Def* cur = w.val_nat_32();
+    const Def* cur = w.lit_nat_32();
     for (int i = 0; i < test_num_vars; ++i)
         cur = w.lambda(w.type_nat(), cur);
 
     for (int i = 0; i < test_num_vars; ++i)
-        cur = w.app(cur, w.val_nat_64());
+        cur = w.app(cur, w.lit_nat_64());
 
-    EXPECT_EQ(cur, w.val_nat_32());
+    EXPECT_EQ(cur, w.lit_nat_32());
 }
 
 TEST(Lambda, AppArity) {
     World w;
-    auto l = w.lambda(w.sigma(DefArray{test_num_vars, w.type_nat()}), w.val_nat_32());
-    auto r = w.app(l, DefArray(test_num_vars, w.val_nat_64()));
-    EXPECT_EQ(r, w.val_nat_32());
+    auto l = w.lambda(w.sigma(DefArray{test_num_vars, w.type_nat()}), w.lit_nat_32());
+    auto r = w.app(l, DefArray(test_num_vars, w.lit_nat_64()));
+    EXPECT_EQ(r, w.lit_nat_32());
 }
 
 TEST(Lambda, EtaConversion) {
@@ -92,11 +92,11 @@ TEST(Lambda, EtaConversion) {
     auto g = w.axiom(w.pi(w.sigma({N, N}), N), {"g"});
     auto NxN = w.sigma({N, N});
     auto NxNxN = w.sigma({N, N, N});
-    EXPECT_EQ(w.lambda(NxN, w.app(g, w.tuple({w.extract(w.var(NxN, 0), 0), w.extract(w.var(NxN, 0), 1)}))), g);
-    EXPECT_NE(w.lambda(NxN, w.app(g, w.tuple({w.extract(w.var(NxN, 0), 1), w.extract(w.var(NxN, 0), 0)}))), g);
-    EXPECT_NE(w.lambda(NxNxN, w.app(g, w.tuple({w.extract(w.var(NxNxN, 0), 0), w.extract(w.var(NxNxN, 0), 1)}))), g);
+    EXPECT_EQ(w.lambda(NxN, w.app(g, w.tuple({w.extract(w.var(NxN, 0), 0_u64), w.extract(w.var(NxN, 0), 1)}))), g);
+    EXPECT_NE(w.lambda(NxN, w.app(g, w.tuple({w.extract(w.var(NxN, 0), 1), w.extract(w.var(NxN, 0), 0_u64)}))), g);
+    EXPECT_NE(w.lambda(NxNxN, w.app(g, w.tuple({w.extract(w.var(NxNxN, 0), 0_u64), w.extract(w.var(NxNxN, 0), 1)}))), g);
 
     auto h = w.axiom(w.pi(w.sigma({N, N, N}), N), {"h"});
-    EXPECT_EQ(w.lambda(NxNxN, w.app(h, w.tuple({w.extract(w.var(NxNxN, 0), 0), w.extract(w.var(NxNxN, 0), 1), w.extract(w.var(NxNxN, 0), 2)}))), h);
-    EXPECT_NE(w.lambda(NxNxN, w.app(h, w.tuple({w.extract(w.var(NxNxN, 0), 2), w.extract(w.var(NxNxN, 0), 1), w.extract(w.var(NxNxN, 0), 0)}))), h);
+    EXPECT_EQ(w.lambda(NxNxN, w.app(h, w.tuple({w.extract(w.var(NxNxN, 0), 0_u64), w.extract(w.var(NxNxN, 0), 1_u64), w.extract(w.var(NxNxN, 0), 2_u64)}))), h);
+    EXPECT_NE(w.lambda(NxNxN, w.app(h, w.tuple({w.extract(w.var(NxNxN, 0), 2_u64), w.extract(w.var(NxNxN, 0), 1_u64), w.extract(w.var(NxNxN, 0), 0_u64)}))), h);
 }

@@ -24,7 +24,7 @@ TEST(Variadic, Misc) {
     auto v = w.variadic(5, N);
     EXPECT_TRUE(v->arity(w) == w.arity(5));
 
-    auto t = w.tuple({w.val_nat_2(), w.val_nat_4()});
+    auto t = w.tuple({w.lit_nat_2(), w.lit_nat_4()});
     EXPECT_TRUE(t->type()->isa<Variadic>());
 
     EXPECT_EQ(w.variadic(1, N), N);
@@ -62,22 +62,22 @@ TEST(Variadic, LEA) {
     auto N = w.type_nat();
 
     auto s2 = w.sigma({B, N});
-    auto ps2 = w.axiom(w.type_ptr(s2, w.val_nat_2()), {"ptr_s2"});
-    ASSERT_EQ(w.op_lea(ps2, 0_s)->type(), w.type_ptr(B, w.val_nat_2()));
-    ASSERT_EQ(w.op_lea(ps2, 1_s)->type(), w.type_ptr(N, w.val_nat_2()));
+    auto ps2 = w.axiom(w.type_ptr(s2, w.lit_nat_2()), {"ptr_s2"});
+    ASSERT_EQ(w.op_lea(ps2, 0_s)->type(), w.type_ptr(B, w.lit_nat_2()));
+    ASSERT_EQ(w.op_lea(ps2, 1_s)->type(), w.type_ptr(N, w.lit_nat_2()));
 
     auto v3n = w.variadic(w.arity(3), N);
-    auto pv3n = w.axiom(w.type_ptr(v3n, w.val_nat_2()), {"ptr_v3n"});
-    ASSERT_EQ(w.op_lea(pv3n, 0_s)->type(), w.type_ptr(N, w.val_nat_2()));
-    ASSERT_EQ(w.op_lea(pv3n, 1_s)->type(), w.type_ptr(N, w.val_nat_2()));
-    ASSERT_EQ(w.op_lea(pv3n, 2_s)->type(), w.type_ptr(N, w.val_nat_2()));
+    auto pv3n = w.axiom(w.type_ptr(v3n, w.lit_nat_2()), {"ptr_v3n"});
+    ASSERT_EQ(w.op_lea(pv3n, 0_s)->type(), w.type_ptr(N, w.lit_nat_2()));
+    ASSERT_EQ(w.op_lea(pv3n, 1_s)->type(), w.type_ptr(N, w.lit_nat_2()));
+    ASSERT_EQ(w.op_lea(pv3n, 2_s)->type(), w.type_ptr(N, w.lit_nat_2()));
 
     // TODO allow assignability/conversion from values of nominal type to structural type
 #if 0
     auto n2 = w.sigma_type(2, {"n2"})->set(0, B)->set(1, N);
-    auto pn2 = w.axiom(w.type_ptr(n2, w.val_nat_4()), {"ptr_n2"});
-    ASSERT_EQ(w.op_lea(pn2, 0_s)->type(), w.type_ptr(B, w.val_nat_2()));
-    ASSERT_EQ(w.op_lea(pn2, 1_s)->type(), w.type_ptr(N, w.val_nat_2()));
+    auto pn2 = w.axiom(w.type_ptr(n2, w.lit_nat_4()), {"ptr_n2"});
+    ASSERT_EQ(w.op_lea(pn2, 0_s)->type(), w.type_ptr(B, w.lit_nat_2()));
+    ASSERT_EQ(w.op_lea(pn2, 1_s)->type(), w.type_ptr(N, w.lit_nat_2()));
 #endif
 }
 

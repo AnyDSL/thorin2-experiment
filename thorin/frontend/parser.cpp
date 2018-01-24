@@ -31,7 +31,7 @@ const Def* Parser::parse_def() {
     else if (ahead().isa(Token::Tag::Backslash) ||
              ahead().isa(Token::Tag::Identifier)) def = parse_var_or_binder();
     else if (ahead().isa(Token::Tag::L_Paren))    def = parse_tuple_or_pack();
-    else if (ahead().isa(Token::Tag::L_Brace))    def = parse_assume();
+    else if (ahead().isa(Token::Tag::L_Brace))    def = parse_lit();
     else if (ahead().isa(Token::Tag::Literal))    def = parse_literal();
     else if (accept(Token::Tag::Qualifier_Type))    def = world_.qualifier_type();
     else if (accept(Token::Tag::QualifierU))        def = world_.unlimited();
@@ -211,7 +211,7 @@ const Def* Parser::parse_tuple_or_pack() {
     return world_.tuple(defs, tracker.location());
 }
 
-const Axiom* Parser::parse_assume() {
+const Lit* Parser::parse_lit() {
     Tracker tracker(this);
 
     eat(Token::Tag::L_Brace);
@@ -225,7 +225,7 @@ const Axiom* Parser::parse_assume() {
     expect(Token::Tag::Colon, "assumption");
     auto type = parse_def();
 
-    return world_.assume(type, box, tracker.location());
+    return world_.lit(type, box, tracker.location());
 }
 
 const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {
