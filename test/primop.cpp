@@ -139,11 +139,18 @@ TEST(Primop, Normalize) {
     auto a = w.axiom(w.type_i(8), {"a"});
     auto b = w.axiom(w.type_i(8), {"b"});
     auto z = w.lit_i(0_u8);
+    auto l2 = w.lit_i(2_u8);
+    auto l3 = w.lit_i(3_u8);
+    auto l5 = w.lit_i(5_u8);
     ASSERT_EQ(w.op<WOp::add>(a, z), a);
     ASSERT_EQ(w.op<WOp::add>(z, a), a);
-    ASSERT_EQ(w.op<WOp::add>(a, a), w.op<WOp::mul>(a, w.lit_i(2_u8)));
+    ASSERT_EQ(w.op<WOp::add>(a, a), w.op<WOp::mul>(a, l2));
     ASSERT_EQ(w.op<WOp::add>(a, b), w.op<WOp::add>(b, a));
     ASSERT_EQ(w.op<WOp::sub>(a, a), z);
+
+    ASSERT_EQ(w.op<WOp::add>(w.op<WOp::add>(b, l3), a), w.op<WOp::add>(l3, w.op<WOp::add>(a, b)));
+    ASSERT_EQ(w.op<WOp::add>(b, w.op<WOp::add>(a, l3)), w.op<WOp::add>(l3, w.op<WOp::add>(a, b)));
+    //ASSERT_EQ(w.op<WOp::add>(w.op<WOp::add>(b, l2), w.op<WOp::add>(a, l3)), w.op<WOp::add>(l5, w.op<WOp::add>(a, b)));
 }
 
 TEST(Primop, Ptr) {
