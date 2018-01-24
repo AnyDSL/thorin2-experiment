@@ -9,7 +9,7 @@ namespace thorin::core {
 // This code assumes two-complement arithmetic for unsigned operations.
 // This is *implementation-defined* but *NOT* *undefined behavior*.
 
-struct BottomException {};
+struct ErrorException {};
 
 template<int w, bool nsw, bool nuw>
 struct Fold_wadd {
@@ -17,7 +17,7 @@ struct Fold_wadd {
         auto x = a.template get<typename w2u<w>::type>();
         auto y = b.template get<typename w2u<w>::type>();
         decltype(x) res = x + y;
-        if (nuw && res < x) throw BottomException();
+        if (nuw && res < x) throw ErrorException();
         // TODO nsw
         return {res};
     }
@@ -30,7 +30,7 @@ struct Fold_wsub {
         auto x = a.template get<UT>();
         auto y = b.template get<UT>();
         decltype(x) res = x - y;
-        //if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
+        //if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw ErrorException();
         // TODO nsw
         return {res};
     }
@@ -43,7 +43,7 @@ struct Fold_wmul {
         auto x = a.template get<UT>();
         auto y = b.template get<UT>();
         decltype(x) res = x * y;
-        if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
+        if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw ErrorException();
         // TODO nsw
         return {res};
     }
@@ -56,7 +56,7 @@ struct Fold_wshl {
         auto x = a.template get<UT>();
         auto y = b.template get<UT>();
         decltype(x) res = x << y;
-        //if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
+        //if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw ErrorException();
         // TODO nsw
         return {res};
     }

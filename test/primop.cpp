@@ -48,6 +48,8 @@ TEST(Primop, ConstFolding) {
 
     ASSERT_EQ(w.op<IOp::ashr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(u8(-1)));
     ASSERT_EQ(w.op<IOp::lshr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(127_u8));
+
+    ASSERT_EQ(w.op<WOp::wadd>(WFlags::nuw, w.lit_i(0xff_u8), w.lit_i(1_u8)), w.error(w.type_i(8)));
 }
 
 TEST(Primop, Cmp) {

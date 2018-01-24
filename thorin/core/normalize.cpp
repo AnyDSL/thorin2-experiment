@@ -86,7 +86,8 @@ const Def* try_wfold(thorin::World& world, const Def* callee, const Def* a, cons
                         case 64: return world.lit(t, F<64, true, true>::run(ba, bb));
                     }
             }
-        } catch (BottomException) {
+        } catch (ErrorException) {
+            return world.error(t);
         }
     }
 
@@ -158,7 +159,8 @@ const Def* try_ifold(thorin::World& world, const Def* callee, const Def* a, cons
                 case 32: return world.lit(t, F<32>::run(ba, bb));
                 case 64: return world.lit(t, F<64>::run(ba, bb));
             }
-        } catch (BottomException) {
+        } catch (ErrorException) {
+            return world.error(t);
         }
     }
 
@@ -217,7 +219,8 @@ const Def* try_rfold(thorin::World& world, const Def* callee, const Def* a, cons
                 case 32: return world.lit(t, F<32>::run(ba, bb));
                 case 64: return world.lit(t, F<64>::run(ba, bb));
             }
-        } catch (BottomException) {
+        } catch (ErrorException) {
+            return world.error(t);
         }
     }
 
