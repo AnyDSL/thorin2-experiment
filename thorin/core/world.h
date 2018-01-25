@@ -143,6 +143,22 @@ public:
     const Def* op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg = {});
     //@}
 
+    //@{ intrinsics (AKA built-in Cont%inuations)
+    const Axiom* branch();
+    const Axiom* match();
+    const Axiom* pe_info();
+    const Axiom* end_scope();
+    const Axiom* amdgpu();
+    const Axiom* cuda();
+    const Axiom* hls();
+    const Axiom* nvvm();
+    const Axiom* opencl();
+    const Axiom* parallel();
+    const Axiom* spawn();
+    const Axiom* syc();
+    const Axiom* vectorize();
+    //@}
+
 private:
     const Axiom* type_i_;
     const Axiom* type_r_;
