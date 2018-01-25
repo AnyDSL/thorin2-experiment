@@ -43,9 +43,9 @@ static const Def* normalize_tuple(thorin::World& world, const Def* callee, const
         auto [head, tail] = shrink_shape(world, app_arg(callee));
         auto new_callee = world.app(app_callee(callee), tail);
 
-        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), tb->op(i)}, dbg); }));
-        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), pb->body()}, dbg); }));
-        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {pa->body(), tb->op(i)}, dbg); }));
+        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i),  tb->op(i)},  dbg); }));
+        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i),  pb->body()}, dbg); }));
+        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {pa->body(), tb->op(i)},  dbg); }));
         assert(pa && pb);
         return world.pack(head, world.app(new_callee, {pa->body(), pb->body()}, dbg), dbg);
     }
@@ -62,9 +62,9 @@ static const Def* normalize_mtuple(thorin::World& world, const Def* callee, cons
         auto [head, tail] = shrink_shape(world, app_arg(callee));
         auto new_callee = world.app(app_callee(callee), tail);
 
-        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i), tb->op(i)}, dbg); }));
-        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i), pb->body()}, dbg); }));
-        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {m, pa->body(), tb->op(i)}, dbg); }));
+        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i),  tb->op(i)},  dbg); }));
+        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i),  pb->body()}, dbg); }));
+        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {m, pa->body(), tb->op(i)},  dbg); }));
         assert(pa && pb);
         return world.pack(head, world.app(new_callee, {m, pa->body(), pb->body()}, dbg), dbg);
     }
@@ -89,24 +89,31 @@ static const Def* commute(thorin::World& world, const Def* callee, const Def* a,
 
 static const Def* associate_commute(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
     std::array<const Def*, 2> args{a, b};
-    std::array<std::array<const Def*, 2>, 2> args_args{{{nullptr, nullptr}, {nullptr, nullptr}}};
+    std::array<std::array<const Def*, 2>, 2> aa{{{nullptr, nullptr}, {nullptr, nullptr}}};
     std::array<bool, 2> foldable{false, false};
 
     for (size_t i = 0; i != 2; ++i) {
         if (auto app = args[i]->isa<App>()) {
-            args_args[i] = split(world, app->arg());
-            foldable[i] = is_foldable(args_args[i][0]);
+            aa[i] = split(world, app->arg());
+            foldable[i] = is_foldable(aa[i][0]);
         }
     }
 
     if (foldable[0] && foldable[1]) {
-        auto f = world.app(callee, {args_args[0][0], args_args[1][0]}, dbg);
-        return world.app(callee, {f, world.app(callee, {args_args[0][1], args_args[1][1]}, dbg)}, dbg);
+        auto f = world.app(callee, {aa[0][0], aa[1][0]}, dbg);
+        return world.app(callee, {f, world.app(callee, {aa[0][1], aa[1][1]}, dbg)}, dbg);
     }
 
     for (size_t i = 0; i != 2; ++i) {
         if (foldable[i])
-            return world.app(callee, {args_args[i][0], world.app(callee, {args[1-i], args_args[i][1]}, dbg)}, dbg);
+            return world.app(callee, {aa[i][0], world.app(callee, {args[1-i], aa[i][1]}, dbg)}, dbg);
+    }
+
+    if (aa[0][0] && aa[1][0]) {
+        // TODO this could be even cooler by sorting this sort of stuff into a reduce operation
+        auto x = world.app(callee, {aa[0][0], aa[0][1]}, dbg);
+        auto y = world.app(callee, {x,        aa[1][0]}, dbg);
+        return   world.app(callee, {y,        aa[1][1]}, dbg);
     }
 
     return commute(world, callee, a, b, dbg);

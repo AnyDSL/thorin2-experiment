@@ -73,7 +73,8 @@ template<class To>
 using DefMap  = GIDMap<const Def*, To>;
 using DefSet  = GIDSet<const Def*>;
 using Def2Def = DefMap<const Def*>;
-using SortedDefSet = std::set<const Def*, GIDLt<const Def*>>;
+using DefLt   = GIDLt<const Def*>;
+using SortedDefSet = std::set<const Def*, DefLt>;
 
 typedef Array<const Def*> DefArray;
 typedef ArrayRef<const Def*> Defs;
