@@ -235,7 +235,6 @@ public:
     static size_t gid_counter() { return gid_counter_; }
     /// A nominal Def is always different from each other Def.
     bool is_nominal() const { return nominal_; }
-    bool is_closed() const { return closed_; }
     bool has_error() const { return has_error_; }
     Tag tag() const { return Tag(tag_); }
     //@}

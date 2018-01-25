@@ -88,7 +88,6 @@ bool Def::maybe_affine(World& world) const {
 }
 
 Def* Def::set(World& world, size_t i, const Def* def) {
-    assert(!is_closed() && is_nominal());
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
 
@@ -102,8 +101,6 @@ Def* Def::set(World& world, size_t i, const Def* def) {
 }
 
 void Def::finalize(World& world) {
-    assert(is_closed());
-
     has_error_ |= this->tag() == Tag::Error;
 
     for (size_t i = 0, e = num_ops(); i != e; ++i) {

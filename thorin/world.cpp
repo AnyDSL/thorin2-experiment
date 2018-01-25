@@ -244,23 +244,16 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     auto app = unify<App>(2, type, callee, arg, dbg);
     assert(app->callee() == callee);
 
+    if (callee->is_nominal())
+        return app;
     if (auto cache = app->cache_)
         return cache;
 
     if (auto lambda = app->callee()->isa<Lambda>()) {
         auto pi_type = app->callee()->type()->as<Pi>();
-        // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
-        if (!pi_type->maybe_affine(*this) && !pi_type->body()->maybe_affine(*this) &&
-            (!lambda->is_nominal() || app->arg()->free_vars().none())) {
-            if (!lambda->is_closed()) // don't set cache as long lambda is unclosed
-                return app;
-
-            if (lambda->is_nominal())
-                app->cache_ = app;
-            app->cache_ = reduce(*this, lambda->body(), {app->arg()});
-            if (lambda->is_nominal())
-                return app;
-            return app->cache_;
+        // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body?
+        if (!lambda->maybe_affine(*this) && !pi_type->body()->maybe_affine(*this) && !lambda->is_nominal()) {
+            return app->cache_ = reduce(*this, lambda->body(), {app->arg()});
         }
     }
 
