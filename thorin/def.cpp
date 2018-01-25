@@ -22,7 +22,7 @@ DefArray qualifiers(World& world, Defs defs) {
 }
 
 void gid_sort(DefArray* defs) {
-    std::sort(defs->begin(), defs->end(), GIDLt<const Def*>());
+    std::sort(defs->begin(), defs->end(), DefLt());
 }
 
 DefArray gid_sorted(Defs defs) {
