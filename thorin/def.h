@@ -150,7 +150,6 @@ protected:
         , num_ops_(num_ops)
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
-        , closed_(num_ops == 0)
         , nominal_(true)
         , has_error_(false)
         , ops_(ops_ptr)
@@ -165,7 +164,6 @@ protected:
         , num_ops_(ops.distance())
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
-        , closed_(true)
         , nominal_(false)
         , has_error_(false)
         , ops_(ops_ptr)
@@ -324,9 +322,8 @@ private:
     uint32_t num_ops_;
     union {
         struct {
-            unsigned gid_           : 23;
+            unsigned gid_           : 24;
             unsigned tag_           :  6;
-            unsigned closed_        :  1;
             unsigned nominal_       :  1;
             unsigned has_error_     :  1;
             // this sum must be 32   ^^^

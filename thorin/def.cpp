@@ -90,13 +90,9 @@ bool Def::maybe_affine(World& world) const {
 Def* Def::set(World& world, size_t i, const Def* def) {
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
-
     ops_[i] = def;
-
-    if (i == num_ops() - 1) {
-        closed_ = true;
+    if (i == num_ops() - 1)
         finalize(world);
-    }
     return this;
 }
 
