@@ -13,20 +13,20 @@ static const Def* check_callee(Normalizer normalizer, thorin::World& world, cons
     return nullptr;
 }
 
-static std::tuple<const Def*, const Def*> split(thorin::World& world, const Def* def) {
+static std::array<const Def*, 2> split(thorin::World& world, const Def* def) {
     auto a = world.extract(def, 0_u64);
     auto b = world.extract(def, 1_u64);
     return {a, b};
 }
 
-static std::tuple<const Def*, const Def*, const Def*> msplit(thorin::World& world, const Def* def) {
+static std::array<const Def*, 3> msplit(thorin::World& world, const Def* def) {
     auto a = world.extract(def, 0_u64);
     auto b = world.extract(def, 1_u64);
     auto m = world.extract(def, 2_u64);
     return {a, b, m};
 }
 
-static std::tuple<const Def*, const Def*> shrink_shape(thorin::World& world, const Def* def) {
+static std::array<const Def*, 2> shrink_shape(thorin::World& world, const Def* def) {
     if (def->isa<Arity>())
         return {def, world.arity(1)};
     if (auto sigma = def->isa<Sigma>())
@@ -72,11 +72,11 @@ static const Def* normalize_mtuple(thorin::World& world, const Def* callee, cons
     return nullptr;
 }
 
-static const Lit* const_to_left(const Def*& a, const Def*& b) {
-    if (b->isa<Lit>()) {
+static inline bool is_foldable(const Def* def) { return def->isa<Lit>() || def->isa<Tuple>() || def->isa<Pack>(); }
+
+static const Lit* foldable_to_left(const Def*& a, const Def*& b) {
+    if (is_foldable(b))
         std::swap(a, b);
-        return a->as<Lit>();
-    }
 
     return a->isa<Lit>();
 }
@@ -88,28 +88,26 @@ static const Def* commute(thorin::World& world, const Def* callee, const Def* a,
 }
 
 static const Def* associate_commute(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    const Def* aa = nullptr, *ab = nullptr, *ba = nullptr, *bb = nullptr;
-    const Lit* laa = nullptr, *lba = nullptr;
+    std::array<const Def*, 2> args{a, b};
+    std::array<std::array<const Def*, 2>, 2> args_args{{{nullptr, nullptr}, {nullptr, nullptr}}};
+    std::array<bool, 2> foldable{false, false};
 
-    if (auto app = a->isa<App>(); app && app->callee() == callee) {
-        aa = world.extract(app->arg(), 0_u64);
-        ab = world.extract(app->arg(), 1_u64);
-        laa = aa->isa<Lit>();
+    for (size_t i = 0; i != 2; ++i) {
+        if (auto app = args[i]->isa<App>()) {
+            args_args[i] = split(world, app->arg());
+            foldable[i] = is_foldable(args_args[i][0]);
+        }
     }
 
-    if (auto app = b->isa<App>(); app && app->callee() == callee) {
-        ba = world.extract(app->arg(), 0_u64);
-        bb = world.extract(app->arg(), 1_u64);
-        lba = ba->isa<Lit>();
+    if (foldable[0] && foldable[1]) {
+        auto f = world.app(callee, {args_args[0][0], args_args[1][0]}, dbg);
+        return world.app(callee, {f, world.app(callee, {args_args[0][1], args_args[1][1]}, dbg)}, dbg);
     }
 
-    if (laa && lba) {
-        auto lit = world.app(callee, {laa, lba}, dbg)->as<Lit>();
-        return world.app(callee, {lit, world.app(callee, {ab, bb}, dbg)}, dbg);
+    for (size_t i = 0; i != 2; ++i) {
+        if (foldable[i])
+            return world.app(callee, {args_args[i][0], world.app(callee, {args[1-i], args_args[i][1]}, dbg)}, dbg);
     }
-
-    if (laa) return world.app(callee, {laa, world.app(callee, {ab, b}, dbg)}, dbg);
-    if (lba) return world.app(callee, {lba, world.app(callee, {a, bb}, dbg)}, dbg);
 
     return commute(world, callee, a, b, dbg);
 }
@@ -172,7 +170,7 @@ const Def* normalize_add(thorin::World& world, const Def* callee, const Def* arg
     auto [a, b] = split(world, arg);
     if (auto result = try_wfold<Fold_add>(world, callee, a, b, dbg)) return result;
 
-    if (auto la = const_to_left(a, b)) {
+    if (auto la = foldable_to_left(a, b)) {
         if (get_u64(la) == 0_u64) return b;
     }
 
@@ -198,7 +196,7 @@ const Def* normalize_mul(thorin::World& world, const Def* callee, const Def* arg
     auto [a, b] = split(world, arg);
     if (auto result = try_wfold<Fold_mul>(world, callee, a, b, dbg)) return result;
 
-    if (auto la = const_to_left(a, b)) {
+    if (auto la = foldable_to_left(a, b)) {
         if (get_u64(la) == 0_u64) return la;
         if (get_u64(la) == 1_u64) return b;
     }
@@ -369,7 +367,7 @@ const Def* normalize_radd(thorin::World& world, const Def* callee, const Def* ar
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_radd>(world, callee, a, b, dbg)) return result;
 
-    if (auto la = const_to_left(a, b)) {
+    if (auto la = foldable_to_left(a, b)) {
         la->box();
     }
 
@@ -391,7 +389,7 @@ const Def* normalize_rmul(thorin::World& world, const Def* callee, const Def* ar
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_rmul>(world, callee, a, b, dbg)) return result;
 
-    if (auto la = const_to_left(a, b)) {
+    if (auto la = foldable_to_left(a, b)) {
         la->box();
     }
 

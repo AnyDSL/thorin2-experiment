@@ -10,9 +10,9 @@
 namespace thorin::core {
 
 class World;
-std::tuple<const Def*, const Def*> shape_and_body(World&, const Def* def);
+std::array<const Def*, 2> shape_and_body(World&, const Def* def);
 const Def* infer_shape(World&, const Def* def);
-std::tuple<const Def*, const Def*> infer_width_and_shape(World&, const Def*);
+std::array<const Def*, 2> infer_width_and_shape(World&, const Def*);
 
 class World : public ::thorin::World {
 public:
