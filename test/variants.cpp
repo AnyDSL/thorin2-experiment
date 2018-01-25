@@ -12,6 +12,7 @@ TEST(Variants, negative_test) {
     auto any_nat23 = w.any(variant, w.lit_nat(23));
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
     auto handle_bool_bool = w.lambda(w.sigma({boolean, boolean}), w.lit_nat(0));
+    // TODO can we remove DEATH tests?
     ASSERT_DEATH(w.match(any_nat23, {handle_bool_bool, handle_nat}), ".*");
 }
 

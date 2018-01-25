@@ -22,7 +22,7 @@ static bool any_of(const Def* def, Defs defs) {
     return std::any_of(defs.begin(), defs.end(), [&](auto d){ return d == def; });
 }
 
-static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
+static bool is_qualifier(World& world, const Def* def) { return def->type() == world.qualifier_type(); }
 
 template<bool use_glb, class I>
 const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
@@ -30,7 +30,7 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
         return star(q ? q : use_glb ? linear() : unlimited());
 
     auto first = *defs.begin();
-    auto inferred_q = first->qualifier();
+    auto inferred_q = first->qualifier(*this);
     auto max = first;
 
     auto iter = defs.begin();
@@ -39,12 +39,12 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
         auto def = *iter;
         assertf(!def->is_value(), "can't have value {} as operand of bound operator", def);
 
-        if (def->qualifier()->free_vars().any_range(0, i)) {
+        if (def->qualifier(*this)->free_vars().any_range(0, i)) {
             // qualifier is dependent within this type/kind, go to top directly
             // TODO might want to assert that this will always be a kind?
             inferred_q = use_glb ? linear() : unlimited();
         } else {
-            auto qualifier = def->qualifier()->shift_free_vars(-i);
+            auto qualifier = def->qualifier(*this)->shift_free_vars(*this, -i);
 
             inferred_q = use_glb ? intersection(qualifier_type(), {inferred_q, qualifier})
                 : variant(qualifier_type(), {inferred_q, qualifier});
@@ -108,7 +108,7 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
             accu = use_glb ? thorin::glb(accu, qual) : thorin::lub(accu, qual);
             num_const++;
         } else {
-            assert(is_qualifier(*iter));
+            assert(is_qualifier(*this, *iter));
             reduced[i - num_const] = *iter;
         }
     }
@@ -130,9 +130,9 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
     return unify_fn(set);
 }
 
-const Def* normalize_arity_eliminator(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_arity_eliminator(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
     if (callee->type()->as<Pi>()->body()->isa<Pi>())
-        return world.curry(normalize_arity_eliminator, type, callee, arg, dbg);
+        return world.curry(normalize_arity_eliminator, callee, arg, dbg);
     const Def* pred = nullptr;
     if (auto arity = arg->isa<Arity>()) {
         auto arity_val = arity->value();
@@ -157,7 +157,7 @@ World::World()
     : root_page_(new Zone)
     , cur_page_(root_page_.get())
 {
-    universe_ = insert<Universe>(0, *this);
+    universe_ = insert<Universe>(0);
     qualifier_type_ = insert<QualifierType>(0, *this);
     for (size_t i = 0; i != 4; ++i) {
         auto q = QualifierTag(i);
@@ -171,7 +171,6 @@ World::World()
 
     type_bool_ = arity(2);
     type_nat_  = axiom(star(), {"nat"});
-    type_bottom_  = axiom(star(), {"⊥"});
 
     lit_bool_[0] = index(2, 0);
     lit_bool_[1] = index(2, 1);
@@ -210,13 +209,13 @@ const Def* World::any(const Def* type, const Def* def, Debug dbg) {
     auto variants = type->ops();
     assert(any_of(def->type(), variants) && "type must be a part of the variant type");
 
-    return unify<Any>(1, *this, type->as<Variant>(), def, dbg);
+    return unify<Any>(1, type->as<Variant>(), def, dbg);
 }
 
 const Arity* World::arity(size_t a, const Def* q, Location location) {
     assert(q->type() == qualifier_type());
     auto cur = Def::gid_counter();
-    auto result = unify<Arity>(3, *this, arity_kind(q), a, location);
+    auto result = unify<Arity>(3, arity_kind(q), a, location);
 
     if (result->gid() >= cur)
         result->debug().set(std::to_string(a) + "ₐ");
@@ -226,24 +225,23 @@ const Arity* World::arity(size_t a, const Def* q, Location location) {
 
 const Def* World::arity_succ(const Def* a, Debug dbg) {
     if (auto a_lit = a->isa<Arity>()) {
-        return arity(a_lit->value() + 1, a->qualifier(), dbg);
+        return arity(a_lit->value() + 1, a->qualifier(*this), dbg);
     }
-    return app(arity_succ_, tuple({a->qualifier(), a}), dbg);
+    return app(arity_succ_, tuple({a->qualifier(*this), a}), dbg);
 }
 
 const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     auto callee_type = callee->type()->as<Pi>();
-    assertf(callee_type->domain()->assignable(arg),
+    assertf(callee_type->domain()->assignable(*this, arg),
             "callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
 
-    auto type = callee_type->apply(arg);
-
     if (auto normalizer = callee->normalizer()) {
-        if (auto result = normalizer(*this, type, callee, arg, dbg))
+        if (auto result = normalizer(*this, callee, arg, dbg))
             return result;
     }
 
-    auto app = unify<App>(2, *this, type, callee, arg, dbg);
+    auto type = callee_type->apply(*this, arg);
+    auto app = unify<App>(2, type, callee, arg, dbg);
     assert(app->callee() == callee);
 
     if (auto cache = app->cache_)
@@ -252,12 +250,17 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     if (auto lambda = app->callee()->isa<Lambda>()) {
         auto pi_type = app->callee()->type()->as<Pi>();
         // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
-        if (!pi_type->maybe_affine() && !pi_type->body()->maybe_affine() &&
+        if (!pi_type->maybe_affine(*this) && !pi_type->body()->maybe_affine(*this) &&
             (!lambda->is_nominal() || app->arg()->free_vars().none())) {
             if (!lambda->is_closed()) // don't set cache as long lambda is unclosed
                 return app;
 
-            return thorin::reduce(lambda->body(), {app->arg()}, [&] (const Def* def) { app->cache_ = def; });
+            if (lambda->is_nominal())
+                app->cache_ = app;
+            app->cache_ = reduce(*this, lambda->body(), {app->arg()});
+            if (lambda->is_nominal())
+                return app;
+            return app->cache_;
         }
     }
 
@@ -269,12 +272,12 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
         return def;
     // need to allow the above, as types are also a 1-tuple of a type
     assertf(def->is_value(), "can only build extracts of values, {} is not a value", def);
-    auto arity = def->arity();
+    auto arity = def->arity(*this);
     auto type = def->type();
     assertf(arity, "arity unknown for {} of type {}, can only extract when arity is known", def, type);
-    if (arity->assignable(index)) {
-        if (auto idx = index->isa<Index>()) {
-            auto i = idx->value();
+    if (arity->assignable(*this, index)) {
+        if (auto idx = index->isa<Lit>()) {
+            auto i = get_index(idx);
             if (def->isa<Tuple>()) {
                 return def->op(i);
             }
@@ -289,17 +292,17 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
                     //}
 
                     // this also shifts any Var with i > skipped_shifts by -1
-                    type = type->reduce(extract(def, i - delta));
+                    type = type->reduce(*this, extract(def, i - delta));
                 }
-                return unify<Extract>(2, *this, type, def, index, dbg);
+                return unify<Extract>(2, type, def, index, dbg);
             }
         }
         // homogeneous tuples <v,...,v> are normalized to packs, so this also optimizes to v
         if (auto pack = def->isa<Pack>()) {
-            return pack->body()->reduce(index);
+            return pack->body()->reduce(*this, index);
         }
         // here: index is const => type is variadic, index is var => type may be variadic/sigma, must not be dependent sigma
-        assert(!index->isa<Index>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
+        assert(!index->isa<Lit>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
         const Def* result_type = nullptr;
         if (auto sigma = type->isa<Sigma>()) {
             assertf(!sigma->is_dependent(), "can't extract at {} from {} : {}, type is dependent", index, def, sigma);
@@ -313,14 +316,14 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             } else
                 result_type = extract(tuple(sigma->ops(), dbg), index);
         } else
-            result_type = type->as<Variadic>()->body()->reduce(index);
+            result_type = type->as<Variadic>()->body()->reduce(*this, index);
 
-        return unify<Extract>(2, *this, result_type, def, index, dbg);
+        return unify<Extract>(2, result_type, def, index, dbg);
     }
     // not the same exact arity, but as long as it types, we can use indices from constant arity tuples, even of non-index type
     // can only extract if we can iteratively extract with each index in the multi-index
     // can only do that if we know how many elements there are
-    if (auto i_arity = index->arity()->isa<Arity>()) {
+    if (auto i_arity = index->arity(*this)->isa<Arity>()) {
         auto a = i_arity->value();
         if (a > 1) {
             auto extracted = def;
@@ -336,17 +339,17 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
 }
 
 const Def* World::extract(const Def* def, size_t i, Debug dbg) {
-    assertf(def->arity()->isa<Arity>(), "can only extract by size_t on constant arities");
-    return extract(def, index(def->arity()->as<Arity>(), i, dbg), dbg);
+    assertf(def->arity(*this)->isa<Arity>(), "can only extract by size_t on constant arities");
+    return extract(def, index(def->arity(*this)->as<Arity>(), i, dbg), dbg);
 }
 
-const Index* World::index(const Arity* a, size_t i, Location location) {
+const Lit* World::index(const Arity* a, u64 i, Location location) {
     auto arity_val = a->value();
     assertf(i < arity_val, "Index literal {} does not fit within arity {}", i, a);
     auto cur = Def::gid_counter();
-    auto result = unify<Index>(3, *this, a, i, location);
+    auto result = lit(a, i, location);
 
-    if (result->gid() >= cur) { // new iassume -> build name
+    if (result->gid() >= cur) { // new literal -> build name
         std::string s = std::to_string(i);
         auto b = s.size();
 
@@ -371,19 +374,19 @@ const Def* World::index_zero(const Def* arity, Location location) {
 
 const Def* World::index_succ(const Def* index, Debug dbg) {
     assert(index->type()->type()->isa<ArityKind>());
-    if (auto idx = index->isa<Index>())
-        return this->index(idx->type(), idx->value() + 1, dbg);
+    if (auto idx = index->isa<Lit>())
+        return this->index(idx->type()->as<Arity>(), get_index(idx) + 1_u64, dbg);
 
     return app(app(index_succ_, index->type(), dbg), index, dbg);
 }
 
 const Def* World::insert(const Def* def, const Def* i, const Def* value, Debug dbg) {
     // TODO type check insert node
-    return unify<Insert>(2, *this, def->type(), def, i, value, dbg);
+    return unify<Insert>(2, def->type(), def, i, value, dbg);
 }
 
 const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) {
-    auto idx = index(def->arity()->as<Arity>()->value(), i);
+    auto idx = index(def->arity(*this)->as<Arity>()->value(), i);
     return insert(def, idx, value, dbg);
 }
 
@@ -402,27 +405,27 @@ const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
     }
     // implements a least upper bound on qualifiers,
     // could possibly be replaced by something subtyping-generic
-    if (is_qualifier(first)) {
+    if (is_qualifier(*this, first)) {
         assert(type == qualifier_type());
         return qualifier_glb(range(defs), [&] (const SortedDefSet& defs) {
-                return unify<Intersection>(defs.size(), *this, qualifier_type(), defs, dbg);
+                return unify<Intersection>(defs.size(), qualifier_type(), defs, dbg);
         });
     }
 
     // TODO recognize some empty intersections? i.e. same sorted ops, intersection of types non-empty?
-    return unify<Intersection>(defs.size(), *this, type, defs, dbg);
+    return unify<Intersection>(defs.size(), type, defs, dbg);
 }
 
 const Pi* World::pi(const Def* domain, const Def* body, const Def* q, Debug dbg) {
     assertf(!body->is_value(), "body {} : {} of function type cannot be a value", body, body->type());
     auto type = type_lub({domain, body}, q, false);
-    return unify<Pi>(2, *this, type, domain, body, dbg);
+    return unify<Pi>(2, type, domain, body, dbg);
 }
 
 const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
     if (auto def_type = def->type()->isa<Intersection>()) {
         assert(any_of(type, def_type->ops()) && "picked type must be a part of the intersection type");
-        return unify<Pick>(1, *this, type, def, dbg);
+        return unify<Pick>(1, type, def, dbg);
     }
 
     assert(type == def->type());
@@ -438,28 +441,28 @@ const Def* World::lambda(const Def* domain, const Def* body, const Def* type_qua
         };
 
         if (!app->callee()->free_vars().test(0) && eta_property())
-            return app->callee()->shift_free_vars(-1);
+            return app->callee()->shift_free_vars(*this, -1);
     }
 
-    return unify<Lambda>(1, *this, p, body, dbg);
+    return unify<Lambda>(1, p, body, dbg);
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
-    assertf(multi_arity_kind()->assignable(arity), "({} : {}) provided to variadic constructor is not a (multi-) arity",
+    assertf(multi_arity_kind()->assignable(*this, arity), "({} : {}) provided to variadic constructor is not a (multi-) arity",
             arity, arity-> type());
     if (auto sigma = arity->isa<Sigma>()) {
         assertf(!sigma->is_nominal(), "can't have nominal sigma arities");
-        return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
+        return variadic(sigma->ops(), flatten(*this, body, sigma->ops()), dbg);
     }
 
     if (auto v = arity->isa<Variadic>()) {
-        if (auto a_literal = v->arity()->isa<Arity>()) {
+        if (auto a_literal = v->arity(*this)->isa<Arity>()) {
             assert(!v->body()->free_vars().test(0));
             auto a = a_literal->value();
             assert(a != 1);
-            auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(a-1)));
+            auto result = flatten(*this, body, DefArray(a, v->body()->shift_free_vars(*this, a-1)));
             for (size_t i = a; i-- != 0;)
-                result = variadic(v->body()->shift_free_vars(i-1), result, dbg);
+                result = variadic(v->body()->shift_free_vars(*this, i-1), result, dbg);
             return result;
         }
     }
@@ -468,17 +471,17 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
         auto a = a_literal->value();
         if (a == 0) {
             if (body->is_kind())
-                return unify<Variadic>(2, *this, universe(), this->arity(0), star(body->qualifier()), dbg);
-            return unit(body->type()->qualifier());
+                return unify<Variadic>(2, universe(), this->arity(0), star(body->qualifier(*this)), dbg);
+            return unit(body->type()->qualifier(*this));
         }
-        if (a == 1) return body->reduce(this->index(1, 0));
+        if (a == 1) return body->reduce(*this, this->index(1, 0));
         if (body->free_vars().test(0))
             return sigma(DefArray(a, [&](auto i) {
-                        return body->reduce(this->index(a, i))->shift_free_vars(i); }), dbg);
+                        return body->reduce(*this, this->index(a, i))->shift_free_vars(*this, i); }), dbg);
     }
 
     assert(body->type()->is_kind() || body->type()->is_universe());
-    return unify<Variadic>(2, *this, body->type()->shift_free_vars(-1), arity, body, dbg);
+    return unify<Variadic>(2, body->type()->shift_free_vars(*this, -1), arity, body, dbg);
 }
 
 const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
@@ -490,7 +493,7 @@ const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
 const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
     auto type = type_lub(defs, q);
     if (defs.size() == 0)
-        return unit(type->qualifier());
+        return unit(type->qualifier(*this));
 
     if (type == multi_arity_kind()) {
         if (any_of(arity(0), defs))
@@ -504,11 +507,11 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
     }
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && is_homogeneous(defs)) {
-        assert(q == nullptr || defs.front()->qualifier() == q);
-        return variadic(arity(defs.size(), QualifierTag::Unlimited, dbg), defs.front()->shift_free_vars(-1), dbg);
+        assert(q == nullptr || defs.front()->qualifier(*this) == q);
+        return variadic(arity(defs.size(), QualifierTag::Unlimited, dbg), defs.front()->shift_free_vars(*this, -1), dbg);
     }
 
-    return unify<Sigma>(defs.size(), *this, type, defs, dbg);
+    return unify<Sigma>(defs.size(), type, defs, dbg);
 }
 
 const Def* World::singleton(const Def* def, Debug dbg) {
@@ -532,31 +535,31 @@ const Def* World::singleton(const Def* def, Debug dbg) {
     if (auto sig = def->type()->isa<Sigma>()) {
         // See Harper PFPL 43.13b
         auto ops = DefArray(sig->num_ops(), [&](auto i) { return this->singleton(this->extract(def, i)); });
-        return sigma(sig->qualifier(), ops, dbg);
+        return sigma(sig->qualifier(*this), ops, dbg);
     }
 
     if (auto pi_type = def->type()->isa<Pi>()) {
         // See Harper PFPL 43.13c
         auto domain = pi_type->domain();
         auto applied = app(def, var(domain, 0));
-        return pi(domain, singleton(applied), pi_type->qualifier(), dbg);
+        return pi(domain, singleton(applied), pi_type->qualifier(*this), dbg);
     }
 
-    return unify<Singleton>(1, *this, def, dbg);
+    return unify<Singleton>(1, def, dbg);
 }
 
 const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
     if (auto sigma = arity->isa<Sigma>())
-        return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
+        return pack(sigma->ops(), flatten(*this, body, sigma->ops()), dbg);
 
     if (auto v = arity->isa<Variadic>()) {
-        if (auto a_literal = v->arity()->isa<Arity>()) {
+        if (auto a_literal = v->arity(*this)->isa<Arity>()) {
             assert(!v->body()->free_vars().test(0));
             auto a = a_literal->value();
             assert(a != 1);
-            auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(a-1)));
+            auto result = flatten(*this, body, DefArray(a, v->body()->shift_free_vars(*this, a-1)));
             for (size_t i = a; i-- != 0;)
-                result = pack(v->body()->shift_free_vars(i-1), result, dbg);
+                result = pack(v->body()->shift_free_vars(*this, i-1), result, dbg);
             return result;
         }
     }
@@ -565,23 +568,23 @@ const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
         auto a = a_literal->value();
         if (a == 0) {
             if (body->is_type())
-                return unify<Pack>(1, *this, unit_kind(body->qualifier()), unit(body->qualifier()), dbg);
-            return val_unit(body->type()->qualifier());
+                return unify<Pack>(1, unit_kind(body->qualifier(*this)), unit(body->qualifier(*this)), dbg);
+            return val_unit(body->type()->qualifier(*this));
         }
-        if (a == 1) return body->reduce(this->index(1, 0));
+        if (a == 1) return body->reduce(*this, this->index(1, 0));
         if (body->free_vars().test(0))
-            return tuple(DefArray(a, [&](auto i) { return body->reduce(this->index(a, i)); }), dbg);
+            return tuple(DefArray(a, [&](auto i) { return body->reduce(*this, this->index(a, i)); }), dbg);
     }
 
     if (auto extract = body->isa<Extract>()) {
         if (auto var = extract->index()->isa<Var>()) {
             if (var->index() == 0 && !extract->scrutinee()->free_vars().test(0))
-                return extract->scrutinee()->shift_free_vars(-1);
+                return extract->scrutinee()->shift_free_vars(*this, -1);
         }
     }
 
     assert(body->is_term() || body->is_type());
-    return unify<Pack>(1, *this, variadic(arity, body->type()), body, dbg);
+    return unify<Pack>(1, variadic(arity, body->type()), body, dbg);
 }
 
 const Def* World::pack(Defs arity, const Def* body, Debug dbg) {
@@ -597,7 +600,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
     if (size == 1)
         return defs.front();
     auto type = sigma(DefArray(defs.size(),
-                               [&](auto i) { return defs[i]->type()->shift_free_vars(i); }), dbg);
+                               [&](auto i) { return defs[i]->type()->shift_free_vars(*this, i); }), dbg);
 
     auto eta_property = [&]() {
         const Def* same = nullptr;
@@ -605,13 +608,13 @@ const Def* World::tuple(Defs defs, Debug dbg) {
             if (auto extract = defs[i]->isa<Extract>()) {
                 if (same == nullptr) {
                     same = extract->scrutinee();
-                    if (same->arity() != arity(size))
+                    if (same->arity(*this) != arity(size))
                         return (const Def*)nullptr;
                 }
 
                 if (same == extract->scrutinee()) {
-                    if (auto index = extract->index()->isa<Index>()) {
-                        if (index->value() == i)
+                    if (auto index = extract->index()->isa<Lit>()) {
+                        if (get_index(index) == i)
                             continue;
                     }
                 }
@@ -623,12 +626,12 @@ const Def* World::tuple(Defs defs, Debug dbg) {
 
     if (size != 0) {
         if (is_homogeneous(defs))
-            return pack(arity(size, QualifierTag::Unlimited, dbg), defs.front()->shift_free_vars(1), dbg);
+            return pack(arity(size, QualifierTag::Unlimited, dbg), defs.front()->shift_free_vars(*this, 1), dbg);
         else if (auto same = eta_property())
             return same;
     }
 
-    return unify<Tuple>(size, *this, type->as<SigmaBase>(), defs, dbg);
+    return unify<Tuple>(size, type->as<SigmaBase>(), defs, dbg);
 }
 
 const Def* World::variant(Defs defs, Debug dbg) {
@@ -646,14 +649,14 @@ const Def* World::variant(const Def* type, Defs ops, Debug dbg) {
     }
     // implements a least upper bound on qualifiers,
     // could possibly be replaced by something subtyping-generic
-    if (is_qualifier(first)) {
+    if (is_qualifier(*this, first)) {
         assert(type == qualifier_type());
         return qualifier_lub(range(defs), [&] (const SortedDefSet& defs) {
-            return unify<Variant>(defs.size(), *this, qualifier_type(), defs, dbg);
+            return unify<Variant>(defs.size(), qualifier_type(), defs, dbg);
         });
     }
 
-    return unify<Variant>(defs.size(), *this, type, defs, dbg);
+    return unify<Variant>(defs.size(), type, defs, dbg);
 }
 
 static const Def* build_match_type(World& w, Defs handlers) {
@@ -691,7 +694,7 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
         return app(sorted_handlers[any->index()], any_def, dbg);
     }
     auto type = build_match_type(*this, sorted_handlers);
-    return unify<Match>(1, *this, type, def, sorted_handlers, dbg);
+    return unify<Match>(1, type, def, sorted_handlers, dbg);
 }
 
 const Lit* World::lit_nat(int64_t val, Location location) {

@@ -83,7 +83,7 @@ const Def* Parser::parse_var_or_binder() {
             });
             if (it != binders_.rend()) {
                 auto index = depth_ - it->depth;
-                auto type = bruijn_[it->depth]->shift_free_vars(index);
+                auto type = bruijn_[it->depth]->shift_free_vars(world_, index);
                 const Def* var = world_.var(type, index - 1, tracker.location());
                 for (auto i : it->ids)
                     var = world_.extract(var, i, tracker.location());

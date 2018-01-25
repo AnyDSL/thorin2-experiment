@@ -7,22 +7,35 @@ namespace thorin::core {
  * helpers
  */
 
-std::tuple<const Def*, const Def*> split(thorin::World& world, const Def* def) {
-    auto a = world.extract(def, 0);
-    auto b = world.extract(def, 1);
+static const Def* check_callee(Normalizer normalizer, thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto pi = callee->type()->isa<Pi>(); pi->body()->isa<Pi>())
+        return world.curry(normalizer, callee, arg, dbg);
+    return nullptr;
+}
+
+static std::tuple<const Def*, const Def*> split(thorin::World& world, const Def* def) {
+    auto a = world.extract(def, 0_u64);
+    auto b = world.extract(def, 1_u64);
     return {a, b};
 }
 
-std::tuple<const Def*, const Def*> shrink_shape(thorin::World& world, const Def* def) {
+static std::tuple<const Def*, const Def*, const Def*> msplit(thorin::World& world, const Def* def) {
+    auto a = world.extract(def, 0_u64);
+    auto b = world.extract(def, 1_u64);
+    auto m = world.extract(def, 2_u64);
+    return {a, b, m};
+}
+
+static std::tuple<const Def*, const Def*> shrink_shape(thorin::World& world, const Def* def) {
     if (def->isa<Arity>())
         return {def, world.arity(1)};
     if (auto sigma = def->isa<Sigma>())
-        return {sigma->op(0), world.sigma(sigma->ops().skip_front())->shift_free_vars(-1)};
+        return {sigma->op(0), world.sigma(sigma->ops().skip_front())->shift_free_vars(world, -1)};
     auto variadic = def->as<Variadic>();
-    return {variadic->arity(), world.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())};
+    return {variadic->arity(world), world.variadic(variadic->arity(world)->as<Arity>()->value() - 1, variadic->body())};
 }
 
-const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+static const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
     auto ta = a->isa<Tuple>(), tb = b->isa<Tuple>();
     auto pa = a->isa<Pack>(),  pb = b->isa<Pack>();
 
@@ -30,12 +43,9 @@ const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a
         auto [head, tail] = shrink_shape(world, app_arg(callee));
         auto new_callee = world.app(app_callee(callee), tail);
 
-        if (ta && tb)
-            return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), tb->op(i)}, dbg); }));
-        if (ta && pb)
-            return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), pb->body()}, dbg); }));
-        if (pa && tb)
-            return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {pa->body(), tb->op(i)}, dbg); }));
+        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), tb->op(i)}, dbg); }));
+        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), pb->body()}, dbg); }));
+        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {pa->body(), tb->op(i)}, dbg); }));
         assert(pa && pb);
         return world.pack(head, world.app(new_callee, {pa->body(), pb->body()}, dbg), dbg);
     }
@@ -43,16 +53,77 @@ const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a
     return nullptr;
 }
 
+static const Def* normalize_mtuple(thorin::World& world, const Def* callee, const Def* m, const Def* a, const Def* b, Debug dbg) {
+    // TODO
+    auto ta = a->isa<Tuple>(), tb = b->isa<Tuple>();
+    auto pa = a->isa<Pack>(),  pb = b->isa<Pack>();
+
+    if ((ta || pa) && (tb || pb)) {
+        auto [head, tail] = shrink_shape(world, app_arg(callee));
+        auto new_callee = world.app(app_callee(callee), tail);
+
+        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i), tb->op(i)}, dbg); }));
+        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i), pb->body()}, dbg); }));
+        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {m, pa->body(), tb->op(i)}, dbg); }));
+        assert(pa && pb);
+        return world.pack(head, world.app(new_callee, {m, pa->body(), pb->body()}, dbg), dbg);
+    }
+
+    return nullptr;
+}
+
+static const Lit* const_to_left(const Def*& a, const Def*& b) {
+    if (b->isa<Lit>()) {
+        std::swap(a, b);
+        return a->as<Lit>();
+    }
+
+    return a->isa<Lit>();
+}
+
+static const Def* commute(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+    if (a->gid() > b->gid() && !a->isa<Lit>())
+        return world.raw_app(callee, {b, a}, dbg);
+    return world.raw_app(callee, {a, b}, dbg);
+}
+
+static const Def* associate_commute(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+    const Def* aa = nullptr, *ab = nullptr, *ba = nullptr, *bb = nullptr;
+    const Lit* laa = nullptr, *lba = nullptr;
+
+    if (auto app = a->isa<App>(); app && app->callee() == callee) {
+        aa = world.extract(app->arg(), 0_u64);
+        ab = world.extract(app->arg(), 1_u64);
+        laa = aa->isa<Lit>();
+    }
+
+    if (auto app = b->isa<App>(); app && app->callee() == callee) {
+        ba = world.extract(app->arg(), 0_u64);
+        bb = world.extract(app->arg(), 1_u64);
+        lba = ba->isa<Lit>();
+    }
+
+    if (laa && lba) {
+        auto lit = world.app(callee, {laa, lba}, dbg)->as<Lit>();
+        return world.app(callee, {lit, world.app(callee, {ab, bb}, dbg)}, dbg);
+    }
+
+    if (laa) return world.app(callee, {laa, world.app(callee, {ab, b}, dbg)}, dbg);
+    if (lba) return world.app(callee, {lba, world.app(callee, {a, bb}, dbg)}, dbg);
+
+    return commute(world, callee, a, b, dbg);
+}
+
 /*
  * WArithop
  */
 
 template<template<int, bool, bool> class F>
-const Def* try_wfold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+static const Def* try_wfold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
     auto la = a->isa<Lit>(), lb = b->isa<Lit>();
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
-        auto t = a->type();
+        auto t = callee->type()->template as<Pi>()->body();
         auto w = get_nat(app_arg(app_callee(callee)));
         auto f = get_nat(app_arg(app_callee(app_callee(callee))));
         try {
@@ -86,70 +157,74 @@ const Def* try_wfold(thorin::World& world, const Def* callee, const Def* a, cons
                         case 64: return world.lit(t, F<64, true, true>::run(ba, bb));
                     }
             }
-        } catch (BottomException) {
+        } catch (ErrorException) {
+            return world.error(t);
         }
     }
 
     return normalize_tuple(world, callee, a, b, dbg);
 }
 
-const Def* normalize_wadd(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(world, arg);
-    if (auto result = try_wfold<Fold_wadd>(world, callee, a, b, dbg)) return result;
+const Def* normalize_add(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_add, world, callee, arg, dbg)) return result;
 
-    return nullptr;
+    auto& w = static_cast<World&>(world);
+    auto [a, b] = split(world, arg);
+    if (auto result = try_wfold<Fold_add>(world, callee, a, b, dbg)) return result;
+
+    if (auto la = const_to_left(a, b)) {
+        if (get_u64(la) == 0_u64) return b;
+    }
+
+    if (a == b) return w.op<WOp::mul>(world.lit(a->type(), {2_u64}), a, dbg);
+
+    return associate_commute(world, callee, a, b, dbg);
 }
 
-const Def* normalize_wsub(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_sub(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_sub, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
-    if (auto result = try_wfold<Fold_wsub>(world, callee, a, b, dbg)) return result;
-    return nullptr;
+    if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
+
+    if (a == b) return world.lit(a->type(), {0_u64});
+
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
-const Def* normalize_wmul(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(world, arg);
-    if (auto result = try_wfold<Fold_wmul>(world, callee, a, b, dbg)) return result;
+const Def* normalize_mul(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_mul, world, callee, arg, dbg)) return result;
 
-    return nullptr;
+    auto [a, b] = split(world, arg);
+    if (auto result = try_wfold<Fold_mul>(world, callee, a, b, dbg)) return result;
+
+    if (auto la = const_to_left(a, b)) {
+        if (get_u64(la) == 0_u64) return la;
+        if (get_u64(la) == 1_u64) return b;
+    }
+
+    return associate_commute(world, callee, a, b, dbg);
 }
 
-const Def* normalize_wshl(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(world, arg);
-    if (auto result = try_wfold<Fold_wshl>(world, callee, a, b, dbg)) return result;
+const Def* normalize_shl(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_shl, world, callee, arg, dbg)) return result;
 
-    return nullptr;
+    auto [a, b] = split(world, arg);
+    if (auto result = try_wfold<Fold_shl>(world, callee, a, b, dbg)) return result;
+
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
 /*
  * MArithop
  */
 
-const Def* normalize_sdiv(thorin::World&, const Def*, const Def*, const Def*, Debug) {
-    return nullptr;
-}
-
-const Def* normalize_udiv(thorin::World&, const Def*, const Def*, const Def*, Debug) {
-    return nullptr;
-}
-
-const Def* normalize_smod(thorin::World&, const Def*, const Def*, const Def*, Debug) {
-    return nullptr;
-}
-
-const Def* normalize_umod(thorin::World&, const Def*, const Def*, const Def*, Debug) {
-    return nullptr;
-}
-
-/*
- * IArithop
- */
-
 template<template<int> class F>
-const Def* try_ifold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+static const Def* just_try_ifold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
     auto la = a->isa<Lit>(), lb = b->isa<Lit>();
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
-        auto t = a->type();
+        auto t = callee->type()->template as<Pi>()->body();
         auto w = get_nat(app_arg(app_callee(callee)));
         try {
             switch (w) {
@@ -158,46 +233,109 @@ const Def* try_ifold(thorin::World& world, const Def* callee, const Def* a, cons
                 case 32: return world.lit(t, F<32>::run(ba, bb));
                 case 64: return world.lit(t, F<64>::run(ba, bb));
             }
-        } catch (BottomException) {
+        } catch (ErrorException) {
+            return world.error(t);
         }
     }
 
     return normalize_tuple(world, callee, a, b, dbg);
 }
 
-const Def* normalize_ashr(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+template<template<int> class F>
+static const Def* try_ifold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+    if (auto result = just_try_ifold<F>(world, callee, a, b, dbg)) return result;
+    return normalize_tuple(world, callee, a, b, dbg);
+}
+
+template<template<int> class F>
+static const Def* try_mfold(thorin::World& world, const Def* callee, const Def* m, const Def* a, const Def* b, Debug dbg) {
+    if (auto result = just_try_ifold<F>(world, callee, a, b, dbg)) return world.tuple({m, result});
+    return normalize_mtuple(world, callee, m, a, b, dbg);
+}
+
+const Def* normalize_sdiv(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_sdiv, world, callee, arg, dbg)) return result;
+
+    auto [m, a, b] = msplit(world, arg);
+    if (auto result = try_mfold<Fold_sdiv>(world, callee, m, a, b, dbg)) return result;
+
+    return world.raw_app(callee, {m, a, b}, dbg);
+}
+
+const Def* normalize_udiv(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_udiv, world, callee, arg, dbg)) return result;
+
+    auto [m, a, b] = msplit(world, arg);
+    //if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
+
+    return world.raw_app(callee, {m, a, b}, dbg);
+}
+
+const Def* normalize_smod(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_smod, world, callee, arg, dbg)) return result;
+
+    auto [m, a, b] = msplit(world, arg);
+    //if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
+
+    return world.raw_app(callee, {m, a, b}, dbg);
+}
+
+const Def* normalize_umod(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_umod, world, callee, arg, dbg)) return result;
+
+    auto [m, a, b] = msplit(world, arg);
+    //if (auto result = try_wfold<Fold_sub>(world, callee, a, b, dbg)) return result;
+
+    return world.raw_app(callee, {m, a, b}, dbg);
+}
+
+/*
+ * IArithop
+ */
+
+const Def* normalize_ashr(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_ashr, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_ashr>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
-const Def* normalize_lshr(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_lshr(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_lshr, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_lshr>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
-const Def* normalize_iand(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_iand(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_iand, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_iand>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return associate_commute(world, callee, a, b, dbg);
 }
 
-const Def* normalize_ior(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_ior(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_ior, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_ior>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return associate_commute(world, callee, a, b, dbg);
 }
 
-const Def* normalize_ixor(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_ixor(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_ixor, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_ixor>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return associate_commute(world, callee, a, b, dbg);
 }
 
 /*
@@ -205,11 +343,11 @@ const Def* normalize_ixor(thorin::World& world, const Def*, const Def* callee, c
  */
 
 template<template<int> class F>
-const Def* try_rfold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+static const Def* try_rfold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
     auto la = a->isa<Lit>(), lb = b->isa<Lit>();
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
-        auto t = a->type();
+        auto t = callee->type()->template as<Pi>()->body();
         auto w = get_nat(app_arg(app_callee(callee)));
         try {
             switch (w) {
@@ -217,46 +355,65 @@ const Def* try_rfold(thorin::World& world, const Def* callee, const Def* a, cons
                 case 32: return world.lit(t, F<32>::run(ba, bb));
                 case 64: return world.lit(t, F<64>::run(ba, bb));
             }
-        } catch (BottomException) {
+        } catch (ErrorException) {
+            return world.error(t);
         }
     }
 
     return normalize_tuple(world, callee, a, b, dbg);
 }
 
-const Def* normalize_radd(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_radd(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_radd, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_radd>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    if (auto la = const_to_left(a, b)) {
+        la->box();
+    }
+
+    return commute(world, callee, a, b, dbg);
 }
 
-const Def* normalize_rsub(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_rsub(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_rsub, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_rsub>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
-const Def* normalize_rmul(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_rmul(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_rmul, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_rmul>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    if (auto la = const_to_left(a, b)) {
+        la->box();
+    }
+
+    return commute(world, callee, a, b, dbg);
 }
 
-const Def* normalize_rdiv(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_rdiv(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_rdiv, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_rdiv>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
-const Def* normalize_rmod(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_rmod(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_rmod, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_rrem>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
 /*
@@ -264,51 +421,29 @@ const Def* normalize_rmod(thorin::World& world, const Def*, const Def* callee, c
  */
 
 template<ICmp op>
-const Def* normalize_icmp(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(world, arg);
-    if (auto result = try_rfold<FoldICmp<op>::template Fold>(world, callee, a, b, dbg)) return result;
+const Def* normalize_ICmp(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_ICmp<op>, world, callee, arg, dbg)) return result;
 
-    return nullptr;
+    auto [a, b] = split(world, arg);
+    if (auto result = try_ifold<FoldICmp<op>::template Fold>(world, callee, a, b, dbg)) return result;
+
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
 
 template<RCmp op>
-const Def* normalize_rcmp(thorin::World& world, const Def*, const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_RCmp(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+    if (auto result = check_callee(normalize_RCmp<op>, world, callee, arg, dbg)) return result;
+
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<FoldRCmp<op>::template Fold>(world, callee, a, b, dbg)) return result;
 
-    return nullptr;
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
-/*
- * curry normalizers
- */
-
-#define CODE(o) \
-    const Def* normalize_ ## o ## _2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o,       type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _2, type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _1, type, callee, arg, dbg); }
-    THORIN_W_OP(CODE)
-    THORIN_R_OP(CODE)
-#undef CODE
-
-#define CODE(o) \
-    const Def* normalize_ ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o,       type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _1, type, callee, arg, dbg); }
-    THORIN_M_OP(CODE)
-    THORIN_I_OP(CODE)
-#undef CODE
-
-#define CODE(o) \
-    const Def* normalize_ ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_icmp<o>,    type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _1, type, callee, arg, dbg); }
+// instantiate templates
+#define CODE(T, o) template const Def* normalize_ ## T<T::o>(thorin::World&, const Def*, const Def*, Debug);
     THORIN_I_CMP(CODE)
-#undef CODE
-
-#define CODE(o) \
-    const Def* normalize_ ## o ## _2(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_rcmp<o>,    type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _1(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _2, type, callee, arg, dbg); } \
-    const Def* normalize_ ## o ## _0(thorin::World& world, const Def* type, const Def* callee, const Def* arg, Debug dbg) { return world.curry(normalize_## o ## _1, type, callee, arg, dbg); }
     THORIN_R_CMP(CODE)
 #undef CODE
 

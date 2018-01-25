@@ -74,15 +74,15 @@ TEST(Arity, Subkinding) {
     auto vA = w.var(A, 0);
     auto M = w.multi_arity_kind();
 
-    EXPECT_TRUE(A->assignable(a0));
-    EXPECT_TRUE(M->assignable(a0));
-    EXPECT_TRUE(A->assignable(a3));
-    EXPECT_TRUE(M->assignable(a3));
-    EXPECT_TRUE(A->assignable(vA));
-    EXPECT_TRUE(M->assignable(vA));
+    EXPECT_TRUE(A->assignable(w, a0));
+    EXPECT_TRUE(M->assignable(w, a0));
+    EXPECT_TRUE(A->assignable(w, a3));
+    EXPECT_TRUE(M->assignable(w, a3));
+    EXPECT_TRUE(A->assignable(w, vA));
+    EXPECT_TRUE(M->assignable(w, vA));
 
     auto sig = w.sigma({M, w.variadic(w.var(M, 0), w.star())});
-    EXPECT_TRUE(sig->assignable(w.tuple({a0, w.val_unit_kind()})));
+    EXPECT_TRUE(sig->assignable(w, w.tuple({a0, w.val_unit_kind()})));
 }
 
 TEST(Arity, PrefixExtract) {
@@ -106,8 +106,8 @@ TEST(Arity, PrefixExtract) {
 TEST(Arity, Eliminators) {
     World w;
     auto lam_bool = w.lambda(w.arity_kind(), w.type_bool());
-    auto step_negate = w.lambda(w.arity_kind(), w.lambda(w.type_bool(), w.extract(w.tuple({w.lit_bool_top(), w.lit_bool_bot()}), w.var(w.type_bool(), 0))));
-    auto arity_is_even = w.app(w.app(w.app(w.app(w.arity_eliminator(), w.unlimited()), lam_bool), w.lit_bool_top()), step_negate);
-    EXPECT_EQ(w.lit_bool_top(), w.app(arity_is_even, w.arity(0)));
-    EXPECT_EQ(w.lit_bool_bot(), w.app(arity_is_even, w.arity(3)));
+    auto step_negate = w.lambda(w.arity_kind(), w.lambda(w.type_bool(), w.extract(w.tuple({w.lit_true(), w.lit_false()}), w.var(w.type_bool(), 0))));
+    auto arity_is_even = w.app(w.app(w.app(w.app(w.arity_eliminator(), w.unlimited()), lam_bool), w.lit_true()), step_negate);
+    EXPECT_EQ(w.lit_true(), w.app(arity_is_even, w.arity(0)));
+    EXPECT_EQ(w.lit_false(), w.app(arity_is_even, w.arity(3)));
 }

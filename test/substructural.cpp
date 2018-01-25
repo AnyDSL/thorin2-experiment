@@ -44,10 +44,10 @@ TEST(Qualifiers, Variants) {
     auto l = w.linear();
     auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
 
-    EXPECT_EQ(u, u->qualifier());
-    EXPECT_EQ(u, r->qualifier());
-    EXPECT_EQ(u, a->qualifier());
-    EXPECT_EQ(u, l->qualifier());
+    EXPECT_EQ(u, u->qualifier(w));
+    EXPECT_EQ(u, r->qualifier(w));
+    EXPECT_EQ(u, a->qualifier(w));
+    EXPECT_EQ(u, l->qualifier(w));
 
     EXPECT_EQ(u, lub({u}));
     EXPECT_EQ(r, lub({r}));
@@ -61,7 +61,7 @@ TEST(Qualifiers, Variants) {
     EXPECT_EQ(l, lub({u, l, r, r}));
 
     auto v = w.var(w.qualifier_type(), 0);
-    EXPECT_EQ(u, v->qualifier());
+    EXPECT_EQ(u, v->qualifier(w));
     EXPECT_EQ(v, lub({v}));
     EXPECT_EQ(v, lub({u, v, u}));
     EXPECT_EQ(l, lub({v, l}));
@@ -89,13 +89,13 @@ TEST(Qualifiers, Kinds) {
     auto anat = w.axiom(w.star(a), {"nat"});
     auto rnat = w.axiom(w.star(r), {"nat"});
     auto vtype = w.lit(w.star(v), {0}, {"nat"});
-    EXPECT_EQ(w.sigma({anat, w.star()})->qualifier(), a);
-    EXPECT_EQ(w.sigma({anat, rnat})->qualifier(), l);
-    EXPECT_EQ(w.sigma({vtype, rnat})->qualifier(), lub({v, r}));
-    EXPECT_EQ(w.sigma({anat, w.star(l)})->qualifier(), a);
+    EXPECT_EQ(w.sigma({anat, w.star()})->qualifier(w), a);
+    EXPECT_EQ(w.sigma({anat, rnat})->qualifier(w), l);
+    EXPECT_EQ(w.sigma({vtype, rnat})->qualifier(w), lub({v, r}));
+    EXPECT_EQ(w.sigma({anat, w.star(l)})->qualifier(w), a);
 
-    EXPECT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier());
-    EXPECT_EQ(l, w.variant({w.star(r), w.star(l)})->qualifier());
+    EXPECT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier(w));
+    EXPECT_EQ(l, w.variant({w.star(r), w.star(l)})->qualifier(w));
 }
 
 #if 0

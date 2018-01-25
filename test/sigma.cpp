@@ -9,8 +9,8 @@ TEST(Sigma, Assign) {
     World w;
     auto sig = w.sigma({w.star(), w.var(w.star(), 0)})->as<Sigma>();
     EXPECT_TRUE(sig->is_dependent());
-    EXPECT_TRUE(sig->assignable(w.tuple({w.type_nat(), w.lit_nat(42)})));
-    EXPECT_FALSE(sig->assignable(w.tuple({w.type_nat(), w.lit_bool_bot()})));
+    EXPECT_TRUE(sig->assignable(w, w.tuple({w.type_nat(), w.lit_nat(42)})));
+    EXPECT_FALSE(sig->assignable(w, w.tuple({w.type_nat(), w.lit_false()})));
 }
 
 TEST(Sigma, ExtractAndSingleton) {
@@ -19,7 +19,7 @@ TEST(Sigma, ExtractAndSingleton) {
     auto n42 = w.lit_nat(42);
     auto NxN = w.sigma({w.type_nat(), w.type_nat()});
 
-    auto fst = w.lambda(NxN, w.extract(w.var(NxN, 0), 0));
+    auto fst = w.lambda(NxN, w.extract(w.var(NxN, 0), 0_u64));
     auto snd = w.lambda(NxN, w.extract(w.var(NxN, 0), 1));
     ASSERT_EQ(w.app(fst, {n23, n42}), w.lit_nat(23));
     ASSERT_EQ(w.app(snd, {n23, n42}), w.lit_nat(42));
@@ -51,6 +51,7 @@ TEST(Tuple, TypeExtract) {
     EXPECT_EQ(ex_var_tup, w.star());
 
     auto sig = w.sigma({w.pi(w.star(), w.star()), w.star()});
+    // TODO can we remove DEATH tests?
     EXPECT_DEATH(w.extract(w.var(sig, 1), w.var(arity2, 0))->type(), ".*");
 }
 

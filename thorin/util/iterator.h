@@ -152,7 +152,7 @@ template<class T>
 auto reverse_range(const T& t) -> Range<decltype(t.rbegin())> { return range(t.rbegin(), t.rend()); }
 
 template<class I, class P>
-auto  range(I begin, I end, P predicate) -> Range<filter_iterator<I, P>> {
+auto range(I begin, I end, P predicate) -> Range<filter_iterator<I, P>> {
     typedef filter_iterator<I, P> Filter;
     return range(Filter(begin, end, predicate), Filter(end, end, predicate));
 }
@@ -168,6 +168,14 @@ auto map_range(I begin, I end, F function) -> Range<map_iterator<I, decltype(fun
     typedef map_iterator<I, decltype(function(*begin)), F> Map;
     return range(Map(begin, end, function), Map(end, end, function));
 }
+
+//------------------------------------------------------------------------------
+
+#define THORIN_ENUM_ITERATOR(T) \
+	inline T operator++(T& x) { return x = (T)(std::underlying_type<T>::type(x) + 1); } \
+	inline T operator*(T x) { return x; } \
+	inline T begin(T) { return T(0); } \
+	inline T end(T) { return T(Num<T>); }
 
 //------------------------------------------------------------------------------
 
