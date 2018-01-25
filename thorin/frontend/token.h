@@ -36,6 +36,7 @@ namespace thorin {
     f(Qualifier_Type,   "\\qualifier_type") \
     f(Arity_Kind,       "\\arity_kind") \
     f(Multi_Arity_Kind, "\\multi_arity_kind") \
+    f(Cn,               "cn") \
     f(Identifier,       "identifier") \
     f(Literal,          "literal") \
     f(Eof,              "eof")

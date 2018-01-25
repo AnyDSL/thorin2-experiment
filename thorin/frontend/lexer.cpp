@@ -157,6 +157,10 @@ Token Lexer::lex() {
         // identifier
         if (accept_if(sym)) {
             while (accept_if(sym) || accept_if(dec)) {}
+
+            // TODO make this mechanism better
+            if (str() == "cn")
+                return {location(), Token::Tag::Cn};
             return {location(), str()};
         }
 

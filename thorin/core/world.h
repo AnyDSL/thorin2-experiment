@@ -144,19 +144,19 @@ public:
     //@}
 
     //@{ intrinsics (AKA built-in Cont%inuations)
-    const Axiom* branch();
-    const Axiom* match();
-    const Axiom* pe_info();
-    const Axiom* end_scope();
-    const Axiom* amdgpu();
-    const Axiom* cuda();
-    const Axiom* hls();
-    const Axiom* nvvm();
-    const Axiom* opencl();
-    const Axiom* parallel();
-    const Axiom* spawn();
-    const Axiom* syc();
-    const Axiom* vectorize();
+    const Axiom* cn_br();
+    const Axiom* cn_match();
+    const Axiom* cn_pe_info();
+    const Axiom* cn_end();
+    const Axiom* cn_amdgpu();
+    const Axiom* cn_cuda();
+    const Axiom* cn_hls();
+    const Axiom* cn_nvvm();
+    const Axiom* cn_opencl();
+    const Axiom* cn_parallel();
+    const Axiom* cn_spawn();
+    const Axiom* cn_syc();
+    const Axiom* cn_vectorize();
     //@}
 
 private:
@@ -183,6 +183,19 @@ private:
     const Axiom* op_load_;
     const Axiom* op_slot_;
     const Axiom* op_store_;
+    const Axiom* cn_br_;
+    const Axiom* cn_match_;
+    const Axiom* cn_pe_info_;
+    const Axiom* cn_end_;
+    const Axiom* cn_amdgpu_;
+    const Axiom* cn_cuda_;
+    const Axiom* cn_hls_;
+    const Axiom* cn_nvvm_;
+    const Axiom* cn_opencl_;
+    const Axiom* cn_parallel_;
+    const Axiom* cn_spawn_;
+    const Axiom* cn_syc_;
+    const Axiom* cn_vectorize_;
 };
 
 }
