@@ -43,7 +43,7 @@ DefArray unique_gid_sorted(Defs defs) {
     return result;
 }
 
-bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
+static bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
 #ifndef NDEBUG
     auto all = std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); });
     assertf(all, "operands must be of the same sort");
@@ -156,23 +156,8 @@ Intersection::Intersection(const Def* type, const SortedDefSet& ops, Debug dbg)
     assert(check_same_sorted_ops(sort(), this->ops()));
 }
 
-Lambda::Lambda(const Pi* type, Debug dbg)
-    : Def(Tag::Lambda, type, 1, THORIN_OPS_PTR, dbg)
-{}
-Lambda::Lambda(const Pi* type, const Def* body, Debug dbg)
-    : Def(Tag::Lambda, type, {body}, THORIN_OPS_PTR, dbg)
-{}
-
 MultiArityKind::MultiArityKind(World& world, const Def* qualifier)
     : Def(Tag::MultiArityKind, world.universe(), {qualifier}, THORIN_OPS_PTR, {"𝕄"})
-{}
-
-Pack::Pack(const Def* type, const Def* body, Debug dbg)
-    : TupleBase(Tag::Pack, type, {body}, dbg)
-{}
-
-Pi::Pi(const Def* type, const Def* domain, const Def* body, Debug dbg)
-    : Def(Tag::Pi, type, {domain, body}, THORIN_OPS_PTR, dbg)
 {}
 
 Qualifier::Qualifier(World& world, QualifierTag q)
@@ -190,10 +175,6 @@ Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
 
 Star::Star(World& world, const Def* qualifier)
     : Def(Tag::Star, world.universe(), {qualifier}, THORIN_OPS_PTR, {"*"})
-{}
-
-Variadic::Variadic(const Def* type, const Def* arity, const Def* body, Debug dbg)
-    : SigmaBase(Tag::Variadic, type, {arity, body}, dbg)
 {}
 
 Variant::Variant(const Def* type, const SortedDefSet& ops, Debug dbg)

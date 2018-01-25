@@ -434,7 +434,9 @@ private:
 
 class Pi : public Def {
 private:
-    Pi(const Def* type, const Def* domain, const Def* body, Debug dbg);
+    Pi(const Def* type, const Def* domain, const Def* body, Debug dbg)
+        : Def(Tag::Pi, type, {domain, body}, THORIN_OPS_PTR, dbg)
+    {}
 
 public:
     const Def* domain() const { return op(0); }
@@ -459,8 +461,14 @@ private:
 
 class Lambda : public Def {
 private:
-    Lambda(const Pi* type, const Def* body, Debug dbg);
-    Lambda(const Pi* type, Debug dbg);
+    /// @em structural Lambda
+    Lambda(const Pi* type, const Def* body, Debug dbg)
+        : Def(Tag::Lambda, type, {body}, THORIN_OPS_PTR, dbg)
+    {}
+    /// @em nominal Lambda
+    Lambda(const Pi* type, Debug dbg)
+        : Def(Tag::Lambda, type, 1, THORIN_OPS_PTR, dbg)
+    {}
 
 public:
     Lambda* set(World& world, const Def* body) { return Def::set(world, 0, body)->as<Lambda>(); }
@@ -546,7 +554,9 @@ private:
 
 class Variadic : public SigmaBase {
 private:
-    Variadic(const Def* type, const Def* arity, const Def* body, Debug dbg);
+    Variadic(const Def* type, const Def* arity, const Def* body, Debug dbg)
+        : SigmaBase(Tag::Variadic, type, {arity, body}, dbg)
+    {}
 
 public:
     const Def* arity(World&) const override { return op(0); }
@@ -586,7 +596,9 @@ private:
 
 class Pack : public TupleBase {
 private:
-    Pack(const Def* type, const Def* body, Debug dbg);
+    Pack(const Def* type, const Def* body, Debug dbg)
+        : TupleBase(Tag::Pack, type, {body}, dbg)
+        {}
 
 public:
     const Def* body() const { return op(0); }
@@ -668,8 +680,9 @@ private:
 
 class Variant : public Def {
 private:
+    /// @em structural Variant
     Variant(const Def* type, const SortedDefSet& ops, Debug dbg);
-    // Nominal Variant
+    /// @em nominal Variant
     Variant(const Def* type, size_t num_ops, Debug dbg)
         : Def(Tag::Variant, type, num_ops, THORIN_OPS_PTR, dbg)
     {}
