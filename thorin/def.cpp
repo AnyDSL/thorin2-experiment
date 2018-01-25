@@ -57,7 +57,7 @@ bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
  * misc
  */
 
-size_t Def::gid_counter_ = 1;
+uint32_t Def::gid_counter_ = 1;
 
 Def::Sort Def::sort() const {
     if (auto t = type()) {

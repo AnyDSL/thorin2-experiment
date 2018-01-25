@@ -229,8 +229,8 @@ public:
     virtual const Def* arity(World&) const;
     const BitSet& free_vars() const { return free_vars_; }
     uint32_t fields() const { return uint32_t(num_ops_) << 8_u32 | uint32_t(tag()); }
-    size_t gid() const { return gid_; }
-    static size_t gid_counter() { return gid_counter_; }
+    uint32_t gid() const { return gid_; }
+    static uint32_t gid_counter() { return gid_counter_; }
     /// A nominal Def is always different from each other Def.
     bool is_nominal() const { return nominal_; }
     bool has_error() const { return has_error_; }
@@ -308,7 +308,7 @@ private:
     virtual bool vsubtype_of(World&, const Def*) const { return false; }
     virtual std::ostream& vstream(std::ostream& os) const = 0;
 
-    static size_t gid_counter_;
+    static uint32_t gid_counter_;
 
 protected:
     BitSet free_vars_;
