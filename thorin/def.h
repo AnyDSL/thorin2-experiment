@@ -110,6 +110,8 @@ public:
         Arity,
         ArityKind,
         Axiom,
+        Cont,
+        ContType,
         Error,
         Extract,
         Index,
@@ -120,6 +122,7 @@ public:
         Match,
         MultiArityKind,
         Pack,
+        Param,
         Pi,
         Pick,
         Qualifier,
@@ -928,6 +931,68 @@ private:
 };
 
 inline bool is_error(const Def* def) { return def->tag() == Def::Tag::Error; }
+
+//------------------------------------------------------------------------------
+
+class ContType : public Def {
+private:
+    ContType(const Def* type, const Def* domain, Debug dbg)
+        : Def(Tag::ContType, type, {domain}, THORIN_OPS_PTR, dbg)
+    {}
+
+public:
+    const Def* domain() const { return op(0); }
+
+    const Def* arity(World&) const override;
+    bool assignable(World&, const Def* def) const override;
+    bool has_values() const override;
+    const Def* kind_qualifier(World&) const override;
+
+private:
+    //bool vsubtype_of(World&, const Def* def) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
+
+    friend class World;
+};
+
+class Param : public Def {
+private:
+    Param(const Def* type, Debug dbg)
+        : Def(Tag::Param, type, 0, THORIN_OPS_PTR, dbg)
+    {}
+
+public:
+    const Def* arity(World&) const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
+
+    friend class World;
+};
+
+class Cont : public Def {
+private:
+    Cont(const Def* type, Debug dbg)
+        : Def(Tag::Cont, type, 2, THORIN_OPS_PTR, dbg)
+    {}
+
+public:
+    const Def* callee() const { return op(0); }
+    const Def* arg() const { return op(1); }
+
+    const Def* arity(World&) const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    Cont* stub(World& to, const Def* type, Debug dbg) const override;
+    std::ostream& vstream(std::ostream&) const override;
+
+    friend class World;
+};
+
+//------------------------------------------------------------------------------
 
 }
 

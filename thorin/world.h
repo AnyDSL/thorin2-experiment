@@ -233,11 +233,19 @@ public:
     const Lit* lit_true()  { return lit_bool_[1]; }
     //@}
 
+    //@{ continuations
+    const ContType* cont_type(const Def* domain, Debug dbg = {});
+    const ContType* cont_type(Defs domain, Debug dbg = {}) { return cont_type(sigma(domain), dbg); }
+    const Cont* cont(const Def* domain, Debug dbg = {});
+    //@}
+
+    //@{ misc
     const DefSet& defs() const { return defs_; }
 
     const App* curry(Normalizer normalizer, const Def* callee, const Def* arg, Debug dbg) {
         return raw_app(callee, arg, dbg)->set_normalizer(normalizer)->as<App>();
     }
+    //@}
 
     friend void swap(World& w1, World& w2) {
         using std::swap;

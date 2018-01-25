@@ -43,8 +43,6 @@ add_executable(coc
     test/substructural.cpp
     test/variadic.cpp
     test/variants.cpp
-    thorin/cont.cpp
-    thorin/cont.h
     thorin/def.cpp
     thorin/def.h
     thorin/qualifier.h
