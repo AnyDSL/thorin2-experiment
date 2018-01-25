@@ -11,8 +11,7 @@
 
 namespace thorin {
 
-// TODO use thorin::HashMap
-typedef std::unordered_map<std::string, const Def*> Env;
+typedef HashMap<const char*, const Def*, StrHash> Env;
 
 class Parser {
 public:

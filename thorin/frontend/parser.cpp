@@ -89,8 +89,8 @@ const Def* Parser::parse_var_or_binder() {
                 for (auto i : it->ids)
                     var = world_.extract(var, i, tracker.location());
                 return var;
-            } else if (env_.count(id)) {
-                return env_[id];
+            } else if (auto i = env_.find(id.c_str()); i != env_.end()) {
+                return i->second;
             } else {
                 assertf(false, "unknown identifier '{}'", id);
             }
