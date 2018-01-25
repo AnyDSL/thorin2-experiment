@@ -149,10 +149,10 @@ static const Def* try_wfold(thorin::World& world, const Def* callee, const Def* 
                     }
                 case int64_t(WFlags::nsw | WFlags::nuw):
                     switch (w) {
-                        case  8: return world.lit(t, F< 8, true, true>::run(ba, bb));
-                        case 16: return world.lit(t, F<16, true, true>::run(ba, bb));
-                        case 32: return world.lit(t, F<32, true, true>::run(ba, bb));
-                        case 64: return world.lit(t, F<64, true, true>::run(ba, bb));
+                        case  8: return world.lit(t, F< 8, true,  true>::run(ba, bb));
+                        case 16: return world.lit(t, F<16, true,  true>::run(ba, bb));
+                        case 32: return world.lit(t, F<32, true,  true>::run(ba, bb));
+                        case 64: return world.lit(t, F<64, true,  true>::run(ba, bb));
                     }
             }
         } catch (ErrorException) {
