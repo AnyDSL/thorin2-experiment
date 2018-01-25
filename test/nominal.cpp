@@ -20,6 +20,7 @@ TEST(Nominal, Option) {
     World w;
     auto nat = w.type_nat();
 
+    // could replace None by unit and make it structural
     auto none = w.sigma_type(0, {"None"});
     // auto some = w.lambda(w.pi(w.star(), w.star()), {"Some"});
     // some->set(w.sigma({w.var(0, w.star())}));
@@ -37,6 +38,7 @@ TEST(Nominal, PolymorphicList) {
     auto nat = w.type_nat();
     auto star = w.star();
 
+    // could replace Nil by unit and make it structural
     auto nil = w.sigma_type(0, {"Nil"});
     auto list = w.lambda(w.pi(star, star), {"List"});
     EXPECT_TRUE(list->is_nominal());
