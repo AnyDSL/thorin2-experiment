@@ -28,8 +28,8 @@ TEST(Nominal, Option) {
     auto app = w.app(option_nominal, nat);
     EXPECT_TRUE(app->isa<App>());
     EXPECT_EQ(app->op(1), nat);
-    auto option = w.lambda(w.star(), w.variant({none, w.var(w.star(), 0)}), {"Option"});
-    EXPECT_EQ(w.app(option, nat), w.variant({none, nat}));
+    auto option = w.lambda(w.star(), w.variant({w.unit(), w.var(w.star(), 0)}), {"Option"});
+    EXPECT_EQ(w.app(option, nat), w.variant({w.unit(), nat}));
 }
 
 TEST(Nominal, PolymorphicList) {
