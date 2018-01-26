@@ -704,11 +704,11 @@ const Lit* World::lit_nat(int64_t val, Location location) {
     return result;
 }
 
-const ContType* World::cont_type(const Def* domain, Debug dbg) {
+const CnType* World::cn_type(const Def* domain, Debug dbg) {
     // TODO
     //auto type = type_lub(domain, false);
     auto type = star();
-    return unify<ContType>(1, type, domain, dbg);
+    return unify<CnType>(1, type, domain, dbg);
 }
 
 //------------------------------------------------------------------------------

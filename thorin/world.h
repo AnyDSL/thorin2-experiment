@@ -235,9 +235,9 @@ public:
     //@}
 
     //@{ continuations
-    const ContType* cont_type(const Def* domain, Debug dbg = {});
-    const ContType* cont_type(Defs domain, Debug dbg = {}) { return cont_type(sigma(domain), dbg); }
-    const Cont* cont(const Def* domain, Debug dbg = {});
+    const CnType* cn_type(const Def* domain, Debug dbg = {});
+    const CnType* cn_type(Defs domain, Debug dbg = {}) { return cn_type(sigma(domain), dbg); }
+    const Cn*     cn(const Def* domain, Debug dbg = {});
     //@}
 
     //@{ misc

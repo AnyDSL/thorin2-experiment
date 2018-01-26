@@ -110,8 +110,8 @@ public:
         Arity,
         ArityKind,
         Axiom,
-        Cont,
-        ContType,
+        Cn,
+        CnType,
         Error,
         Extract,
         Index,
@@ -934,10 +934,10 @@ inline bool is_error(const Def* def) { return def->tag() == Def::Tag::Error; }
 
 //------------------------------------------------------------------------------
 
-class ContType : public Def {
+class CnType : public Def {
 private:
-    ContType(const Def* type, const Def* domain, Debug dbg)
-        : Def(Tag::ContType, type, {domain}, THORIN_OPS_PTR, dbg)
+    CnType(const Def* type, const Def* domain, Debug dbg)
+        : Def(Tag::CnType, type, {domain}, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -972,10 +972,10 @@ private:
     friend class World;
 };
 
-class Cont : public Def {
+class Cn : public Def {
 private:
-    Cont(const Def* type, Debug dbg)
-        : Def(Tag::Cont, type, 2, THORIN_OPS_PTR, dbg)
+    Cn(const Def* type, Debug dbg)
+        : Def(Tag::Cn, type, 2, THORIN_OPS_PTR, dbg)
     {}
 
 public:
@@ -986,7 +986,7 @@ public:
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
-    Cont* stub(World& to, const Def* type, Debug dbg) const override;
+    Cn* stub(World& to, const Def* type, Debug dbg) const override;
     std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
