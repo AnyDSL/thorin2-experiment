@@ -218,7 +218,6 @@ public:
     const Axiom* type_nat() { return type_nat_; }
     //@}
 
-
     //@{ values for bool and nat
     const Lit* lit_nat(int64_t val, Location location = {});
     const Lit* lit_nat_0() { return lit_nat_0_; }

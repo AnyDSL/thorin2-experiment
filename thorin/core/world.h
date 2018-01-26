@@ -115,6 +115,7 @@ public:
 
     //@{ cast
     template<Cast o> const Axiom* op() const { return cast_[size_t(o)]; }
+    template<Cast o> const Def* op(s64 dst_width, const Def* a, Debug dbg = {}) { return op<o>(lit_nat(dst_width), a, dbg); }
     template<Cast o> const Def* op(const Def* dst_width, const Def* a, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
         return op<o>(dst_width, width, shape, a, dbg);

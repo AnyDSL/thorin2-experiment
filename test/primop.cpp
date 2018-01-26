@@ -134,6 +134,14 @@ TEST(Primop, Cmp) {
 #undef CODE
 }
 
+TEST(Primop, Cast) {
+    World w;
+    auto x = w.op<Cast::rcast>(16, w.lit_r(23.f));
+    auto y = w.op<Cast::r2s>(8, w.lit_r(-1.f));
+    x->dump(); x->type()->dump();
+    y->dump(); y->type()->dump();
+}
+
 TEST(Primop, Normalize) {
     World w;
     auto a = w.axiom(w.type_i(8), {"a"});
