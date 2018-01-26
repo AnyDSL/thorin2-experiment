@@ -329,7 +329,6 @@ private:
 
 #define THORIN_OPS_PTR reinterpret_cast<const Def**>(reinterpret_cast<char*>(this+1))
 
-
 uint64_t UseHash::hash(Use use) {
     return murmur3(uint64_t(use.index()) << 48_u64 | uint64_t(use->gid()));
 }
@@ -969,6 +968,7 @@ private:
 public:
     const Def* callee() const { return op(0); }
     const Def* arg() const { return op(1); }
+    const CnType* type() const { return type()->as<CnType>(); }
     const Param* param() const { return param_; }
 
     const Def* arity(World&) const override;
