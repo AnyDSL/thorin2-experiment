@@ -35,13 +35,14 @@ public:
     //@}
 
     //@{ @p Lit%erals
-#define CODE(T) const Lit* lit_i(T val) { return lit(type_i(sizeof(T)*8), {val}); }
-    THORIN_S_TYPES(CODE)
-    THORIN_U_TYPES(CODE)
-#undef CODE
-#define CODE(T) const Lit* lit_r(T val) { return lit(type_r(sizeof(T)*8), {val}); }
-    THORIN_R_TYPES(CODE)
-#undef CODE
+    template<class I> const Lit* lit_i(I val) {
+        static_assert(std::is_integral<I>());
+        return lit(type_i(sizeof(I)*8), {val});
+    }
+    template<class R> const Lit* lit_r(R val) {
+        static_assert(std::is_floating_point<R>());
+        return lit(type_r(sizeof(R)*8), {val});
+    }
     //@}
 
     //@{ arithmetic operations for WOp
