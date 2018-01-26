@@ -35,7 +35,7 @@ constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int6
 /// Floating point (real) instructions that take @p RFlags.
 #define THORIN_R_OP(m) m(ROp, radd) m(ROp, rsub) m(ROp, rmul) m(ROp, rdiv) m(ROp, rmod)
 /// All cast instructions that cast from/to real/signed/unsigned.
-#define THORIN_CAST(m) m(scast) m(ucast) m(rcast) m(s2r) m(u2r) m(r2s) m(r2u)
+#define THORIN_CAST(m) m(Cast, scast) m(Cast, ucast) m(Cast, rcast) m(Cast, s2r) m(Cast, u2r) m(Cast, r2s) m(Cast, r2u)
 
 #define THORIN_I_CMP(m)\
     m(ICmp, eq)  /* equal */ \
@@ -103,6 +103,12 @@ enum class RCmp : size_t {
 #undef CODE
 };
 
+enum class Cast : size_t {
+#define CODE(T, o) o,
+    THORIN_CAST(CODE)
+#undef CODE
+};
+
 template<class T> constexpr auto Num = size_t(-1);
 
 #define CODE(T, o) + 1_s
@@ -112,6 +118,7 @@ template<> constexpr auto Num<IOp>  = 0_s THORIN_I_OP (CODE);
 template<> constexpr auto Num<ROp>  = 0_s THORIN_R_OP (CODE);
 template<> constexpr auto Num<ICmp> = 0_s THORIN_I_CMP(CODE);
 template<> constexpr auto Num<RCmp> = 0_s THORIN_R_CMP(CODE);
+template<> constexpr auto Num<Cast> = 0_s THORIN_CAST (CODE);
 #undef CODE
 
 THORIN_ENUM_ITERATOR(WOp)
@@ -170,6 +177,15 @@ constexpr const char* cmp2str(RCmp o) {
     switch (o) {
 #define CODE(T, o) case T::o: return "rcmp_" #o;
     THORIN_R_CMP(CODE)
+#undef CODE
+        default: THORIN_UNREACHABLE;
+    }
+}
+
+constexpr const char* cast2str(Cast o) {
+    switch (o) {
+#define CODE(T, o) case T::o: return #o;
+    THORIN_CAST(CODE)
 #undef CODE
         default: THORIN_UNREACHABLE;
     }

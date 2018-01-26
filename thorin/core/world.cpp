@@ -52,13 +52,13 @@ World::World() {
     for (auto o : ICmp()) icmp_[size_t(o)] = axiom(type_icmp, {cmp2str(o)});
     for (auto o : RCmp()) rcmp_[size_t(o)] = axiom(type_rcmp, {cmp2str(o)});
 
-    op_scast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]"));
-    op_ucast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]"));
-    op_rcast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s; real v]"));
-    op_s2r_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]"));
-    op_u2r_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]"));
-    op_r2s_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]"));
-    op_r2u_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]"));
+    cast_[size_t(Cast::scast)] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]"));
+    cast_[size_t(Cast::ucast)] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]"));
+    cast_[size_t(Cast::rcast)] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s; real v]"));
+    cast_[size_t(Cast::s2r  )] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]"));
+    cast_[size_t(Cast::u2r  )] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]"));
+    cast_[size_t(Cast::r2s  )] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]"));
+    cast_[size_t(Cast::r2u  )] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]"));
 
     op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)"), {"lea"});
     op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]"), {"load"});

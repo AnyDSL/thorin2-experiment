@@ -112,19 +112,16 @@ public:
         return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
 
-#define CODE(C)                                                                                                     \
-    /*@{ C */                                                                                                       \
-    const Axiom* op_ ## C() const { return op_ ## C ## _; }                                                         \
-    const Def* op_ ## C(const Def* dst_width, const Def* a, Debug dbg = {}) {                                       \
-        auto [width, shape] = infer_width_and_shape(*this, a);                                                      \
-        return op_ ## C(dst_width, width, shape, a, dbg);                                                           \
-    }                                                                                                               \
-    const Def* op_ ## C(const Def* dst_width, const Def* width, const Def* shape, const Def* a, Debug dbg = {}) {   \
-        return app(app(app(op_ ## C(), {dst_width, width}), shape), a, dbg);                                        \
-    }                                                                                                               \
+    //@{ cast
+    template<Cast o> const Axiom* op() const { return cast_[size_t(o)]; }
+    template<Cast o> const Def* op(const Def* dst_width, const Def* a, Debug dbg = {}) {
+        auto [width, shape] = infer_width_and_shape(*this, a);
+        return op<o>(dst_width, width, shape, a, dbg);
+    }
+    template<Cast o> const Def* op(const Def* dst_width, const Def* width, const Def* shape, const Def* a, Debug dbg = {}) {
+        return app(app(app(op<o>(), {dst_width, width}), shape), a, dbg);
+    }
     //@}
-    THORIN_CAST(CODE)
-#undef CODE
 
     //@{ lea - load effective address
     const Axiom* op_lea() { return op_lea_; }
@@ -171,9 +168,7 @@ private:
     std::array<const Axiom*, Num<ROp >> rop_;
     std::array<const Axiom*, Num<ICmp>> icmp_;
     std::array<const Axiom*, Num<RCmp>> rcmp_;
-#define CODE(C) const Axiom* op_ ## C ## _;
-    THORIN_CAST(CODE)
-#undef CODE
+    std::array<const Axiom*, Num<Cast>> cast_;
     const Axiom* op_enter_;
     const Axiom* op_lea_;
     const Axiom* op_load_;
