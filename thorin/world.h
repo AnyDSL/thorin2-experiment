@@ -193,7 +193,8 @@ public:
 
     //@{ misc factory methods
     const Def* any(const Def* type, const Def* def, Debug dbg = {});
-    const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, type, dbg); }
+    const Axiom* axiom(const Def* type, Debug dbg = {});
+    const Axiom* axiom(const char* s) { return find(axioms_, s); }
     const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
@@ -358,6 +359,8 @@ protected:
     std::unique_ptr<Zone> root_page_;
     Zone* cur_page_;
     size_t buffer_index_ = 0;
+    HashMap<const char*, const Axiom*, StrHash> axioms_;
+
     DefSet defs_;
     const Universe* universe_;
     const QualifierType* qualifier_type_;

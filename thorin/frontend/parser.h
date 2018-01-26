@@ -11,20 +11,17 @@
 
 namespace thorin {
 
-typedef HashMap<const char*, const Def*, StrHash> Env;
-
 class Parser {
 public:
-    Parser(World& world, Lexer& lexer, Env& env)
+    Parser(World& world, Lexer& lexer)
         : world_(world)
         , lexer_(lexer)
-        , env_(env)
     {
         ahead_[0] = lexer_.lex();
         ahead_[1] = lexer_.lex();
     }
 
-    const Def*    parse_def();
+    const Def* parse_def();
 
 private:
     struct Tracker {
@@ -129,7 +126,6 @@ private:
 
     World& world_;
     Lexer& lexer_;
-    Env env_;
 
     std::vector<const Def*> bruijn_;
     std::vector<Binder> binders_;
@@ -137,7 +133,7 @@ private:
     size_t depth_ = 0;
 };
 
-const Def* parse(World& world, const std::string& str, Env env = {});
+const Def* parse(World& world, const char* str);
 
 }
 

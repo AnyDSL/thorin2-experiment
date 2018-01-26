@@ -179,20 +179,16 @@ World::World()
     for (size_t j = 0; j != lit_nat_.size(); ++j)
         lit_nat_[j] = lit_nat(1 << int64_t(j));
 
-    Env env;
-    arity_succ_ = axiom(parse(*this, "Π[q: ℚ, a: 𝔸(q)].𝔸(q)", env), {"Sₐ"});
-    env["ASucc"] = arity_succ_;
-    index_zero_ = axiom(parse(*this, "Πp:[q: ℚ, 𝔸(q)].ASucc p", env), {"0ⁱ"});
-    env["I0"] = index_zero_;
-    index_succ_ = axiom(parse(*this, "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p", env), {"Sⁱ"});
-    env["IS"] = index_succ_;
+    arity_succ_ = axiom(parse(*this, "Π[q: ℚ, a: 𝔸(q)].𝔸(q)"), {"ASucc"}/*{"Sₐ"}*/);
+    index_zero_ = axiom(parse(*this, "Πp:[q: ℚ, 𝔸(q)].ASucc p"), {"I0"}/*{"0ⁱ"}*/);
+    index_succ_ = axiom(parse(*this, "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p"), {"IS"}/*{"Sⁱ"}*/);
 
-    arity_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a", env), {"Eₐ"});
+    arity_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a"), {"Eₐ"});
     arity_eliminator_->set_normalizer(normalize_arity_eliminator);
-    arity_eliminator_arity_ = axiom(parse(*this, "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q", env), {"R𝔸ₐ"});
-    arity_eliminator_multi_ = axiom(parse(*this, "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q", env), {"R𝕄ₐ"});
-    arity_eliminator_star_ = axiom(parse(*this, "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q", env), {"R*ₐ"});
-    // index_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a", env));
+    arity_eliminator_arity_ = axiom(parse(*this, "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q"), {"R𝔸ₐ"});
+    arity_eliminator_multi_ = axiom(parse(*this, "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q"), {"R𝕄ₐ"});
+    arity_eliminator_star_ = axiom(parse(*this, "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q"), {"R*ₐ"});
+    // index_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
 }
 
 World::~World() {
@@ -258,6 +254,16 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     }
 
     return app->cache_ = app;
+}
+
+const Axiom* World::axiom(const Def* type, Debug dbg) {
+    auto a = insert<Axiom>(0, type, dbg);
+    auto s = dbg.name().c_str();
+    if (s[0] != '\0') {
+        assert(!axioms_.contains(s));
+        axioms_[s] = a;
+    }
+    return a;
 }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {

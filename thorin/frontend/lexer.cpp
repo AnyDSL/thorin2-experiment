@@ -159,8 +159,8 @@ Token Lexer::lex() {
             while (accept_if(sym) || accept_if(dec)) {}
 
             // TODO make this mechanism better
-            if (str() == "cn")
-                return {location(), Token::Tag::Cn};
+            if (str() == "cn")   return {location(), Token::Tag::Cn};
+            if (str() == "bool") return {location(), Token::Tag::Bool};
             return {location(), str()};
         }
 

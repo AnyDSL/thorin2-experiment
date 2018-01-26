@@ -22,6 +22,7 @@ const Def* Parser::parse_def() {
     const Def* def = nullptr;
 
     if (false) {}
+    else if (accept(Token::Tag::Bool))              def = world_.type_bool();
     else if (ahead().isa(Token::Tag::Cn))           def = parse_cont_type();
     else if (ahead().isa(Token::Tag::Pi))           def = parse_pi();
     else if (ahead().isa(Token::Tag::L_Bracket))    def = parse_sigma_or_variadic();
@@ -89,8 +90,8 @@ const Def* Parser::parse_var_or_binder() {
                 for (auto i : it->ids)
                     var = world_.extract(var, i, tracker.location());
                 return var;
-            } else if (auto i = env_.find(id.c_str()); i != env_.end()) {
-                return i->second;
+            } else if (auto a = world_.axiom(id.c_str())) {
+                return a;
             } else {
                 assertf(false, "unknown identifier '{}'", id);
             }
@@ -294,10 +295,10 @@ bool Parser::accept(Token::Tag tag) {
     return true;
 }
 
-const Def* parse(World& world, const std::string& str, Env env) {
+const Def* parse(World& world, const char* str) {
     std::istringstream is(str, std::ios::binary);
     Lexer lexer(is, "stdin");
-    return Parser(world, lexer, env).parse_def();
+    return Parser(world, lexer).parse_def();
 }
 
 }

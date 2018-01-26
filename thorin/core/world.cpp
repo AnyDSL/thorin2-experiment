@@ -32,21 +32,20 @@ std::array<const Def*, 2> infer_width_and_shape(World& world, const Def* def) {
 //------------------------------------------------------------------------------
 
 World::World() {
-    Env env;
-    env["nat"]  = type_nat();
-    env["bool"] = type_bool();
-    env["int"]  = type_i_ = axiom(parse(*this, "Πnat. *", env), {"int"});
-    env["real"] = type_r_ = axiom(parse(*this, "Πnat. *", env), {"real"});
-    env["ptr"]  = type_ptr_   = axiom(parse(*this, "Π[*, nat]. *", env), {"ptr"});
-    env["M"]    = type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
-    env["F"]    = type_frame_ = axiom(star(), {"F"});
+    type_nat();
+    type_bool();
+    type_i_     = axiom(parse(*this, "Πnat. *"), {"int"});
+    type_r_     = axiom(parse(*this, "Πnat. *"), {"real"});
+    type_ptr_   = axiom(parse(*this, "Π[*, nat]. *"), {"ptr"});
+    type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
+    type_frame_ = axiom(star(), {"F"});
 
-    auto type_wop  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ", env);
-    auto type_mop  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]", env);
-    auto type_iop  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ", env);
-    auto type_rop  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ", env);
-    auto type_icmp = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]", env);
-    auto type_rcmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]", env);
+    auto type_wop  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
+    auto type_mop  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]");
+    auto type_iop  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
+    auto type_rop  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ");
+    auto type_icmp = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]");
+    auto type_rcmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]");
 
     for (auto o : WOp ()) wop_ [size_t(o)] = axiom(type_wop,  { op2str(o)});
     for (auto o : MOp ()) mop_ [size_t(o)] = axiom(type_mop,  { op2str(o)});
@@ -55,24 +54,24 @@ World::World() {
     for (auto o : ICmp()) icmp_[size_t(o)] = axiom(type_icmp, {cmp2str(o)});
     for (auto o : RCmp()) rcmp_[size_t(o)] = axiom(type_rcmp, {cmp2str(o)});
 
-    op_scast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]", env));
-    op_ucast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]", env));
-    op_rcast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s; real v]", env));
-    op_s2r_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]", env));
-    op_u2r_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]", env));
-    op_r2s_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]", env));
-    op_r2u_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]", env));
+    op_scast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]"));
+    op_ucast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]"));
+    op_rcast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s; real v]"));
+    op_s2r_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]"));
+    op_u2r_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]"));
+    op_r2s_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]"));
+    op_r2u_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]"));
 
-    op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)", env), {"lea"});
-    op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]", env), {"load"});
-    op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});
-    op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
-    op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
+    op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)"), {"lea"});
+    op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]"), {"load"});
+    op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M"), {"store"});
+    op_enter_ = axiom(parse(*this, "ΠM. [M, F]"), {"enter"});
+    op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)"), {"slot"});
 
-    cn_br_      = axiom(parse(*this, "cn[bool, cn[], cn[]]", env), {"br"});
-    cn_pe_info_ = axiom(parse(*this, "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T]", env), {"pe_info"});
-    cn_match_   = axiom(parse(*this, "cn[T: *, a: 𝔸, [a; [T, cn[]]]]", env), {"match"});
-    cn_end_     = axiom(parse(*this, "cn[]", env), {"end"});
+    cn_br_      = axiom(parse(*this, "cn[bool, cn[], cn[]]"), {"br"});
+    cn_pe_info_ = axiom(parse(*this, "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T]"), {"pe_info"});
+    cn_match_   = axiom(parse(*this, "cn[T: *, a: 𝔸, [a; [T, cn[]]]]"), {"match"});
+    cn_end_     = axiom(parse(*this, "cn[]"), {"end"});
 
 #define CODE(T, o) op<T::o>()->set_normalizer(normalize_ ## o);
     THORIN_W_OP (CODE)
