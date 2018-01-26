@@ -10,13 +10,13 @@ namespace thorin::core {
  * helpers
  */
 
-std::tuple<const Def*, const Def*> shape_and_body(World& world, const Def* def) {
+std::array<const Def*, 2> shape_and_body(World& world, const Def* def) {
     if (auto variadic = def->isa<Variadic>())
         return {variadic->arity(world), variadic->body()};
     return {world.arity(1), def};
 }
 
-std::tuple<const Def*, const Def*> infer_width_and_shape(World& world, const Def* def) {
+std::array<const Def*, 2> infer_width_and_shape(World& world, const Def* def) {
     if (auto variadic = def->type()->isa<Variadic>()) {
         if (!variadic->body()->isa<Variadic>())
             return {variadic->body()->as<App>()->arg(), variadic->arity(world)};
@@ -32,21 +32,18 @@ std::tuple<const Def*, const Def*> infer_width_and_shape(World& world, const Def
 //------------------------------------------------------------------------------
 
 World::World() {
-    Env env;
-    env["nat"]  = type_nat();
-    env["bool"] = type_bool();
-    env["int"]  = type_i_ = axiom(parse(*this, "Πnat. *", env), {"int"});
-    env["real"] = type_r_ = axiom(parse(*this, "Πnat. *", env), {"real"});
-    env["ptr"]  = type_ptr_   = axiom(parse(*this, "Π[*, nat]. *", env), {"ptr"});
-    env["M"]    = type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
-    env["F"]    = type_frame_ = axiom(star(), {"F"});
+    type_i_     = axiom("int", "Πnat. *");
+    type_r_     = axiom("real", "Πnat. *");
+    type_ptr_   = axiom("ptr", "Π[*, nat]. *");
+    type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
+    type_frame_ = axiom(star(), {"F"});
 
-    auto type_wop  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ", env);
-    auto type_mop  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]", env);
-    auto type_iop  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ", env);
-    auto type_rop  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ", env);
-    auto type_icmp = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]", env);
-    auto type_rcmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]", env);
+    auto type_wop  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
+    auto type_mop  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]");
+    auto type_iop  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
+    auto type_rop  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ");
+    auto type_icmp = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]");
+    auto type_rcmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]");
 
     for (auto o : WOp ()) wop_ [size_t(o)] = axiom(type_wop,  { op2str(o)});
     for (auto o : MOp ()) mop_ [size_t(o)] = axiom(type_mop,  { op2str(o)});
@@ -55,19 +52,24 @@ World::World() {
     for (auto o : ICmp()) icmp_[size_t(o)] = axiom(type_icmp, {cmp2str(o)});
     for (auto o : RCmp()) rcmp_[size_t(o)] = axiom(type_rcmp, {cmp2str(o)});
 
-    op_scast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]", env));
-    op_ucast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]", env));
-    op_rcast_ = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s; real v]", env));
-    op_s2r_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]", env));
-    op_u2r_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]", env));
-    op_r2s_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]", env));
-    op_r2u_ =   axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]", env));
+    cast_[size_t(Cast::scast)] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]"));
+    cast_[size_t(Cast::ucast)] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s;  int v]"));
+    cast_[size_t(Cast::rcast)] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s; real v]"));
+    cast_[size_t(Cast::s2r  )] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]"));
+    cast_[size_t(Cast::u2r  )] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s;  int w]. [s; real v]"));
+    cast_[size_t(Cast::r2s  )] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]"));
+    cast_[size_t(Cast::r2u  )] = axiom(parse(*this, "Π[w: nat, v: nat]. Πs: 𝕄. Π[s; real w]. [s;  int v]"));
 
-    op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)", env), {"lea"});
-    op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]", env), {"load"});
-    op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M",   env), {"store"});
-    op_enter_ = axiom(parse(*this, "ΠM. [M, F]",                               env), {"enter"});
-    op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)",    env), {"slot"});
+    op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)"), {"lea"});
+    op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]"), {"load"});
+    op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M"), {"store"});
+    op_enter_ = axiom(parse(*this, "ΠM. [M, F]"), {"enter"});
+    op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)"), {"slot"});
+
+    cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
+    cn_pe_info_ = axiom("pe_info", "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T]");
+    cn_match_   = axiom("match",   "cn[T: *, a: 𝔸, [a; [T, cn[]]]]");
+    cn_end_     = axiom("end",     "cn[]");
 
 #define CODE(T, o) op<T::o>()->set_normalizer(normalize_ ## o);
     THORIN_W_OP (CODE)

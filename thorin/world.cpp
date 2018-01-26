@@ -179,20 +179,16 @@ World::World()
     for (size_t j = 0; j != lit_nat_.size(); ++j)
         lit_nat_[j] = lit_nat(1 << int64_t(j));
 
-    Env env;
-    arity_succ_ = axiom(parse(*this, "Π[q: ℚ, a: 𝔸(q)].𝔸(q)", env), {"Sₐ"});
-    env["ASucc"] = arity_succ_;
-    index_zero_ = axiom(parse(*this, "Πp:[q: ℚ, 𝔸(q)].ASucc p", env), {"0ⁱ"});
-    env["I0"] = index_zero_;
-    index_succ_ = axiom(parse(*this, "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p", env), {"Sⁱ"});
-    env["IS"] = index_succ_;
+    arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: 𝔸(q)].𝔸(q)");         // {"Sₐ"}
+    index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸(q)].ASucc p");       // {"0ⁱ"}
+    index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p"); // {"Sⁱ"}
 
-    arity_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a", env), {"Eₐ"});
+    arity_eliminator_       = axiom("Eₐ",  "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a");
+    arity_eliminator_arity_ = axiom("R𝔸ₐ", "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q");
+    arity_eliminator_multi_ = axiom("R𝕄ₐ", "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q");
+    arity_eliminator_star_  = axiom("R*ₐ",  "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q");
     arity_eliminator_->set_normalizer(normalize_arity_eliminator);
-    arity_eliminator_arity_ = axiom(parse(*this, "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q", env), {"R𝔸ₐ"});
-    arity_eliminator_multi_ = axiom(parse(*this, "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q", env), {"R𝕄ₐ"});
-    arity_eliminator_star_ = axiom(parse(*this, "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q", env), {"R*ₐ"});
-    // index_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a", env));
+    // index_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
 }
 
 World::~World() {
@@ -244,28 +240,33 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     auto app = unify<App>(2, type, callee, arg, dbg);
     assert(app->callee() == callee);
 
+    if (callee->is_nominal())
+        return app;
     if (auto cache = app->cache_)
         return cache;
 
     if (auto lambda = app->callee()->isa<Lambda>()) {
         auto pi_type = app->callee()->type()->as<Pi>();
-        // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body
-        if (!pi_type->maybe_affine(*this) && !pi_type->body()->maybe_affine(*this) &&
-            (!lambda->is_nominal() || app->arg()->free_vars().none())) {
-            if (!lambda->is_closed()) // don't set cache as long lambda is unclosed
-                return app;
-
-            if (lambda->is_nominal())
-                app->cache_ = app;
-            app->cache_ = reduce(*this, lambda->body(), {app->arg()});
-            if (lambda->is_nominal())
-                return app;
-            return app->cache_;
+        // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body?
+        if (!lambda->maybe_affine(*this) && !pi_type->body()->maybe_affine(*this) && !lambda->is_nominal()) {
+            return app->cache_ = reduce(*this, lambda->body(), {app->arg()});
         }
     }
 
     return app->cache_ = app;
 }
+
+const Axiom* World::axiom(const Def* type, Debug dbg) {
+    auto a = insert<Axiom>(0, type, dbg);
+    auto s = dbg.name().c_str();
+    if (s[0] != '\0') {
+        assert(!axioms_.contains(s));
+        axioms_[s] = a;
+    }
+    return a;
+}
+
+const Axiom* World::axiom(const char* name, const char* s) { return axiom(parse(*this, s), {name}); }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     if (index->type() == arity(1))
@@ -703,6 +704,13 @@ const Lit* World::lit_nat(int64_t val, Location location) {
     if (result->gid() >= cur)
         result->debug().set(std::to_string(val));
     return result;
+}
+
+const CnType* World::cn_type(const Def* domain, Debug dbg) {
+    // TODO
+    //auto type = type_lub(domain, false);
+    auto type = star();
+    return unify<CnType>(1, type, domain, dbg);
 }
 
 //------------------------------------------------------------------------------

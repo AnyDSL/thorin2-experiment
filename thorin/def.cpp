@@ -22,7 +22,7 @@ DefArray qualifiers(World& world, Defs defs) {
 }
 
 void gid_sort(DefArray* defs) {
-    std::sort(defs->begin(), defs->end(), GIDLt<const Def*>());
+    std::sort(defs->begin(), defs->end(), DefLt());
 }
 
 DefArray gid_sorted(Defs defs) {
@@ -43,7 +43,7 @@ DefArray unique_gid_sorted(Defs defs) {
     return result;
 }
 
-bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
+static bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
 #ifndef NDEBUG
     auto all = std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); });
     assertf(all, "operands must be of the same sort");
@@ -57,7 +57,7 @@ bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
  * misc
  */
 
-size_t Def::gid_counter_ = 1;
+uint32_t Def::gid_counter_ = 1;
 
 Def::Sort Def::sort() const {
     if (auto t = type()) {
@@ -88,22 +88,15 @@ bool Def::maybe_affine(World& world) const {
 }
 
 Def* Def::set(World& world, size_t i, const Def* def) {
-    assert(!is_closed() && is_nominal());
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
-
     ops_[i] = def;
-
-    if (i == num_ops() - 1) {
-        closed_ = true;
+    if (i == num_ops() - 1)
         finalize(world);
-    }
     return this;
 }
 
 void Def::finalize(World& world) {
-    assert(is_closed());
-
     has_error_ |= this->tag() == Tag::Error;
 
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
@@ -163,23 +156,8 @@ Intersection::Intersection(const Def* type, const SortedDefSet& ops, Debug dbg)
     assert(check_same_sorted_ops(sort(), this->ops()));
 }
 
-Lambda::Lambda(const Pi* type, Debug dbg)
-    : Def(Tag::Lambda, type, 1, THORIN_OPS_PTR, dbg)
-{}
-Lambda::Lambda(const Pi* type, const Def* body, Debug dbg)
-    : Def(Tag::Lambda, type, {body}, THORIN_OPS_PTR, dbg)
-{}
-
 MultiArityKind::MultiArityKind(World& world, const Def* qualifier)
     : Def(Tag::MultiArityKind, world.universe(), {qualifier}, THORIN_OPS_PTR, {"𝕄"})
-{}
-
-Pack::Pack(const Def* type, const Def* body, Debug dbg)
-    : TupleBase(Tag::Pack, type, {body}, dbg)
-{}
-
-Pi::Pi(const Def* type, const Def* domain, const Def* body, Debug dbg)
-    : Def(Tag::Pi, type, {domain, body}, THORIN_OPS_PTR, dbg)
 {}
 
 Qualifier::Qualifier(World& world, QualifierTag q)
@@ -199,10 +177,6 @@ Star::Star(World& world, const Def* qualifier)
     : Def(Tag::Star, world.universe(), {qualifier}, THORIN_OPS_PTR, {"*"})
 {}
 
-Variadic::Variadic(const Def* type, const Def* arity, const Def* body, Debug dbg)
-    : SigmaBase(Tag::Variadic, type, {arity, body}, dbg)
-{}
-
 Variant::Variant(const Def* type, const SortedDefSet& ops, Debug dbg)
     : Def(Tag::Variant, type, range(ops), THORIN_OPS_PTR, dbg)
 {
@@ -218,6 +192,7 @@ Variant::Variant(const Def* type, const SortedDefSet& ops, Debug dbg)
 
 bool Arity::has_values() const { return true; }
 bool Axiom::has_values() const { return sort() == Sort::Type && !type()->has_values(); }
+bool CnType::has_values() const { return true; }
 bool Intersection::has_values() const {
     return std::all_of(ops().begin(), ops().end(), [](auto op){ return op->has_values(); });
 }
@@ -253,6 +228,12 @@ const Def* Def::kind_qualifier(World& world) const {
 }
 
 const Def* ArityKind::kind_qualifier(World&) const { return op(0); }
+
+const Def* CnType::kind_qualifier(World& world) const {
+    // TODO
+    return world.unlimited();
+}
+
 const Def* MultiArityKind::kind_qualifier(World&) const { return op(0); }
 
 const Def* Intersection::kind_qualifier(World& world) const {
@@ -314,10 +295,13 @@ const Def* ArityKind     ::arity(World& w) const { return w.arity(1); }
 // const Def* Any::arity(World& w) const { return TODO; }
 const Def* App           ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
 const Def* Axiom         ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
+const Def* Cn            ::arity(World& w) const { return w.arity(1); }
+const Def* CnType        ::arity(World& w) const { return w.arity(1); }
 const Def* Error         ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
 // const Def* Intersection::arity(World& world) const { return TODO; }
 const Def* Lit           ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
 const Def* MultiArityKind::arity(World& w) const { return w.arity(1); }
+const Def* Param         ::arity(World& w) const { return type()->arity(w); }
 const Def* Pi            ::arity(World& w) const { return w.arity(1); }
 const Def* Qualifier     ::arity(World& w) const { return w.arity(1); }
 const Def* QualifierType ::arity(World& w) const { return w.arity(1); }
@@ -395,6 +379,8 @@ const Def* App           ::rebuild(World& to, const Def*  , Defs ops) const { re
 const Def* Arity         ::rebuild(World& to, const Def* t, Defs    ) const { return to.arity(value(), t->op(0), debug()); }
 const Def* ArityKind     ::rebuild(World& to, const Def*  , Defs ops) const { return to.arity_kind(ops[0]); }
 const Def* Axiom         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
+const Def* Cn            ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
+const Def* CnType        ::rebuild(World& to, const Def*  , Defs ops) const { return to.cn_type(ops[0], debug()); }
 const Def* Error         ::rebuild(World& to, const Def* t, Defs    ) const { return to.error(t); }
 const Def* Extract       ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
@@ -407,6 +393,7 @@ const Def* Lit           ::rebuild(World& to, const Def* t, Defs    ) const { re
 const Def* Match         ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* MultiArityKind::rebuild(World& to, const Def*  , Defs ops) const { return to.multi_arity_kind(ops[0]); }
 const Def* Pack          ::rebuild(World& to, const Def*  , Defs ops) const { return to.pack(arity(to), ops[0], debug()); }
+const Def* Param         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Pi            ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi(ops[0], ops[1], debug()); }
 const Def* Pick          ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
@@ -433,6 +420,7 @@ const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { re
  */
 
 Axiom*   Axiom  ::stub(World& to, const Def* type, Debug dbg) const { return const_cast<Axiom*>(to.axiom(type, dbg)); }
+Cn*      Cn     ::stub(World&   , const Def*     , Debug    ) const { return /*TODO*/ nullptr; }
 Sigma*   Sigma  ::stub(World& to, const Def* type, Debug dbg) const { return to.sigma(type, num_ops(), dbg); }
 Variant* Variant::stub(World& to, const Def* type, Debug dbg) const { return to.variant(type, num_ops(), dbg); }
 
@@ -495,13 +483,9 @@ bool Pi::vsubtype_of(World& world, const Def* def) const {
 // bool Variadic::vsubtype_of(World& world, const Def* def) const {
 // }
 
-bool MultiArityKind::assignable(World& world, const Def* def) const {
-    return def->type()->subtype_of(world, this);
-}
-
-bool Pi::assignable(World& world, const Def* def) const {
-    return def->type()->subtype_of(world, this);
-}
+bool CnType        ::assignable(World& world, const Def* def) const { return def->type()->subtype_of(world, this); }
+bool MultiArityKind::assignable(World& world, const Def* def) const { return def->type()->subtype_of(world, this); }
+bool Pi            ::assignable(World& world, const Def* def) const { return def->type()->subtype_of(world, this); }
 
 bool Sigma::assignable(World& world, const Def* def) const {
     if (def->type() == this)
@@ -700,6 +684,14 @@ std::ostream& Axiom::vstream(std::ostream& os) const {
     return qualifier_stream(os) << name();
 }
 
+std::ostream& Cn::vstream(std::ostream& os) const {
+    return streamf(os, "{}({})", callee(), arg());
+}
+
+std::ostream& CnType::vstream(std::ostream& os) const {
+    return streamf(os, "cn {}", domain());
+}
+
 std::ostream& Error::vstream(std::ostream& os) const { return os << "<error>"; }
 
 std::ostream& Extract::vstream(std::ostream& os) const {
@@ -733,6 +725,8 @@ std::ostream& MultiArityKind::vstream(std::ostream& os) const {
             return os;
     return os << op(0);
 }
+
+std::ostream& Param::vstream(std::ostream& os) const { return os << unique_name(); }
 
 std::ostream& Lambda::vstream(std::ostream& os) const {
     domain()->name_stream(os << "λ");

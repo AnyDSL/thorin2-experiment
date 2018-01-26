@@ -8,7 +8,7 @@
 using namespace thorin;
 
 TEST(Lexer, Tokens) {
-    std::string str ="{ } ( ) < > [ ] : , . * \\pi \\lambda";
+    std::string str ="{ } ( ) < > [ ] : , . * \\pi \\lambda cn bool";
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
@@ -26,6 +26,8 @@ TEST(Lexer, Tokens) {
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Star));
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Pi));
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
+    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Cn));
+    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Bool));
     ASSERT_TRUE(lexer.lex().isa(Token::Tag::Eof));
 }
 

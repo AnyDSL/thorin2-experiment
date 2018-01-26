@@ -22,17 +22,19 @@ const Def* Parser::parse_def() {
     const Def* def = nullptr;
 
     if (false) {}
-    else if (ahead().isa(Token::Tag::Pi))         def = parse_pi();
-    else if (ahead().isa(Token::Tag::L_Bracket))  def = parse_sigma_or_variadic();
-    else if (ahead().isa(Token::Tag::Lambda))     def = parse_lambda();
+    else if (accept(Token::Tag::Bool))              def = world_.type_bool();
+    else if (ahead().isa(Token::Tag::Cn))           def = parse_cn_type();
+    else if (ahead().isa(Token::Tag::Pi))           def = parse_pi();
+    else if (ahead().isa(Token::Tag::L_Bracket))    def = parse_sigma_or_variadic();
+    else if (ahead().isa(Token::Tag::Lambda))       def = parse_lambda();
     else if (ahead().isa(Token::Tag::Star)
-             || ahead().isa(Token::Tag::Arity_Kind)
-             || ahead().isa(Token::Tag::Multi_Arity_Kind)) def = parse_qualified_kind();
+            || ahead().isa(Token::Tag::Arity_Kind)
+            || ahead().isa(Token::Tag::Multi_Arity_Kind)) def = parse_qualified_kind();
     else if (ahead().isa(Token::Tag::Backslash) ||
-             ahead().isa(Token::Tag::Identifier)) def = parse_var_or_binder();
-    else if (ahead().isa(Token::Tag::L_Paren))    def = parse_tuple_or_pack();
-    else if (ahead().isa(Token::Tag::L_Brace))    def = parse_lit();
-    else if (ahead().isa(Token::Tag::Literal))    def = parse_literal();
+             ahead().isa(Token::Tag::Identifier))   def = parse_var_or_binder();
+    else if (ahead().isa(Token::Tag::L_Paren))      def = parse_tuple_or_pack();
+    else if (ahead().isa(Token::Tag::L_Brace))      def = parse_lit();
+    else if (ahead().isa(Token::Tag::Literal))      def = parse_literal();
     else if (accept(Token::Tag::Qualifier_Type))    def = world_.qualifier_type();
     else if (accept(Token::Tag::QualifierU))        def = world_.unlimited();
     else if (accept(Token::Tag::QualifierR))        def = world_.relevant();
@@ -88,8 +90,8 @@ const Def* Parser::parse_var_or_binder() {
                 for (auto i : it->ids)
                     var = world_.extract(var, i, tracker.location());
                 return var;
-            } else if (env_.count(id)) {
-                return env_[id];
+            } else if (auto a = world_.axiom(id.c_str())) {
+                return a;
             } else {
                 assertf(false, "unknown identifier '{}'", id);
             }
@@ -113,7 +115,14 @@ const Def* Parser::parse_var_or_binder() {
     return nullptr;
 }
 
-const Pi* Parser::parse_pi() {
+const Def* Parser::parse_cn_type() {
+    Tracker tracker(this);
+    eat(Token::Tag::Cn);
+    auto domain = parse_def();
+    return world_.cn_type(domain, tracker.location());
+}
+
+const Def* Parser::parse_pi() {
     Tracker tracker(this);
     eat(Token::Tag::Pi);
     auto domain = parse_def();
@@ -211,7 +220,7 @@ const Def* Parser::parse_tuple_or_pack() {
     return world_.tuple(defs, tracker.location());
 }
 
-const Lit* Parser::parse_lit() {
+const Def* Parser::parse_lit() {
     Tracker tracker(this);
 
     eat(Token::Tag::L_Brace);
@@ -220,10 +229,10 @@ const Lit* Parser::parse_lit() {
 
     auto box = ahead_[0].literal().box;
     eat(Token::Tag::Literal);
-    expect(Token::Tag::R_Brace, "assumption");
 
-    expect(Token::Tag::Colon, "assumption");
+    expect(Token::Tag::Colon, "literal");
     auto type = parse_def();
+    expect(Token::Tag::R_Brace, "literal");
 
     return world_.lit(type, box, tracker.location());
 }
@@ -286,10 +295,10 @@ bool Parser::accept(Token::Tag tag) {
     return true;
 }
 
-const Def* parse(World& world, const std::string& str, Env env) {
+const Def* parse(World& world, const char* str) {
     std::istringstream is(str, std::ios::binary);
     Lexer lexer(is, "stdin");
-    return Parser(world, lexer, env).parse_def();
+    return Parser(world, lexer).parse_def();
 }
 
 }

@@ -13,20 +13,20 @@ static const Def* check_callee(Normalizer normalizer, thorin::World& world, cons
     return nullptr;
 }
 
-static std::tuple<const Def*, const Def*> split(thorin::World& world, const Def* def) {
+static std::array<const Def*, 2> split(thorin::World& world, const Def* def) {
     auto a = world.extract(def, 0_u64);
     auto b = world.extract(def, 1_u64);
     return {a, b};
 }
 
-static std::tuple<const Def*, const Def*, const Def*> msplit(thorin::World& world, const Def* def) {
+static std::array<const Def*, 3> msplit(thorin::World& world, const Def* def) {
     auto a = world.extract(def, 0_u64);
     auto b = world.extract(def, 1_u64);
     auto m = world.extract(def, 2_u64);
     return {a, b, m};
 }
 
-static std::tuple<const Def*, const Def*> shrink_shape(thorin::World& world, const Def* def) {
+static std::array<const Def*, 2> shrink_shape(thorin::World& world, const Def* def) {
     if (def->isa<Arity>())
         return {def, world.arity(1)};
     if (auto sigma = def->isa<Sigma>())
@@ -43,9 +43,9 @@ static const Def* normalize_tuple(thorin::World& world, const Def* callee, const
         auto [head, tail] = shrink_shape(world, app_arg(callee));
         auto new_callee = world.app(app_callee(callee), tail);
 
-        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), tb->op(i)}, dbg); }));
-        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i), pb->body()}, dbg); }));
-        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {pa->body(), tb->op(i)}, dbg); }));
+        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i),  tb->op(i)},  dbg); }));
+        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {ta->op(i),  pb->body()}, dbg); }));
+        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {pa->body(), tb->op(i)},  dbg); }));
         assert(pa && pb);
         return world.pack(head, world.app(new_callee, {pa->body(), pb->body()}, dbg), dbg);
     }
@@ -62,9 +62,9 @@ static const Def* normalize_mtuple(thorin::World& world, const Def* callee, cons
         auto [head, tail] = shrink_shape(world, app_arg(callee));
         auto new_callee = world.app(app_callee(callee), tail);
 
-        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i), tb->op(i)}, dbg); }));
-        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i), pb->body()}, dbg); }));
-        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {m, pa->body(), tb->op(i)}, dbg); }));
+        if (ta && tb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i),  tb->op(i)},  dbg); }));
+        if (ta && pb) return world.tuple(DefArray(ta->num_ops(), [&](auto i) { return world.app(new_callee, {m, ta->op(i),  pb->body()}, dbg); }));
+        if (pa && tb) return world.tuple(DefArray(tb->num_ops(), [&](auto i) { return world.app(new_callee, {m, pa->body(), tb->op(i)},  dbg); }));
         assert(pa && pb);
         return world.pack(head, world.app(new_callee, {m, pa->body(), pb->body()}, dbg), dbg);
     }
@@ -72,11 +72,11 @@ static const Def* normalize_mtuple(thorin::World& world, const Def* callee, cons
     return nullptr;
 }
 
-static const Lit* const_to_left(const Def*& a, const Def*& b) {
-    if (b->isa<Lit>()) {
+static inline bool is_foldable(const Def* def) { return def->isa<Lit>() || def->isa<Tuple>() || def->isa<Pack>(); }
+
+static const Lit* foldable_to_left(const Def*& a, const Def*& b) {
+    if (is_foldable(b))
         std::swap(a, b);
-        return a->as<Lit>();
-    }
 
     return a->isa<Lit>();
 }
@@ -88,28 +88,33 @@ static const Def* commute(thorin::World& world, const Def* callee, const Def* a,
 }
 
 static const Def* associate_commute(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    const Def* aa = nullptr, *ab = nullptr, *ba = nullptr, *bb = nullptr;
-    const Lit* laa = nullptr, *lba = nullptr;
+    std::array<const Def*, 2> args{a, b};
+    std::array<std::array<const Def*, 2>, 2> aa{{{nullptr, nullptr}, {nullptr, nullptr}}};
+    std::array<bool, 2> foldable{false, false};
 
-    if (auto app = a->isa<App>(); app && app->callee() == callee) {
-        aa = world.extract(app->arg(), 0_u64);
-        ab = world.extract(app->arg(), 1_u64);
-        laa = aa->isa<Lit>();
+    for (size_t i = 0; i != 2; ++i) {
+        if (auto app = args[i]->isa<App>()) {
+            aa[i] = split(world, app->arg());
+            foldable[i] = is_foldable(aa[i][0]);
+        }
     }
 
-    if (auto app = b->isa<App>(); app && app->callee() == callee) {
-        ba = world.extract(app->arg(), 0_u64);
-        bb = world.extract(app->arg(), 1_u64);
-        lba = ba->isa<Lit>();
+    if (foldable[0] && foldable[1]) {
+        auto f = world.app(callee, {aa[0][0], aa[1][0]}, dbg);
+        return world.app(callee, {f, world.app(callee, {aa[0][1], aa[1][1]}, dbg)}, dbg);
     }
 
-    if (laa && lba) {
-        auto lit = world.app(callee, {laa, lba}, dbg)->as<Lit>();
-        return world.app(callee, {lit, world.app(callee, {ab, bb}, dbg)}, dbg);
+    for (size_t i = 0; i != 2; ++i) {
+        if (foldable[i])
+            return world.app(callee, {aa[i][0], world.app(callee, {args[1-i], aa[i][1]}, dbg)}, dbg);
     }
 
-    if (laa) return world.app(callee, {laa, world.app(callee, {ab, b}, dbg)}, dbg);
-    if (lba) return world.app(callee, {lba, world.app(callee, {a, bb}, dbg)}, dbg);
+    if (aa[0][0] && aa[1][0]) {
+        // TODO this could be even cooler by sorting this sort of stuff into a reduce operation
+        auto x = world.app(callee, {aa[0][0], aa[0][1]}, dbg);
+        auto y = world.app(callee, {x,        aa[1][0]}, dbg);
+        return   world.app(callee, {y,        aa[1][1]}, dbg);
+    }
 
     return commute(world, callee, a, b, dbg);
 }
@@ -151,10 +156,10 @@ static const Def* try_wfold(thorin::World& world, const Def* callee, const Def* 
                     }
                 case int64_t(WFlags::nsw | WFlags::nuw):
                     switch (w) {
-                        case  8: return world.lit(t, F< 8, true, true>::run(ba, bb));
-                        case 16: return world.lit(t, F<16, true, true>::run(ba, bb));
-                        case 32: return world.lit(t, F<32, true, true>::run(ba, bb));
-                        case 64: return world.lit(t, F<64, true, true>::run(ba, bb));
+                        case  8: return world.lit(t, F< 8, true,  true>::run(ba, bb));
+                        case 16: return world.lit(t, F<16, true,  true>::run(ba, bb));
+                        case 32: return world.lit(t, F<32, true,  true>::run(ba, bb));
+                        case 64: return world.lit(t, F<64, true,  true>::run(ba, bb));
                     }
             }
         } catch (ErrorException) {
@@ -172,7 +177,7 @@ const Def* normalize_add(thorin::World& world, const Def* callee, const Def* arg
     auto [a, b] = split(world, arg);
     if (auto result = try_wfold<Fold_add>(world, callee, a, b, dbg)) return result;
 
-    if (auto la = const_to_left(a, b)) {
+    if (auto la = foldable_to_left(a, b)) {
         if (get_u64(la) == 0_u64) return b;
     }
 
@@ -198,7 +203,7 @@ const Def* normalize_mul(thorin::World& world, const Def* callee, const Def* arg
     auto [a, b] = split(world, arg);
     if (auto result = try_wfold<Fold_mul>(world, callee, a, b, dbg)) return result;
 
-    if (auto la = const_to_left(a, b)) {
+    if (auto la = foldable_to_left(a, b)) {
         if (get_u64(la) == 0_u64) return la;
         if (get_u64(la) == 1_u64) return b;
     }
@@ -369,7 +374,7 @@ const Def* normalize_radd(thorin::World& world, const Def* callee, const Def* ar
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_radd>(world, callee, a, b, dbg)) return result;
 
-    if (auto la = const_to_left(a, b)) {
+    if (auto la = foldable_to_left(a, b)) {
         la->box();
     }
 
@@ -391,7 +396,7 @@ const Def* normalize_rmul(thorin::World& world, const Def* callee, const Def* ar
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_rmul>(world, callee, a, b, dbg)) return result;
 
-    if (auto la = const_to_left(a, b)) {
+    if (auto la = foldable_to_left(a, b)) {
         la->box();
     }
 

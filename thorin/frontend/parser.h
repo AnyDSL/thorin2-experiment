@@ -1,9 +1,6 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <type_traits>
-#include <unordered_map>
-
 #include "thorin/def.h"
 #include "thorin/world.h"
 #include "thorin/frontend/token.h"
@@ -11,21 +8,17 @@
 
 namespace thorin {
 
-// TODO use thorin::HashMap
-typedef std::unordered_map<std::string, const Def*> Env;
-
 class Parser {
 public:
-    Parser(World& world, Lexer& lexer, Env& env)
+    Parser(World& world, Lexer& lexer)
         : world_(world)
         , lexer_(lexer)
-        , env_(env)
     {
         ahead_[0] = lexer_.lex();
         ahead_[1] = lexer_.lex();
     }
 
-    const Def*    parse_def();
+    const Def* parse_def();
 
 private:
     struct Tracker {
@@ -46,16 +39,17 @@ private:
         uint32_t col;
     };
 
-    const Def*    parse_var_or_binder();
-    const Pi*     parse_pi();
-    const Def*    parse_sigma_or_variadic();
-    const Def*    parse_lambda();
-    const Def*    parse_qualified_kind();
-    const Def*    parse_tuple_or_pack();
-    const Lit*    parse_lit();
-    const Def*    parse_param();
-    const Def*    parse_extract_or_insert(Tracker, const Def*);
-    const Def*    parse_literal();
+    const Def* parse_var_or_binder();
+    const Def* parse_cn_type();
+    const Def* parse_pi();
+    const Def* parse_sigma_or_variadic();
+    const Def* parse_lambda();
+    const Def* parse_qualified_kind();
+    const Def* parse_tuple_or_pack();
+    const Def* parse_lit();
+    const Def* parse_param();
+    const Def* parse_extract_or_insert(Tracker, const Def*);
+    const Def* parse_literal();
 
     struct Binder {
         std::string name;
@@ -129,7 +123,6 @@ private:
 
     World& world_;
     Lexer& lexer_;
-    Env env_;
 
     std::vector<const Def*> bruijn_;
     std::vector<Binder> binders_;
@@ -137,7 +130,7 @@ private:
     size_t depth_ = 0;
 };
 
-const Def* parse(World& world, const std::string& str, Env env = {});
+const Def* parse(World& world, const char* str);
 
 }
 

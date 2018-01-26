@@ -193,7 +193,9 @@ public:
 
     //@{ misc factory methods
     const Def* any(const Def* type, const Def* def, Debug dbg = {});
-    const Axiom* axiom(const Def* type, Debug dbg = {}) { return insert<Axiom>(0, type, dbg); }
+    const Axiom* axiom(const Def* type, Debug dbg = {});
+    const Axiom* axiom(const char* s) { return find(axioms_, s); }
+    const Axiom* axiom(const char* name, const char* s);
     const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
@@ -233,11 +235,19 @@ public:
     const Lit* lit_true()  { return lit_bool_[1]; }
     //@}
 
+    //@{ continuations
+    const CnType* cn_type(const Def* domain, Debug dbg = {});
+    const CnType* cn_type(Defs domain, Debug dbg = {}) { return cn_type(sigma(domain), dbg); }
+    const Cn*     cn(const Def* domain, Debug dbg = {});
+    //@}
+
+    //@{ misc
     const DefSet& defs() const { return defs_; }
 
     const App* curry(Normalizer normalizer, const Def* callee, const Def* arg, Debug dbg) {
         return raw_app(callee, arg, dbg)->set_normalizer(normalizer)->as<App>();
     }
+    //@}
 
     friend void swap(World& w1, World& w2) {
         using std::swap;
@@ -350,6 +360,8 @@ protected:
     std::unique_ptr<Zone> root_page_;
     Zone* cur_page_;
     size_t buffer_index_ = 0;
+    HashMap<const char*, const Axiom*, StrHash> axioms_;
+
     DefSet defs_;
     const Universe* universe_;
     const QualifierType* qualifier_type_;

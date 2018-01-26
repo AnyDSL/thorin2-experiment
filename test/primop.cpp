@@ -138,19 +138,26 @@ TEST(Primop, Normalize) {
     World w;
     auto a = w.axiom(w.type_i(8), {"a"});
     auto b = w.axiom(w.type_i(8), {"b"});
-    auto z = w.lit_i(0_u8);
-    auto l2 = w.lit_i(2_u8);
-    auto l3 = w.lit_i(3_u8);
-    auto l5 = w.lit_i(5_u8);
-    ASSERT_EQ(w.op<WOp::add>(a, z), a);
-    ASSERT_EQ(w.op<WOp::add>(z, a), a);
-    ASSERT_EQ(w.op<WOp::add>(a, a), w.op<WOp::mul>(a, l2));
-    ASSERT_EQ(w.op<WOp::add>(a, b), w.op<WOp::add>(b, a));
-    ASSERT_EQ(w.op<WOp::sub>(a, a), z);
+    auto c = w.axiom(w.type_i(8), {"c"});
+    auto d = w.axiom(w.type_i(8), {"d"});
+    auto l0 = w.lit_i(0_u8), l2 = w.lit_i(2_u8), l3 = w.lit_i(3_u8), l5 = w.lit_i(5_u8);
 
-    ASSERT_EQ(w.op<WOp::add>(w.op<WOp::add>(b, l3), a), w.op<WOp::add>(l3, w.op<WOp::add>(a, b)));
-    ASSERT_EQ(w.op<WOp::add>(b, w.op<WOp::add>(a, l3)), w.op<WOp::add>(l3, w.op<WOp::add>(a, b)));
-    ASSERT_EQ(w.op<WOp::add>(w.op<WOp::add>(b, l2), w.op<WOp::add>(a, l3)), w.op<WOp::add>(b, w.op<WOp::add>(a, l5)));
+    auto add = [&] (auto a, auto b) { return w.op<WOp::add>(a, b); };
+    auto sub = [&] (auto a, auto b) { return w.op<WOp::sub>(a, b); };
+    auto mul = [&] (auto a, auto b) { return w.op<WOp::mul>(a, b); };
+    ASSERT_EQ(add(a, l0), a);
+    ASSERT_EQ(add(l0, a), a);
+    ASSERT_EQ(add(a, a), mul(a, l2));
+    ASSERT_EQ(add(a, b), add(b, a));
+    ASSERT_EQ(sub(a, a), l0);
+
+    ASSERT_EQ(add(add(b, l3), a), add(l3, add(a, b)));
+    ASSERT_EQ(add(b, add(a, l3)), add(l3, add(a, b)));
+    ASSERT_EQ(add(add(b, l2), add(a, l3)), add(b, add(a, l5)));
+    ASSERT_EQ(add(add(b, l2), add(a, l3)), add(b, add(a, l5)));
+
+    // this test is not super stable as the operand ordering is quite random
+    ASSERT_EQ(add(add(d, c), add(b, a)), add(b, add(a, add(c, d))));
 }
 
 TEST(Primop, Ptr) {

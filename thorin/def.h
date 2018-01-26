@@ -18,6 +18,7 @@
 namespace thorin {
 
 class App;
+class Cn;
 class Def;
 class World;
 
@@ -73,7 +74,8 @@ template<class To>
 using DefMap  = GIDMap<const Def*, To>;
 using DefSet  = GIDSet<const Def*>;
 using Def2Def = DefMap<const Def*>;
-using SortedDefSet = std::set<const Def*, GIDLt<const Def*>>;
+using DefLt   = GIDLt<const Def*>;
+using SortedDefSet = std::set<const Def*, DefLt>;
 
 typedef Array<const Def*> DefArray;
 typedef ArrayRef<const Def*> Defs;
@@ -103,34 +105,18 @@ typedef const Def* (*Normalizer)(World&, const Def*, const Def*, Debug);
 class Def : public RuntimeCast<Def>, public Streamable  {
 public:
     enum class Tag {
-        All,
-        Any,
-        App,
-        Arity,
-        ArityKind,
-        Axiom,
+        Any, Match, Variant,
+        App, Lambda, Pi,
+        Arity, ArityKind, MultiArityKind,
+        Cn, Param, CnType,
+        Extract, Insert, Tuple, Pack, Sigma, Variadic,
+        Lit, Axiom,
+        Pick, Intersection,
+        Qualifier, QualifierType,
+        Star, Universe,
         Error,
-        Extract,
-        Index,
-        Intersection,
-        Insert,
-        Lambda,
-        Lit,
-        Match,
-        MultiArityKind,
-        Pack,
-        Pi,
-        Pick,
-        Qualifier,
-        QualifierType,
-        Sigma,
         Singleton,
-        Star,
-        Tuple,
-        Universe,
         Var,
-        Variadic,
-        Variant,
         Num
     };
 
@@ -150,7 +136,6 @@ protected:
         , num_ops_(num_ops)
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
-        , closed_(num_ops == 0)
         , nominal_(true)
         , has_error_(false)
         , ops_(ops_ptr)
@@ -165,7 +150,6 @@ protected:
         , num_ops_(ops.distance())
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
-        , closed_(true)
         , nominal_(false)
         , has_error_(false)
         , ops_(ops_ptr)
@@ -231,11 +215,10 @@ public:
     virtual const Def* arity(World&) const;
     const BitSet& free_vars() const { return free_vars_; }
     uint32_t fields() const { return uint32_t(num_ops_) << 8_u32 | uint32_t(tag()); }
-    size_t gid() const { return gid_; }
-    static size_t gid_counter() { return gid_counter_; }
+    uint32_t gid() const { return gid_; }
+    static uint32_t gid_counter() { return gid_counter_; }
     /// A nominal Def is always different from each other Def.
     bool is_nominal() const { return nominal_; }
-    bool is_closed() const { return closed_; }
     bool has_error() const { return has_error_; }
     Tag tag() const { return Tag(tag_); }
     //@}
@@ -311,7 +294,7 @@ private:
     virtual bool vsubtype_of(World&, const Def*) const { return false; }
     virtual std::ostream& vstream(std::ostream& os) const = 0;
 
-    static size_t gid_counter_;
+    static uint32_t gid_counter_;
 
 protected:
     BitSet free_vars_;
@@ -325,9 +308,8 @@ private:
     uint32_t num_ops_;
     union {
         struct {
-            unsigned gid_           : 23;
+            unsigned gid_           : 24;
             unsigned tag_           :  6;
-            unsigned closed_        :  1;
             unsigned nominal_       :  1;
             unsigned has_error_     :  1;
             // this sum must be 32   ^^^
@@ -346,7 +328,6 @@ private:
 };
 
 #define THORIN_OPS_PTR reinterpret_cast<const Def**>(reinterpret_cast<char*>(this+1))
-
 
 uint64_t UseHash::hash(Use use) {
     return murmur3(uint64_t(use.index()) << 48_u64 | uint64_t(use->gid()));
@@ -437,7 +418,9 @@ private:
 
 class Pi : public Def {
 private:
-    Pi(const Def* type, const Def* domain, const Def* body, Debug dbg);
+    Pi(const Def* type, const Def* domain, const Def* body, Debug dbg)
+        : Def(Tag::Pi, type, {domain, body}, THORIN_OPS_PTR, dbg)
+    {}
 
 public:
     const Def* domain() const { return op(0); }
@@ -462,8 +445,14 @@ private:
 
 class Lambda : public Def {
 private:
-    Lambda(const Pi* type, const Def* body, Debug dbg);
-    Lambda(const Pi* type, Debug dbg);
+    /// @em structural Lambda
+    Lambda(const Pi* type, const Def* body, Debug dbg)
+        : Def(Tag::Lambda, type, {body}, THORIN_OPS_PTR, dbg)
+    {}
+    /// @em nominal Lambda
+    Lambda(const Pi* type, Debug dbg)
+        : Def(Tag::Lambda, type, 1, THORIN_OPS_PTR, dbg)
+    {}
 
 public:
     Lambda* set(World& world, const Def* body) { return Def::set(world, 0, body)->as<Lambda>(); }
@@ -549,7 +538,9 @@ private:
 
 class Variadic : public SigmaBase {
 private:
-    Variadic(const Def* type, const Def* arity, const Def* body, Debug dbg);
+    Variadic(const Def* type, const Def* arity, const Def* body, Debug dbg)
+        : SigmaBase(Tag::Variadic, type, {arity, body}, dbg)
+    {}
 
 public:
     const Def* arity(World&) const override { return op(0); }
@@ -589,7 +580,9 @@ private:
 
 class Pack : public TupleBase {
 private:
-    Pack(const Def* type, const Def* body, Debug dbg);
+    Pack(const Def* type, const Def* body, Debug dbg)
+        : TupleBase(Tag::Pack, type, {body}, dbg)
+        {}
 
 public:
     const Def* body() const { return op(0); }
@@ -671,8 +664,9 @@ private:
 
 class Variant : public Def {
 private:
+    /// @em structural Variant
     Variant(const Def* type, const SortedDefSet& ops, Debug dbg);
-    // Nominal Variant
+    /// @em nominal Variant
     Variant(const Def* type, size_t num_ops, Debug dbg)
         : Def(Tag::Variant, type, num_ops, THORIN_OPS_PTR, dbg)
     {}
@@ -918,6 +912,78 @@ private:
 };
 
 inline bool is_error(const Def* def) { return def->tag() == Def::Tag::Error; }
+
+//------------------------------------------------------------------------------
+
+/// Type type of a continuation @p Cn.
+class CnType : public Def {
+private:
+    CnType(const Def* type, const Def* domain, Debug dbg)
+        : Def(Tag::CnType, type, {domain}, THORIN_OPS_PTR, dbg)
+    {}
+
+public:
+    const Def* domain() const { return op(0); }
+
+    const Def* arity(World&) const override;
+    bool assignable(World&, const Def* def) const override;
+    bool has_values() const override;
+    const Def* kind_qualifier(World&) const override;
+
+private:
+    //bool vsubtype_of(World&, const Def* def) const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
+
+    friend class World;
+};
+
+/// The @p Param%eter associated to a continuation @p Cn.
+class Param : public Def {
+private:
+    Param(const Def* type, Debug dbg)
+        : Def(Tag::Param, type, 0, THORIN_OPS_PTR, dbg)
+    {}
+
+public:
+    const Cn* cn() const { return cn_; }
+    const Def* arity(World&) const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    std::ostream& vstream(std::ostream&) const override;
+
+    const Cn* cn_;
+
+    friend class World;
+};
+
+/// A continuation value.
+class Cn : public Def {
+private:
+    Cn(const Def* type, Debug dbg)
+        : Def(Tag::Cn, type, 2, THORIN_OPS_PTR, dbg)
+    {}
+
+public:
+    const Def* callee() const { return op(0); }
+    const Def* arg() const { return op(1); }
+    const CnType* type() const { return type()->as<CnType>(); }
+    const Param* param() const { return param_; }
+
+    const Def* arity(World&) const override;
+
+private:
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    Cn* stub(World& to, const Def* type, Debug dbg) const override;
+    std::ostream& vstream(std::ostream&) const override;
+
+    const Param* param_;
+
+    friend class World;
+};
+
+//------------------------------------------------------------------------------
 
 }
 

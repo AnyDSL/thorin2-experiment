@@ -10,9 +10,9 @@
 namespace thorin::core {
 
 class World;
-std::tuple<const Def*, const Def*> shape_and_body(World&, const Def* def);
+std::array<const Def*, 2> shape_and_body(World&, const Def* def);
 const Def* infer_shape(World&, const Def* def);
-std::tuple<const Def*, const Def*> infer_width_and_shape(World&, const Def*);
+std::array<const Def*, 2> infer_width_and_shape(World&, const Def*);
 
 class World : public ::thorin::World {
 public:
@@ -35,17 +35,14 @@ public:
     //@}
 
     //@{ @p Lit%erals
-    const Lit* lit_i( s8 val) { return lit(type_i( 8), {val}); }
-    const Lit* lit_i(s16 val) { return lit(type_i(16), {val}); }
-    const Lit* lit_i(s32 val) { return lit(type_i(32), {val}); }
-    const Lit* lit_i(s64 val) { return lit(type_i(64), {val}); }
-    const Lit* lit_i( u8 val) { return lit(type_i( 8), {val}); }
-    const Lit* lit_i(u16 val) { return lit(type_i(16), {val}); }
-    const Lit* lit_i(u32 val) { return lit(type_i(32), {val}); }
-    const Lit* lit_i(u64 val) { return lit(type_i(64), {val}); }
-    const Lit* lit_r(r16 val) { return lit(type_r(16), {val}); }
-    const Lit* lit_r(r32 val) { return lit(type_r(32), {val}); }
-    const Lit* lit_r(r64 val) { return lit(type_r(64), {val}); }
+    template<class I> const Lit* lit_i(I val) {
+        static_assert(std::is_integral<I>());
+        return lit(type_i(sizeof(I)*8), {val});
+    }
+    template<class R> const Lit* lit_r(R val) {
+        static_assert(std::is_floating_point<R>());
+        return lit(type_r(sizeof(R)*8), {val});
+    }
     //@}
 
     //@{ arithmetic operations for WOp
@@ -116,14 +113,15 @@ public:
         return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
 
-    //@{ conversions
-    const Axiom* op_scast() const { return op_scast_; }
-    const Axiom* op_ucast() const { return op_ucast_; }
-    const Axiom* op_rcast() const { return op_rcast_; }
-    const Axiom* op_r2s() const { return op_r2s_; }
-    const Axiom* op_r2u() const { return op_r2u_; }
-    const Axiom* op_s2r() const { return op_s2r_; }
-    const Axiom* op_u2r() const { return op_u2r_; }
+    //@{ cast
+    template<Cast o> const Axiom* op() const { return cast_[size_t(o)]; }
+    template<Cast o> const Def* op(const Def* dst_width, const Def* a, Debug dbg = {}) {
+        auto [width, shape] = infer_width_and_shape(*this, a);
+        return op<o>(dst_width, width, shape, a, dbg);
+    }
+    template<Cast o> const Def* op(const Def* dst_width, const Def* width, const Def* shape, const Def* a, Debug dbg = {}) {
+        return app(app(app(op<o>(), {dst_width, width}), shape), a, dbg);
+    }
     //@}
 
     //@{ lea - load effective address
@@ -143,6 +141,22 @@ public:
     const Def* op_store(const Def* mem, const Def* ptr, const Def* val, Debug dbg = {});
     //@}
 
+    //@{ intrinsics (AKA built-in Cont%inuations)
+    const Axiom* cn_br();
+    const Axiom* cn_match();
+    const Axiom* cn_pe_info();
+    const Axiom* cn_end();
+    const Axiom* cn_amdgpu();
+    const Axiom* cn_cuda();
+    const Axiom* cn_hls();
+    const Axiom* cn_nvvm();
+    const Axiom* cn_opencl();
+    const Axiom* cn_parallel();
+    const Axiom* cn_spawn();
+    const Axiom* cn_syc();
+    const Axiom* cn_vectorize();
+    //@}
+
 private:
     const Axiom* type_i_;
     const Axiom* type_r_;
@@ -155,18 +169,25 @@ private:
     std::array<const Axiom*, Num<ROp >> rop_;
     std::array<const Axiom*, Num<ICmp>> icmp_;
     std::array<const Axiom*, Num<RCmp>> rcmp_;
-    const Axiom* op_scast_;
-    const Axiom* op_ucast_;
-    const Axiom* op_rcast_;
-    const Axiom* op_r2s_;
-    const Axiom* op_r2u_;
-    const Axiom* op_s2r_;
-    const Axiom* op_u2r_;
+    std::array<const Axiom*, Num<Cast>> cast_;
     const Axiom* op_enter_;
     const Axiom* op_lea_;
     const Axiom* op_load_;
     const Axiom* op_slot_;
     const Axiom* op_store_;
+    const Axiom* cn_br_;
+    const Axiom* cn_match_;
+    const Axiom* cn_pe_info_;
+    const Axiom* cn_end_;
+    const Axiom* cn_amdgpu_;
+    const Axiom* cn_cuda_;
+    const Axiom* cn_hls_;
+    const Axiom* cn_nvvm_;
+    const Axiom* cn_opencl_;
+    const Axiom* cn_parallel_;
+    const Axiom* cn_spawn_;
+    const Axiom* cn_syc_;
+    const Axiom* cn_vectorize_;
 };
 
 }
