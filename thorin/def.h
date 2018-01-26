@@ -105,37 +105,18 @@ typedef const Def* (*Normalizer)(World&, const Def*, const Def*, Debug);
 class Def : public RuntimeCast<Def>, public Streamable  {
 public:
     enum class Tag {
-        All,
-        Any,
-        App,
-        Arity,
-        ArityKind,
-        Axiom,
-        Cn,
-        CnType,
+        Any, Match, Variant,
+        App, Lambda, Pi,
+        Arity, ArityKind, MultiArityKind,
+        Cn, Param, CnType,
+        Extract, Insert, Tuple, Pack, Sigma, Variadic,
+        Lit, Axiom,
+        Pick, Intersection,
+        Qualifier, QualifierType,
+        Star, Universe,
         Error,
-        Extract,
-        Index,
-        Intersection,
-        Insert,
-        Lambda,
-        Lit,
-        Match,
-        MultiArityKind,
-        Pack,
-        Param,
-        Pi,
-        Pick,
-        Qualifier,
-        QualifierType,
-        Sigma,
         Singleton,
-        Star,
-        Tuple,
-        Universe,
         Var,
-        Variadic,
-        Variant,
         Num
     };
 
@@ -958,7 +939,7 @@ private:
     friend class World;
 };
 
-/// The @p Param%eter associated to a @p continuation @p Cn.
+/// The @p Param%eter associated to a continuation @p Cn.
 class Param : public Def {
 private:
     Param(const Def* type, Debug dbg)
