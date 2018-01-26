@@ -179,15 +179,15 @@ World::World()
     for (size_t j = 0; j != lit_nat_.size(); ++j)
         lit_nat_[j] = lit_nat(1 << int64_t(j));
 
-    arity_succ_ = axiom(parse(*this, "Π[q: ℚ, a: 𝔸(q)].𝔸(q)"), {"ASucc"}/*{"Sₐ"}*/);
-    index_zero_ = axiom(parse(*this, "Πp:[q: ℚ, 𝔸(q)].ASucc p"), {"I0"}/*{"0ⁱ"}*/);
-    index_succ_ = axiom(parse(*this, "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p"), {"IS"}/*{"Sⁱ"}*/);
+    arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: 𝔸(q)].𝔸(q)");         // {"Sₐ"}
+    index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸(q)].ASucc p");       // {"0ⁱ"}
+    index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p"); // {"Sⁱ"}
 
-    arity_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a"), {"Eₐ"});
+    arity_eliminator_       = axiom("Eₐ",  "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a");
+    arity_eliminator_arity_ = axiom("R𝔸ₐ", "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q");
+    arity_eliminator_multi_ = axiom("R𝕄ₐ", "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q");
+    arity_eliminator_star_  = axiom("R*ₐ",  "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q");
     arity_eliminator_->set_normalizer(normalize_arity_eliminator);
-    arity_eliminator_arity_ = axiom(parse(*this, "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q"), {"R𝔸ₐ"});
-    arity_eliminator_multi_ = axiom(parse(*this, "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q"), {"R𝕄ₐ"});
-    arity_eliminator_star_ = axiom(parse(*this, "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q"), {"R*ₐ"});
     // index_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
 }
 
@@ -265,6 +265,8 @@ const Axiom* World::axiom(const Def* type, Debug dbg) {
     }
     return a;
 }
+
+const Axiom* World::axiom(const char* name, const char* s) { return axiom(parse(*this, s), {name}); }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     if (index->type() == arity(1))

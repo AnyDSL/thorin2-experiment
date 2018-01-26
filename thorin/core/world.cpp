@@ -32,9 +32,9 @@ std::array<const Def*, 2> infer_width_and_shape(World& world, const Def* def) {
 //------------------------------------------------------------------------------
 
 World::World() {
-    type_i_     = axiom(parse(*this, "Πnat. *"), {"int"});
-    type_r_     = axiom(parse(*this, "Πnat. *"), {"real"});
-    type_ptr_   = axiom(parse(*this, "Π[*, nat]. *"), {"ptr"});
+    type_i_     = axiom("int", "Πnat. *");
+    type_r_     = axiom("real", "Πnat. *");
+    type_ptr_   = axiom("ptr", "Π[*, nat]. *");
     type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
     type_frame_ = axiom(star(), {"F"});
 
@@ -66,10 +66,10 @@ World::World() {
     op_enter_ = axiom(parse(*this, "ΠM. [M, F]"), {"enter"});
     op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)"), {"slot"});
 
-    cn_br_      = axiom(parse(*this, "cn[bool, cn[], cn[]]"), {"br"});
-    cn_pe_info_ = axiom(parse(*this, "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T]"), {"pe_info"});
-    cn_match_   = axiom(parse(*this, "cn[T: *, a: 𝔸, [a; [T, cn[]]]]"), {"match"});
-    cn_end_     = axiom(parse(*this, "cn[]"), {"end"});
+    cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
+    cn_pe_info_ = axiom("pe_info", "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T]");
+    cn_match_   = axiom("match",   "cn[T: *, a: 𝔸, [a; [T, cn[]]]]");
+    cn_end_     = axiom("end",     "cn[]");
 
 #define CODE(T, o) op<T::o>()->set_normalizer(normalize_ ## o);
     THORIN_W_OP (CODE)

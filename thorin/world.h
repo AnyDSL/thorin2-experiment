@@ -195,6 +195,7 @@ public:
     const Def* any(const Def* type, const Def* def, Debug dbg = {});
     const Axiom* axiom(const Def* type, Debug dbg = {});
     const Axiom* axiom(const char* s) { return find(axioms_, s); }
+    const Axiom* axiom(const char* name, const char* s);
     const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
