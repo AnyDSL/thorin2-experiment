@@ -92,6 +92,8 @@ const Def* Parser::parse_var_or_binder() {
                 return var;
             } else if (auto a = world_.axiom(id.c_str())) {
                 return a;
+            } else if (auto e = world_.lookup_external(id.c_str())) {
+                return e;
             } else {
                 assertf(false, "unknown identifier '{}'", id);
             }

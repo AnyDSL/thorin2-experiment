@@ -610,6 +610,9 @@ public:
     friend void swap(HashMap& m1, HashMap& m2) { swap(static_cast<Super&>(m1), static_cast<Super&>(m2)); }
 };
 
+template<class V>
+using StrMap = HashMap<const char*, V, StrHash>;
+
 //------------------------------------------------------------------------------
 
 template<class Key, class T, class H>

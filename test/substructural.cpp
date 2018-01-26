@@ -214,7 +214,6 @@ TEST(Substructural, AffineCapabilityRefs) {
     // TODO asserts to typecheck correct and incorrect usage
 }
 
-#if 0
 TEST(Substructural, AffineFractionalCapabilityRefs) {
     World w;
     auto a = w.affine();
@@ -225,6 +224,7 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
 
     w.axiom(w.pi(w.sigma({Star, Star}), Star), {"FRef"});
     auto Write = w.sigma_type(0, {"Wr"});
+    w.make_external(Write);
     // TODO Replace Star by a more precise kind allowing only Wr/Rd
     auto Read = w.axiom(w.pi(Star, Star), {"Rd"});
     w.axiom(w.pi(w.sigma({Star, Star}), w.star(a)), {"FCap"});
@@ -261,4 +261,3 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
     print_value_type(free);
     // TODO asserts to typecheck correct and incorrect usage
 }
-#endif

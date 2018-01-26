@@ -241,9 +241,21 @@ public:
     const Cn*     cn(const Def* domain, Debug dbg = {});
     //@}
 
+    //@{ externals
+    const StrMap<const Def*>& externals() const { return externals_; }
+    void make_external(const Def* def) {
+        auto [i, success] = externals_.emplace(def->name().c_str(), def);
+        assert_unused(success || i->second == def);
+    }
+    const Def* lookup_external(const char* s) const {
+        auto i = externals_.find(s);
+        assert(i != externals_.end());
+        return i->second;
+    }
+    //@}
+
     //@{ misc
     const DefSet& defs() const { return defs_; }
-
     const App* curry(Normalizer normalizer, const Def* callee, const Def* arg, Debug dbg) {
         return raw_app(callee, arg, dbg)->set_normalizer(normalizer)->as<App>();
     }
@@ -360,9 +372,9 @@ protected:
     std::unique_ptr<Zone> root_page_;
     Zone* cur_page_;
     size_t buffer_index_ = 0;
-    HashMap<const char*, const Axiom*, StrHash> axioms_;
-
     DefSet defs_;
+    StrMap<const Axiom*> axioms_;
+    StrMap<const Def*> externals_;
     const Universe* universe_;
     const QualifierType* qualifier_type_;
     const Axiom* arity_succ_;
