@@ -35,17 +35,13 @@ public:
     //@}
 
     //@{ @p Lit%erals
-    const Lit* lit_i( s8 val) { return lit(type_i( 8), {val}); }
-    const Lit* lit_i(s16 val) { return lit(type_i(16), {val}); }
-    const Lit* lit_i(s32 val) { return lit(type_i(32), {val}); }
-    const Lit* lit_i(s64 val) { return lit(type_i(64), {val}); }
-    const Lit* lit_i( u8 val) { return lit(type_i( 8), {val}); }
-    const Lit* lit_i(u16 val) { return lit(type_i(16), {val}); }
-    const Lit* lit_i(u32 val) { return lit(type_i(32), {val}); }
-    const Lit* lit_i(u64 val) { return lit(type_i(64), {val}); }
-    const Lit* lit_r(r16 val) { return lit(type_r(16), {val}); }
-    const Lit* lit_r(r32 val) { return lit(type_r(32), {val}); }
-    const Lit* lit_r(r64 val) { return lit(type_r(64), {val}); }
+#define CODE(T) const Lit* lit_i(T val) { return lit(type_i(sizeof(T)*8), {val}); }
+    THORIN_S_TYPES(CODE)
+    THORIN_U_TYPES(CODE)
+#undef CODE
+#define CODE(T) const Lit* lit_r(T val) { return lit(type_r(sizeof(T)*8), {val}); }
+    THORIN_R_TYPES(CODE)
+#undef CODE
     //@}
 
     //@{ arithmetic operations for WOp
