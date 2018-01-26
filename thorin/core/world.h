@@ -116,15 +116,19 @@ public:
         return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
 
-    //@{ conversions
-    const Axiom* op_scast() const { return op_scast_; }
-    const Axiom* op_ucast() const { return op_ucast_; }
-    const Axiom* op_rcast() const { return op_rcast_; }
-    const Axiom* op_r2s() const { return op_r2s_; }
-    const Axiom* op_r2u() const { return op_r2u_; }
-    const Axiom* op_s2r() const { return op_s2r_; }
-    const Axiom* op_u2r() const { return op_u2r_; }
+#define CODE(C)                                                                                                     \
+    /*@{ C */                                                                                                       \
+    const Axiom* op_ ## C() const { return op_ ## C ## _; }                                                         \
+    const Def* op_ ## C(const Def* dst_width, const Def* a, Debug dbg = {}) {                                       \
+        auto [width, shape] = infer_width_and_shape(*this, a);                                                      \
+        return op_ ## C(dst_width, width, shape, a, dbg);                                                           \
+    }                                                                                                               \
+    const Def* op_ ## C(const Def* dst_width, const Def* width, const Def* shape, const Def* a, Debug dbg = {}) {   \
+        return app(app(app(op_ ## C(), {dst_width, width}), shape), a, dbg);                                        \
+    }                                                                                                               \
     //@}
+    THORIN_CAST(CODE)
+#undef CODE
 
     //@{ lea - load effective address
     const Axiom* op_lea() { return op_lea_; }
@@ -171,13 +175,9 @@ private:
     std::array<const Axiom*, Num<ROp >> rop_;
     std::array<const Axiom*, Num<ICmp>> icmp_;
     std::array<const Axiom*, Num<RCmp>> rcmp_;
-    const Axiom* op_scast_;
-    const Axiom* op_ucast_;
-    const Axiom* op_rcast_;
-    const Axiom* op_r2s_;
-    const Axiom* op_r2u_;
-    const Axiom* op_s2r_;
-    const Axiom* op_u2r_;
+#define CODE(C) const Axiom* op_ ## C ## _;
+    THORIN_CAST(CODE)
+#undef CODE
     const Axiom* op_enter_;
     const Axiom* op_lea_;
     const Axiom* op_load_;

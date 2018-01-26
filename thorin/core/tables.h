@@ -34,6 +34,8 @@ constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int6
 #define THORIN_I_OP(m) m(IOp, ashr) m(IOp, lshr) m(IOp, iand) m(IOp, ior) m(IOp, ixor)
 /// Floating point (real) instructions that take @p RFlags.
 #define THORIN_R_OP(m) m(ROp, radd) m(ROp, rsub) m(ROp, rmul) m(ROp, rdiv) m(ROp, rmod)
+/// All cast instructions that cast from/to real/signed/unsigned.
+#define THORIN_CAST(m) m(scast) m(ucast) m(rcast) m(s2r) m(u2r) m(r2s) m(r2u)
 
 #define THORIN_I_CMP(m)\
     m(ICmp, eq)  /* equal */ \
