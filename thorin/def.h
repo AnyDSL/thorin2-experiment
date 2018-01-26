@@ -18,6 +18,7 @@
 namespace thorin {
 
 class App;
+class Cn;
 class Def;
 class World;
 
@@ -934,6 +935,7 @@ inline bool is_error(const Def* def) { return def->tag() == Def::Tag::Error; }
 
 //------------------------------------------------------------------------------
 
+/// Type type of a continuation @p Cn.
 class CnType : public Def {
 private:
     CnType(const Def* type, const Def* domain, Debug dbg)
@@ -956,6 +958,7 @@ private:
     friend class World;
 };
 
+/// The @p Param%eter associated to a @p continuation @p Cn.
 class Param : public Def {
 private:
     Param(const Def* type, Debug dbg)
@@ -963,15 +966,19 @@ private:
     {}
 
 public:
+    const Cn* cn() const { return cn_; }
     const Def* arity(World&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
     std::ostream& vstream(std::ostream&) const override;
 
+    const Cn* cn_;
+
     friend class World;
 };
 
+/// A continuation value.
 class Cn : public Def {
 private:
     Cn(const Def* type, Debug dbg)
@@ -981,6 +988,7 @@ private:
 public:
     const Def* callee() const { return op(0); }
     const Def* arg() const { return op(1); }
+    const Param* param() const { return param_; }
 
     const Def* arity(World&) const override;
 
@@ -988,6 +996,8 @@ private:
     const Def* rebuild(World&, const Def*, Defs) const override;
     Cn* stub(World& to, const Def* type, Debug dbg) const override;
     std::ostream& vstream(std::ostream&) const override;
+
+    const Param* param_;
 
     friend class World;
 };
