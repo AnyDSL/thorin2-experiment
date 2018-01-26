@@ -115,14 +115,14 @@ const Def* Parser::parse_var_or_binder() {
     return nullptr;
 }
 
-const CnType* Parser::parse_cn_type() {
+const Def* Parser::parse_cn_type() {
     Tracker tracker(this);
     eat(Token::Tag::Cn);
     auto domain = parse_def();
     return world_.cn_type(domain, tracker.location());
 }
 
-const Pi* Parser::parse_pi() {
+const Def* Parser::parse_pi() {
     Tracker tracker(this);
     eat(Token::Tag::Pi);
     auto domain = parse_def();
@@ -220,7 +220,7 @@ const Def* Parser::parse_tuple_or_pack() {
     return world_.tuple(defs, tracker.location());
 }
 
-const Lit* Parser::parse_lit() {
+const Def* Parser::parse_lit() {
     Tracker tracker(this);
 
     eat(Token::Tag::L_Brace);

@@ -1,9 +1,6 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <type_traits>
-#include <unordered_map>
-
 #include "thorin/def.h"
 #include "thorin/world.h"
 #include "thorin/frontend/token.h"
@@ -42,17 +39,17 @@ private:
         uint32_t col;
     };
 
-    const Def*    parse_var_or_binder();
-    const CnType* parse_cn_type();
-    const Pi*     parse_pi();
-    const Def*    parse_sigma_or_variadic();
-    const Def*    parse_lambda();
-    const Def*    parse_qualified_kind();
-    const Def*    parse_tuple_or_pack();
-    const Lit*    parse_lit();
-    const Def*    parse_param();
-    const Def*    parse_extract_or_insert(Tracker, const Def*);
-    const Def*    parse_literal();
+    const Def* parse_var_or_binder();
+    const Def* parse_cn_type();
+    const Def* parse_pi();
+    const Def* parse_sigma_or_variadic();
+    const Def* parse_lambda();
+    const Def* parse_qualified_kind();
+    const Def* parse_tuple_or_pack();
+    const Def* parse_lit();
+    const Def* parse_param();
+    const Def* parse_extract_or_insert(Tracker, const Def*);
+    const Def* parse_literal();
 
     struct Binder {
         std::string name;
