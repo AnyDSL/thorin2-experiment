@@ -158,6 +158,12 @@ public:
     const Axiom* cn_vectorize();
     //@}
 
+    //@{ array operations
+    const Axiom* op_map();
+    const Axiom* op_fold();
+    const Axiom* op_reduce();
+    //@}
+
 private:
     const Axiom* type_i_;
     const Axiom* type_r_;
@@ -178,6 +184,9 @@ private:
     const Axiom* op_store_;
     const Axiom* cn_br_;
     const Axiom* cn_match_;
+    const Axiom* cn_map_;
+    const Axiom* cn_fold_;
+    const Axiom* cn_reduce_;
     const Axiom* cn_pe_info_;
     const Axiom* cn_end_;
     const Axiom* cn_amdgpu_;
