@@ -60,11 +60,11 @@ World::World() {
     cast_[size_t(Cast::r2s  )] = axiom("r2s",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]");
     cast_[size_t(Cast::r2u  )] = axiom("r2u",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]");
 
-    op_lea_   = axiom(parse(*this, "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)"), {"lea"});
-    op_load_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]"), {"load"});
-    op_store_ = axiom(parse(*this, "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M"), {"store"});
-    op_enter_ = axiom(parse(*this, "ΠM. [M, F]"), {"enter"});
-    op_slot_  = axiom(parse(*this, "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)"), {"slot"});
+    op_lea_   = axiom("lea",   "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)");
+    op_load_  = axiom("load",  "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]");
+    op_store_ = axiom("store", "Π[T: *, a: nat]. Π[M, ptr(T, a), T]. M");
+    op_enter_ = axiom("enter", "ΠM. [M, F]");
+    op_slot_  = axiom("slot",  "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)");
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_pe_info_ = axiom("pe_info", "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T]");
