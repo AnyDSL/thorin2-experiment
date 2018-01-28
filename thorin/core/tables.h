@@ -24,7 +24,13 @@ enum class RFlags : int64_t {
 };
 
 constexpr WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int64_t(b)); }
+constexpr WFlags operator&(WFlags a, WFlags b) { return WFlags(int64_t(a) & int64_t(b)); }
+
 constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
+constexpr RFlags operator&(RFlags a, RFlags b) { return RFlags(int64_t(a) & int64_t(b)); }
+
+constexpr bool has_feature(WFlags flags, WFlags feature) { return (flags & feature) == feature; }
+constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & feature) == feature; }
 
 /// Integer instructions that might wrap and, hence, take @p WFlags.
 #define THORIN_W_OP(m) m(WOp, add) m(WOp, sub) m(WOp, mul) m(WOp, shl)

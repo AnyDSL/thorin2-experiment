@@ -87,7 +87,7 @@ static const Def* commute(thorin::World& world, const Def* callee, const Def* a,
     return world.raw_app(callee, {a, b}, dbg);
 }
 
-static const Def* associate_commute(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
+static const Def* reassociate(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
     std::array<const Def*, 2> args{a, b};
     std::array<std::array<const Def*, 2>, 2> aa{{{nullptr, nullptr}, {nullptr, nullptr}}};
     std::array<bool, 2> foldable{false, false};
@@ -183,7 +183,7 @@ const Def* normalize_add(thorin::World& world, const Def* callee, const Def* arg
 
     if (a == b) return w.op<WOp::mul>(world.lit(a->type(), {2_u64}), a, dbg);
 
-    return associate_commute(world, callee, a, b, dbg);
+    return reassociate(world, callee, a, b, dbg);
 }
 
 const Def* normalize_sub(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
@@ -208,7 +208,7 @@ const Def* normalize_mul(thorin::World& world, const Def* callee, const Def* arg
         if (get_u64(la) == 1_u64) return b;
     }
 
-    return associate_commute(world, callee, a, b, dbg);
+    return reassociate(world, callee, a, b, dbg);
 }
 
 const Def* normalize_shl(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
@@ -322,7 +322,7 @@ const Def* normalize_iand(thorin::World& world, const Def* callee, const Def* ar
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_iand>(world, callee, a, b, dbg)) return result;
 
-    return associate_commute(world, callee, a, b, dbg);
+    return reassociate(world, callee, a, b, dbg);
 }
 
 const Def* normalize_ior(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
@@ -331,7 +331,7 @@ const Def* normalize_ior(thorin::World& world, const Def* callee, const Def* arg
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_ior>(world, callee, a, b, dbg)) return result;
 
-    return associate_commute(world, callee, a, b, dbg);
+    return reassociate(world, callee, a, b, dbg);
 }
 
 const Def* normalize_ixor(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
@@ -340,12 +340,14 @@ const Def* normalize_ixor(thorin::World& world, const Def* callee, const Def* ar
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_ixor>(world, callee, a, b, dbg)) return result;
 
-    return associate_commute(world, callee, a, b, dbg);
+    return reassociate(world, callee, a, b, dbg);
 }
 
 /*
  * RArithop
  */
+
+static inline bool is_rzero(int64_t w, Box b) { return (b.get_u64() & ~(1 << (w-1))) == 0; }
 
 template<template<int> class F>
 static const Def* try_rfold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
@@ -374,10 +376,16 @@ const Def* normalize_radd(thorin::World& world, const Def* callee, const Def* ar
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_radd>(world, callee, a, b, dbg)) return result;
 
+    auto f = RFlags(get_nat(app_arg(app_callee(app_callee(callee)))));
+    auto w = get_nat(app_arg(app_callee(callee)));
+
     if (auto la = foldable_to_left(a, b)) {
-        la->box();
+        if (has_feature(f, RFlags::nnan | RFlags::ninf) && is_rzero(w, la->box()))
+            return b;
     }
 
+    if (has_feature(f, RFlags::reassoc))
+        return reassociate(world, callee, a, b, dbg);
     return commute(world, callee, a, b, dbg);
 }
 
@@ -396,10 +404,16 @@ const Def* normalize_rmul(thorin::World& world, const Def* callee, const Def* ar
     auto [a, b] = split(world, arg);
     if (auto result = try_rfold<Fold_rmul>(world, callee, a, b, dbg)) return result;
 
+    auto f = RFlags(get_nat(app_arg(app_callee(app_callee(callee)))));
+    auto w = get_nat(app_arg(app_callee(callee)));
+
     if (auto la = foldable_to_left(a, b)) {
-        la->box();
+        if (has_feature(f, RFlags::nnan | RFlags::ninf) && is_rzero(w, la->box()))
+            return la;
     }
 
+    if (has_feature(f, RFlags::reassoc))
+        return reassociate(world, callee, a, b, dbg);
     return commute(world, callee, a, b, dbg);
 }
 

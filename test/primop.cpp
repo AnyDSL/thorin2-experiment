@@ -166,6 +166,12 @@ TEST(Primop, Normalize) {
 
     // this test is not super stable as the operand ordering is quite random
     ASSERT_EQ(add(add(d, c), add(b, a)), add(b, add(a, add(c, d))));
+
+    auto x = w.axiom(w.type_r(16), {"x"});
+    ASSERT_FALSE(w.op<ROp::rmul>(x, w.lit_r(0._r16))->isa<Lit>());
+    ASSERT_FALSE(w.op<ROp::rmul>(RFlags::nnan, x, w.lit_r(0._r16))->isa<Lit>());
+    ASSERT_EQ(w.op<ROp::rmul>(RFlags::fast, w.lit_r(0._r16), x), w.lit_r(0._r16));
+    ASSERT_EQ(w.op<ROp::rmul>(RFlags::fast, w.lit_r(-0._r16), x), w.lit_r(-0._r16));
 }
 
 TEST(Primop, Ptr) {
