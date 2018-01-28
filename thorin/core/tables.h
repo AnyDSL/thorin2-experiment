@@ -55,7 +55,7 @@ constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & featu
     m(ICmp, slt) /* signed less than */ \
     m(ICmp, sle) /* signed less or equal */
 
-#define THORIN_R_CMP(m)      /* O E G L                                      */ \
+#define THORIN_R_CMP(m)           /* O E G L                                      */ \
                      m(RCmp, t)   /* o o o o - always true                        */ \
                      m(RCmp, ult) /* o o o x - unordered or less than             */ \
                      m(RCmp, ugt) /* o o x o - unordered or greater than          */ \
