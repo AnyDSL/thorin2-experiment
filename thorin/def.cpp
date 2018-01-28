@@ -13,7 +13,6 @@ namespace thorin {
  * helpers
  */
 
-
 DefArray qualifiers(World& world, Defs defs) {
     DefArray result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)

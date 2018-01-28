@@ -962,12 +962,13 @@ private:
 class Cn : public Def {
 private:
     Cn(const Def* type, Debug dbg)
-        : Def(Tag::Cn, type, 2, THORIN_OPS_PTR, dbg)
+        : Def(Tag::Cn, type, 3, THORIN_OPS_PTR, dbg)
     {}
 
 public:
-    const Def* callee() const { return op(0); }
-    const Def* arg() const { return op(1); }
+    const Def* filter() const { return op(0); }
+    const Def* callee() const { return op(1); }
+    const Def* arg() const { return op(2); }
     const CnType* type() const { return type()->as<CnType>(); }
     const Param* param() const { return param_; }
 
