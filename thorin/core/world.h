@@ -40,7 +40,7 @@ public:
         return lit(type_i(sizeof(I)*8), {val});
     }
     template<class R> const Lit* lit_r(R val) {
-        static_assert(std::is_floating_point<R>());
+        static_assert(std::is_floating_point<R>() || std::is_same<R, r16>());
         return lit(type_r(sizeof(R)*8), {val});
     }
     //@}
