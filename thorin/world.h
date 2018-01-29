@@ -255,8 +255,10 @@ public:
 
     //@{ misc
     const DefSet& defs() const { return defs_; }
-    const App* curry(Normalizer normalizer, const Def* callee, const Def* arg, Debug dbg) {
-        return raw_app(callee, arg, dbg)->set_normalizer(normalizer)->as<App>();
+    const App* curry_normalizer(const Def* callee, const Def* arg, Debug dbg) {
+        if (auto pi = callee->type()->isa<Pi>(); pi->body()->isa<Pi>())
+            return raw_app(callee, arg, dbg)->set_normalizer(callee->normalizer())->as<App>();
+        return nullptr;
     }
     //@}
 

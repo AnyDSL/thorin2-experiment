@@ -12,10 +12,11 @@ class World;
 namespace core {
 
 #define CODE(T, o) const Def* normalize_ ## o(thorin::World& , const Def*, const Def*, Debug);
-    THORIN_W_OP (CODE)
-    THORIN_M_OP (CODE)
-    THORIN_I_OP (CODE)
-    THORIN_R_OP (CODE)
+    THORIN_W_OP(CODE)
+    THORIN_M_OP(CODE)
+    THORIN_I_OP(CODE)
+    THORIN_R_OP(CODE)
+    THORIN_CAST(CODE)
 #undef CODE
 
 template<ICmp op> const Def* normalize_ICmp(thorin::World&, const Def*, const Def*, Debug);

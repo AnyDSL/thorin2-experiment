@@ -146,8 +146,6 @@ TEST(Primop, Normalize) {
     World w;
     auto a = w.axiom(w.type_i(8), {"a"});
     auto b = w.axiom(w.type_i(8), {"b"});
-    auto c = w.axiom(w.type_i(8), {"c"});
-    auto d = w.axiom(w.type_i(8), {"d"});
     auto l0 = w.lit_i(0_u8), l2 = w.lit_i(2_u8), l3 = w.lit_i(3_u8), l5 = w.lit_i(5_u8);
 
     auto add = [&] (auto a, auto b) { return w.op<WOp::add>(a, b); };

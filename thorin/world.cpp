@@ -4,7 +4,6 @@
 #include "thorin/world.h"
 #include "thorin/reduce.h"
 #include "thorin/frontend/parser.h"
-#include "thorin/core/normalize.h"
 
 namespace thorin {
 
@@ -131,8 +130,7 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
 }
 
 const Def* normalize_arity_eliminator(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
-    if (callee->type()->as<Pi>()->body()->isa<Pi>())
-        return world.curry(normalize_arity_eliminator, callee, arg, dbg);
+    if (auto result = world.curry_normalizer(callee, arg, dbg)) return result;
     const Def* pred = nullptr;
     if (auto arity = arg->isa<Arity>()) {
         auto arity_val = arity->value();
