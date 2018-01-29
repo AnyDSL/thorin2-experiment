@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "thorin/world.h"
+#include "thorin/frontend/parser.h"
 
 using namespace thorin;
 
@@ -140,8 +141,21 @@ TEST(Nominal, Module) {
     L->dump();
     w.app(L, N)->dump();
     auto M = w.lambda(S, L);
-    /*auto LNN = */w.app(w.app(M, N), N);
-    /*auto LNB = */w.app(w.app(M, N), B);
-    /*auto LBN = */w.app(w.app(M, B), N);
-    /*auto LBB = */w.app(w.app(M, B), B);
+    auto LNN = w.app(w.app(M, N), N);
+    auto LBN = w.app(w.app(M, N), B);
+    auto LNB = w.app(w.app(M, B), N);
+    auto LBB = w.app(w.app(M, B), B);
+
+    auto id = parse(w, "λT:*. λx:T. x");
+
+    w.extract(w.axiom(LNN, {"lnn"}), 0_u64)->type()->dump();
+    w.extract(w.axiom(LNB, {"lnb"}), 0_u64)->type()->dump();
+    w.extract(w.axiom(LBN, {"lbn"}), 0_u64)->type()->dump();
+    w.extract(w.axiom(LBB, {"lbb"}), 0_u64)->type()->dump();
+    w.app(w.app(id, w.sigma({N, N})), w.extract(w.axiom(LNN, {"lnn'"}), 0_u64));
+    w.app(w.app(id, w.sigma({N, B})), w.extract(w.axiom(LNB, {"lnb'"}), 0_u64));
+    w.app(w.app(id, w.sigma({B, N})), w.extract(w.axiom(LBN, {"lbn'"}), 0_u64));
+    w.app(w.app(id, w.sigma({B, B})), w.extract(w.axiom(LBB, {"lbb'"}), 0_u64));
+
+    ASSERT_EQ(w.extract(w.axiom(LNN), 0_u64)->type(), w.sigma({N, N}));
 }

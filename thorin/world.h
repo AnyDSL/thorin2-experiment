@@ -260,6 +260,7 @@ public:
             return raw_app(callee, arg, dbg)->set_normalizer(callee->normalizer())->as<App>();
         return nullptr;
     }
+    const Def* destructing_type(const Def*);
     //@}
 
     friend void swap(World& w1, World& w2) {
@@ -311,15 +312,15 @@ protected:
     const T* unify(size_t num_ops, Args&&... args) {
         auto def = alloc<T>(num_ops, args...);
         assert(!def->is_nominal());
-        auto p = defs_.emplace(def);
-        if (p.second) {
+        auto [i, success] = defs_.emplace(def);
+        if (success) {
             def->finalize(*this);
             return def;
         }
 
         --Def::gid_counter_;
         dealloc(def);
-        return static_cast<const T*>(*p.first);
+        return static_cast<const T*>(*i);
     }
 
     template<class T, class... Args>
@@ -369,7 +370,6 @@ protected:
             buffer_index_-= num_bytes;
         assert(buffer_index_ % alignof(T) == 0);
     }
-
     std::unique_ptr<Zone> root_page_;
     Zone* cur_page_;
     size_t buffer_index_ = 0;

@@ -193,16 +193,8 @@ public:
     bool is_type() const { return sort() == Sort::Type; }
     bool is_kind() const { return sort() == Sort::Kind; }
     bool is_universe() const { return sort() == Sort::Universe; }
-    bool is_value() const {
-        switch (sort()) {
-            case Sort::Universe:
-            case Sort::Kind: return false;
-            case Sort::Type: return type()->has_values();
-            case Sort::Term: return type()->has_values();
-        }
-        THORIN_UNREACHABLE;
-    }
-    virtual bool has_values() const { return false; }
+    bool is_value(World&) const;
+    virtual bool has_values(World&) const { return false; }
     bool is_qualifier() const { return type() && type()->tag() == Tag::QualifierType; }
     //@}
 
@@ -249,7 +241,7 @@ public:
     virtual bool assignable(World&, const Def* def) const { return this == def->type(); }
     bool subtype_of(World& world, const Def* def) const {
         auto s = sort();
-        return (!def->is_value() && s >= Sort::Type && (this == def || (s == def->sort() && vsubtype_of(world, def))));
+        return (!def->is_value(world) && s >= Sort::Type && (this == def || (s == def->sort() && vsubtype_of(world, def))));
     }
 
     std::ostream& qualifier_stream(std::ostream& os) const;
@@ -401,7 +393,7 @@ public:
     const ArityKind* type() const { return Def::type()->as<ArityKind>(); }
     u64 value() const { return arity_; }
     const Def* arity(World&) const override;
-    bool has_values() const override;
+    bool has_values(World&) const override;
 
 private:
     uint64_t vhash() const override;
@@ -429,7 +421,7 @@ public:
 
     const Def* arity(World&) const override;
     bool assignable(World&, const Def* def) const override;
-    bool has_values() const override;
+    bool has_values(World&) const override;
     void typecheck_vars(World&, DefVector&, EnvDefSet& checked) const override;
     const Def* kind_qualifier(World&) const override;
 
@@ -519,7 +511,7 @@ private:
 public:
     const Def* arity(World&) const override;
     const Def* kind_qualifier(World&) const override;
-    bool has_values() const override;
+    bool has_values(World&) const override;
     bool assignable(World&, const Def* def) const override;
     bool is_unit() const { return ops().empty(); }
     bool is_dependent() const;
@@ -548,7 +540,7 @@ public:
     const Def* body() const { return op(1); }
     const Def* kind_qualifier(World&) const override;
     bool is_homogeneous() const { return !body()->free_vars().test(0); };
-    bool has_values() const override;
+    bool has_values(World&) const override;
     bool assignable(World&, const Def* def) const override;
     void typecheck_vars(World&, DefVector&, EnvDefSet& checked) const override;
 
@@ -638,7 +630,7 @@ private:
 
 public:
     const Def* kind_qualifier(World&) const override;
-    bool has_values() const override;
+    bool has_values(World&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -676,7 +668,7 @@ public:
     const Def* arity(World&) const override;
     Variant* set(World& world, size_t i, const Def* def) { return Def::set(world, i, def)->as<Variant>(); };
     const Def* kind_qualifier(World&) const override;
-    bool has_values() const override;
+    bool has_values(World&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -741,7 +733,7 @@ private:
 public:
     const Def* arity(World&) const override;
     const Def* kind_qualifier(World&) const override;
-    bool has_values() const override;
+    bool has_values(World&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -773,7 +765,7 @@ private:
 
 public:
     const Def* arity(World&) const override;
-    bool has_values() const override;
+    bool has_values(World&) const override;
     const Def* kind_qualifier(World&) const override;
 
 private:
@@ -855,7 +847,7 @@ private:
 public:
     const Def* arity(World&) const override;
     Axiom* stub(World&, const Def*, Debug) const override;
-    bool has_values() const override;
+    bool has_values(World&) const override;
 
 private:
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -876,7 +868,7 @@ public:
     const Def* arity(World&) const override;
     Box box() const { return box_; }
 
-    bool has_values() const override;
+    bool has_values(World&) const override;
 
 private:
     uint64_t vhash() const override;
@@ -944,7 +936,7 @@ public:
 
     const Def* arity(World&) const override;
     bool assignable(World&, const Def* def) const override;
-    bool has_values() const override;
+    bool has_values(World&) const override;
     const Def* kind_qualifier(World&) const override;
 
 private:

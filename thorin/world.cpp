@@ -36,7 +36,7 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
     iter++;
     for (size_t i = 1, e = defs.distance(); i != e; ++i, ++iter) {
         auto def = *iter;
-        assertf(!def->is_value(), "can't have value {} as operand of bound operator", def);
+        assertf(!def->is_value(*this), "can't have value {} as operand of bound operator", def);
 
         if (def->qualifier(*this)->free_vars().any_range(0, i)) {
             // qualifier is dependent within this type/kind, go to top directly
@@ -129,7 +129,23 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
     return unify_fn(set);
 }
 
-const Def* normalize_arity_eliminator(thorin::World& world, const Def* callee, const Def* arg, Debug dbg) {
+const Def* World::destructing_type(const Def* def) {
+    if (auto app = def->type()->isa<App>()) {
+        if (auto cache = app->cache_) {
+            assert(app->callee()->is_nominal());
+            return cache;
+        }
+        if (auto lambda = app->callee()->isa<Lambda>(); lambda != nullptr && lambda->is_nominal()) {
+            auto res = thorin::reduce(*this, lambda->body(), {app->arg()});
+            app->cache_ = res;
+            return res;
+        }
+    }
+
+    return def->type();
+}
+
+const Def* normalize_arity_eliminator(World& world, const Def* callee, const Def* arg, Debug dbg) {
     if (auto result = world.curry_normalizer(callee, arg, dbg)) return result;
     const Def* pred = nullptr;
     if (auto arity = arg->isa<Arity>()) {
@@ -270,9 +286,9 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     if (index->type() == arity(1))
         return def;
     // need to allow the above, as types are also a 1-tuple of a type
-    assertf(def->is_value(), "can only build extracts of values, {} is not a value", def);
-    auto arity = def->arity(*this);
-    auto type = def->type();
+    //assertf(def->is_value(), "can only build extracts of values, {} is not a value", def);
+    auto type = destructing_type(def);
+    auto arity = type->arity(*this);
     assertf(arity, "arity unknown for {} of type {}, can only extract when arity is known", def, type);
     if (arity->assignable(*this, index)) {
         if (auto idx = index->isa<Lit>()) {
@@ -416,7 +432,7 @@ const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
 }
 
 const Pi* World::pi(const Def* domain, const Def* body, const Def* q, Debug dbg) {
-    assertf(!body->is_value(), "body {} : {} of function type cannot be a value", body, body->type());
+    assertf(!body->is_value(*this), "body {} : {} of function type cannot be a value", body, body->type());
     auto type = type_lub({domain, body}, q, false);
     return unify<Pi>(2, type, domain, body, dbg);
 }

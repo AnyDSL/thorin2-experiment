@@ -74,7 +74,7 @@ Def::Sort Def::sort() const {
 }
 
 bool Def::maybe_affine(World& world) const {
-    if (!is_value())
+    if (!is_value(world))
         return false;
     if (type()->isa<QualifierType>())
         return false;
@@ -135,6 +135,16 @@ void Def::unregister_use(size_t i) const {
     assert(!def->uses_.contains(Use(this, i)));
 }
 
+bool Def::is_value(World& world) const {
+    switch (sort()) {
+        case Sort::Universe:
+        case Sort::Kind: return false;
+        case Sort::Type: return world.destructing_type(this)->has_values(world);
+        case Sort::Term: return world.destructing_type(this)->has_values(world);
+    }
+    THORIN_UNREACHABLE;
+}
+
 std::string Def::unique_name() const { return name() + '_' + std::to_string(gid()); }
 
 //------------------------------------------------------------------------------
@@ -187,20 +197,20 @@ Variant::Variant(const Def* type, const SortedDefSet& ops, Debug dbg)
  * has_values
  */
 
-bool Arity::has_values() const { return true; }
-bool Axiom::has_values() const { return sort() == Sort::Type && !type()->has_values(); }
-bool CnType::has_values() const { return true; }
-bool Intersection::has_values() const {
-    return std::all_of(ops().begin(), ops().end(), [](auto op){ return op->has_values(); });
+bool Arity::has_values(World&) const { return true; }
+bool Axiom::has_values(World& w) const { return sort() == Sort::Type && !type()->has_values(w); }
+bool CnType::has_values(World&) const { return true; }
+bool Intersection::has_values(World& w) const {
+    return std::all_of(ops().begin(), ops().end(), [&](auto op){ return op->has_values(w); });
 }
-bool Lit::has_values() const { return sort() == Sort::Type && !type()->has_values(); }
-bool Pi::has_values() const { return true; }
-bool QualifierType::has_values() const { return true; }
-bool Sigma::has_values() const { return true; }
-bool Singleton::has_values() const { return op(0)->is_value(); }
-bool Variadic::has_values() const { return true; }
-bool Variant::has_values() const {
-    return std::any_of(ops().begin(), ops().end(), [](auto op){ return op->has_values(); });
+bool Lit::has_values(World& w) const { return sort() == Sort::Type && !type()->has_values(w); }
+bool Pi::has_values(World&) const { return true; }
+bool QualifierType::has_values(World&) const { return true; }
+bool Sigma::has_values(World&) const { return true; }
+bool Singleton::has_values(World& w) const { return op(0)->is_value(w); }
+bool Variadic::has_values(World&) const { return true; }
+bool Variant::has_values(World& w) const {
+    return std::any_of(ops().begin(), ops().end(), [&](auto op){ return op->has_values(w); });
 }
 
 //------------------------------------------------------------------------------
@@ -254,7 +264,7 @@ const Def* Sigma::kind_qualifier(World& world) const {
         return unlimited;
     auto qualifiers = DefArray(num_ops(), [&](auto i) {
        // XXX qualifiers should/must not be dependent within a sigma, as we couldn't express the qualifier of the sigma itself then
-       return this->op(i)->has_values() ? this->op(i)->qualifier(world)->shift_free_vars(world, -i) : unlimited; });
+       return this->op(i)->has_values(world) ? this->op(i)->qualifier(world)->shift_free_vars(world, -i) : unlimited; });
     return world.variant(world.qualifier_type(), qualifiers);
 }
 
@@ -267,7 +277,7 @@ const Def* Star::kind_qualifier(World&) const { return op(0); }
 
 const Def* Variadic::kind_qualifier(World& world) const {
     assert(is_kind());
-    return body()->has_values() ? body()->qualifier(world)->shift_free_vars(world, 1) : world.unlimited();
+    return body()->has_values(world) ? body()->qualifier(world)->shift_free_vars(world, 1) : world.unlimited();
 }
 
 const Def* Variant::kind_qualifier(World& world) const {
@@ -285,20 +295,20 @@ const Def* Variant::kind_qualifier(World& world) const {
 // TODO assumption: every axiom that is not a value has arity 1
 // TODO assumption: all callees of non-folded apps that yield a type are (originally) axioms
 
-const Def* Def           ::arity(World& w) const { return is_value() ? type()->arity(w) : nullptr; }
+const Def* Def           ::arity(World& w) const { return is_value(w) ? w.destructing_type(this)->arity(w) : nullptr; }
 const Def* Arity         ::arity(World& w) const { return w.arity(1); }
 const Def* ArityKind     ::arity(World& w) const { return w.arity(1); }
 // const Def* All::arity(World& w) const { return TODO; }
 // const Def* Any::arity(World& w) const { return TODO; }
-const Def* App           ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
-const Def* Axiom         ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
+const Def* App           ::arity(World& w) const { return is_value(w) ? w.destructing_type(this)->arity(w) : w.arity(1); }
+const Def* Axiom         ::arity(World& w) const { return is_value(w) ? w.destructing_type(this)->arity(w) : w.arity(1); }
 const Def* Cn            ::arity(World& w) const { return w.arity(1); }
 const Def* CnType        ::arity(World& w) const { return w.arity(1); }
-const Def* Error         ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
+const Def* Error         ::arity(World& w) const { return is_value(w) ? w.destructing_type(this)->arity(w) : w.arity(1); }
 // const Def* Intersection::arity(World& world) const { return TODO; }
-const Def* Lit           ::arity(World& w) const { return is_value() ? type()->arity(w) : w.arity(1); }
+const Def* Lit           ::arity(World& w) const { return is_value(w) ? w.destructing_type(this)->arity(w) : w.arity(1); }
 const Def* MultiArityKind::arity(World& w) const { return w.arity(1); }
-const Def* Param         ::arity(World& w) const { return type()->arity(w); }
+const Def* Param         ::arity(World& w) const { return w.destructing_type(this)->arity(w); }
 const Def* Pi            ::arity(World& w) const { return w.arity(1); }
 const Def* Qualifier     ::arity(World& w) const { return w.arity(1); }
 const Def* QualifierType ::arity(World& w) const { return w.arity(1); }
@@ -306,7 +316,7 @@ const Def* Sigma         ::arity(World& w) const { return w.arity(num_ops()); }
 const Def* Singleton     ::arity(World& w) const { return op(0)->arity(w); }
 const Def* Star          ::arity(World& w) const { return w.arity(1); }
 const Def* Universe      ::arity(World&  ) const { THORIN_UNREACHABLE; }
-const Def* Var           ::arity(World& w) const { return is_value() ? type()->arity(w) : nullptr; }
+const Def* Var           ::arity(World& w) const { return is_value(w) ? w.destructing_type(this)->arity(w) : nullptr; }
 const Def* Variant       ::arity(World& w) const { return w.variant(DefArray(num_ops(), [&](auto i) { return op(i)->arity(w); })); }
 
 //------------------------------------------------------------------------------
@@ -481,16 +491,17 @@ bool Pi::vsubtype_of(World& world, const Def* def) const {
 // bool Variadic::vsubtype_of(World& world, const Def* def) const {
 // }
 
-bool CnType        ::assignable(World& world, const Def* def) const { return def->type()->subtype_of(world, this); }
-bool MultiArityKind::assignable(World& world, const Def* def) const { return def->type()->subtype_of(world, this); }
-bool Pi            ::assignable(World& world, const Def* def) const { return def->type()->subtype_of(world, this); }
+bool CnType        ::assignable(World& world, const Def* def) const { return world.destructing_type(def)->subtype_of(world, this); }
+bool MultiArityKind::assignable(World& world, const Def* def) const { return world.destructing_type(def)->subtype_of(world, this); }
+bool Pi            ::assignable(World& world, const Def* def) const { return world.destructing_type(def)->subtype_of(world, this); }
 
 bool Sigma::assignable(World& world, const Def* def) const {
-    if (def->type() == this)
+    auto t = world.destructing_type(def);
+    if (t == this)
         return true;
-    if (is_nominal() && num_ops() == 1 && def->type() == op(0))
+    if (is_nominal() && num_ops() == 1 && t == op(0))
         return true;
-    if (!def->type()->type()->subtype_of(world, type()))
+    if (!t->type()->subtype_of(world, type()))
         return false;
     Defs defs = def->ops(); // only correct when def is a tuple
     if (auto pack = def->isa<Pack>()) {
@@ -518,7 +529,8 @@ bool Star::assignable(World& world, const Def* def) const {
 }
 
 bool Variadic::assignable(World& world, const Def* def) const {
-    if (def->type() == this)
+    auto t = world.destructing_type(def);
+    if (t == this)
         return true;
     if (auto pack = def->isa<Pack>()) {
         if (arity(world) != pack->arity(world))
@@ -570,9 +582,8 @@ void dependent_check(World& world, Defs defs, Environment& types, EnvDefSet& che
 }
 
 bool is_nominal_typechecked(const Def* def, Environment& types, EnvDefSet& checked) {
-    if (def->is_nominal()) {
+    if (def->is_nominal())
         return checked.emplace(DefArray(types), def).second;
-    }
     return false;
 }
 
@@ -635,8 +646,10 @@ void Variadic::typecheck_vars(World& world, Environment& types, EnvDefSet& check
  */
 
 std::ostream& Def::qualifier_stream(std::ostream& os) const {
-    if (!has_values() || tag() == Tag::QualifierType)
-        return os;
+    // TODO
+    return os;
+    //if (!has_values() || tag() == Tag::QualifierType)
+        //return os;
     if (type()->is_kind()) {
         auto q = type()->op(0)->isa<Qualifier>();
         if(q->qualifier_tag() != QualifierTag::u)
