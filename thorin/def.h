@@ -461,6 +461,7 @@ public:
     const Def* apply(World&, const Def*) const;
     const Pi* type() const { return Def::type()->as<Pi>(); }
     void typecheck_vars(World&, DefVector&, EnvDefSet& checked) const override;
+    Lambda* stub(World&, const Def*, Debug) const override;
 
 private:
     size_t shift(size_t) const override;
