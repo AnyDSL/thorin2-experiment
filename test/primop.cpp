@@ -151,6 +151,7 @@ TEST(Primop, Normalize) {
     auto add = [&] (auto a, auto b) { return w.op<WOp::add>(a, b); };
     auto sub = [&] (auto a, auto b) { return w.op<WOp::sub>(a, b); };
     auto mul = [&] (auto a, auto b) { return w.op<WOp::mul>(a, b); };
+
     ASSERT_EQ(add(a, l0), a);
     ASSERT_EQ(add(l0, a), a);
     ASSERT_EQ(add(a, a), mul(a, l2));

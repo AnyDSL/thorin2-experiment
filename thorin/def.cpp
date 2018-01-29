@@ -114,8 +114,6 @@ void Def::finalize(World& world) {
 #ifndef NDEBUG
     if (free_vars().none())
         typecheck(world);
-    else
-        assertf(!is_nominal(), "nominal expression {} may not have free variables", this);
 #endif
 }
 
@@ -420,8 +418,9 @@ const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { re
 
 Axiom*   Axiom  ::stub(World& to, const Def* type, Debug dbg) const { return const_cast<Axiom*>(to.axiom(type, dbg)); }
 Cn*      Cn     ::stub(World&   , const Def*     , Debug    ) const { return /*TODO*/ nullptr; }
-Sigma*   Sigma  ::stub(World& to, const Def* type, Debug dbg) const { return to.sigma(type, num_ops(), dbg); }
-Variant* Variant::stub(World& to, const Def* type, Debug dbg) const { return to.variant(type, num_ops(), dbg); }
+Lambda*  Lambda ::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.lambda (type->as<Pi>(),  dbg); }
+Sigma*   Sigma  ::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.sigma  (type, num_ops(), dbg); }
+Variant* Variant::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.variant(type, num_ops(), dbg); }
 
 //------------------------------------------------------------------------------
 

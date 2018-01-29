@@ -37,6 +37,7 @@ private:
     DefArray args_;
     int64_t shift_;
     thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
+    DefMap<const Def*> nominals_;
 };
 
 const Def* Reducer::reduce(const Def* old_def, size_t offset) {
@@ -48,10 +49,8 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
     if (auto new_def = find(map_, {old_def, offset}))
         return new_def;
 
-    if (old_def->is_nominal()) {
-        assert(old_def->free_vars().none());
-        return old_def;
-    }
+    if (auto new_def = find(nominals_, old_def))
+        return new_def;
 
     auto new_type = reduce(old_def->type(), offset);
 
@@ -78,10 +77,21 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
         return world().var(var->type(), var->index() - total_shift, var->debug());
     }
 
+    Def* new_nominal = nullptr;
+    if (old_def->is_nominal()) {
+        new_nominal = old_def->stub(world(), new_type);
+        nominals_.emplace(old_def, new_nominal);
+    }
+
     // rebuild all other defs
     DefArray new_ops(old_def->num_ops());
-    for (size_t i = 0, e = old_def->num_ops(); i != e; ++i) {
+    for (size_t i = 0, e = old_def->num_ops(); i != e; ++i)
         new_ops[i] = reduce(old_def->op(i), offset + old_def->shift(i));
+
+    if (new_nominal != nullptr) {
+        for (size_t i = 0, e = new_ops.size(); i != e; ++i)
+            new_nominal->set(world(), i, new_ops[i]);
+        return new_nominal;
     }
 
     auto new_def = old_def->rebuild(world(), new_type, new_ops);
