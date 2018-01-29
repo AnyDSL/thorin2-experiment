@@ -373,7 +373,7 @@ const Def* normalize_radd(thorin::World& world, const Def* callee, const Def* ar
     auto w = get_nat(app_arg(app_callee(callee)));
 
     if (auto la = foldable_to_left(a, b)) {
-        if (has_feature(f, RFlags::nnan | RFlags::ninf) && is_rzero(w, la->box()))
+        if (has_feature(f, RFlags::nnan | RFlags::ninf | RFlags::nsz) && is_rzero(w, la->box()))
             return b;
     }
 
@@ -401,7 +401,7 @@ const Def* normalize_rmul(thorin::World& world, const Def* callee, const Def* ar
     auto w = get_nat(app_arg(app_callee(callee)));
 
     if (auto la = foldable_to_left(a, b)) {
-        if (has_feature(f, RFlags::nnan | RFlags::ninf) && is_rzero(w, la->box()))
+        if (has_feature(f, RFlags::nnan | RFlags::ninf | RFlags::nsz) && is_rzero(w, la->box()))
             return la;
     }
 
