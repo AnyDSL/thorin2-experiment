@@ -109,13 +109,6 @@ static const Def* reassociate(thorin::World& world, const Def* callee, const Def
             return world.app(callee, {aa[i][0], world.app(callee, {args[1-i], aa[i][1]}, dbg)}, dbg);
     }
 
-    if (aa[0][0] && aa[1][0]) {
-        // TODO this could be even cooler by sorting this sort of stuff into a reduce operation
-        auto x = world.app(callee, {aa[0][0], aa[0][1]}, dbg);
-        auto y = world.app(callee, {x,        aa[1][0]}, dbg);
-        return   world.app(callee, {y,        aa[1][1]}, dbg);
-    }
-
     return commute(world, callee, a, b, dbg);
 }
 
