@@ -165,7 +165,7 @@ const Def* normalize_add(thorin::World& world, const Def* callee, const Def* arg
     if (auto result = try_wfold<Fold_add>(world, callee, a, b, dbg)) return result;
 
     if (auto la = foldable_to_left(a, b)) {
-        if (get_u64(la) == 0_u64) return b;
+        if (is_zero(la)) return b;
     }
 
     if (a == b) return w.op<WOp::mul>(world.lit(a->type(), {2_u64}), a, dbg);
@@ -191,8 +191,8 @@ const Def* normalize_mul(thorin::World& world, const Def* callee, const Def* arg
     if (auto result = try_wfold<Fold_mul>(world, callee, a, b, dbg)) return result;
 
     if (auto la = foldable_to_left(a, b)) {
-        if (get_u64(la) == 0_u64) return la;
-        if (get_u64(la) == 1_u64) return b;
+        if (is_zero(la)) return la;
+        if (is_one (la)) return b;
     }
 
     return reassociate(world, callee, a, b, dbg);
@@ -310,6 +310,11 @@ const Def* normalize_iand(thorin::World& world, const Def* callee, const Def* ar
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_iand>(world, callee, a, b, dbg)) return result;
 
+    if (auto la = foldable_to_left(a, b)) {
+        if (is_zero  (la)) return la;
+        if (is_allset(la)) return  b;
+    }
+
     return reassociate(world, callee, a, b, dbg);
 }
 
@@ -318,6 +323,11 @@ const Def* normalize_ior(thorin::World& world, const Def* callee, const Def* arg
 
     auto [a, b] = split(world, arg);
     if (auto result = try_ifold<Fold_ior>(world, callee, a, b, dbg)) return result;
+
+    if (auto la = foldable_to_left(a, b)) {
+        if (is_zero  (la)) return  b;
+        if (is_allset(la)) return la;
+    }
 
     return reassociate(world, callee, a, b, dbg);
 }
@@ -334,8 +344,6 @@ const Def* normalize_ixor(thorin::World& world, const Def* callee, const Def* ar
 /*
  * RArithop
  */
-
-static inline bool is_rzero(int64_t w, Box b) { return (b.get_u64() & ~(1 << (w-1))) == 0; }
 
 template<template<int> class F>
 static const Def* try_rfold(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {
@@ -368,7 +376,7 @@ const Def* normalize_radd(thorin::World& world, const Def* callee, const Def* ar
     auto w = get_nat(app_arg(app_callee(callee)));
 
     if (auto la = foldable_to_left(a, b)) {
-        if (has_feature(f, RFlags::nnan | RFlags::ninf | RFlags::nsz) && is_rzero(w, la->box()))
+        if (is_rzero(w, la))
             return b;
     }
 
@@ -396,7 +404,7 @@ const Def* normalize_rmul(thorin::World& world, const Def* callee, const Def* ar
     auto w = get_nat(app_arg(app_callee(callee)));
 
     if (auto la = foldable_to_left(a, b)) {
-        if (has_feature(f, RFlags::nnan | RFlags::ninf | RFlags::nsz) && is_rzero(w, la->box()))
+        if (has_feature(f, RFlags::finite | RFlags::nsz) && is_rzero(w, la))
             return la;
     }
 

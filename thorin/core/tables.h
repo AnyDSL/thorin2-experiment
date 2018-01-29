@@ -20,6 +20,8 @@ enum class RFlags : int64_t {
     contract = 1 << 4, ///< Allow floating-point contraction (e.g. fusing a multiply followed by an addition into a fused multiply-and-add).
     afn      = 1 << 5, ///< Approximate functions - Allow substitution of approximate calculations for functions (sin, log, sqrt, etc). See floating-point intrinsic definitions for places where this can apply to LLVM’s intrinsic math functions.
     reassoc  = 1 << 6, ///< Allow reassociation transformations for floating-point instructions. This may dramatically change results in floating point.
+    finite   = nnan | ninf,
+    unsafe   = nsz | arcp | reassoc,
     fast = nnan | ninf | nsz | arcp | contract | afn | reassoc,
 };
 

@@ -894,6 +894,22 @@ THORIN_TYPES(CODE)
 inline s64 get_nat(const Def* def) { return get_s64(def); }
 inline u64 get_index(const Def* def) { return get_u64(def); }
 
+inline bool is_zero  (const Lit* lit) { return lit->box().get_u64() == 0_u64; }
+inline bool is_one   (const Lit* lit) { return lit->box().get_u64() == 1_u64; }
+inline bool is_allset(const Lit* lit) { return lit->box().get_u64() == u64(-1); }
+
+/// Is @p lit an IEEE-754 zero? yields also true for negative zero.
+inline bool is_rzero(int64_t w, const Lit* lit) { return (lit->box().get_u64() & ~(1 << (w-1))) == 0; }
+
+inline bool is_one  (int64_t w, const Lit* lit) {
+    switch (w) {
+        case 16: return lit->box().get_r16() == 1._r16;
+        case 32: return lit->box().get_r32() == 1._r32;
+        case 64: return lit->box().get_r64() == 1._r64;
+        default: THORIN_UNREACHABLE;
+    }
+}
+
 class Error : public Def {
 private:
     // TODO additional error message with more precise information
