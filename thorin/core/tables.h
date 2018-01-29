@@ -43,17 +43,23 @@ constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & featu
 /// All cast instructions that cast from/to real/signed/unsigned.
 #define THORIN_CAST(m) m(Cast, scast) m(Cast, ucast) m(Cast, rcast) m(Cast, s2r) m(Cast, u2r) m(Cast, r2s) m(Cast, r2u)
 
-#define THORIN_I_CMP(m)\
-    m(ICmp, eq)  /* equal */ \
-    m(ICmp, ne)  /* not equal */ \
-    m(ICmp, ugt) /* unsigned greater than */ \
-    m(ICmp, uge) /* unsigned greater or equal */ \
-    m(ICmp, ult) /* unsigned less than */ \
-    m(ICmp, ule) /* unsigned less or equal */ \
-    m(ICmp, sgt) /* signed greater than */ \
-    m(ICmp, sge) /* signed greater or equal */ \
-    m(ICmp, slt) /* signed less than */ \
-    m(ICmp, sle) /* signed less or equal */
+#define THORIN_I_CMP(m)           /* E S U G                                      */ \
+                     m(ICmp, t)   /* o o o o - always true                        */ \
+                     m(ICmp, sugt)/* o o o x - signed and unsigned greater than   */ \
+                     m(ICmp, ult) /* o o x o - unsigned less than                 */ \
+                     m(ICmp, sgt) /* o o x x - signed greater than                */ \
+                     m(ICmp, slt) /* o x o o - signed less than                   */ \
+                     m(ICmp, ugt) /* o x o x - unsigned greater than              */ \
+                     m(ICmp, sult)/* o x x o - signed and unsigned less than      */ \
+                     m(ICmp, ne)  /* o x x x - not equal                          */ \
+                     m(ICmp, eq)  /* x o o o - equal                              */ \
+                     m(ICmp, suge)/* x o o x - signed and unsigned greater equal  */ \
+                     m(ICmp, ule) /* x o x o - unsigned less or equal             */ \
+                     m(ICmp, sge) /* x o x x - signed greater or equal            */ \
+                     m(ICmp, sle) /* x x o o - signed less or equal               */ \
+                     m(ICmp, uge) /* x x o x - unsigned greater or equal          */ \
+                     m(ICmp, sule)/* x x x o - signed and unsigned less or equal  */ \
+                     m(ICmp, f)   /* x x x x - always false                       */
 
 #define THORIN_R_CMP(m)           /* O E G L                                      */ \
                      m(RCmp, t)   /* o o o o - always true                        */ \
