@@ -145,8 +145,9 @@ const Def* World::destructing_type(const Def* def) {
     return def->type();
 }
 
-const Def* normalize_arity_eliminator(World& world, const Def* callee, const Def* arg, Debug dbg) {
-    if (auto result = world.curry_normalizer(callee, arg, dbg)) return result;
+const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug dbg) {
+    auto& w = callee->world();
+    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
     const Def* pred = nullptr;
     if (auto arity = arg->isa<Arity>()) {
         auto arity_val = arity->value();
@@ -154,12 +155,12 @@ const Def* normalize_arity_eliminator(World& world, const Def* callee, const Def
             // callee = E P base f
             return callee->op(0)->op(1);
         }
-        pred = world.arity(arity_val - 1);
-    } else if (auto arity_app = arg->isa<App>(); arity_app->callee() == world.arity_succ()) {
+        pred = w.arity(arity_val - 1);
+    } else if (auto arity_app = arg->isa<App>(); arity_app->callee() == w.arity_succ()) {
         pred = arity_app->arg();
     }
     if (pred != nullptr)
-        return world.app(world.app(callee->op(1), pred), world.app(callee, pred));
+        return w.app(w.app(callee->op(1), pred), w.app(callee, pred));
     return nullptr;
 }
 
@@ -246,7 +247,7 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
             "callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
 
     if (auto normalizer = callee->normalizer()) {
-        if (auto result = normalizer(*this, callee, arg, dbg))
+        if (auto result = normalizer(callee, arg, dbg))
             return result;
     }
 
