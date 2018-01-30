@@ -75,18 +75,11 @@ const Def* Def::destructing_type() const {
 }
 
 Def::Sort Def::sort() const {
-    if (auto t = type()) {
-        if (auto tt = t->type()) {
-            if (auto ttt = tt->type()) {
-                assert(!ttt->type());
-                return Sort::Term;
-            }
-            return Sort::Type;
-        }
-        return Sort::Kind;
-    }
-    assert(isa<Universe>());
-    return Sort::Universe;
+    if (tag()                 == Tag::Universe) return Sort::Universe;
+    if (type()->tag()         == Tag::Universe) return Sort::Kind;
+    if (type()->type()->tag() == Tag::Universe) return Sort::Type;
+    assert(type()->type()->type()->tag() == Tag::Universe);
+    return Sort::Term;
 }
 
 bool Def::maybe_affine() const {

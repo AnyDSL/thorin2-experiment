@@ -188,15 +188,12 @@ public:
 
     //@{ get World, type, and Sort
     World& world() const {
-        auto def = this;
-        for (size_t i = 0; i != 3; ++i, def = def->type_) {
-            if (def->has_world())
-                return *reinterpret_cast<World*>(def->world_ & uintptr_t(-2));
-        }
-        assert(def->has_world());
-        return *reinterpret_cast<World*>(def->world_ & uintptr_t(-2));
+        if (tag()                 == Tag::Universe) return *world_;
+        if (type()->tag()         == Tag::Universe) return *type()->world_;
+        if (type()->type()->tag() == Tag::Universe) return *type()->type()->world_;
+        return *type()->type()->type()->world_;
     }
-    const Def* type() const { return has_world() ? nullptr : type_; }
+    const Def* type() const { assert(tag() != Tag::Universe); return type_; }
     const Def* destructing_type() const;
     Sort sort() const;
     bool is_term() const { return sort() == Sort::Term; }
@@ -293,7 +290,6 @@ private:
     virtual const Def* kind_qualifier() const;
     virtual bool vsubtype_of(const Def*) const { return false; }
     virtual std::ostream& vstream(std::ostream& os) const = 0;
-    bool has_world() const { return world_ & uintptr_t(1); }
 
     static uint32_t gid_counter_;
 
@@ -306,7 +302,7 @@ private:
     mutable Debug debug_;
     union {
         const Def* type_;
-        uintptr_t world_;
+        World* world_;
     };
     mutable Normalizer normalizer_ = nullptr;
     uint32_t num_ops_;
@@ -807,7 +803,7 @@ private:
 class Universe : public Def {
 private:
     Universe(World& world)
-        : Def(Tag::Universe, reinterpret_cast<const Def*>(uintptr_t(&world) | uintptr_t(1)), 0, THORIN_OPS_PTR, {"□"})
+        : Def(Tag::Universe, reinterpret_cast<const Def*>(&world), 0, THORIN_OPS_PTR, {"□"})
     {}
 
 public:
