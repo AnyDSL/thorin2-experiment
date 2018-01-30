@@ -129,22 +129,6 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
     return unify_fn(set);
 }
 
-const Def* World::destructing_type(const Def* def) {
-    if (auto app = def->type()->isa<App>()) {
-        if (auto cache = app->cache_) {
-            assert(app->callee()->is_nominal());
-            return cache;
-        }
-        if (auto lambda = app->callee()->isa<Lambda>(); lambda != nullptr && lambda->is_nominal()) {
-            auto res = thorin::reduce(lambda->body(), {app->arg()});
-            app->cache_ = res;
-            return res;
-        }
-    }
-
-    return def->type();
-}
-
 const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
     if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
@@ -288,7 +272,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
         return def;
     // need to allow the above, as types are also a 1-tuple of a type
     //assertf(def->is_value(), "can only build extracts of values, {} is not a value", def);
-    auto type = destructing_type(def);
+    auto type = def->destructing_type();
     auto arity = type->arity();
     assertf(arity, "arity unknown for {} of type {}, can only extract when arity is known", def, type);
     if (arity->assignable(index)) {

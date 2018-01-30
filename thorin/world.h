@@ -260,7 +260,6 @@ public:
             return raw_app(callee, arg, dbg)->set_normalizer(callee->normalizer())->as<App>();
         return nullptr;
     }
-    const Def* destructing_type(const Def*);
     //@}
 
     friend void swap(World& w1, World& w2) {

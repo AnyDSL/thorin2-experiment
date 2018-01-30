@@ -197,6 +197,7 @@ public:
         return *reinterpret_cast<World*>(def->world_ & uintptr_t(-2));
     }
     const Def* type() const { return has_world() ? nullptr : type_; }
+    const Def* destructing_type() const;
     Sort sort() const;
     bool is_term() const { return sort() == Sort::Term; }
     bool is_type() const { return sort() == Sort::Type; }
@@ -491,6 +492,7 @@ private:
     mutable const Def* cache_ = nullptr;
     std::ostream& vstream(std::ostream&) const override;
 
+    friend const Def* Def::destructing_type() const;
     friend class World;
 };
 
