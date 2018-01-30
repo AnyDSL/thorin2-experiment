@@ -88,8 +88,8 @@ const Def* World::bound(Lattice l, Range<I> defs, const Def* q, bool require_qua
     return max;
 }
 
-template<class I>
-const Def* World::qualifier_bound(Lattice l, Range<I> defs, std::function<const Def*(const SortedDefSet&)> unify_fn) {
+template<class I, class F>
+const Def* World::qualifier_bound(Lattice l, Range<I> defs, F unify_fn) {
     size_t num_defs = defs.distance();
     DefArray reduced(num_defs);
     QualifierTag accu = QualifierTag::Unlimited;

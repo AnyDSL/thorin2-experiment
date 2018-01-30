@@ -297,9 +297,10 @@ private:
     const Def* type_bound(Lattice l, Defs ops, const Def* q, bool require_qualifier = true) {
         return type_bound(l, range(ops), q, require_qualifier);
     }
-    template<class I>
-    const Def* qualifier_bound(Lattice l, Range<I> defs, std::function<const Def*(const SortedDefSet&)> f);
-    const Def* qualifier_bound(Lattice l, Defs defs, std::function<const Def*(const SortedDefSet&)> f) {
+    template<class I, class F>
+    const Def* qualifier_bound(Lattice l, Range<I> defs, F f);
+    template<class F>
+    const Def* qualifier_bound(Lattice l, Defs defs, F f) {
         return qualifier_bound(l, range(defs), f);
     }
 
