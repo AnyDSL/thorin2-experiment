@@ -143,10 +143,6 @@ public:
     //@}
 
     //@{ intrinsics (AKA built-in Cont%inuations)
-    const Axiom* cn_br();
-    const Axiom* cn_match();
-    const Axiom* cn_pe_info();
-    const Axiom* cn_end();
     const Axiom* cn_amdgpu();
     const Axiom* cn_cuda();
     const Axiom* cn_hls();
@@ -182,13 +178,10 @@ private:
     const Axiom* op_load_;
     const Axiom* op_slot_;
     const Axiom* op_store_;
-    const Axiom* cn_br_;
-    const Axiom* cn_match_;
-    const Axiom* cn_map_;
-    const Axiom* cn_fold_;
-    const Axiom* cn_reduce_;
+    const Axiom* op_map_;
+    const Axiom* op_fold_;
+    const Axiom* op_reduce_;
     const Axiom* cn_pe_info_;
-    const Axiom* cn_end_;
     const Axiom* cn_amdgpu_;
     const Axiom* cn_cuda_;
     const Axiom* cn_hls_;

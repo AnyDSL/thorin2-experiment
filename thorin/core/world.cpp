@@ -66,10 +66,7 @@ World::World() {
     op_enter_ = axiom("enter", "ΠM. [M, F]");
     op_slot_  = axiom("slot",  "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)");
 
-    cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
-    cn_pe_info_ = axiom("pe_info", "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T]");
-    cn_match_   = axiom("match",   "cn[T: *, a: 𝔸, [a; [T, cn[]]]]");
-    cn_end_     = axiom("end",     "cn[]");
+    cn_pe_info_ = axiom("pe_info", "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T, cn[]]");
 
 #define CODE(T, o) op<T::o>()->set_normalizer(normalize_ ## o);
     THORIN_W_OP (CODE)

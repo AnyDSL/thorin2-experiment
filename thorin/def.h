@@ -20,6 +20,7 @@ namespace thorin {
 class App;
 class Cn;
 class Def;
+class Param;
 class World;
 
 /**
@@ -958,39 +959,25 @@ private:
     friend class World;
 };
 
-/// The @p Param%eter associated to a continuation @p Cn.
-class Param : public Def {
-private:
-    Param(const Def* type, Debug dbg)
-        : Def(Tag::Param, type, 0, THORIN_OPS_PTR, dbg)
-    {}
-
-public:
-    const Cn* cn() const { return cn_; }
-    const Def* arity() const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
-private:
-    std::ostream& vstream(std::ostream&) const override;
-
-    const Cn* cn_;
-
-    friend class World;
-};
-
 /// A continuation value.
 class Cn : public Def {
 private:
-    Cn(const Def* type, Debug dbg)
+    Cn(const CnType* type, Debug dbg)
         : Def(Tag::Cn, type, 3, THORIN_OPS_PTR, dbg)
     {}
 
 public:
+    //@{ getters
     const Def* filter() const { return op(0); }
     const Def* callee() const { return op(1); }
     const Def* arg() const { return op(2); }
     const CnType* type() const { return type()->as<CnType>(); }
-    const Param* param() const { return param_; }
+    const Param* param() const;
+    //@}
+
+    //@{ setters/terminators
+    void jump(const Def* callee, const Def* arg, Debug dbg = {});
+    //@}
 
     const Def* arity() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -1000,6 +987,26 @@ private:
     std::ostream& vstream(std::ostream&) const override;
 
     const Param* param_;
+
+    friend class World;
+};
+
+/// The @p Param%eter associated to a continuation @p Cn.
+class Param : public Def {
+private:
+    Param(const Def* type, const Cn* cn, Debug dbg)
+        : Def(Tag::Param, type, Defs{cn}, THORIN_OPS_PTR, dbg)
+    {}
+
+public:
+    Cn* cn() const { return const_cast<Cn*>(op(0)->as<Cn>()); }
+    const Def* arity() const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+private:
+    std::ostream& vstream(std::ostream&) const override;
+
+    const Cn* cn_;
 
     friend class World;
 };

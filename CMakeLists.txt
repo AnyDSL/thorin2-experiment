@@ -31,6 +31,7 @@ include_directories(.)
 add_executable(coc 
     test/arity.cpp
     test/bitset.cpp
+    test/cn.cpp
     test/lambda.cpp
     test/lexer.cpp
     test/main.cpp

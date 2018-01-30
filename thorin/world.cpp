@@ -182,6 +182,10 @@ World::World()
     arity_eliminator_star_  = axiom("R*ₐ",  "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q");
     arity_eliminator_->set_normalizer(normalize_arity_eliminator);
     // index_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
+
+    cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
+    cn_match_   = axiom("match",   "cn[T: *, a: 𝔸, [a; [T, cn[]]]]");
+    cn_end_     = axiom("end",     "cn[]");
 }
 
 World::~World() {
@@ -704,6 +708,10 @@ const CnType* World::cn_type(const Def* domain, Debug dbg) {
     //auto type = type_bound(LUB, domain, false);
     auto type = star();
     return unify<CnType>(1, type, domain, dbg);
+}
+
+Cn* World::cn(const CnType* type, Debug dbg) {
+    return insert<Cn>(3, type, dbg);
 }
 
 //------------------------------------------------------------------------------

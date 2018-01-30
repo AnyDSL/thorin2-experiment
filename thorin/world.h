@@ -237,7 +237,15 @@ public:
     //@{ continuations
     const CnType* cn_type(const Def* domain, Debug dbg = {});
     const CnType* cn_type(Defs domain, Debug dbg = {}) { return cn_type(sigma(domain), dbg); }
-    const Cn*     cn(const Def* domain, Debug dbg = {});
+    Cn* cn(const CnType*, Debug dbg = {});
+    const Param* param(const Cn* cn, Debug dbg = {}) { return unify<Param>(1, cn->type()->op(0), cn, dbg); }
+    //@}
+
+    //@{ intrinsics (AKA built-in Cont%inuations)
+    const Axiom* cn_br();
+    const Axiom* cn_match();
+    const Axiom* cn_pe_info();
+    const Axiom* cn_end();
     //@}
 
     //@{ externals
@@ -395,6 +403,9 @@ protected:
     const Lit* lit_nat_0_;
     std::array<const Lit*, 2> lit_bool_;
     std::array<const Lit*, 7> lit_nat_;
+    const Axiom* cn_br_;
+    const Axiom* cn_match_;
+    const Axiom* cn_end_;
 };
 
 inline const Def* app_callee(const Def* def) { return def->as<App>()->callee(); }

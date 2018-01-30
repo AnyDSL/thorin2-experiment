@@ -836,6 +836,10 @@ bool Sigma::is_dependent() const {
     return false;
 }
 
+const Param* Cn::param() const {
+    return world().param(this);
+}
+
 //------------------------------------------------------------------------------
 
 }
