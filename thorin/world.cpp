@@ -23,10 +23,10 @@ static bool any_of(const Def* def, Defs defs) {
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
-template<bool use_glb, class I>
-const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
+template<class I>
+const Def* World::bound(Lattice l, Range<I> defs, const Def* q, bool require_qualifier) {
     if (defs.distance() == 0)
-        return star(q ? q : use_glb ? linear() : unlimited());
+        return star(q ? q : qualifier(l.min));
 
     auto first = *defs.begin();
     auto inferred_q = first->qualifier();
@@ -41,12 +41,10 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
         if (def->qualifier()->free_vars().any_range(0, i)) {
             // qualifier is dependent within this type/kind, go to top directly
             // TODO might want to assert that this will always be a kind?
-            inferred_q = use_glb ? linear() : unlimited();
+            inferred_q = qualifier(l.min);
         } else {
             auto qualifier = def->qualifier()->shift_free_vars(-i);
-
-            inferred_q = use_glb ? intersection(qualifier_type(), {inferred_q, qualifier})
-                : variant(qualifier_type(), {inferred_q, qualifier});
+            inferred_q = (this->*(l.join))(qualifier_type(), {inferred_q, qualifier}, {});
         }
 
         // TODO somehow build into a def->is_subtype_of(other)/similar
@@ -68,7 +66,7 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
 
     if (max->template isa<Star>()) {
         if (!require_qualifier)
-            return star(q ? q : use_glb ? linear() : unlimited());
+            return star(q ? q : qualifier(l.min));
         if (q == nullptr) {
             // no provided qualifier, so we use the inferred one
             assert(!max || max->op(0) == inferred_q);
@@ -79,10 +77,8 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
                 auto iq = i_qual->qualifier_tag();
                 if (auto q_qual = q->template isa<Qualifier>()) {
                     auto qual = q_qual->qualifier_tag();
-                    auto test = use_glb ? qual <= iq : qual >= iq;
-                    assertf(test, "qualifier must be {} than the {} of the operands' qualifiers",
-                            use_glb ? "less" : "greater",
-                            use_glb ? "greatest lower bound" : "least upper bound");
+                    auto test = !l.q_less(iq, qual);
+                    assertf(test, "qualifier must be {} than the {} of the operands' qualifiers", l.short_name, l.full_name);
                 }
             }
 #endif
@@ -92,10 +88,8 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
     return max;
 }
 
-template<bool use_glb, class I>
-const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const SortedDefSet&)> unify_fn) {
-    auto const_elem = use_glb ? QualifierTag::Unlimited : QualifierTag::Linear;
-    auto ident_elem = use_glb ? QualifierTag::Linear : QualifierTag::Unlimited;
+template<class I>
+const Def* World::qualifier_bound(Lattice l, Range<I> defs, std::function<const Def*(const SortedDefSet&)> unify_fn) {
     size_t num_defs = defs.distance();
     DefArray reduced(num_defs);
     QualifierTag accu = QualifierTag::Unlimited;
@@ -104,7 +98,7 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
     for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
         if (auto q = (*iter)->template isa<Qualifier>()) {
             auto qual = q->qualifier_tag();
-            accu = use_glb ? thorin::glb(accu, qual) : thorin::lub(accu, qual);
+            accu = l.q_join(accu, qual);
             num_const++;
         } else {
             assert(is_qualifier(*iter));
@@ -113,10 +107,10 @@ const Def* World::qualifier_bound(Range<I> defs, std::function<const Def*(const 
     }
     if (num_const == num_defs)
         return qualifier(accu);
-    if (accu == const_elem) {
+    if (accu == l.max) {
         // glb(U, x) = U/lub(L, x) = L
-        return qualifier(const_elem);
-    } else if (accu != ident_elem) {
+        return qualifier(l.max);
+    } else if (accu != l.min) {
         // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
         assert(num_const != 0);
         reduced[num_defs - num_const] = qualifier(accu);
@@ -392,7 +386,7 @@ const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) 
 
 const Def* World::intersection(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return intersection(type_glb(defs, nullptr), defs, dbg);
+    return intersection(type_bound(GLB,defs, nullptr), defs, dbg);
 }
 
 const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
@@ -407,7 +401,7 @@ const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
     // could possibly be replaced by something subtyping-generic
     if (is_qualifier(first)) {
         assert(type == qualifier_type());
-        return qualifier_glb(range(defs), [&] (const SortedDefSet& defs) {
+        return qualifier_bound(GLB, range(defs), [&] (const SortedDefSet& defs) {
                 return unify<Intersection>(defs.size(), qualifier_type(), defs, dbg);
         });
     }
@@ -418,7 +412,7 @@ const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
 
 const Pi* World::pi(const Def* domain, const Def* body, const Def* q, Debug dbg) {
     assertf(!body->is_value(), "body {} : {} of function type cannot be a value", body, body->type());
-    auto type = type_lub({domain, body}, q, false);
+    auto type = type_bound(LUB, {domain, body}, q, false);
     return unify<Pi>(2, type, domain, body, dbg);
 }
 
@@ -491,7 +485,7 @@ const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
 }
 
 const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
-    auto type = type_lub(defs, q);
+    auto type = type_bound(LUB, defs, q);
     if (defs.size() == 0)
         return unit(type->qualifier());
 
@@ -636,7 +630,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
 
 const Def* World::variant(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return variant(type_lub(defs, nullptr), defs, dbg);
+    return variant(type_bound(LUB, defs, nullptr), defs, dbg);
 }
 
 const Def* World::variant(const Def* type, Defs ops, Debug dbg) {
@@ -651,7 +645,7 @@ const Def* World::variant(const Def* type, Defs ops, Debug dbg) {
     // could possibly be replaced by something subtyping-generic
     if (is_qualifier(first)) {
         assert(type == qualifier_type());
-        return qualifier_lub(range(defs), [&] (const SortedDefSet& defs) {
+        return qualifier_bound(LUB, range(defs), [&] (const SortedDefSet& defs) {
             return unify<Variant>(defs.size(), qualifier_type(), defs, dbg);
         });
     }
@@ -707,7 +701,7 @@ const Lit* World::lit_nat(int64_t val, Location location) {
 
 const CnType* World::cn_type(const Def* domain, Debug dbg) {
     // TODO
-    //auto type = type_lub(domain, false);
+    //auto type = type_bound(LUB, domain, false);
     auto type = star();
     return unify<CnType>(1, type, domain, dbg);
 }

@@ -33,10 +33,6 @@ inline bool operator<(QualifierTag lhs, QualifierTag rhs) {
     return false;
 }
 
-inline bool operator<=(QualifierTag lhs, QualifierTag rhs) {
-    return lhs == rhs || lhs < rhs;
-}
-
 constexpr const char* qualifier2str(QualifierTag q) {
     switch (q) {
         case QualifierTag::u: return "ᵁ";

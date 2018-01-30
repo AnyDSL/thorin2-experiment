@@ -270,49 +270,39 @@ public:
 private:
     struct Lattice {
         QualifierTag min, max;
+        bool (*q_less)(QualifierTag, QualifierTag);
         QualifierTag (*q_join)(QualifierTag, QualifierTag);
-        const Def* (World::*join)(Defs, Debug);
+        const Def* (World::*join)(const Def*, Defs, Debug);
+        const char* short_name;
+        const char* full_name;
     };
 
-    static constexpr Lattice LUB{QualifierTag::u, QualifierTag::l, thorin::lub, &thorin::World::variant};
-    static constexpr Lattice GLB{QualifierTag::u, QualifierTag::l, thorin::lub, &thorin::World::intersection};
+    static constexpr Lattice LUB{QualifierTag::u, QualifierTag::l,
+                                 &thorin::operator<, thorin::lub, &thorin::World::variant,
+                                 "less",    "least upper bound"};
+    static constexpr Lattice GLB{QualifierTag::u, QualifierTag::l,
+                                 &thorin::operator<, thorin::lub, &thorin::World::intersection,
+                                 "greater", "greatest lower bound"};
 
-    template<bool glb, class I>
-    const Def* bound(Range<I> ops, const Def* q, bool require_qualifier = true);
     template<class I>
-    const Def* type_lub(Range<I> ops, const Def* q, bool require_qualifier = true) {
-        auto types = map_range(ops.begin(), ops.end(), [&] (auto def) -> const Def* { return def->type(); });
-        return bound<false>(types, q, require_qualifier);
+    const Def* bound(Lattice, Range<I> ops, const Def* q, bool require_qualifier = true);
+    template<class I>
+    const Def* type_bound(Lattice l, Range<I> ops, const Def* q, bool require_qualifier = true) {
+        auto types = map_range(ops, [&] (auto def) -> const Def* { return def->type(); });
+        return bound(l, types, q, require_qualifier);
     }
-    const Def* type_lub(Defs ops, const Def* q, bool require_qualifier = true) { return type_lub(range(ops), q, require_qualifier); }
+    const Def* type_bound(Lattice l, Defs ops, const Def* q, bool require_qualifier = true) { return type_bound(l, range(ops), q, require_qualifier); }
     template<class I>
-    const Def* lub(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<false>(ops, q, require_qualifier); }
+    const Def* lub(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound(LUB, ops, q, require_qualifier); }
     const Def* lub(Defs ops, const Def* q, bool require_qualifier = true) { return lub(range(ops), q, require_qualifier); }
     template<class I>
-    const Def* type_glb(Range<I> ops, const Def* q, bool require_qualifier = true) {
-        auto types = map_range(ops.begin(), ops.end(), [&] (auto def) -> const Def* { return def->type(); });
-        return bound<true>(types, q, require_qualifier);
-    }
-    const Def* type_glb(Defs ops, const Def* q, bool require_qualifier = true) { return glb(range(ops), q, require_qualifier); }
-    template<class I>
-    const Def* glb(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<true>(ops, q, require_qualifier); }
+    const Def* glb(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound(GLB, ops, q, require_qualifier); }
     const Def* glb(Defs ops, const Def* q, bool require_qualifier = true) { return glb(range(ops), q, require_qualifier); }
 
-    template<bool glb, class I>
-    const Def* qualifier_bound(Range<I> defs, std::function<const Def*(const SortedDefSet&)> f);
     template<class I>
-    const Def* qualifier_lub(Range<I> defs, std::function<const Def*(const SortedDefSet&)> f) {
-        return qualifier_bound<false>(defs, f);
-    }
-    const Def* qualifier_lub(Defs defs, std::function<const Def*(const SortedDefSet&)> f) {
-        return qualifier_lub(range(defs), f);
-    }
-    template<class I>
-    const Def* qualifier_glb(Range<I> defs, std::function<const Def*(const SortedDefSet&)> f) {
-        return qualifier_bound<true >(defs, f);
-    }
-    const Def* qualifier_glb(Defs defs, std::function<const Def*(const SortedDefSet&)> f) {
-        return qualifier_glb(range(defs), f);
+    const Def* qualifier_bound(Lattice l, Range<I> defs, std::function<const Def*(const SortedDefSet&)> f);
+    const Def* qualifier_bound(Lattice l, Defs defs, std::function<const Def*(const SortedDefSet&)> f) {
+        return qualifier_bound(l, range(defs), f);
     }
 
 protected:
