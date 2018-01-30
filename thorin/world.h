@@ -265,6 +265,7 @@ public:
     friend void swap(World& w1, World& w2) {
         using std::swap;
         swap(w1.defs_, w2.defs_);
+        swap(w1.universe_->world_, w2.universe_->world_);
     }
 
 private:
