@@ -61,9 +61,9 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
                 // remember that the lowest index corresponds to the last element in args due to De Bruijn's
                 // way of counting
                 size_t arg_index = shift() - (var->index() - offset) - 1;
-                if (!new_type->assignable(world(), args_[arg_index]))
+                if (!new_type->assignable(args_[arg_index]))
                     return world().error(new_type); // use the expected type, not the one provided by the arg
-                return args_[arg_index]->shift_free_vars(world(), -offset);
+                return args_[arg_index]->shift_free_vars(-offset);
             }
         }
 
@@ -90,7 +90,7 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
 
     if (new_nominal != nullptr) {
         for (size_t i = 0, e = new_ops.size(); i != e; ++i)
-            new_nominal->set(world(), i, new_ops[i]);
+            new_nominal->set(i, new_ops[i]);
         return new_nominal;
     }
 
@@ -100,34 +100,36 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
 
 //------------------------------------------------------------------------------
 
-const Def* reduce(World& world, const Def* def, Defs args, size_t index) {
+const Def* reduce(const Def* def, Defs args, size_t index) {
     if (def->free_vars().none_begin(index))
         return def;
 
-    Reducer reducer(world, args);
+    Reducer reducer(def->world(), args);
     return reducer.reduce(def, index);
 }
 
-const Def* unflatten(World& world, const Def* body, const Def* arg) {
-    auto arity = arg->arity(world)->as<Arity>();
+const Def* unflatten(const Def* body, const Def* arg) {
+    auto& w = body->world();
+    auto arity = arg->arity()->as<Arity>();
     assert(arity != nullptr);
     auto length = arity->value();
-    auto extracts = DefArray(length, [&](auto i) { return world.extract(arg, i); });
-    return reduce(world, body, extracts);
+    auto extracts = DefArray(length, [&](auto i) { return w.extract(arg, i); });
+    return reduce(body, extracts);
 }
 
-const Def* flatten(World& world, const Def* body, Defs args) {
-    auto t = world.tuple(DefArray(args.size(), [&](auto i) { return world.var(args[i], args.size()-1-i); }));
-    return reduce(world, body, {t});
+const Def* flatten(const Def* body, Defs args) {
+    auto& w = body->world();
+    auto t = w.tuple(DefArray(args.size(), [&](auto i) { return w.var(args[i], args.size()-1-i); }));
+    return reduce(body, {t});
 }
 
-const Def* shift_free_vars(World& world, const Def* def, int64_t shift) {
+const Def* shift_free_vars(const Def* def, int64_t shift) {
     if (shift == 0 || def->free_vars().none())
         return def;
     assertf(shift > 0 || def->free_vars().none_end(-shift),
             "can't shift {} by {}, there are variables with index <= {}", def, shift, -shift);
 
-    Reducer reducer(world, -shift);
+    Reducer reducer(def->world(), -shift);
     return reducer.reduce(def, 0);
 }
 

@@ -9,8 +9,8 @@ TEST(Sigma, Assign) {
     World w;
     auto sig = w.sigma({w.star(), w.var(w.star(), 0)})->as<Sigma>();
     EXPECT_TRUE(sig->is_dependent());
-    EXPECT_TRUE(sig->assignable(w, w.tuple({w.type_nat(), w.lit_nat(42)})));
-    EXPECT_FALSE(sig->assignable(w, w.tuple({w.type_nat(), w.lit_false()})));
+    EXPECT_TRUE(sig->assignable(w.tuple({w.type_nat(), w.lit_nat(42)})));
+    EXPECT_FALSE(sig->assignable(w.tuple({w.type_nat(), w.lit_false()})));
 }
 
 TEST(Sigma, ExtractAndSingleton) {

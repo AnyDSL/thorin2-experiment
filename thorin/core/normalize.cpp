@@ -24,9 +24,9 @@ static std::array<const Def*, 2> shrink_shape(thorin::World& world, const Def* d
     if (def->isa<Arity>())
         return {def, world.arity(1)};
     if (auto sigma = def->isa<Sigma>())
-        return {sigma->op(0), world.sigma(sigma->ops().skip_front())->shift_free_vars(world, -1)};
+        return {sigma->op(0), world.sigma(sigma->ops().skip_front())->shift_free_vars(-1)};
     auto variadic = def->as<Variadic>();
-    return {variadic->arity(world), world.variadic(variadic->arity(world)->as<Arity>()->value() - 1, variadic->body())};
+    return {variadic->arity(), world.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())};
 }
 
 static const Def* normalize_tuple(thorin::World& world, const Def* callee, const Def* a, const Def* b, Debug dbg) {

@@ -8,12 +8,12 @@ using namespace thorin;
 TEST(Nominal, Sigma) {
     World w;
     auto nat = w.type_nat();
-    auto nat2 = w.sigma_type(2, {"Nat x Nat"})->set(w, 0, nat)->set(w, 1, nat);
+    auto nat2 = w.sigma_type(2, {"Nat x Nat"})->set(0, nat)->set(1, nat);
     ASSERT_TRUE(nat2->free_vars().none());
     ASSERT_EQ(w.pi(nat2, nat)->domain(), nat2);
 
     auto n42 = w.lit_nat(42);
-    ASSERT_FALSE(nat2->assignable(w, n42));
+    ASSERT_FALSE(nat2->assignable(n42));
 }
 
 TEST(Nominal, Option) {
@@ -24,7 +24,7 @@ TEST(Nominal, Option) {
     auto none = w.sigma_type(0, {"None"});
     // auto some = w.lambda(w.pi(w.star(), w.star()), {"Some"});
     // some->set(w.sigma({w.var(0, w.star())}));
-    auto option_nominal = w.lambda(w.pi(w.star(), w.star()), {"Option"})->set(w, w.variant({none, w.var(w.star(), 0)}));
+    auto option_nominal = w.lambda(w.pi(w.star(), w.star()), {"Option"})->set(w.variant({none, w.var(w.star(), 0)}));
     // option_nominal->set(w.variant({none, w.app(some, w.var(0, w.star()))}));
     auto app = w.app(option_nominal, nat);
     EXPECT_TRUE(app->isa<App>());
@@ -48,7 +48,7 @@ TEST(Nominal, PolymorphicList) {
     EXPECT_TRUE(app_var->isa<App>());
     auto cons = w.sigma({w.var(star, 0), app_var});
     EXPECT_TRUE(cons->free_vars().any_end(1));
-    list->set(w, w.variant({nil, cons}));
+    list->set(w.variant({nil, cons}));
     auto apped = w.app(list, nat);
     EXPECT_TRUE(apped->isa<App>());
     EXPECT_EQ(apped->op(1), nat);
@@ -59,10 +59,10 @@ TEST(Nominal, Nat) {
     auto star = w.star();
 
     auto variant = w.variant(star, 2, {"Nat"});
-    variant->set(w, 0, w.sigma_type(0, {"0"}));
+    variant->set(0, w.sigma_type(0, {"0"}));
     auto succ = w.sigma_type(1, {"Succ"});
-    succ->set(w, 0, variant);
-    variant->set(w, 1, succ);
+    succ->set(0, variant);
+    variant->set(1, succ);
     // TODO asserts, methods on nat
 }
 
@@ -74,7 +74,7 @@ TEST(Nominal, SigmaFreeVars) {
     auto v0 = w.var(star, 0);
     auto v1 = w.var(star, 1);
     auto v3 = w.var(star, 3);
-    sig->set(w, 0, v0)->set(w, 1, v3)->set(w, 2, v1);
+    sig->set(0, v0)->set(1, v3)->set(2, v1);
     ASSERT_TRUE(sig->free_vars().test(0));
     ASSERT_FALSE(sig->free_vars().test(1));
     ASSERT_TRUE(sig->free_vars().test(2));
@@ -90,7 +90,7 @@ TEST(Nominal, ReduceWithNominals) {
 
     auto sig = w.sigma_type(1, {"sig"});
     auto v0 = w.var(star, 0);
-    sig->set(w, 0, v0);
+    sig->set(0, v0);
     ASSERT_TRUE(sig->free_vars().test(0));
 
     auto lam = w.lambda(star, w.tuple({sig, sig}));
@@ -116,8 +116,8 @@ TEST(Nominal, PolymorphicListVariantNominal) {
     auto nil = w.unit();
     auto cons = w.sigma({w.var(star, 0), w.app(list, w.var(star, 1))});
     ASSERT_TRUE(cons->free_vars().any_end(1));
-    cons_or_nil->set(w, 0, nil);
-    cons_or_nil->set(w, 1, cons);
+    cons_or_nil->set(0, nil);
+    cons_or_nil->set(1, cons);
     auto apped = w.app(list, nat);
     ASSERT_EQ(apped->op(1)->op(0), nat);
 }
@@ -134,8 +134,8 @@ TEST(Nominal, Module) {
 
     auto L = w.lambda(w.pi(S, S), {"L"});
     auto l = w.sigma({w.sigma({w.var(S, 0), w.var(S, 2)}),
-                      w.variant({w.sigma_type(0_s, {"nil"}), w.sigma_type(1, {"cons"})->set(w, 0, w.app(L, w.var(S, 1)))})});
-    L->set(w, l);
+                      w.variant({w.sigma_type(0_s, {"nil"}), w.sigma_type(1, {"cons"})->set(0, w.app(L, w.var(S, 1)))})});
+    L->set(l);
 
     l->dump();
     L->dump();
