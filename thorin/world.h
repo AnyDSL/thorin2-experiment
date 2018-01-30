@@ -268,6 +268,15 @@ public:
     }
 
 private:
+    struct Lattice {
+        QualifierTag min, max;
+        QualifierTag (*q_join)(QualifierTag, QualifierTag);
+        const Def* (World::*join)(Defs, Debug);
+    };
+
+    static constexpr Lattice LUB{QualifierTag::u, QualifierTag::l, thorin::lub, &thorin::World::variant};
+    static constexpr Lattice GLB{QualifierTag::u, QualifierTag::l, thorin::lub, &thorin::World::intersection};
+
     template<bool glb, class I>
     const Def* bound(Range<I> ops, const Def* q, bool require_qualifier = true);
     template<class I>
