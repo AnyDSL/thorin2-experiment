@@ -281,7 +281,7 @@ private:
     static constexpr Lattice LUB{QualifierTag::u, QualifierTag::l,
                                  &thorin::operator<, thorin::lub, &thorin::World::variant,
                                  "less",    "least upper bound"};
-    static constexpr Lattice GLB{QualifierTag::u, QualifierTag::l,
+    static constexpr Lattice GLB{QualifierTag::l, QualifierTag::u,
                                  &thorin::operator<, thorin::lub, &thorin::World::intersection,
                                  "greater", "greatest lower bound"};
 
