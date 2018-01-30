@@ -16,7 +16,7 @@ std::array<const Def*, 2> infer_width_and_shape(World&, const Def*);
 
 class World : public ::thorin::World {
 public:
-    World();
+    World(Debug dbg = {});
 
     //@{ types and type constructors
     const Axiom* type_i() { return type_i_; }

@@ -139,6 +139,7 @@ protected:
         , tag_(unsigned(tag))
         , nominal_(true)
         , has_error_(false)
+        , contains_cn_(false)
         , ops_(ops_ptr)
     {
         std::fill_n(ops_, num_ops, nullptr);
@@ -153,6 +154,7 @@ protected:
         , tag_(unsigned(tag))
         , nominal_(false)
         , has_error_(false)
+        , contains_cn_(false)
         , ops_(ops_ptr)
     {
         std::copy(ops.begin(), ops.end(), ops_);
@@ -172,6 +174,7 @@ public:
     Defs ops() const { return Defs(ops_, num_ops_); }
     const Def* op(size_t i) const { return ops()[i]; }
     size_t num_ops() const { return num_ops_; }
+    bool empty() const { return num_ops() == 0; }
     Def* set(size_t i, const Def*);
     //@}
 
@@ -223,6 +226,7 @@ public:
     Tag tag() const { return Tag(tag_); }
     //@}
 
+    //@{ type checking
     void typecheck() const {
         assert(free_vars().none());
         DefVector types;
@@ -230,17 +234,25 @@ public:
         typecheck_vars(types, checked);
     }
     virtual void typecheck_vars(DefVector& types, EnvDefSet& checked) const;
-
-    const Def* shift_free_vars(size_t shift) const;
-    Normalizer normalizer() const { return normalizer_; }
-    const Def* set_normalizer(Normalizer normalizer) const { normalizer_ = normalizer; return this; }
-
     virtual bool assignable(const Def* def) const { return this == def->type(); }
     bool subtype_of(const Def* def) const {
         auto s = sort();
         return (!def->is_value() && s >= Sort::Type && (this == def || (s == def->sort() && vsubtype_of(def))));
     }
+    //@}
 
+    //@{ get/set Normalizer
+    Normalizer normalizer() const { return normalizer_; }
+    const Def* set_normalizer(Normalizer normalizer) const { normalizer_ = normalizer; return this; }
+    //@}
+
+    //@{ continuation-related stuff
+    Cn* isa_cn() const;
+    Cn* as_cn() const;
+    bool contains_cn() const { return contains_cn_; }
+    //@}
+
+    //@{ stuff to rebuild a Def
     /**
      * The amount to shift De Bruijn indices when descending into this Def's @p i's Def::op.
      * For example:
@@ -251,9 +263,8 @@ public:
     }
 @endcode
     */
-
-    //@{ stuff to rebuild a Def
     virtual size_t shift(size_t i) const;
+    const Def* shift_free_vars(size_t shift) const;
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
     virtual Def* stub(World&, const Def*, Debug) const { THORIN_UNREACHABLE; }
     Def* stub(World& world, const Def* type) const {
@@ -266,7 +277,7 @@ public:
     }
     //@}
 
-    std::ostream& qualifier_stream(std::ostream& os) const;
+    //@{ stream
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "" || is_nominal()) {
             qualifier_stream(os);
@@ -274,6 +285,7 @@ public:
         }
         return stream(os);
     }
+    std::ostream& qualifier_stream(std::ostream& os) const;
     std::ostream& stream(std::ostream& os) const {
         if (is_nominal()) {
             qualifier_stream(os);
@@ -281,6 +293,7 @@ public:
         }
         return vstream(os);
     }
+    //@}
 
 protected:
     //@{ hash and equal
@@ -312,10 +325,11 @@ private:
     uint32_t num_ops_;
     union {
         struct {
-            unsigned gid_           : 24;
+            unsigned gid_           : 23;
             unsigned tag_           :  6;
             unsigned nominal_       :  1;
             unsigned has_error_     :  1;
+            unsigned contains_cn_   :  1;
             // this sum must be 32   ^^^
         };
         uint32_t fields_;
@@ -959,6 +973,8 @@ private:
     friend class World;
 };
 
+typedef std::vector<Cn*> Cns;
+
 /// A continuation value.
 class Cn : public Def {
 private:
@@ -975,6 +991,15 @@ public:
     const Param* param(Debug dbg = {}) const;
     /// @p Extract%s the @c i th element from @p Param.
     const Def* param(u64 i, Debug dbg = {}) const;
+    //@}
+
+    //@{ succs/preds
+    Cns direct_preds() const;
+    Cns direct_succs() const;
+    Cns indirect_preds() const;
+    Cns indirect_succs() const;
+    Cns preds() const;
+    Cns succs() const;
     //@}
 
     //@{ setters/terminators
@@ -997,6 +1022,11 @@ private:
 
     friend class World;
 };
+
+template<class To>
+using CnMap = GIDMap<Cn*, To>;
+using CnSet = GIDSet<Cn*>;
+using Cn2Cn = CnMap<Cn*>;
 
 /// The @p Param%eter associated to a continuation @p Cn.
 class Param : public Def {

@@ -1,9 +1,8 @@
 #include <sstream>
 #include <stack>
 
-#include "thorin/def.h"
-#include "thorin/reduce.h"
 #include "thorin/world.h"
+#include "thorin/transform/reduce.h"
 
 namespace thorin {
 
@@ -105,14 +104,16 @@ Def* Def::set(size_t i, const Def* def) {
 }
 
 void Def::finalize() {
-    has_error_ |= this->tag() == Tag::Error;
+    // TODO move this to Error constructor
+    has_error_   |= this->tag() == Tag::Error;
 
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         assert(op(i) != nullptr);
         const auto& p = op(i)->uses_.emplace(this, i);
         assert_unused(p.second);
-        free_vars_ |= op(i)->free_vars() >> shift(i);
-        has_error_ |= op(i)->has_error();
+        free_vars_   |= op(i)->free_vars() >> shift(i);
+        has_error_   |= op(i)->has_error();
+        contains_cn_ |= op(i)->tag() == Tag::Cn || op(i)->contains_cn();
     }
 
     if (type() != nullptr) {
@@ -155,6 +156,9 @@ bool Def::is_value() const {
 }
 
 std::string Def::unique_name() const { return name() + '_' + std::to_string(gid()); }
+
+Cn* Def::as_cn() const { return const_cast<Cn*>(as<Cn>()); }
+Cn* Def::isa_cn() const { return const_cast<Cn*>(isa<Cn>()); }
 
 //------------------------------------------------------------------------------
 
@@ -852,6 +856,69 @@ Cn* Cn::jump(const Def* callee, const Def* arg, Debug dbg) { return set(world().
 Cn* Cn::jump(const Def* callee, Defs args, Debug dbg ) { return jump(callee, world().tuple(args), dbg); }
 
 Cn* Cn::br(const Def* cond, const Def* t, const Def* f, Debug dbg) { return jump(world().cn_br(), {cond, t, f}, dbg); }
+
+Cns Cn::preds() const {
+    std::vector<Cn*> preds;
+    std::queue<Use> queue;
+    DefSet done;
+
+    auto enqueue = [&] (const Def* def) {
+        for (auto use : def->uses()) {
+            if (done.find(use) == done.end()) {
+                queue.push(use);
+                done.insert(use);
+            }
+        }
+    };
+
+    done.insert(this);
+    enqueue(this);
+
+    while (!queue.empty()) {
+        auto use = pop(queue);
+        if (auto cn = use->isa_cn()) {
+            preds.push_back(cn);
+            continue;
+        }
+
+        enqueue(use);
+    }
+
+    return preds;
+}
+
+Cns Cn::succs() const {
+    std::vector<Cn*> succs;
+    std::queue<const Def*> queue;
+    DefSet done;
+
+    auto enqueue = [&] (const Def* def) {
+        if (done.find(def) == done.end()) {
+            queue.push(def);
+            done.insert(def);
+        }
+    };
+
+    done.insert(this);
+    if (!empty())
+        enqueue(callee());
+    enqueue(arg());
+
+    while (!queue.empty()) {
+        auto def = pop(queue);
+        if (auto cn = def->isa_cn()) {
+            succs.push_back(cn);
+            continue;
+        }
+
+        for (auto op : def->ops()) {
+            if (op->contains_cn())
+                enqueue(op);
+        }
+    }
+
+    return succs;
+}
 
 //------------------------------------------------------------------------------
 

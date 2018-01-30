@@ -157,10 +157,10 @@ auto range(I begin, I end, P predicate) -> auto {
     return range(Filter(begin, end, predicate), Filter(end, end, predicate));
 }
 
-template<class V, class I, class P>
-auto range(I begin, I end, P predicate) -> auto {
-    typedef filter_iterator<I, P, V> Filter;
-    return range(Filter(begin, end, predicate), Filter(end, end, predicate));
+template<class T, class P>
+auto range(const T& t, P predicate) -> auto {
+    //typedef filter_iterator<I, P, V> Filter;
+    return range(filter_iterator(t.begin(), t.end(), predicate), filter_iterator(t.end(), t.end(), predicate));
 }
 
 template<class I, class F>

@@ -2,8 +2,8 @@
 #include <functional>
 
 #include "thorin/world.h"
-#include "thorin/reduce.h"
 #include "thorin/frontend/parser.h"
+#include "thorin/transform/reduce.h"
 
 namespace thorin {
 
@@ -146,8 +146,9 @@ const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug d
 
 bool World::alloc_guard_ = false;
 
-World::World()
-    : root_page_(new Zone)
+World::World(Debug dbg)
+    : debug_(dbg)
+    , root_page_(new Zone)
     , cur_page_(root_page_.get())
 {
     universe_ = insert<Universe>(0, *this);

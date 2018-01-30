@@ -5,6 +5,7 @@
 #include <string>
 
 #include "thorin/def.h"
+#include "thorin/util/iterator.h"
 
 namespace thorin {
 
@@ -21,8 +22,14 @@ public:
     World& operator=(const World&) = delete;
     World(const World&) = delete;
 
-    World();
+    World(Debug dbg = {});
     ~World();
+
+    //@{ get Debug information
+    Debug& debug() const { return debug_; }
+    Location location() const { return debug_; }
+    const std::string& name() const { return debug().name(); }
+    //@}
 
     //@{ create universe and kinds
     const Universe* universe() const { return universe_; }
@@ -242,14 +249,17 @@ public:
     //@}
 
     //@{ intrinsics (AKA built-in Cont%inuations)
-    const Axiom* cn_br() { return cn_br_; }
-    const Axiom* cn_match();
-    const Axiom* cn_pe_info();
-    const Axiom* cn_end();
+    const Axiom* cn_br()    const { return cn_br_; }
+    const Axiom* cn_match() const { return cn_match_; }
+    const Axiom* cn_end()   const { return cn_end_; }
     //@}
 
     //@{ externals
     const StrMap<const Def*>& externals() const { return externals_; }
+    auto external_cns() const { return map_range(range(externals_,
+                [](auto p) { return p.second->template isa<Cn>(); }),
+                [](auto p) { return p.second->as_cn(); });
+    }
     void make_external(const Def* def) {
         auto [i, success] = externals_.emplace(def->name().c_str(), def);
         assert_unused(success || i->second == def);
@@ -272,7 +282,8 @@ public:
 
     friend void swap(World& w1, World& w2) {
         using std::swap;
-        swap(w1.defs_, w2.defs_);
+        swap(w1.debug_,            w2.debug_);
+        swap(w1.defs_,             w2.defs_);
         swap(w1.universe_->world_, w2.universe_->world_);
     }
 
@@ -375,6 +386,8 @@ protected:
             buffer_index_-= num_bytes;
         assert(buffer_index_ % alignof(T) == 0);
     }
+
+    mutable Debug debug_;
     std::unique_ptr<Zone> root_page_;
     Zone* cur_page_;
     size_t buffer_index_ = 0;

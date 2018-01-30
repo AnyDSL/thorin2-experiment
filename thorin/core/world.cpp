@@ -31,7 +31,9 @@ std::array<const Def*, 2> infer_width_and_shape(World& world, const Def* def) {
 
 //------------------------------------------------------------------------------
 
-World::World() {
+World::World(Debug dbg)
+    : thorin::World(dbg)
+{
     type_i_     = axiom("int", "Πnat. *");
     type_r_     = axiom("real", "Πnat. *");
     type_ptr_   = axiom("ptr", "Π[*, nat]. *");

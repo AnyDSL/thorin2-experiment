@@ -1,4 +1,4 @@
-#include "thorin/reduce.h"
+#include "thorin/transform/reduce.h"
 
 #include "thorin/world.h"
 
