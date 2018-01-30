@@ -129,8 +129,8 @@ TEST(Nominal, Module) {
     auto B = w.type_bool();
     auto N = w.type_nat();
 
-    // M := λU:*. L := λT:*. [[T, U], {[]_cons | [L T]_nil}
-    // M := λU:*. L := λT:*. [[0, 2], {[]_cons | [L 1]_nil}
+    // M := λU:*. L := λT:*. [[T, U], {nil := [] | cons := [L T]}
+    // M := λU:*. L := λT:*. [[0, 2], {nil := [] | cons := [L 1]}
 
     auto L = w.lambda(w.pi(S, S), {"L"});
     auto l = w.sigma({w.sigma({w.var(S, 0), w.var(S, 2)}),
