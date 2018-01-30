@@ -79,11 +79,11 @@ TEST(Qualifiers, Kinds) {
     EXPECT_TRUE(w.qualifier_type()->is_kind());
     EXPECT_EQ(u->type(), w.qualifier_type());
     EXPECT_TRUE(u->is_type());
-    EXPECT_TRUE(u->is_value(w));
+    EXPECT_TRUE(u->is_value());
     EXPECT_FALSE(u->has_values(w));
-    EXPECT_TRUE(r->is_value(w));
-    EXPECT_TRUE(a->is_value(w));
-    EXPECT_TRUE(l->is_value(w));
+    EXPECT_TRUE(r->is_value());
+    EXPECT_TRUE(a->is_value());
+    EXPECT_TRUE(l->is_value());
     auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
 
     auto anat = w.axiom(w.star(a), {"anat"});

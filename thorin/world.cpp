@@ -36,7 +36,7 @@ const Def* World::bound(Range<I> defs, const Def* q, bool require_qualifier) {
     iter++;
     for (size_t i = 1, e = defs.distance(); i != e; ++i, ++iter) {
         auto def = *iter;
-        assertf(!def->is_value(*this), "can't have value {} as operand of bound operator", def);
+        assertf(!def->is_value(), "can't have value {} as operand of bound operator", def);
 
         if (def->qualifier(*this)->free_vars().any_range(0, i)) {
             // qualifier is dependent within this type/kind, go to top directly
@@ -171,7 +171,7 @@ World::World()
     : root_page_(new Zone)
     , cur_page_(root_page_.get())
 {
-    universe_ = insert<Universe>(0);
+    universe_ = insert<Universe>(0, *this);
     qualifier_type_ = insert<QualifierType>(0, *this);
     for (size_t i = 0; i != 4; ++i) {
         auto q = QualifierTag(i);
@@ -432,7 +432,7 @@ const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
 }
 
 const Pi* World::pi(const Def* domain, const Def* body, const Def* q, Debug dbg) {
-    assertf(!body->is_value(*this), "body {} : {} of function type cannot be a value", body, body->type());
+    assertf(!body->is_value(), "body {} : {} of function type cannot be a value", body, body->type());
     auto type = type_lub({domain, body}, q, false);
     return unify<Pi>(2, type, domain, body, dbg);
 }

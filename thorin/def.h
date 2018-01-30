@@ -186,14 +186,23 @@ public:
     std::string unique_name() const;
     //@}
 
-    //@{ get type and Sort
-    const Def* type() const { return type_; }
+    //@{ get World, type, and Sort
+    World& world() const {
+        auto def = this;
+        for (size_t i = 0; i != 3; ++i, def = def->type_) {
+            if (def->has_world())
+                return *reinterpret_cast<World*>(def->world_ & uintptr_t(-2));
+        }
+        assert(def->has_world());
+        return *reinterpret_cast<World*>(def->world_ & uintptr_t(-2));
+    }
+    const Def* type() const { return has_world() ? nullptr : type_; }
     Sort sort() const;
     bool is_term() const { return sort() == Sort::Term; }
     bool is_type() const { return sort() == Sort::Type; }
     bool is_kind() const { return sort() == Sort::Kind; }
     bool is_universe() const { return sort() == Sort::Universe; }
-    bool is_value(World&) const;
+    bool is_value() const;
     virtual bool has_values(World&) const { return false; }
     bool is_qualifier() const { return type() && type()->tag() == Tag::QualifierType; }
     //@}
@@ -241,7 +250,7 @@ public:
     virtual bool assignable(World&, const Def* def) const { return this == def->type(); }
     bool subtype_of(World& world, const Def* def) const {
         auto s = sort();
-        return (!def->is_value(world) && s >= Sort::Type && (this == def || (s == def->sort() && vsubtype_of(world, def))));
+        return (!def->is_value() && s >= Sort::Type && (this == def || (s == def->sort() && vsubtype_of(world, def))));
     }
 
     std::ostream& qualifier_stream(std::ostream& os) const;
@@ -285,6 +294,7 @@ private:
     virtual const Def* kind_qualifier(World&) const;
     virtual bool vsubtype_of(World&, const Def*) const { return false; }
     virtual std::ostream& vstream(std::ostream& os) const = 0;
+    bool has_world() const { return world_ & uintptr_t(1); }
 
     static uint32_t gid_counter_;
 
@@ -295,7 +305,10 @@ private:
     mutable Uses uses_;
     mutable uint64_t hash_ = 0;
     mutable Debug debug_;
-    const Def* type_;
+    union {
+        const Def* type_;
+        uintptr_t world_;
+    };
     mutable Normalizer normalizer_ = nullptr;
     uint32_t num_ops_;
     union {
@@ -794,8 +807,8 @@ private:
 
 class Universe : public Def {
 private:
-    Universe()
-        : Def(Tag::Universe, nullptr, 0, THORIN_OPS_PTR, {"□"})
+    Universe(World& world)
+        : Def(Tag::Universe, reinterpret_cast<const Def*>(uintptr_t(&world) | uintptr_t(1)), 0, THORIN_OPS_PTR, {"□"})
     {}
 
 public:
