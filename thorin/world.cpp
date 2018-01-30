@@ -302,11 +302,11 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             assertf(!sigma->is_dependent(), "can't extract at {} from {} : {}, type is dependent", index, def, sigma);
             if (sigma->type() == universe()) {
                 // can only type those, that we can bound usefully
-                auto bound = lub(sigma->ops(), nullptr, true);
+                auto bnd = bound(LUB, sigma->ops(), nullptr, true);
                 // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *] : □, but * and t:*->t-> not subtypes, thus can't derive a bound for this
                 // TODO maybe infer variant? { t:*->t->t, * }?
-                assertf(bound != universe(), "can't extract at {} from {} : {}, type may be □ (not reflectable)", index, def, sigma);
-                result_type = bound;
+                assertf(bnd != universe(), "can't extract at {} from {} : {}, type may be □ (not reflectable)", index, def, sigma);
+                result_type = bnd;
             } else
                 result_type = extract(tuple(sigma->ops(), dbg), index);
         } else

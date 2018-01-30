@@ -286,19 +286,16 @@ private:
 
     template<class I>
     const Def* bound(Lattice, Range<I> ops, const Def* q, bool require_qualifier = true);
+    const Def* bound(Lattice l, Defs ops, const Def* q, bool require_qualifier = true) {
+        return bound(l, range(ops), q, require_qualifier);
+    }
     template<class I>
     const Def* type_bound(Lattice l, Range<I> ops, const Def* q, bool require_qualifier = true) {
-        auto types = map_range(ops, [&] (auto def) -> const Def* { return def->type(); });
-        return bound(l, types, q, require_qualifier);
+        return bound(l, map_range(ops, [&] (auto def) { return def->type(); }), q, require_qualifier);
     }
-    const Def* type_bound(Lattice l, Defs ops, const Def* q, bool require_qualifier = true) { return type_bound(l, range(ops), q, require_qualifier); }
-    template<class I>
-    const Def* lub(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound(LUB, ops, q, require_qualifier); }
-    const Def* lub(Defs ops, const Def* q, bool require_qualifier = true) { return lub(range(ops), q, require_qualifier); }
-    template<class I>
-    const Def* glb(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound(GLB, ops, q, require_qualifier); }
-    const Def* glb(Defs ops, const Def* q, bool require_qualifier = true) { return glb(range(ops), q, require_qualifier); }
-
+    const Def* type_bound(Lattice l, Defs ops, const Def* q, bool require_qualifier = true) {
+        return type_bound(l, range(ops), q, require_qualifier);
+    }
     template<class I>
     const Def* qualifier_bound(Lattice l, Range<I> defs, std::function<const Def*(const SortedDefSet&)> f);
     const Def* qualifier_bound(Lattice l, Defs defs, std::function<const Def*(const SortedDefSet&)> f) {
