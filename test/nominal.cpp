@@ -158,4 +158,7 @@ TEST(Nominal, Module) {
     w.app(w.app(id, w.sigma({B, B})), w.extract(w.axiom(LBB, {"lbb'"}), 0_u64));
 
     ASSERT_EQ(w.extract(w.axiom(LNN), 0_u64)->type(), w.sigma({N, N}));
+    ASSERT_EQ(w.extract(w.axiom(LNB), 0_u64)->type(), w.sigma({N, B}));
+    ASSERT_EQ(w.extract(w.axiom(LBN), 0_u64)->type(), w.sigma({B, N}));
+    ASSERT_EQ(w.extract(w.axiom(LBB), 0_u64)->type(), w.sigma({B, B}));
 }
