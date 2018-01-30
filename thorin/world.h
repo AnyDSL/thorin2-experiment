@@ -83,7 +83,7 @@ public:
     const Def* app(const Def* callee, const Def* arg, Debug dbg = {});
     const Def* raw_app(const Def* callee, Defs args, Debug dbg = {}) { return raw_app(callee, tuple(args, dbg), dbg); }
     const Def* raw_app(const Def* callee, const Def* arg, Debug dbg = {}) {
-        auto type = callee->type()->as<Pi>()->apply(*this, arg);
+        auto type = callee->type()->as<Pi>()->apply(arg);
         return unify<App>(2, type, callee, arg, dbg);
     }
     //@}
@@ -311,15 +311,15 @@ protected:
     const T* unify(size_t num_ops, Args&&... args) {
         auto def = alloc<T>(num_ops, args...);
         assert(!def->is_nominal());
-        auto p = defs_.emplace(def);
-        if (p.second) {
-            def->finalize(*this);
+        auto [i, success] = defs_.emplace(def);
+        if (success) {
+            def->finalize();
             return def;
         }
 
         --Def::gid_counter_;
         dealloc(def);
-        return static_cast<const T*>(*p.first);
+        return static_cast<const T*>(*i);
     }
 
     template<class T, class... Args>
@@ -369,7 +369,6 @@ protected:
             buffer_index_-= num_bytes;
         assert(buffer_index_ % alignof(T) == 0);
     }
-
     std::unique_ptr<Zone> root_page_;
     Zone* cur_page_;
     size_t buffer_index_ = 0;
@@ -402,7 +401,7 @@ protected:
 
 inline const Def* app_callee(const Def* def) { return def->as<App>()->callee(); }
 inline const Def* app_arg(const Def* def) { return def->as<App>()->arg(); }
-inline const Def* app_arg(World& world, const Def* def, size_t i) { return world.extract(app_arg(def), i); }
+inline const Def* app_arg(const Def* def, u64 i) { return def->world().extract(app_arg(def), i); }
 
 }
 
