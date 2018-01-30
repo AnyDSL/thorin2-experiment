@@ -836,9 +836,22 @@ bool Sigma::is_dependent() const {
     return false;
 }
 
-const Param* Cn::param() const {
-    return world().param(this);
+const Param* Cn::param(Debug dbg) const { return world().param(this, dbg); }
+const Def* Cn::param(u64 i, Debug dbg) const { return world().extract(param(), i, dbg); }
+
+Cn* Cn::set(const Def* filter, const Def* callee, const Def* arg, Debug dbg) {
+    jump_debug_ = dbg;
+    return Def::set(0, filter)->Def::set(1, callee)->Def::set(2, arg)->as<Cn>();
 }
+
+Cn* Cn::set(const Def* filter, const Def* callee, Defs args, Debug dbg) {
+    return set(filter, callee, world().tuple(args), dbg);
+}
+
+Cn* Cn::jump(const Def* callee, const Def* arg, Debug dbg) { return set(world().lit_false(), callee, arg, dbg); }
+Cn* Cn::jump(const Def* callee, Defs args, Debug dbg ) { return jump(callee, world().tuple(args), dbg); }
+
+Cn* Cn::br(const Def* cond, const Def* t, const Def* f, Debug dbg) { return jump(world().cn_br(), {cond, t, f}, dbg); }
 
 //------------------------------------------------------------------------------
 

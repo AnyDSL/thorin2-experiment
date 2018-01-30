@@ -242,7 +242,7 @@ public:
     //@}
 
     //@{ intrinsics (AKA built-in Cont%inuations)
-    const Axiom* cn_br();
+    const Axiom* cn_br() { return cn_br_; }
     const Axiom* cn_match();
     const Axiom* cn_pe_info();
     const Axiom* cn_end();

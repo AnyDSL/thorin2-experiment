@@ -971,12 +971,19 @@ public:
     const Def* filter() const { return op(0); }
     const Def* callee() const { return op(1); }
     const Def* arg() const { return op(2); }
-    const CnType* type() const { return type()->as<CnType>(); }
-    const Param* param() const;
+    const CnType* type() const { return Def::type()->as<CnType>(); }
+    const Param* param(Debug dbg = {}) const;
+    /// @p Extract%s the @c i th element from @p Param.
+    const Def* param(u64 i, Debug dbg = {}) const;
     //@}
 
     //@{ setters/terminators
-    void jump(const Def* callee, const Def* arg, Debug dbg = {});
+    /// uses @c false as filter
+    Cn* set(const Def* filter, const Def* callee, const Def* arg, Debug dbg = {});
+    Cn* set(const Def* filter, const Def* callee, Defs args, Debug dbg = {});
+    Cn* jump(const Def* callee, const Def* arg, Debug dbg = {});
+    Cn* jump(const Def* callee, Defs args, Debug dbg = {});
+    Cn* br(const Def* cond, const Def* t, const Def* f, Debug dbg = {});
     //@}
 
     const Def* arity() const override;
@@ -986,7 +993,7 @@ public:
 private:
     std::ostream& vstream(std::ostream&) const override;
 
-    const Param* param_;
+    mutable Debug jump_debug_;
 
     friend class World;
 };
@@ -1005,8 +1012,6 @@ public:
 
 private:
     std::ostream& vstream(std::ostream&) const override;
-
-    const Cn* cn_;
 
     friend class World;
 };
