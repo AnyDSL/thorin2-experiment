@@ -13,7 +13,7 @@ namespace thorin {
  * helpers
  */
 
-static bool is_homogeneous(Defs defs) {
+static bool is_all_of(Defs defs) {
     return std::all_of(defs.begin() + 1, defs.end(), [&](auto def) { return def == defs.front(); });
 }
 
@@ -500,7 +500,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
         return defs.front();
     }
 
-    if (defs.front()->free_vars().none_end(defs.size() - 1) && is_homogeneous(defs)) {
+    if (defs.front()->free_vars().none_end(defs.size() - 1) && is_all_of(defs)) {
         assert(q == nullptr || defs.front()->qualifier() == q);
         return variadic(arity(defs.size(), QualifierTag::Unlimited, dbg), defs.front()->shift_free_vars(-1), dbg);
     }
@@ -619,7 +619,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
     };
 
     if (size != 0) {
-        if (is_homogeneous(defs))
+        if (is_all_of(defs))
             return pack(arity(size, QualifierTag::Unlimited, dbg), defs.front()->shift_free_vars(1), dbg);
         else if (auto same = eta_property())
             return same;
