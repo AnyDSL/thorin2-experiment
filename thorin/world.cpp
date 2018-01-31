@@ -435,11 +435,9 @@ const Def* World::lambda(const Def* domain, const Def* body, const Def* type_qua
     auto p = pi(domain, body->type(), type_qualifier, dbg);
 
     if (auto app = body->isa<App>()) {
-        auto eta_property = [&]() {
-            return app->arg()->isa<Var>() && app->arg()->as<Var>()->index() == 0;
-        };
+        bool eta_property = app->arg()->isa<Var>() && app->arg()->as<Var>()->index() == 0;
 
-        if (!app->callee()->free_vars().test(0) && eta_property())
+        if (!app->callee()->free_vars().test(0) && eta_property)
             return app->callee()->shift_free_vars(-1);
     }
 
