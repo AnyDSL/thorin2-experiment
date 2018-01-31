@@ -920,7 +920,9 @@ inline bool is_one   (const Lit* lit) { return lit->box().get_u64() == 1_u64; }
 inline bool is_allset(const Lit* lit) { return lit->box().get_u64() == u64(-1); }
 
 /// Is @p lit an IEEE-754 zero? yields also true for negative zero.
-inline bool is_rzero(int64_t w, const Lit* lit) { return (lit->box().get_u64() & ~(1 << (w-1))) == 0; }
+inline bool is_rzero(int64_t w, const Lit* lit) {
+    return (lit->box().get_u64() & ~(1_u64 << (u64(w)-1_u64))) == 0_u64;
+}
 
 inline bool is_one  (int64_t w, const Lit* lit) {
     switch (w) {
