@@ -1046,6 +1046,11 @@ private:
     friend class World;
 };
 
+template<class To>
+using ParamMap    = GIDMap<const Param*, To>;
+using ParamSet    = GIDSet<const Param*>;
+using Param2Param = ParamMap<const Param*>;
+
 //------------------------------------------------------------------------------
 
 }

@@ -67,6 +67,8 @@ add_executable(coc
     thorin/analyses/schedule.h
     thorin/analyses/scope.cpp
     thorin/analyses/scope.h
+    thorin/analyses/verify.cpp
+    thorin/analyses/verify.h
     thorin/frontend/lexer.cpp
     thorin/frontend/lexer.h
     thorin/frontend/parser.cpp
