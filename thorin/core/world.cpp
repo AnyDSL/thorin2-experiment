@@ -70,17 +70,49 @@ World::World(Debug dbg)
 
 #if 0
     // add
-    rule("[f: nat, w: nat, a: 𝔸, s: 𝕄, x: [a; [s; int w]], y: [a; [s; int w]]]. add f w s (i: a; x#i) (i: a; y#i)) -> (i: a; add f w s (x#i, y#i))");
     rule("[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x) -> x");
-    rule("[f: nat, w: nat, x: int w]. add f w 1ₐ (x, x) -> mul f w x 1ₐ ({2U64: int w}, x)");
+    rule("[f: nat, w: nat, x: int w]. add f w 1ₐ (x, x) -> mul f w x 1ₐ ({2u64: int w}, x)");
+    // sub
+    rule("[f: nat, w: nat, x: int w]. add f w 1ₐ (x, {0u64: int w}) -> x");
+    rule("[f: nat, w: nat, x: int w]. add f w 1ₐ (x, x) -> {0u64: int w})";
     // mul
     rule("[f: nat, w: nat, x: int w]. mul f w 1ₐ ({1u64: int w}, x) -> x");
     rule("[f: nat, w: nat, x: int w]. mul f w 1ₐ ({0u64: int w}, x) -> {0u64: int w}");
+    // shl
+    rule("[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x) -> {0u64: int w}");
+    rule("[f: nat, w: nat, x: int w]. add f w 1ₐ (x, {0u64: int w}) -> x");
     // icmp
-    rule("[w: nat, s: 𝕄, x: int w, y: int w]. icmp_sgt f w (x, y) -> icmp_slt f w (y, x)");
-    rule("[w: nat, s: 𝕄, x: int w, y: int w]. icmp_sge f w (x, y) -> icmp_sle f w (y, x)");
-    rule("[w: nat, s: 𝕄, x: int w, y: int w]. icmp_ugt f w (x, y) -> icmp_ult f w (y, x)");
-    rule("[w: nat, s: 𝕄, x: int w, y: int w]. icmp_uge f w (x, y) -> icmp_ule f w (y, x)");
+    rule("[w: nat, s: 𝕄, x: int w, y: int w]. icmp_sgt  f w (x, y) -> icmp_slt  f w (y, x)");
+    rule("[w: nat, s: 𝕄, x: int w, y: int w]. icmp_sge  f w (x, y) -> icmp_sle  f w (y, x)");
+    rule("[w: nat, s: 𝕄, x: int w, y: int w]. icmp_ugt  f w (x, y) -> icmp_ult  f w (y, x)");
+    rule("[w: nat, s: 𝕄, x: int w, y: int w]. icmp_uge  f w (x, y) -> icmp_ule  f w (y, x)");
+    rule("[w: nat, s: 𝕄, x: int w, y: int w]. icmp_sugt f w (x, y) -> icmp_sult f w (y, x)");
+    rule("[w: nat, s: 𝕄, x: int w, y: int w]. icmp_suge f w (x, y) -> icmp_sule f w (y, x)");
+    rule("[w: nat, s: 𝕄, x: int w]. icmp_eq   f w (x, x) -> {1u64: int w}");
+    rule("[w: nat, s: 𝕄, x: int w]. icmp_ne   f w (x, x) -> {0u64: int w}");
+    rule("[w: nat, s: 𝕄, x: int w]. icmp_sle  f w (x, x) -> {1u64: int w}");
+    rule("[w: nat, s: 𝕄, x: int w]. icmp_ule  f w (x, x) -> {1u64: int w}");
+    rule("[w: nat, s: 𝕄, x: int w]. icmp_sule f w (x, x) -> {1u64: int w}");
+    // iand
+    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ ({0u64: int w}, x) -> {0u64: int w}");
+    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ ({-1us64: int w}, x) -> x");
+    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ (x, x) -> x");
+    // ior
+    rule("[f: nat, w: nat, x: int w]. ior f w 1ₐ ({0u64: int w}, x) -> x");
+    rule("[f: nat, w: nat, x: int w]. ior f w 1ₐ ({-1us64: int w}, x) -> {0u64: int w}");
+    rule("[f: nat, w: nat, x: int w]. ior f w 1ₐ (x, x) -> x");
+    // ixor
+    rule("[f: nat, w: nat, x: int w]. ixor f w 1ₐ (x, x) -> {0u64: int w}");
+    rule("[f: nat, w: nat, x: int w]. ixor f w 1ₐ ({-1s64: int w}, (ixor f w 1ₐ ({-1s64: int w}, x))) -> x"); // double negation
+    // absorption
+    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ (x, ior  f w 1ₐ (x, y)) -> x");
+    rule("[f: nat, w: nat, x: int w]. ior  f w 1ₐ (x, iand f w 1ₐ (x, y)) -> x");
+    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ (x, ior  f w 1ₐ (y, x)) -> x");
+    rule("[f: nat, w: nat, x: int w]. ior  f w 1ₐ (x, iand f w 1ₐ (y, x)) -> x");
+    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ (ior  f w 1ₐ (x, y), x) -> x");
+    rule("[f: nat, w: nat, x: int w]. ior  f w 1ₐ (iand f w 1ₐ (x, y), x) -> x");
+    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ (ior  f w 1ₐ (y, x), x) -> x");
+    rule("[f: nat, w: nat, x: int w]. ior  f w 1ₐ (iand f w 1ₐ (y, x), x) -> x");
 #endif
     cn_pe_info_ = axiom("pe_info", "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T, cn[]]");
 
