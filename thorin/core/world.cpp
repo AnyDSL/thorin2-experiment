@@ -12,21 +12,21 @@ namespace thorin::core {
 
 std::array<const Def*, 2> shape_and_body(World& world, const Def* def) {
     if (auto variadic = def->isa<Variadic>())
-        return {variadic->arity(), variadic->body()};
-    return {world.arity(1), def};
+        return {{variadic->arity(), variadic->body()}};
+    return {{world.arity(1), def}};
 }
 
 std::array<const Def*, 2> infer_width_and_shape(World& world, const Def* def) {
     if (auto variadic = def->type()->isa<Variadic>()) {
         if (!variadic->body()->isa<Variadic>())
-            return {variadic->body()->as<App>()->arg(), variadic->arity()};
+            return {{variadic->body()->as<App>()->arg(), variadic->arity()}};
         std::vector<const Def*> arities;
         const Def* cur = variadic;
         for (; cur->isa<Variadic>(); cur = cur->as<Variadic>()->body())
             arities.emplace_back(cur->as<Variadic>()->arity());
-        return {cur->as<App>()->arg(), world.sigma(arities)};
+        return {{cur->as<App>()->arg(), world.sigma(arities)}};
     }
-    return {def->type()->as<App>()->arg(), world.arity(1)};
+    return {{def->type()->as<App>()->arg(), world.arity(1)}};
 }
 
 //------------------------------------------------------------------------------
