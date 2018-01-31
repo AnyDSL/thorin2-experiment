@@ -4,37 +4,46 @@
 #include "thorin/analyses/scope.h"
 
 namespace thorin {
-
 #if 0
-const Def* Rewriter::instantiate(const Def* odef) {
-    if (auto ndef = find(old2new, odef))
-        return ndef;
-
-    if (auto oprimop = odef->isa<PrimOp>()) {
-        Array<const Def*> nops(oprimop->num_ops());
-        for (size_t i = 0; i != oprimop->num_ops(); ++i)
-            nops[i] = instantiate(odef->op(i));
-
-        auto nprimop = oprimop->rebuild(nops);
-        return old2new[oprimop] = nprimop;
-    }
-
-    return old2new[odef] = odef;
-}
 
 Mangler::Mangler(const Scope& scope, const Def* arg, DefSet lift)
-    : scope_(scope)
+    : world_(arg->world())
+    , scope_(scope)
     , arg_(arg)
     , lift_(lift)
     , old_entry_(scope.entry())
     , old2new_(scope.defs().capacity())
 {
-    assert(!old_entry()->empty());
+    assert(!old_entry_->empty());
     assert(arg->type() == old_entry_->type()->domain());
 #ifndef NDEBUG
     for (auto def : lift)
         assert(scope.free().contains(def));
 #endif
+}
+
+const Def* Mangler::mangle_signature(const Def* type, const Def* arg) {
+    if (arg->isa<Top>())
+        return type;
+    assert(!type->is_nominal());
+
+    if (auto sigma = type->isa<Sigma>()) {
+        std::vector<const Def*> types;
+
+        if (auto tuple = arg->isa<Tuple>()) {
+            for (size_t i = 0; i != tuple->num_ops(); ++i) {
+                if (tuple->op(i)->isa<Top>())
+                    types.emplace_back(sigma->op(i));
+                else
+                    types.emplace_back(mangle_signature(sigma->op(i), tuple->op(i));
+            }
+        }
+    }
+
+    if (auto variadic = type->isa<Variadic>()) {
+    }
+
+    return type;
 }
 
 Cn* Mangler::mangle() {
