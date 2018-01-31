@@ -415,10 +415,10 @@ const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
     return unify<Intersection>(defs.size(), type, defs, dbg);
 }
 
-const Pi* World::pi(const Def* domain, const Def* body, const Def* q, Debug dbg) {
-    assertf(!body->is_value(), "body {} : {} of function type cannot be a value", body, body->type());
-    auto type = type_bound(LUB, {domain, body}, q, false);
-    return unify<Pi>(2, type, domain, body, dbg);
+const Pi* World::pi(const Def* domain, const Def* codomain, const Def* q, Debug dbg) {
+    assertf(!codomain->is_value(), "codomain {} : {} of function type cannot be a value", codomain, codomain->type());
+    auto type = type_bound(LUB, {domain, codomain}, q, false);
+    return unify<Pi>(2, type, domain, codomain, dbg);
 }
 
 const Def* World::pick(const Def* type, const Def* def, Debug dbg) {

@@ -64,10 +64,10 @@ public:
     //@}
 
     //@{ create Pi
-    const Pi* pi(const Def* domain, const Def* body, Debug dbg = {}) {
-        return pi(domain, body, unlimited(), dbg);
+    const Pi* pi(const Def* domain, const Def* codomain, Debug dbg = {}) {
+        return pi(domain, codomain, unlimited(), dbg);
     }
-    const Pi* pi(const Def* domain, const Def* body, const Def* qualifier, Debug dbg = {});
+    const Pi* pi(const Def* domain, const Def* codomain, const Def* qualifier, Debug dbg = {});
     //@}
 
     //@{ create Lambda
@@ -135,9 +135,8 @@ public:
         return variadic(arity(a, QualifierTag::Unlimited, dbg), body, dbg);
     }
     const Def* variadic(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
-        return variadic(DefArray(a.size(), [&](auto i) {
-                    return this->arity(a[i], QualifierTag::Unlimited, dbg);
-                }), body, dbg);
+        return variadic(DefArray(a.size(),
+                [&](auto i) { return this->arity(a[i], QualifierTag::Unlimited, dbg); }), body, dbg);
     }
     //@}
 
@@ -268,6 +267,15 @@ public:
         auto i = externals_.find(s);
         assert(i != externals_.end());
         return i->second;
+    }
+    //@}
+
+    //@{ rules
+    const RuleType* rule_type(const Def* domain, const Def* codomain, Debug dbg = {}) {
+        return unify<RuleType>(2, *this, domain, codomain, dbg);
+    }
+    const Rule* rule(const Def* domain, const Def* lhs, const Def* rhs, Debug dbg = {}) {
+        return unify<Rule>(2, rule_type(domain, lhs->type()), lhs, rhs, dbg);
     }
     //@}
 

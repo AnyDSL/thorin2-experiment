@@ -114,6 +114,7 @@ public:
         Lit, Axiom,
         Pick, Intersection,
         Qualifier, QualifierType,
+        Rule, RuleType,
         Star, Universe,
         Error,
         Singleton,
@@ -1051,6 +1052,45 @@ template<class To>
 using ParamMap    = GIDMap<const Param*, To>;
 using ParamSet    = GIDSet<const Param*>;
 using Param2Param = ParamMap<const Param*>;
+
+//------------------------------------------------------------------------------
+
+class RuleType : public Def {
+private:
+    RuleType(World& world, const Def* domain, const Def* codomain, Debug);
+
+public:
+    const Def* domain() const { return op(0); }
+    const Def* codomain() const { return op(1); }
+    const Def* arity() const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+private:
+    std::ostream& vstream(std::ostream&) const override;
+
+    friend class World;
+};
+
+class Rule : public Def {
+private:
+    Rule(const Def* type, const Def* lhs, const Def* rhs, Debug dbg)
+        : Def(Tag::Rule, type, {lhs, rhs}, THORIN_OPS_PTR, dbg)
+    {}
+
+public:
+    const Def* lhs() const { return op(0); }
+    const Def* rhs() const { return op(1); }
+    const RuleType* type() const { return Def::type()->as<RuleType>(); }
+    const Def* domain() const { return type()->domain(); }
+    const Def* codomain() const { return type()->codomain(); }
+    const Def* arity() const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+private:
+    std::ostream& vstream(std::ostream&) const override;
+
+    friend class World;
+};
 
 //------------------------------------------------------------------------------
 
