@@ -35,4 +35,15 @@ TEST(Cn, Simpel) {
     ASSERT_FALSE(scope.contains(i0));
 }
 
+TEST(Cn, Poly) {
+    World w;
+    auto k = w.cn(parse(w, "[T: *, T, cn T]"), {"k"});
+    k->jump(k->param(2, {"ret"}), k->param(1, {"x"}));
+
+    w.make_external(k);
+
+    Scope scope(k);
+    ASSERT_TRUE(scope.contains(k));
+}
+
 }
