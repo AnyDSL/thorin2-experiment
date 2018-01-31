@@ -15,8 +15,10 @@ const Def* Importer::import(Tracker old_def) {
         new_nominal = insert(old_def, old_def->stub(world(), new_type));
 
     DefArray new_ops(old_def->num_ops());
-    for (size_t i = 0, e = old_def->num_ops(); i != e; ++i)
+    for (size_t i = 0, e = old_def->num_ops(); i != e; ++i) {
         new_ops[i] = import(old_def->op(i));
+        todo_ |= new_ops[i]->tag() != old_def->tag();
+    }
 
     if (new_nominal != nullptr) {
         for (size_t i = 0, e = new_ops.size(); i != e; ++i)
