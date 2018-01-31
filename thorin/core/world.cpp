@@ -68,6 +68,19 @@ World::World(Debug dbg)
     op_enter_ = axiom("enter", "ΠM. [M, F]");
     op_slot_  = axiom("slot",  "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)");
 
+#if 0
+    // add
+    rule("[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x) -> x");
+    rule("[f: nat, w: nat, x: int w]. add f w 1ₐ (x, x) -> mul f w x 1ₐ ({2U64: int w}, x)");
+    // mul
+    rule("[f: nat, w: nat, x: int w]. mul f w 1ₐ ({1u64: int w}, x) -> x");
+    rule("[f: nat, w: nat, x: int w]. mul f w 1ₐ ({0u64: int w}, x) -> {0u64: int w}");
+    // icmp
+    rule("[f: nat, w: nat, s: 𝕄, x: int w, y: int w]. icmp_sgt f w s (x, y) -> icmp_slt f w s (y, x)");
+    rule("[f: nat, w: nat, s: 𝕄, x: int w, y: int w]. icmp_sge f w s (x, y) -> icmp_sle f w s (y, x)");
+    rule("[f: nat, w: nat, s: 𝕄, x: int w, y: int w]. icmp_ugt f w s (x, y) -> icmp_ult f w s (y, x)");
+    rule("[f: nat, w: nat, s: 𝕄, x: int w, y: int w]. icmp_uge f w s (x, y) -> icmp_ule f w s (y, x)");
+#endif
     cn_pe_info_ = axiom("pe_info", "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T, cn[]]");
 
 #define CODE(T, o) op<T::o>()->set_normalizer(normalize_ ## o);
