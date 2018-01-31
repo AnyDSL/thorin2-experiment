@@ -11,7 +11,7 @@ static std::array<const Def*, 2> split(const Def* def) {
     auto& w = def->world();
     auto a = w.extract(def, 0_u64);
     auto b = w.extract(def, 1_u64);
-    return {a, b};
+    return {{a, b}};
 }
 
 static std::array<const Def*, 3> msplit(const Def* def) {
@@ -19,17 +19,17 @@ static std::array<const Def*, 3> msplit(const Def* def) {
     auto a = w.extract(def, 0_u64);
     auto b = w.extract(def, 1_u64);
     auto m = w.extract(def, 2_u64);
-    return {a, b, m};
+    return {{a, b, m}};
 }
 
 static std::array<const Def*, 2> shrink_shape(const Def* def) {
     auto& w = def->world();
     if (def->isa<Arity>())
-        return {def, w.arity(1)};
+        return {{def, w.arity(1)}};
     if (auto sigma = def->isa<Sigma>())
-        return {sigma->op(0), w.sigma(sigma->ops().skip_front())->shift_free_vars(-1)};
+        return {{sigma->op(0), w.sigma(sigma->ops().skip_front())->shift_free_vars(-1)}};
     auto variadic = def->as<Variadic>();
-    return {variadic->arity(), w.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())};
+    return {{variadic->arity(), w.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())}};
 }
 
 static const Def* normalize_tuple(const Def* callee, const Def* a, const Def* b, Debug dbg) {
@@ -89,9 +89,9 @@ static const Def* commute(const Def* callee, const Def* a, const Def* b, Debug d
 
 static const Def* reassociate(const Def* callee, const Def* a, const Def* b, Debug dbg) {
     auto& w = callee->world();
-    std::array<const Def*, 2> args{a, b};
-    std::array<std::array<const Def*, 2>, 2> aa{{{nullptr, nullptr}, {nullptr, nullptr}}};
-    std::array<bool, 2> foldable{false, false};
+    std::array<const Def*, 2> args{{a, b}};
+    std::array<std::array<const Def*, 2>, 2> aa{{{{nullptr, nullptr}}, {{nullptr, nullptr}}}};
+    std::array<bool, 2> foldable{{false, false}};
 
     for (size_t i = 0; i != 2; ++i) {
         if (auto app = args[i]->isa<App>()) {
