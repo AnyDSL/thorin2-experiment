@@ -70,7 +70,7 @@ World::World(Debug dbg)
 
 #if 0
     // add
-    rule("[f: nat, w: nat, s: 𝕄, x: [s; int w], y: [s; int w]]. add f w s ((i: s; x#i)) ((i: s; y#i)) -> (i: s; add f w s (x#i, y#i))")
+    rule("[f: nat, w: nat, a: 𝔸, s: 𝕄, x: [a; [s; int w]], y: [a; [s; int w]]]. add f w s (i: a; x#i) (i: a; y#i)) -> (i: a; add f w s (x#i, y#i))");
     rule("[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x) -> x");
     rule("[f: nat, w: nat, x: int w]. add f w 1ₐ (x, x) -> mul f w x 1ₐ ({2U64: int w}, x)");
     // mul
