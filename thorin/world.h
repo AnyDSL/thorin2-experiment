@@ -251,7 +251,7 @@ public:
     //@{ intrinsics (AKA built-in Cont%inuations)
     const Axiom* cn_br()    const { return cn_br_; }
     const Axiom* cn_match() const { return cn_match_; }
-    const Axiom* cn_end()   const { return cn_end_; }
+    Cn* cn_end()   const { return cn_end_; }
     //@}
 
     //@{ externals
@@ -418,7 +418,7 @@ protected:
     std::array<const Lit*, 7> lit_nat_;
     const Axiom* cn_br_;
     const Axiom* cn_match_;
-    const Axiom* cn_end_;
+    Cn* cn_end_;
 };
 
 inline const Def* app_callee(const Def* def) { return def->as<App>()->callee(); }

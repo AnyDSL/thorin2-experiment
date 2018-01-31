@@ -12,45 +12,53 @@
 namespace thorin {
 
 Scope::Scope(Cn* entry)
-    : world_(entry->world())
+    : entry_(entry)
+    , exit_(entry->world().cn_end())
 {
-    run(entry);
+    run();
 }
 
 Scope::~Scope() {}
 
 Scope& Scope::update() {
-    auto e = entry();
-    cns_.clear();
     defs_.clear();
     cfa_ = nullptr;
-    run(e);
     return *this;
 }
 
-void Scope::run(Cn* entry) {
+void Scope::run() {
     std::queue<const Def*> queue;
 
     auto enqueue = [&] (const Def* def) {
-        if (defs_.insert(def).second) {
+        if (defs_.insert(def).second)
             queue.push(def);
-
-            if (auto cn = def->isa_cn())
-                cns_.push_back(cn);
-        }
     };
 
-    enqueue(entry);
+    enqueue(entry_);
+    enqueue(entry_->param());
 
     while (!queue.empty()) {
         auto def = pop(queue);
-        if (def != entry) {
+        if (def != entry_) {
             for (auto use : def->uses())
                 enqueue(use);
         }
     }
 
     enqueue(world().cn_end());
+}
+
+DefSet Scope::free() const {
+    DefSet result;
+
+    for (auto def : defs_) {
+        for (auto op : def->ops()) {
+            if (!contains(op))
+                result.emplace(op);
+        }
+    }
+
+    return result;
 }
 
 const CFA& Scope::cfa() const { return lazy_init(this, cfa_); }

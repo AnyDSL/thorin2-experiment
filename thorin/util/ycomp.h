@@ -101,7 +101,6 @@ public:
     virtual ~YComp() {}
 
     const Scope& scope() const { return scope_; }
-    const World& world() const { return scope().world(); }
     const char* name() const { return name_; }
     // Note that we don't use overloading for the following methods in order to have them accessible from gdb.
     void ycomp() const;                                     ///< Dumps ycomp to a file with an auto-generated file name.
