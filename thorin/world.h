@@ -255,7 +255,7 @@ public:
     //@{ continuations
     const CnType* cn_type(const Def* domain, Debug dbg = {});
     const CnType* cn_type(Defs domain, Debug dbg = {}) { return cn_type(sigma(domain), dbg); }
-    Cn* cn(const CnType*, Debug dbg = {});
+    Cn* cn(const Def* domain, Debug dbg = {});
     const Param* param(const Cn* cn, Debug dbg = {}) { return unify<Param>(1, cn->type()->op(0), cn, dbg); }
     //@}
 

@@ -9,12 +9,12 @@ namespace thorin::core {
 TEST(Cn, Simpel) {
     World w;
     auto C = w.cn_type(w.unit());
-    auto k = w.cn(parse(w, "cn[int {32s64: nat}, cn int {32s64: nat}]")->as<CnType>(), {"k"});
+    auto k = w.cn(parse(w, "[int {32s64: nat}, cn int {32s64: nat}]"), {"k"});
     auto x = k->param(0, {"x"});
     auto r = k->param(1, {"r"});
     auto t = w.cn(C, {"t"});
     auto f = w.cn(C, {"f"});
-    auto n = w.cn(parse(w, "cn[int {32s64: nat}]")->as<CnType>());
+    auto n = w.cn(parse(w, "[int {32s64: nat}]"));
     auto i0 = w.lit_i(0_u32);
     auto cmp = w.op<ICmp::ugt>(x, i0);
     k->br(cmp, t, f);

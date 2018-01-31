@@ -715,8 +715,8 @@ const CnType* World::cn_type(const Def* domain, Debug dbg) {
     return unify<CnType>(1, type, domain, dbg);
 }
 
-Cn* World::cn(const CnType* type, Debug dbg) {
-    return insert<Cn>(3, type, dbg);
+Cn* World::cn(const Def* domain, Debug dbg) {
+    return insert<Cn>(3, cn_type(domain), dbg);
 }
 
 //------------------------------------------------------------------------------
