@@ -12,10 +12,10 @@ public:
     {
         //if  (src.is_pe_done())
             //world_.mark_pe_done();
-//#ifndef NDEBUG
-        //if (src.track_history())
-            //world_.enable_history(true);
-//#endif
+#ifndef NDEBUG
+        if (src.track_history())
+            world_.enable_history(true);
+#endif
     }
 
     World& world() { return world_; }
