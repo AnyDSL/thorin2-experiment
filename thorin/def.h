@@ -1063,6 +1063,7 @@ public:
     const Def* domain() const { return op(0); }
     const Def* codomain() const { return op(1); }
     const Def* arity() const override;
+    size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
@@ -1084,6 +1085,7 @@ public:
     const Def* domain() const { return type()->domain(); }
     const Def* codomain() const { return type()->codomain(); }
     const Def* arity() const override;
+    size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:

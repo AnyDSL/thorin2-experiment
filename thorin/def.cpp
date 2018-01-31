@@ -351,6 +351,8 @@ size_t Def     ::shift(size_t  ) const { return 0; }
 size_t Lambda  ::shift(size_t i) const { assert_unused(i == 0); return 1; }
 size_t Pack    ::shift(size_t i) const { assert_unused(i == 0); return 1; }
 size_t Pi      ::shift(size_t i) const { return i; }
+size_t Rule    ::shift(size_t  ) const { return 1; }
+size_t RuleType::shift(size_t i) const { return i; }
 size_t Sigma   ::shift(size_t i) const { return i; }
 size_t Variadic::shift(size_t i) const { return i; }
 
