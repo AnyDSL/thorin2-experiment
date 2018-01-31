@@ -123,7 +123,7 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
     auto la = a->isa<Lit>(), lb = b->isa<Lit>();
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
-        auto t = callee->type()->template as<Pi>()->body();
+        auto t = callee->type()->template as<Pi>()->codomain();
         auto w = get_nat(app_arg(app_callee(callee)));
         auto f = get_nat(app_arg(app_callee(app_callee(callee))));
         try {
@@ -228,7 +228,7 @@ static const Def* just_try_ifold(const Def* callee, const Def* a, const Def* b) 
     auto la = a->isa<Lit>(), lb = b->isa<Lit>();
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
-        auto t = callee->type()->template as<Pi>()->body();
+        auto t = callee->type()->template as<Pi>()->codomain();
         auto w = get_nat(app_arg(app_callee(callee)));
         try {
             switch (w) {
@@ -371,7 +371,7 @@ static const Def* try_rfold(const Def* callee, const Def* a, const Def* b, Debug
     auto la = a->isa<Lit>(), lb = b->isa<Lit>();
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
-        auto t = callee->type()->template as<Pi>()->body();
+        auto t = callee->type()->template as<Pi>()->codomain();
         auto w = get_nat(app_arg(app_callee(callee)));
         try {
             switch (w) {

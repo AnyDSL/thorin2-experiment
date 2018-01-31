@@ -246,7 +246,7 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     if (auto lambda = app->callee()->isa<Lambda>()) {
         auto pi_type = app->callee()->type()->as<Pi>();
         // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body?
-        if (!lambda->maybe_affine() && !pi_type->body()->maybe_affine() && !lambda->is_nominal()) {
+        if (!lambda->maybe_affine() && !pi_type->codomain()->maybe_affine() && !lambda->is_nominal()) {
             return app->cache_ = reduce(lambda->body(), app->arg());
         }
     }
@@ -660,7 +660,7 @@ const Def* World::variant(const Def* type, Defs ops, Debug dbg) {
 
 static const Def* build_match_type(Defs handlers) {
     auto types = DefArray(handlers.size(),
-            [&](auto i) { return handlers[i]->type()->template as<Pi>()->body(); });
+            [&](auto i) { return handlers[i]->type()->template as<Pi>()->codomain(); });
     // We're not actually building a sum type here, we need uniqueness
     unique_gid_sort(&types);
     return handlers.front()->world().variant(types);

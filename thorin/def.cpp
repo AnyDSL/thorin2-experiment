@@ -456,7 +456,7 @@ Variant* Variant::stub(World& to, const Def* type, Debug dbg) const { assert(is_
 
 const Def* Pi::apply(const Def* arg) const {
     assert(domain()->assignable(arg));
-    return reduce(body(), arg);
+    return reduce(codomain(), arg);
 }
 
 const Def* Lambda::apply(const Def* arg) const {
@@ -486,7 +486,7 @@ bool MultiArityKind::vsubtype_of(const Def* def) const {
 bool Pi::vsubtype_of(const Def* def) const {
     if (type()->subtype_of(def->type())) {
         if (auto other_pi = def->isa<Pi>()) {
-            if (other_pi->domain() == domain() && body()->subtype_of(other_pi->body()))
+            if (other_pi->domain() == domain() && codomain()->subtype_of(other_pi->codomain()))
                 return true;
         }
     }
@@ -616,7 +616,7 @@ void Lambda::typecheck_vars(Environment& types, EnvDefSet& checked) const {
         return;
     // do Pi type check inline to reuse built up environment
     check(type()->type(), types, checked);
-    dependent_check({domain()}, types, checked, {type()->body(), body()});
+    dependent_check({domain()}, types, checked, {type()->codomain(), body()});
 }
 
 void Pack::typecheck_vars(Environment& types, EnvDefSet& checked) const {
@@ -626,7 +626,7 @@ void Pack::typecheck_vars(Environment& types, EnvDefSet& checked) const {
 
 void Pi::typecheck_vars(Environment& types, EnvDefSet& checked) const {
     check(type(), types, checked);
-    dependent_check({domain()}, types, checked, {body()});
+    dependent_check({domain()}, types, checked, {codomain()});
 }
 
 void Sigma::typecheck_vars(Environment& types, EnvDefSet& checked) const {
@@ -770,7 +770,7 @@ std::ostream& Pi::vstream(std::ostream& os) const {
     qualifier_stream(os);
     os  << "Π";
     domain()->name_stream(os);
-    return body()->name_stream(os << ".");
+    return codomain()->name_stream(os << ".");
 }
 
 std::ostream& Pick::vstream(std::ostream& os) const {

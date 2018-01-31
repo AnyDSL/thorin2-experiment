@@ -439,7 +439,7 @@ private:
 
 public:
     const Def* domain() const { return op(0); }
-    const Def* body() const { return op(1); }
+    const Def* codomain() const { return op(1); }
     const Def* apply(const Def*) const;
 
     const Def* arity() const override;
@@ -471,10 +471,11 @@ private:
 
 public:
     Lambda* set(const Def* body) { return Def::set(0, body)->as<Lambda>(); }
-    const Def* domain() const { return type()->domain(); }
     const Def* body() const { return op(0); }
-    const Def* apply(const Def*) const;
     const Pi* type() const { return Def::type()->as<Pi>(); }
+    const Def* domain() const { return type()->domain(); }
+    const Def* codomain() const { return type()->codomain(); }
+    const Def* apply(const Def*) const;
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
