@@ -120,7 +120,7 @@ const Def* unflatten(const Def* body, const Def* arg) {
 const Def* flatten(const Def* body, Defs args) {
     auto& w = body->world();
     auto t = w.tuple(DefArray(args.size(), [&](auto i) { return w.var(args[i], args.size()-1-i); }));
-    return reduce(body, {t});
+    return reduce(body, t);
 }
 
 const Def* shift_free_vars(const Def* def, int64_t shift) {

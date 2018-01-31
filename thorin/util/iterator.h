@@ -172,7 +172,6 @@ auto map_range(I begin, I end, F f) -> auto {
 template<class T, class F>
 auto map_range(const T& t, F f) -> auto { return map_range(t.begin(), t.end(), f); }
 
-
 //------------------------------------------------------------------------------
 
 #define THORIN_ENUM_ITERATOR(T) \

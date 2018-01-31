@@ -64,7 +64,7 @@ const Def* Def::destructing_type() const {
             return cache;
         }
         if (auto lambda = app->callee()->isa<Lambda>(); lambda != nullptr && lambda->is_nominal()) {
-            auto res = thorin::reduce(lambda->body(), {app->arg()});
+            auto res = thorin::reduce(lambda->body(), app->arg());
             app->cache_ = res;
             return res;
         }
@@ -456,7 +456,7 @@ Variant* Variant::stub(World& to, const Def* type, Debug dbg) const { assert(is_
 
 const Def* Pi::apply(const Def* arg) const {
     assert(domain()->assignable(arg));
-    return reduce(body(), {arg});
+    return reduce(body(), arg);
 }
 
 const Def* Lambda::apply(const Def* arg) const {
