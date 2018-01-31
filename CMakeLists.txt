@@ -75,6 +75,10 @@ add_executable(coc
     thorin/frontend/parser.h
     thorin/frontend/token.h
     thorin/frontend/token.cpp
+    thorin/transform/import.cpp
+    thorin/transform/import.h
+    thorin/transform/mangle.cpp
+    thorin/transform/mangle.h
     thorin/transform/reduce.cpp
     thorin/transform/reduce.h
     thorin/util/array.h

@@ -149,6 +149,24 @@ bool Def::is_value() const {
     THORIN_UNREACHABLE;
 }
 
+void Def::replace(Tracker with) const {
+    DLOG("replace: {} -> {}", this, with);
+    assert(type() == with->type());
+    assert(!is_replaced());
+
+    if (this != with) {
+        for (auto& use : copy_uses()) {
+            auto def = const_cast<Def*>(use.def());
+            auto index = use.index();
+            def->unset(index);
+            def->set(index, with);
+        }
+
+        uses_.clear();
+        substitute_ = with;
+    }
+}
+
 std::string Def::unique_name() const { return name() + '_' + std::to_string(gid()); }
 
 Cn* Def::as_cn() const { return const_cast<Cn*>(as<Cn>()); }
@@ -331,6 +349,7 @@ const Def* RuleType      ::arity() const { return world().arity(1); }
 const Def* Sigma         ::arity() const { return world().arity(num_ops()); }
 const Def* Singleton     ::arity() const { return op(0)->arity(); }
 const Def* Star          ::arity() const { return world().arity(1); }
+const Def* Top           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Universe      ::arity() const { THORIN_UNREACHABLE; }
 const Def* Var           ::arity() const { return is_value() ? destructing_type()->arity() : nullptr; }
 const Def* Variant       ::arity() const { return world().variant(DefArray(num_ops(), [&](auto i) { return op(i)->arity(); })); }
@@ -434,6 +453,7 @@ const Def* Rule          ::rebuild(World& to, const Def* t, Defs ops) const { re
 const Def* RuleType      ::rebuild(World& to, const Def*  , Defs ops) const { return to.rule_type(ops[0], ops[1], debug()); }
 const Def* Singleton     ::rebuild(World& to, const Def*  , Defs ops) const { return to.singleton(ops[0]); }
 const Def* Star          ::rebuild(World& to, const Def*  , Defs ops) const { return to.star(ops[0]); }
+const Def* Top           ::rebuild(World& to, const Def* t, Defs    ) const { return to.top(t); }
 const Def* Tuple         ::rebuild(World& to, const Def*  , Defs ops) const { return to.tuple(ops, debug()); }
 const Def* Universe      ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(); }
 const Def* Var           ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
@@ -719,6 +739,7 @@ std::ostream& CnType::vstream(std::ostream& os) const {
 }
 
 std::ostream& Bottom::vstream(std::ostream& os) const { return streamf(os, "{⊥: {}}", type()); }
+std::ostream& Top   ::vstream(std::ostream& os) const { return streamf(os, "{⊤: {}}", type()); }
 
 std::ostream& Extract::vstream(std::ostream& os) const {
     return scrutinee()->name_stream(os) << "#" << index();

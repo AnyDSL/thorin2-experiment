@@ -19,6 +19,14 @@ public:
 
     typedef HashSet<const Def*, DefHash> DefSet;
 
+    struct BreakHash {
+        static uint64_t hash(size_t i) { return i; }
+        static bool eq(size_t i1, size_t i2) { return i1 == i2; }
+        static size_t sentinel() { return size_t(-1); }
+    };
+
+    typedef HashSet<size_t, BreakHash> Breakpoints;
+
     World& operator=(const World&) = delete;
     World(const World&) = delete;
 
@@ -205,7 +213,6 @@ public:
     const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
-    const Bottom* bottom(const Def* type) { return unify<Bottom>(0, type); }
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
     const Def* pick(const Def* type, const Def* def, Debug dbg = {});
     const Def* singleton(const Def* def, Debug dbg = {});
@@ -217,6 +224,11 @@ public:
         assert(num_ops > 1 && "it should not be necessary to build empty/unary variants");
         return insert<Variant>(num_ops, type, num_ops, dbg);
     }
+    //@}
+
+    //@{ misc factory methods
+    const Bottom* bottom(const Def* type) { return unify<Bottom>(0, type); }
+    const Top* top(const Def* type) { return unify<Top>(0, type); }
     //@}
 
     //@{ bool and nat types
@@ -291,11 +303,25 @@ public:
     }
     //@}
 
+#ifndef NDEBUG
+    //@{ debugging infrastructure
+    void breakpoint(size_t number) { breakpoints_.insert(number); }
+    const Breakpoints& breakpoints() const { return breakpoints_; }
+    void swap_breakpoints(World& other) { swap(this->breakpoints_, other.breakpoints_); }
+    bool track_history() const { return track_history_; }
+    void enable_history(bool flag = true) { track_history_ = flag; }
+    //@}
+#endif
+
     friend void swap(World& w1, World& w2) {
         using std::swap;
         swap(w1.debug_,            w2.debug_);
         swap(w1.defs_,             w2.defs_);
         swap(w1.universe_->world_, w2.universe_->world_);
+#ifndef NDEBUG
+        swap(w1.breakpoints_,   w2.breakpoints_);
+        swap(w1.track_history_, w2.track_history_);
+#endif
     }
 
 private:
@@ -430,6 +456,10 @@ protected:
     const Axiom* cn_br_;
     const Axiom* cn_match_;
     Cn* cn_end_;
+#ifndef NDEBUG
+    Breakpoints breakpoints_;
+    bool track_history_ = false;
+#endif
 };
 
 inline const Def* app_callee(const Def* def) { return def->as<App>()->callee(); }

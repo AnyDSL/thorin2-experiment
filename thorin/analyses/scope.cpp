@@ -48,17 +48,18 @@ void Scope::run() {
     enqueue(world().cn_end());
 }
 
-DefSet Scope::free() const {
-    DefSet result;
+const DefSet& Scope::free() const {
+    if (!free_)
+        free_ = std::make_unique<DefSet>();
 
     for (auto def : defs_) {
         for (auto op : def->ops()) {
             if (!contains(op))
-                result.emplace(op);
+                free_->emplace(op);
         }
     }
 
-    return result;
+    return *free_;
 }
 
 const CFA& Scope::cfa() const { return lazy_init(this, cfa_); }

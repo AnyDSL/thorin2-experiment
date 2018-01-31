@@ -20,6 +20,7 @@ namespace thorin {
 class App;
 class Cn;
 class Def;
+class Tracker;
 class Param;
 class World;
 
@@ -103,7 +104,7 @@ DefArray unique_gid_sorted(Defs defs);
 typedef const Def* (*Normalizer)(const Def*, const Def*, Debug);
 
 /// Base class for all Def%s.
-class Def : public RuntimeCast<Def>, public Streamable  {
+class Def : public RuntimeCast<Def>, public Streamable {
 public:
     enum class Tag {
         Any, Match, Variant,
@@ -116,7 +117,7 @@ public:
         Qualifier, QualifierType,
         Rule, RuleType,
         Star, Universe,
-        Bottom,
+        Bottom, Top,
         Singleton,
         Var,
         Num
@@ -180,6 +181,7 @@ public:
     //@{ get Uses%s
     const Uses& uses() const { return uses_; }
     size_t num_uses() const { return uses().size(); }
+    Array<Use> copy_uses() const { return Array<Use>(uses_.begin(), uses_.end()); }
     //@}
 
     //@{ get Debug information
@@ -275,6 +277,11 @@ public:
     }
     //@}
 
+    //@{ replace
+    void replace(Tracker) const;
+    bool is_replaced() const { return substitute_ != nullptr; }
+    //@}
+
     //@{ stream
     virtual std::ostream& name_stream(std::ostream& os) const {
         if (name() != "" || is_nominal()) {
@@ -320,6 +327,7 @@ private:
         mutable World* world_;
     };
     mutable Normalizer normalizer_ = nullptr;
+    mutable const Def* substitute_ = nullptr;
     uint32_t num_ops_;
     union {
         struct {
@@ -335,8 +343,32 @@ private:
     static_assert(int(Tag::Num) <= 64, "you must increase the number of bits in tag_");
     const Def** ops_;
 
+    friend class Tracker;
     friend class World;
     friend void swap(World&, World&);
+};
+
+class Tracker {
+public:
+    Tracker()
+        : def_(nullptr)
+    {}
+    Tracker(const Def* def)
+        : def_(def)
+    {}
+
+    operator const Def*() { return def(); }
+    const Def* operator->() { return def(); }
+    const Def* def() {
+        if (def_ != nullptr) {
+            while (auto repr = def_->substitute_)
+                def_ = repr;
+        }
+        return def_;
+    }
+
+private:
+    const Def* def_;
 };
 
 #define THORIN_OPS_PTR reinterpret_cast<const Def**>(reinterpret_cast<char*>(this+1))
@@ -931,7 +963,6 @@ inline bool is_one(int64_t w, const Lit* lit) {
 
 class Bottom : public Def {
 private:
-    // TODO additional error message with more precise information
     Bottom(const Def* type)
         : Def(Tag::Bottom, type, Defs(), THORIN_OPS_PTR, {"⊥"})
     {}
@@ -946,7 +977,21 @@ private:
     friend class World;
 };
 
-inline bool is_error(const Def* def) { return def->tag() == Def::Tag::Bottom; }
+class Top : public Def {
+private:
+    Top(const Def* type)
+        : Def(Tag::Top, type, Defs(), THORIN_OPS_PTR, {"⊤"})
+    {}
+
+public:
+    const Def* arity() const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+private:
+    std::ostream& vstream(std::ostream&) const override;
+
+    friend class World;
+};
 
 //------------------------------------------------------------------------------
 

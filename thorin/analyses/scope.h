@@ -44,7 +44,7 @@ public:
     const DefSet& defs() const { return defs_; }
     bool contains(const Def* def) const { return defs_.contains(def); }
     /// All @p Def%s referenced but @em not contained in this @p Scope.
-    DefSet free() const;
+    const DefSet& free() const;
     //@}
 
     //@{ simple CFA to construct a CFG
@@ -75,6 +75,7 @@ private:
     Cn* entry_;
     Cn* exit_;
     DefSet defs_;
+    mutable std::unique_ptr<DefSet> free_;
     mutable std::unique_ptr<const CFA> cfa_;
 };
 
