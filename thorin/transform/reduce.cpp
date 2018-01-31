@@ -61,8 +61,7 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
                 // remember that the lowest index corresponds to the last element in args due to De Bruijn's
                 // way of counting
                 size_t arg_index = shift() - (var->index() - offset) - 1;
-                if (!new_type->assignable(args_[arg_index]))
-                    return world().error(new_type); // use the expected type, not the one provided by the arg
+                assertf(new_type->assignable(args_[arg_index]), "cannot assign {} to {}", args_[arg_index], new_type);
                 return args_[arg_index]->shift_free_vars(-offset);
             }
         }

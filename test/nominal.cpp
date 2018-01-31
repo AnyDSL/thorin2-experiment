@@ -98,8 +98,6 @@ TEST(Nominal, ReduceWithNominals) {
     ASSERT_FALSE(red->isa<App>());
     ASSERT_EQ(w.extract(red, 0_s), w.extract(red, 1_s));
 
-    auto sig2 = w.sigma({sig, sig});
-    ASSERT_FALSE(sig2->has_error());
     auto lam2 = w.lambda(star, w.sigma({sig, sig}));
     auto red2 = w.app(lam2, nat);
     ASSERT_FALSE(red2->isa<App>());

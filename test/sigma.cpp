@@ -55,13 +55,6 @@ TEST(Tuple, TypeExtract) {
     EXPECT_DEATH(w.extract(w.var(sig, 1), w.var(arity2, 0))->type(), ".*");
 }
 
-TEST(Tuple, Error) {
-    World w;
-
-    auto tuple = w.tuple({w.error(w.star())});
-    ASSERT_TRUE(tuple->has_error());
-}
-
 TEST(Sigma, EtaConversion) {
     World w;
     auto v = w.lit_nat_32();

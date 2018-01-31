@@ -104,22 +104,16 @@ Def* Def::set(size_t i, const Def* def) {
 }
 
 void Def::finalize() {
-    // TODO move this to Error constructor
-    has_error_   |= this->tag() == Tag::Error;
-
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         assert(op(i) != nullptr);
         const auto& p = op(i)->uses_.emplace(this, i);
         assert_unused(p.second);
         free_vars_   |= op(i)->free_vars() >> shift(i);
-        has_error_   |= op(i)->has_error();
         contains_cn_ |= op(i)->tag() == Tag::Cn || op(i)->contains_cn();
     }
 
-    if (type() != nullptr) {
+    if (type() != nullptr)
         free_vars_ |= type()->free_vars_;
-        has_error_ |= type()->has_error();
-    }
 
 #ifndef NDEBUG
     if (free_vars().none())
@@ -539,7 +533,7 @@ bool Sigma::assignable(const Def* def) const {
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         auto reduced_type = reduce(op(i), defs.get_front(i));
         // TODO allow conversion from nominal -> structural, instead of simple comparison
-        if (reduced_type->has_error() || !reduced_type->assignable(defs[i]))
+        if (!reduced_type->assignable(defs[i]))
             return false;
     }
     return true;
@@ -569,7 +563,7 @@ bool Variadic::assignable(const Def* def) const {
             for (size_t i = 0; i != size; ++i) {
                 // body should actually not depend on index, but implemented for completeness
                 auto reduced_type = reduce(body(), world().index(size, i));
-                if (reduced_type->has_error() || !reduced_type->assignable(def->op(i)))
+                if (!reduced_type->assignable(def->op(i)))
                     return false;
             }
             return true;

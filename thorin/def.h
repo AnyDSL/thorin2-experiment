@@ -139,7 +139,6 @@ protected:
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
         , nominal_(true)
-        , has_error_(false)
         , contains_cn_(false)
         , ops_(ops_ptr)
     {
@@ -154,7 +153,6 @@ protected:
         , gid_(gid_counter_++)
         , tag_(unsigned(tag))
         , nominal_(false)
-        , has_error_(false)
         , contains_cn_(false)
         , ops_(ops_ptr)
     {
@@ -223,7 +221,6 @@ public:
     static uint32_t gid_counter() { return gid_counter_; }
     /// A nominal Def is always different from each other Def.
     bool is_nominal() const { return nominal_; }
-    bool has_error() const { return has_error_; }
     Tag tag() const { return Tag(tag_); }
     //@}
 
@@ -326,10 +323,9 @@ private:
     uint32_t num_ops_;
     union {
         struct {
-            unsigned gid_           : 23;
+            unsigned gid_           : 24;
             unsigned tag_           :  6;
             unsigned nominal_       :  1;
-            unsigned has_error_     :  1;
             unsigned contains_cn_   :  1;
             // this sum must be 32   ^^^
         };
@@ -924,7 +920,7 @@ inline bool is_rzero(int64_t w, const Lit* lit) {
     return (lit->box().get_u64() & ~(1_u64 << (u64(w)-1_u64))) == 0_u64;
 }
 
-inline bool is_one  (int64_t w, const Lit* lit) {
+inline bool is_one(int64_t w, const Lit* lit) {
     switch (w) {
         case 16: return lit->box().get_r16() == 1._r16;
         case 32: return lit->box().get_r32() == 1._r32;
