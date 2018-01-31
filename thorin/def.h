@@ -116,7 +116,7 @@ public:
         Qualifier, QualifierType,
         Rule, RuleType,
         Star, Universe,
-        Error,
+        Bottom,
         Singleton,
         Var,
         Num
@@ -929,11 +929,11 @@ inline bool is_one(int64_t w, const Lit* lit) {
     }
 }
 
-class Error : public Def {
+class Bottom : public Def {
 private:
     // TODO additional error message with more precise information
-    Error(const Def* type)
-        : Def(Tag::Error, type, Defs(), THORIN_OPS_PTR, {"<error>"})
+    Bottom(const Def* type)
+        : Def(Tag::Bottom, type, Defs(), THORIN_OPS_PTR, {"⊥"})
     {}
 
 public:
@@ -946,7 +946,7 @@ private:
     friend class World;
 };
 
-inline bool is_error(const Def* def) { return def->tag() == Def::Tag::Error; }
+inline bool is_error(const Def* def) { return def->tag() == Def::Tag::Bottom; }
 
 //------------------------------------------------------------------------------
 

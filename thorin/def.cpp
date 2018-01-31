@@ -318,7 +318,7 @@ const Def* App           ::arity() const { return is_value() ? destructing_type(
 const Def* Axiom         ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Cn            ::arity() const { return world().arity(1); }
 const Def* CnType        ::arity() const { return world().arity(1); }
-const Def* Error         ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
+const Def* Bottom        ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 // const Def* Intersection::arity() const { return TODO; }
 const Def* Lit           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* MultiArityKind::arity() const { return world().arity(1); }
@@ -406,7 +406,7 @@ const Def* ArityKind     ::rebuild(World& to, const Def*  , Defs ops) const { re
 const Def* Axiom         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Cn            ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* CnType        ::rebuild(World& to, const Def*  , Defs ops) const { return to.cn_type(ops[0], debug()); }
-const Def* Error         ::rebuild(World& to, const Def* t, Defs    ) const { return to.error(t); }
+const Def* Bottom        ::rebuild(World& to, const Def* t, Defs    ) const { return to.bottom(t); }
 const Def* Extract       ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
 const Def* Intersection  ::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
@@ -718,7 +718,7 @@ std::ostream& CnType::vstream(std::ostream& os) const {
     return streamf(os, "cn {}", domain());
 }
 
-std::ostream& Error::vstream(std::ostream& os) const { return os << "<error>"; }
+std::ostream& Bottom::vstream(std::ostream& os) const { return streamf(os, "{⊥: {}}", type()); }
 
 std::ostream& Extract::vstream(std::ostream& os) const {
     return scrutinee()->name_stream(os) << "#" << index();

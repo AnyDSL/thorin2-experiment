@@ -205,7 +205,7 @@ public:
     const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
-    const Error* error(const Def* type) { return unify<Error>(0, type); }
+    const Bottom* bottom(const Def* type) { return unify<Bottom>(0, type); }
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
     const Def* pick(const Def* type, const Def* def, Debug dbg = {});
     const Def* singleton(const Def* def, Debug dbg = {});

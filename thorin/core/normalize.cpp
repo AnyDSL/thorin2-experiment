@@ -157,8 +157,8 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
                         case 64: return world.lit(t, F<64, true,  true>::run(ba, bb));
                     }
             }
-        } catch (ErrorException) {
-            return world.error(t);
+        } catch (BottomException) {
+            return world.bottom(t);
         }
     }
 
@@ -237,8 +237,8 @@ static const Def* just_try_ifold(const Def* callee, const Def* a, const Def* b) 
                 case 32: return world.lit(t, F<32>::run(ba, bb));
                 case 64: return world.lit(t, F<64>::run(ba, bb));
             }
-        } catch (ErrorException) {
-            return world.error(t);
+        } catch (BottomException) {
+            return world.bottom(t);
         }
     }
 
@@ -379,8 +379,8 @@ static const Def* try_rfold(const Def* callee, const Def* a, const Def* b, Debug
                 case 32: return world.lit(t, F<32>::run(ba, bb));
                 case 64: return world.lit(t, F<64>::run(ba, bb));
             }
-        } catch (ErrorException) {
-            return world.error(t);
+        } catch (BottomException) {
+            return world.bottom(t);
         }
     }
 
