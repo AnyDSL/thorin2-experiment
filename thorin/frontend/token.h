@@ -4,6 +4,7 @@
 #include <string>
 
 #include "thorin/util/location.h"
+#include "thorin/util/symbol.h"
 #include "thorin/util/types.h"
 #include "thorin/util/utility.h"
 
@@ -19,8 +20,11 @@ namespace thorin {
     f(L_Angle,          "<") \
     f(R_Angle,          ">") \
     f(Colon,            ":") \
+    f(ColonColon,       "::") \
+    f(ColonEqual,       ":=") \
     f(Comma,            ",") \
     f(Dot,              ".") \
+    f(Equal,            "=") \
     f(Semicolon,        ";") \
     f(Star,             "*") \
     f(Sharp,            "#") \
@@ -90,7 +94,7 @@ public:
 
     Tag tag() const { return tag_; }
     Literal literal() const { return literal_; }
-    std::string identifier() const { return identifier_; }
+    Symbol identifier() const { return identifier_; }
     Location location() const { return location_; }
 
     bool isa(Tag tag) const { return tag_ == tag; }
@@ -109,7 +113,7 @@ private:
     Location location_;
 
     Literal     literal_;
-    std::string identifier_;
+    Symbol identifier_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Token& t);

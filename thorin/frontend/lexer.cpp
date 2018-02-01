@@ -121,7 +121,12 @@ Token Lexer::lex() {
             return {location(), Token::Tag::L_Angle};
         }
         if (accept('>')) return {location(), Token::Tag::R_Angle};
-        if (accept(':')) return {location(), Token::Tag::Colon};
+        if (accept(':')) {
+            if (accept(':')) return {location(), Token::Tag::ColonColon};
+            else if (accept('=')) return {location(), Token::Tag::ColonEqual};
+            else return {location(), Token::Tag::Colon};
+        }
+        if (accept('=')) return {location(), Token::Tag::Equal};
         if (accept(',')) return {location(), Token::Tag::Comma};
         if (accept('.')) return {location(), Token::Tag::Dot};
         if (accept(';')) return {location(), Token::Tag::Semicolon};

@@ -149,3 +149,51 @@ TEST(Parser, IntArithOp) {
     auto i_arithop = parse(w, "Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[int(q, f, w),  int(q, f, w)].  int(q, f, w)");
     EXPECT_EQ(i_arithop, def);
 }
+
+TEST(Parser, Let) {
+    World w;
+    auto S = w.star();
+    auto nat = w.type_nat();
+    EXPECT_EQ(parse(w, "x = nat; (x, x)"), w.tuple({nat, nat}));
+    EXPECT_EQ(parse(w, "x = nat; y = x; (x, y)"), w.tuple({nat, nat}));
+    EXPECT_EQ(parse(w, "x = *; [x, y = nat; y]"), w.sigma({S, nat}));
+    EXPECT_EQ(parse(w, "x = *; x = nat; [x, x]"), w.sigma({nat, nat}));
+    auto SS = w.sigma({S, S});
+    auto TSS = w.sigma({SS, w.extract(w.var(SS, 0), 1), w.extract(w.var(SS,1), 0_u64)});
+    EXPECT_EQ(parse(w, "λp:[k = *; [t1:k, t2:k], x:t2, y:t1].(x, y)"), w.lambda(TSS, w.tuple({w.extract(w.var(TSS, 0), 1), w.extract(w.var(TSS, 0), 2)})));
+}
+
+TEST(Parser, LetShadow) {
+    World w;
+    auto S = w.star();
+    auto nat = w.type_nat();
+    EXPECT_EQ(parse(w, "λx:*.(x = nat; x, x)"), w.lambda(S, w.tuple({nat, w.var(S, 0)})));
+    EXPECT_EQ(parse(w, "λx:*.[x = nat; x, x]"), w.lambda(S, w.sigma({nat, w.var(S, 1)})));
+    EXPECT_EQ(parse(w, "x = nat; λx:x.x"), w.lambda(nat, w.var(nat, 0)));
+    EXPECT_EQ(parse(w, "λ[x = nat; x:x].x"), w.lambda(nat, w.var(nat, 0)));
+}
+
+void check_nominal(const Def* def, Def::Tag tag, const Def* type, Defs ops) {
+    EXPECT_EQ(def->tag(), tag);
+    EXPECT_EQ(def->type(), type);
+    EXPECT_EQ(def->num_ops(), ops.size());
+    for (size_t i = 0, e = ops.size(); i != e; ++i)
+        EXPECT_EQ(def->op(i), ops[i]);
+}
+
+TEST(Parser, NominalLambda) {
+    World w;
+    auto S = w.star();
+    auto nominal_id = parse(w, "l :: Π*.* := λt:*.t; l");
+    check_nominal(nominal_id, Def::Tag::Lambda, w.pi(S, S), {w.var(S, 0)});
+    // the following does not work, as it will be eta-reduced with the current parsing of nominals,
+    // but such nominals are quite useless anyway
+    // auto nominal_endless_id = parse(w, "l :: Π*.* := λt:*.l t; l");
+    // check_nominal(nominal_id, Def::Tag::Lambda, w.pi(S, S), {w.app(nominal_endless_id, w.var(S, 0))});
+    auto ltup = parse(w, "l :: Π*.[*,*] := λt:*.(t, (l t)#0₂); l");
+    check_nominal(ltup, Def::Tag::Lambda, w.pi(S, w.sigma({S, S})), {w.tuple({w.var(S, 0), w.extract(w.app(ltup, w.var(S, 0)), 0_s)})});
+}
+
+// TODO nominal sigma tests
+// TEST(Parser, NominalSigma) {
+// }
