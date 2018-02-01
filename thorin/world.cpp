@@ -251,9 +251,8 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
         if (auto cache = app->cache_)
             return cache;
 
-        auto pi_type = app->callee()->type()->as<Pi>();
         // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body?
-        if (!lambda->maybe_affine() && !pi_type->codomain()->maybe_affine())
+        if (!lambda->maybe_affine() && !lambda->codomain()->maybe_affine())
             return app->cache_ = reduce(lambda->body(), app->arg());
     }
 
