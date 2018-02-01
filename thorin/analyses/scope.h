@@ -19,9 +19,6 @@ class CFNode;
 /**
  * A @p Scope represents a region of @p Cn%s which are live from the view of an @p entry @p Cn.
  * Transitively, all user's of the @p entry's parameters are pooled into this @p Scope.
- * Use @p cns() to retrieve a vector of @p Cn%s in this @p Scope.
- * @p entry() will be first, @p exit() will be last.
- * @warning All other @p Cn%s are in no particular order.
  */
 class Scope : public Streamable {
 public:
@@ -66,8 +63,7 @@ public:
      * Select with @p elide_empty whether you want to visit trivial Scope%s of Cn%s without body.
      * @attention { If you change anything in the Scope passed to @p f, you must invoke @p update to recompute the Scope. }
      */
-    template<bool elide_empty = true>
-    static void for_each(const World&, std::function<void(Scope&)> f);
+    template<bool elide_empty = true> static void for_each(const World& world, std::function<void(Scope&)> f);
 
 private:
     void run();
