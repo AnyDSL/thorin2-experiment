@@ -23,6 +23,7 @@ Scope::~Scope() {}
 Scope& Scope::update() {
     defs_.clear();
     cfa_ = nullptr;
+    free_ = nullptr;
     return *this;
 }
 
