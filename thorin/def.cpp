@@ -1,4 +1,3 @@
-#include <sstream>
 #include <stack>
 
 #include "thorin/world.h"
@@ -11,6 +10,11 @@ namespace thorin {
 /*
  * helpers
  */
+
+#define errorf(cond, ...)                               \
+    if (world().is_typechecking_enabled() && !(cond)) {  \
+        errorf_(__VA_ARGS__);                           \
+    }
 
 DefArray qualifiers(Defs defs) {
     DefArray result(defs.size());
@@ -49,12 +53,10 @@ Normalizer get_normalizer(const Def* def) {
     return nullptr;
 }
 
-static bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
-#ifndef NDEBUG
-    auto all = std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); });
-    assertf(all, "operands must be of the same sort");
-#endif
-    return true;
+static inline void check_same_sorted_ops(Def::Sort sort, Defs ops) {
+    if (ops.front()->world().is_typechecking_enabled() &&
+            !std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); }))
+        errorf_("operands must be of the same sort");
 }
 
 //------------------------------------------------------------------------------
@@ -132,10 +134,8 @@ void Def::finalize() {
     if (type() != nullptr)
         free_vars_ |= type()->free_vars_;
 
-#ifndef NDEBUG
-    if (free_vars().none())
+    if (world().is_typechecking_enabled() && free_vars().none())
         typecheck();
-#endif
 }
 
 void Def::unset(size_t i) {
@@ -202,7 +202,7 @@ ArityKind::ArityKind(World& world, const Def* qualifier)
 Intersection::Intersection(const Def* type, const SortedDefSet& ops, Debug dbg)
     : Def(Tag::Intersection, type, range(ops), THORIN_OPS_PTR, dbg)
 {
-    assert(check_same_sorted_ops(sort(), this->ops()));
+    check_same_sorted_ops(sort(), this->ops());
 }
 
 MultiArityKind::MultiArityKind(World& world, const Def* qualifier)
@@ -234,7 +234,7 @@ Variant::Variant(const Def* type, const SortedDefSet& ops, Debug dbg)
     : Def(Tag::Variant, type, range(ops), THORIN_OPS_PTR, dbg)
 {
     // TODO does same sorted ops really hold? ex: matches that return different sorted stuff? allowed?
-    assert(check_same_sorted_ops(sort(), this->ops()));
+    check_same_sorted_ops(sort(), this->ops());
 }
 
 //------------------------------------------------------------------------------
@@ -677,7 +677,7 @@ void Var::typecheck_vars(Environment& types, EnvDefSet&) const {
     auto reverse_index = types.size() - 1 - index();
     auto shifted_type = shift_free_vars(type(), -index() - 1);
     auto env_type = types[reverse_index];
-    assertf(env_type == shifted_type,
+    errorf(env_type == shifted_type,
             "The shifted type {} of variable {} does not match the type {} declared by the binder.", shifted_type,
             index(), types[reverse_index]);
 }

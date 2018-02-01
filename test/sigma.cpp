@@ -40,6 +40,7 @@ TEST(Sigma, ExtractAndSingleton) {
 
 TEST(Tuple, TypeExtract) {
     World w;
+    w.enable_typechecking();
     auto arity2 = w.arity(2);
     auto nat = w.axiom(w.star(), {"Nat"});
 
@@ -51,8 +52,7 @@ TEST(Tuple, TypeExtract) {
     EXPECT_EQ(ex_var_tup, w.star());
 
     auto sig = w.sigma({w.pi(w.star(), w.star()), w.star()});
-    // TODO can we remove DEATH tests?
-    EXPECT_DEATH(w.extract(w.var(sig, 1), w.var(arity2, 0))->type(), ".*");
+    EXPECT_THROW(w.extract(w.var(sig, 1), w.var(arity2, 0))->type(), TypeError);
 }
 
 TEST(Sigma, EtaConversion) {

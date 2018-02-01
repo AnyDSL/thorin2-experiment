@@ -1,4 +1,5 @@
 #ifndef THORIN_WORLD_H
+
 #define THORIN_WORLD_H
 
 #include <memory>
@@ -8,6 +9,22 @@
 #include "thorin/util/iterator.h"
 
 namespace thorin {
+
+struct TypeError {
+    TypeError(std::string&& msg)
+        : msg(std::move(msg))
+    {}
+    std::string msg;
+};
+
+template<typename... Args>
+[[noreturn]] void errorf_(const char* fmt, Args... args) {
+    std::ostringstream oss;
+    streamf(oss, fmt, std::forward<Args>(args)...);
+    throw TypeError(std::move(oss.str()));
+}
+
+//------------------------------------------------------------------------------
 
 class World {
 public:
@@ -298,22 +315,24 @@ public:
     }
     //@}
 
+    //@{ debugging infrastructure
+#ifndef NDEBUG
+    void breakpoint(size_t number) { breakpoints_.insert(number); }
+    const Breakpoints& breakpoints() const { return breakpoints_; }
+    void swap_breakpoints(World& other) { swap(this->breakpoints_, other.breakpoints_); }
+    bool track_history() const { return track_history_; }
+    void enable_history(bool flag = true) { track_history_ = flag; }
+#endif
+    bool is_typechecking_enabled() const { return typechecking_enabled_; }
+    void enable_typechecking(bool on = true) { typechecking_enabled_ = on; }
+    //@}
+
     //@{ misc
     const DefSet& defs() const { return defs_; }
     auto cns() const { return map_range(range(defs_,
                 [](auto def) { return def->isa_cn(); }),
                 [](auto def) { return def->as_cn(); }); }
     //@}
-
-#ifndef NDEBUG
-    //@{ debugging infrastructure
-    void breakpoint(size_t number) { breakpoints_.insert(number); }
-    const Breakpoints& breakpoints() const { return breakpoints_; }
-    void swap_breakpoints(World& other) { swap(this->breakpoints_, other.breakpoints_); }
-    bool track_history() const { return track_history_; }
-    void enable_history(bool flag = true) { track_history_ = flag; }
-    //@}
-#endif
 
     friend void swap(World& w1, World& w2) {
         using std::swap;
@@ -396,11 +415,21 @@ protected:
         char buffer[Size];
     };
 
-    static bool alloc_guard_;
+#ifndef NDEBUG
+    struct Lock {
+        Lock() {
+            assert((alloc_guard_ = !alloc_guard_) && "you are not allowed to recursively invoke alloc");
+        }
+        ~Lock() { alloc_guard_ = !alloc_guard_; }
+        static bool alloc_guard_;
+    };
+#else
+    struct Lock {}
+#endif
 
     template<class T, class... Args>
     T* alloc(size_t num_ops, Args&&... args) {
-        assert((alloc_guard_ = !alloc_guard_) && "you are not allowed to recursively invoke alloc");
+        Lock lock;
         size_t num_bytes = sizeof(T) + sizeof(const Def*) * num_ops;
         assert(num_bytes < Zone::Size);
 
@@ -415,9 +444,6 @@ protected:
         buffer_index_ += num_bytes;
         assert(buffer_index_ % alignof(T) == 0);
 
-#ifndef NDEBUG
-        alloc_guard_ = !alloc_guard_;
-#endif
         return result;
     }
 
@@ -465,6 +491,9 @@ protected:
 #ifndef NDEBUG
     Breakpoints breakpoints_;
     bool track_history_ = false;
+    bool typechecking_enabled_ = true;
+#else
+    bool typechecking_enabled_ = false;
 #endif
 };
 

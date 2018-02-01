@@ -27,6 +27,8 @@ class World;
 typedef const Def* (*Normalizer)(const Def*, const Def*, Debug);
 Normalizer get_normalizer(const Def* def);
 
+//------------------------------------------------------------------------------
+
 /**
  * References a user.
  * A Def @c u which uses Def @c d as @c i^th operand is a Use with Use::index_ @c i of Def @c d.
@@ -48,8 +50,6 @@ private:
     TaggedPtr<const Def, size_t> tagged_ptr_;
 };
 
-//------------------------------------------------------------------------------
-
 struct UseHash {
     inline static uint64_t hash(Use use);
     static bool eq(Use u1, Use u2) { return u1 == u2; }
@@ -57,6 +57,8 @@ struct UseHash {
 };
 
 typedef HashSet<Use, UseHash> Uses;
+
+//------------------------------------------------------------------------------
 
 template<class T>
 struct GIDLt {
