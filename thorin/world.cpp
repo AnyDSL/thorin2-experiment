@@ -5,12 +5,6 @@
 #include "thorin/frontend/parser.h"
 #include "thorin/transform/reduce.h"
 
-#if (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(__i386__))
-#define THORIN_BREAK asm("int3");
-#else
-#define THORIN_BREAK { int* __p__ = nullptr; *__p__ = 42; }
-#endif
-
 namespace thorin {
 
 //------------------------------------------------------------------------------

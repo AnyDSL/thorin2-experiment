@@ -366,6 +366,9 @@ protected:
     template<class T, class... Args>
     const T* unify(size_t num_ops, Args&&... args) {
         auto def = alloc<T>(num_ops, args...);
+#ifndef NDEBUG
+        if (breakpoints_.contains(def->gid())) THORIN_BREAK;
+#endif
         assert(!def->is_nominal());
         auto [i, success] = defs_.emplace(def);
         if (success) {
@@ -373,7 +376,6 @@ protected:
             return def;
         }
 
-        --Def::gid_counter_;
         dealloc(def);
         return static_cast<const T*>(*i);
     }
