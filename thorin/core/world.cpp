@@ -61,13 +61,13 @@ World::World(Debug dbg)
     THORIN_R_CMP(CODE)
 #undef CODE
 
-    Cast_[size_t(Cast::scast)] = axiom("scast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]");
-    Cast_[size_t(Cast::ucast)] = axiom("ucast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]");
-    Cast_[size_t(Cast::rcast)] = axiom("rcast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s; real dw]");
-    Cast_[size_t(Cast::s2r  )] = axiom("s2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]");
-    Cast_[size_t(Cast::u2r  )] = axiom("u2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]");
-    Cast_[size_t(Cast::r2s  )] = axiom("r2s",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]");
-    Cast_[size_t(Cast::r2u  )] = axiom("r2u",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]");
+    Cast_[size_t(Cast::scast)] = axiom("scast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]", 0, normalize_scast);
+    Cast_[size_t(Cast::ucast)] = axiom("ucast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]", 0, normalize_ucast);
+    Cast_[size_t(Cast::rcast)] = axiom("rcast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s; real dw]", 0, normalize_rcast);
+    Cast_[size_t(Cast::s2r  )] = axiom("s2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]", 0, normalize_s2r);
+    Cast_[size_t(Cast::u2r  )] = axiom("u2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]", 0, normalize_u2r);
+    Cast_[size_t(Cast::r2s  )] = axiom("r2s",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]", 0, normalize_r2s);
+    Cast_[size_t(Cast::r2u  )] = axiom("r2u",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]", 0, normalize_r2u);
 
     op_lea_   = axiom("lea",   "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)");
     op_load_  = axiom("load",  "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]");
