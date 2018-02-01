@@ -615,15 +615,19 @@ using StrMap = HashMap<const char*, V, StrHash>;
 
 //------------------------------------------------------------------------------
 
+/// Returns nullptr if @p key has not been found in @p map.
 template<class Key, class T, class H>
 T* find(const HashMap<Key, T*, H>& map, const typename HashMap<Key, T*, H>::key_type& key) {
     auto i = map.find(key);
     return i == map.end() ? nullptr : i->second;
 }
 
-template<class Key, class H, class Arg>
-bool visit(HashSet<Key, H>& set, const Arg& key) {
-    return !set.emplace(key).second;
+/// Checks whether emplace worked and asserts if not.
+template<class Key, class T, class H, class V>
+V checked_emplace(HashMap<Key, T, H>& map, Key&& key, V&& val) {
+    auto succ = map.emplace(key, val).second;
+    assert_unused(succ);
+    return val;
 }
 
 //------------------------------------------------------------------------------

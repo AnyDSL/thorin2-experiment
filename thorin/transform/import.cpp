@@ -21,7 +21,7 @@ const Def* Importer::import(Tracker old_def) {
     auto new_type = import(old_def->type());
     Def* new_nominal = nullptr;
     if (old_def->is_nominal())
-        new_nominal = insert(old_def, old_def->stub(world(), new_type));
+        new_nominal = checked_emplace(old2new_, old_def.def(), old_def->stub(world(), new_type));
 
     DefArray new_ops(old_def->num_ops());
     for (size_t i = 0, e = old_def->num_ops(); i != e; ++i)
@@ -37,7 +37,7 @@ const Def* Importer::import(Tracker old_def) {
     auto new_def = old_def->rebuild(world(), new_type, new_ops);
     check_todo(old_def, new_def);
 
-    return insert(old_def, new_def);
+    return checked_emplace(old2new_, old_def.def(), new_def);
 }
 
 }

@@ -23,13 +23,6 @@ public:
     bool todo() const { return todo_; }
 
 public:
-    // TODO maybe we want to have a general check_insert for HashTable
-    template<class T>
-    T insert(const Def* old_def, T new_def) {
-        auto success = old2new_.emplace(old_def, new_def).second;
-        assert_unused(success);
-        return new_def;
-    }
     void check_todo(const Def*, const Def*);
 
     Def2Def old2new_;
