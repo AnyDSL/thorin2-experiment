@@ -898,13 +898,14 @@ typedef const Def* (*Normalizer)(const Def*, const Def*, Debug);
 
 class Axiom : public Def {
 private:
-    Axiom(const Def* type, Debug dbg)
-        : Def(Tag::Axiom, type, 0, THORIN_OPS_PTR, dbg)
+    Axiom(const Def* type, size_t num_rules, Debug dbg)
+        : Def(Tag::Axiom, type, num_rules, THORIN_OPS_PTR, dbg)
     {
         assert(type->free_vars().none());
     }
 
 public:
+    auto rules() const { return map_range(ops(), [](auto def) { return def->template as<Axiom>(); }); }
     const Def* arity() const override;
     Axiom* stub(World&, const Def*, Debug) const override;
     bool has_values() const override;

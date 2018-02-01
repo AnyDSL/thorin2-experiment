@@ -259,8 +259,8 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     return app->cache_ = app;
 }
 
-const Axiom* World::axiom(const Def* type, Debug dbg) {
-    auto a = insert<Axiom>(0, type, dbg);
+const Axiom* World::axiom(const Def* type, size_t num_rules, Debug dbg) {
+    auto a = insert<Axiom>(num_rules, type, num_rules, dbg);
     auto s = dbg.name().c_str();
     if (s[0] != '\0') {
         assert(!axioms_.contains(s));
@@ -269,7 +269,9 @@ const Axiom* World::axiom(const Def* type, Debug dbg) {
     return a;
 }
 
-const Axiom* World::axiom(const char* name, const char* s) { return axiom(parse(*this, s), {name}); }
+const Axiom* World::axiom(const char* name, const char* s, size_t num_rules) {
+    return axiom(parse(*this, s), num_rules, {name});
+}
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     if (index->type() == arity(1))

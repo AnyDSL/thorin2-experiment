@@ -205,19 +205,25 @@ public:
     const Def* arity_eliminator() const { return arity_eliminator_; }
     //@}
 
-    //@{ misc factory methods
-    const Def* any(const Def* type, const Def* def, Debug dbg = {});
-    const Axiom* axiom(const Def* type, Debug dbg = {});
+    //@{ axioms and rules
+    const Axiom* axiom(const Def* type, size_t num_rules, Debug dbg = {});
+    const Axiom* axiom(const Def* type, Debug dbg = {}) { return axiom(type, 0, dbg); }
     const Axiom* axiom(const char* s) { return find(axioms_, s); }
-    const Axiom* axiom(const char* name, const char* s);
-    const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
+    const Axiom* axiom(const char* name, const char* s, size_t num_rules = 0);
+    const RuleType* rule_type(const Def* domain, const Def* codomain, Debug dbg = {}) {
+        return unify<RuleType>(2, *this, domain, codomain, dbg);
+    }
+    const Rule* rule(const Def* domain, const Def* lhs, const Def* rhs, Debug dbg = {}) {
+        return unify<Rule>(2, rule_type(domain, lhs->type()), lhs, rhs, dbg);
+    }
+    const Rule* rule(const char*) { return nullptr; }
+    //@}
+
+    //@{ pick, intersection and match, variant
+    const Def* pick(const Def* type, const Def* def, Debug dbg = {});
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
-    const Def* pick(const Def* type, const Def* def, Debug dbg = {});
-    const Def* singleton(const Def* def, Debug dbg = {});
-    const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
-    const Var* var(const Def* type, u64 index, Debug dbg = {}) { return unify<Var>(0, type, index, dbg); }
     const Def* variant(Defs defs, Debug dbg = {});
     const Def* variant(const Def* type, Defs defs, Debug dbg = {});
     Variant* variant(const Def* type, size_t num_ops, Debug dbg = {}) {
@@ -227,6 +233,14 @@ public:
     //@}
 
     //@{ misc factory methods
+    const Def* any(const Def* type, const Def* def, Debug dbg = {});
+    const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
+    const Def* singleton(const Def* def, Debug dbg = {});
+    const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
+    const Var* var(const Def* type, u64 index, Debug dbg = {}) { return unify<Var>(0, type, index, dbg); }
+    //@}
+
+    //@{ top/bottom
     const Bottom* bottom(const Def* type) { return unify<Bottom>(0, type); }
     const Top* top(const Def* type) { return unify<Top>(0, type); }
     //@}
@@ -280,16 +294,6 @@ public:
         assert(i != externals_.end());
         return i->second;
     }
-    //@}
-
-    //@{ rules
-    const RuleType* rule_type(const Def* domain, const Def* codomain, Debug dbg = {}) {
-        return unify<RuleType>(2, *this, domain, codomain, dbg);
-    }
-    const Rule* rule(const Def* domain, const Def* lhs, const Def* rhs, Debug dbg = {}) {
-        return unify<Rule>(2, rule_type(domain, lhs->type()), lhs, rhs, dbg);
-    }
-    const Rule* rule(const char*) { return nullptr; }
     //@}
 
     //@{ misc
