@@ -49,6 +49,13 @@ static bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
     return true;
 }
 
+const Def* curried_callee(const Def* def) {
+    auto res = def;
+    while (auto app = res->isa<App>())
+        res = app->callee();
+    return res;
+}
+
 //------------------------------------------------------------------------------
 
 /*

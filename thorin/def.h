@@ -101,8 +101,6 @@ DefArray unique_gid_sorted(Defs defs);
 
 //------------------------------------------------------------------------------
 
-typedef const Def* (*Normalizer)(const Def*, const Def*, Debug);
-
 /// Base class for all Def%s.
 class Def : public RuntimeCast<Def>, public Streamable {
 public:
@@ -141,6 +139,7 @@ protected:
         , tag_(unsigned(tag))
         , nominal_(true)
         , contains_cn_(false)
+        , has_normalizer_(false)
         , ops_(ops_ptr)
     {
         std::fill_n(ops_, num_ops, nullptr);
@@ -155,6 +154,7 @@ protected:
         , tag_(unsigned(tag))
         , nominal_(false)
         , contains_cn_(false)
+        , has_normalizer_(false)
         , ops_(ops_ptr)
     {
         std::copy(ops.begin(), ops.end(), ops_);
@@ -224,6 +224,7 @@ public:
     /// A nominal Def is always different from each other Def.
     bool is_nominal() const { return nominal_; }
     Tag tag() const { return Tag(tag_); }
+    bool has_normalizer() const { return has_normalizer_; }
     //@}
 
     //@{ type checking
@@ -239,11 +240,6 @@ public:
         auto s = sort();
         return (!def->is_value() && s >= Sort::Type && (this == def || (s == def->sort() && vsubtype_of(def))));
     }
-    //@}
-
-    //@{ get/set Normalizer
-    Normalizer normalizer() const { return normalizer_; }
-    const Def* set_normalizer(Normalizer normalizer) const { normalizer_ = normalizer; return this; }
     //@}
 
     //@{ continuation-related stuff
@@ -307,6 +303,8 @@ protected:
     virtual bool equal(const Def*) const;
     //@}
 
+    void set_has_normalizer() const { has_normalizer_ = true; }
+
 private:
     /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
     virtual const Def* kind_qualifier() const;
@@ -326,23 +324,23 @@ private:
         const Def* type_;
         mutable World* world_;
     };
-    mutable Normalizer normalizer_ = nullptr;
     mutable const Def* substitute_ = nullptr;
     uint32_t num_ops_;
     union {
         struct {
-            unsigned gid_           : 24;
-            unsigned tag_           :  6;
-            unsigned nominal_       :  1;
-            unsigned contains_cn_   :  1;
+            unsigned gid_                    : 23;
+            unsigned tag_                    :  6;
+            unsigned nominal_                :  1;
+            unsigned contains_cn_            :  1;
+            mutable unsigned has_normalizer_ :  1;
             // this sum must be 32   ^^^
         };
-        uint32_t fields_;
     };
 
     static_assert(int(Tag::Num) <= 64, "you must increase the number of bits in tag_");
     const Def** ops_;
 
+    friend class App;
     friend class Tracker;
     friend class World;
     friend void swap(World&, World&);
@@ -520,7 +518,9 @@ class App : public Def {
 private:
     App(const Def* type, const Def* callee, const Def* arg, Debug dbg)
         : Def(Tag::App, type, {callee, arg}, THORIN_OPS_PTR, dbg)
-    {}
+    {
+        has_normalizer_ = callee->has_normalizer_;
+    }
 
 public:
     const Def* callee() const { return op(0); }
@@ -536,6 +536,8 @@ private:
     friend const Def* Def::destructing_type() const;
     friend class World;
 };
+
+const Def* curried_callee(const Def* def);
 
 //------------------------------------------------------------------------------
 
@@ -892,6 +894,8 @@ private:
     friend class World;
 };
 
+typedef const Def* (*Normalizer)(const Def*, const Def*, Debug);
+
 class Axiom : public Def {
 private:
     Axiom(const Def* type, Debug dbg)
@@ -906,8 +910,19 @@ public:
     bool has_values() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
+    //@{ get/set Normalizer
+    Normalizer normalizer() const { return normalizer_; }
+    const Def* set_normalizer(Normalizer normalizer) const {
+        set_has_normalizer();
+        normalizer_ = normalizer;
+        return this;
+    }
+    //@}
+
 private:
     std::ostream& vstream(std::ostream&) const override;
+
+    mutable Normalizer normalizer_ = nullptr;
 
     friend class World;
 };

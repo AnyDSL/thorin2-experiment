@@ -32,6 +32,23 @@ static std::array<const Def*, 2> shrink_shape(const Def* def) {
     return {{variadic->arity(), w.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())}};
 }
 
+static const Def* normalize_tuple(const Def* callee, const Def* a, Debug dbg) {
+    auto& w = callee->world();
+    auto ta = a->isa<Tuple>();
+    auto pa = a->isa<Pack>();
+
+    if (ta || pa) {
+        auto [head, tail] = shrink_shape(app_arg(callee));
+        auto new_callee = w.app(app_callee(callee), tail);
+
+        if (ta) return w.tuple(DefArray(ta->num_ops(), [&](auto i) { return w.app(new_callee, ta->op(i), dbg); }));
+        assert(pa);
+        return w.pack(head, w.app(new_callee, pa->body(), dbg), dbg);
+    }
+
+    return nullptr;
+}
+
 static const Def* normalize_tuple(const Def* callee, const Def* a, const Def* b, Debug dbg) {
     auto& w = callee->world();
     auto ta = a->isa<Tuple>(), tb = b->isa<Tuple>();
@@ -167,7 +184,6 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
 
 const Def* normalize_add(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [a, b] = split(arg);
     if (auto result = try_wfold<Fold_add>(callee, a, b, dbg)) return result;
@@ -183,7 +199,6 @@ const Def* normalize_add(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_sub(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [a, b] = split(arg);
     if (auto result = try_wfold<Fold_sub>(callee, a, b, dbg)) return result;
@@ -194,9 +209,6 @@ const Def* normalize_sub(const Def* callee, const Def* arg, Debug dbg) {
 }
 
 const Def* normalize_mul(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
-
     auto [a, b] = split(arg);
     if (auto result = try_wfold<Fold_mul>(callee, a, b, dbg)) return result;
 
@@ -210,7 +222,6 @@ const Def* normalize_mul(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_shl(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [a, b] = split(arg);
     if (auto result = try_wfold<Fold_shl>(callee, a, b, dbg)) return result;
@@ -260,7 +271,6 @@ static const Def* try_mfold(const Def* callee, const Def* m, const Def* a, const
 
 const Def* normalize_sdiv(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
     auto [m, a, b] = msplit(arg);
     if (auto result = try_mfold<Fold_sdiv>(callee, m, a, b, dbg)) return result;
 
@@ -269,7 +279,6 @@ const Def* normalize_sdiv(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_udiv(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [m, a, b] = msplit(arg);
     //if (auto result = try_wfold<Fold_sub>(callee, a, b, dbg)) return result;
@@ -279,7 +288,6 @@ const Def* normalize_udiv(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_smod(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [m, a, b] = msplit(arg);
     //if (auto result = try_wfold<Fold_sub>(callee, a, b, dbg)) return result;
@@ -289,7 +297,6 @@ const Def* normalize_smod(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_umod(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [m, a, b] = msplit(arg);
     //if (auto result = try_wfold<Fold_sub>(callee, a, b, dbg)) return result;
@@ -303,7 +310,6 @@ const Def* normalize_umod(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_ashr(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [a, b] = split(arg);
     if (auto result = try_ifold<Fold_ashr>(callee, a, b, dbg)) return result;
@@ -313,7 +319,6 @@ const Def* normalize_ashr(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_lshr(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [a, b] = split(arg);
     if (auto result = try_ifold<Fold_lshr>(callee, a, b, dbg)) return result;
@@ -322,9 +327,6 @@ const Def* normalize_lshr(const Def* callee, const Def* arg, Debug dbg) {
 }
 
 const Def* normalize_iand(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
-
     auto [a, b] = split(arg);
     if (auto result = try_ifold<Fold_iand>(callee, a, b, dbg)) return result;
 
@@ -337,9 +339,6 @@ const Def* normalize_iand(const Def* callee, const Def* arg, Debug dbg) {
 }
 
 const Def* normalize_ior(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
-
     auto [a, b] = split(arg);
     if (auto result = try_ifold<Fold_ior>(callee, a, b, dbg)) return result;
 
@@ -352,9 +351,6 @@ const Def* normalize_ior(const Def* callee, const Def* arg, Debug dbg) {
 }
 
 const Def* normalize_ixor(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
-
     auto [a, b] = split(arg);
     if (auto result = try_ifold<Fold_ixor>(callee, a, b, dbg)) return result;
 
@@ -388,9 +384,6 @@ static const Def* try_rfold(const Def* callee, const Def* a, const Def* b, Debug
 }
 
 const Def* normalize_radd(const Def* callee, const Def* arg, Debug dbg) {
-    auto& world = static_cast<World&>(callee->world());
-    if (auto result = world.curry_normalizer(callee, arg, dbg)) return result;
-
     auto [a, b] = split(arg);
     if (auto result = try_rfold<Fold_radd>(callee, a, b, dbg)) return result;
 
@@ -409,7 +402,6 @@ const Def* normalize_radd(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_rsub(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [a, b] = split(arg);
     if (auto result = try_rfold<Fold_rsub>(callee, a, b, dbg)) return result;
@@ -418,9 +410,6 @@ const Def* normalize_rsub(const Def* callee, const Def* arg, Debug dbg) {
 }
 
 const Def* normalize_rmul(const Def* callee, const Def* arg, Debug dbg) {
-    auto& world = static_cast<World&>(callee->world());
-    if (auto result = world.curry_normalizer(callee, arg, dbg)) return result;
-
     auto [a, b] = split(arg);
     if (auto result = try_rfold<Fold_rmul>(callee, a, b, dbg)) return result;
 
@@ -439,7 +428,6 @@ const Def* normalize_rmul(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_rdiv(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [a, b] = split(arg);
     if (auto result = try_rfold<Fold_rdiv>(callee, a, b, dbg)) return result;
@@ -449,7 +437,6 @@ const Def* normalize_rdiv(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_rmod(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [a, b] = split(arg);
     if (auto result = try_rfold<Fold_rrem>(callee, a, b, dbg)) return result;
@@ -464,7 +451,6 @@ const Def* normalize_rmod(const Def* callee, const Def* arg, Debug dbg) {
 template<ICmp op>
 const Def* normalize_ICmp(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [a, b] = split(arg);
     if (auto result = try_ifold<FoldICmp<op>::template Fold>(callee, a, b, dbg)) return result;
@@ -476,7 +462,6 @@ const Def* normalize_ICmp(const Def* callee, const Def* arg, Debug dbg) {
 template<RCmp op>
 const Def* normalize_RCmp(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     auto [a, b] = split(arg);
     if (auto result = try_rfold<FoldRCmp<op>::template Fold>(callee, a, b, dbg)) return result;
@@ -495,50 +480,44 @@ const Def* normalize_RCmp(const Def* callee, const Def* arg, Debug dbg) {
  */
 
 const Def* normalize_scast(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
+    //auto& w = static_cast<World&>(callee->world());
 
-    return w.raw_app(callee, arg, dbg);
+    return normalize_tuple(callee, arg, dbg);
+    //return w.raw_app(callee, arg, dbg);
 }
 
 const Def* normalize_ucast(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     return w.raw_app(callee, arg, dbg);
 }
 
 const Def* normalize_rcast(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     return w.raw_app(callee, arg, dbg);
 }
 
 const Def* normalize_s2r(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     return w.raw_app(callee, arg, dbg);
 }
 
 const Def* normalize_u2r(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     return w.raw_app(callee, arg, dbg);
 }
 
 const Def* normalize_r2s(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     return w.raw_app(callee, arg, dbg);
 }
 
 const Def* normalize_r2u(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
 
     return w.raw_app(callee, arg, dbg);
 }

@@ -296,11 +296,6 @@ public:
     auto cns() const { return map_range(range(defs_,
                 [](auto def) { return def->isa_cn(); }),
                 [](auto def) { return def->as_cn(); }); }
-    const App* curry_normalizer(const Def* callee, const Def* arg, Debug dbg) {
-        if (auto pi = callee->type()->isa<Pi>(); pi->codomain()->isa<Pi>())
-            return raw_app(callee, arg, dbg)->set_normalizer(callee->normalizer())->as<App>();
-        return nullptr;
-    }
     //@}
 
 #ifndef NDEBUG

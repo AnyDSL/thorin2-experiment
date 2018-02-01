@@ -131,7 +131,6 @@ const Def* World::qualifier_bound(Lattice l, Range<I> defs, F unify_fn) {
 
 const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
-    if (auto result = w.curry_normalizer(callee, arg, dbg)) return result;
     const Def* pred = nullptr;
     if (auto arity = arg->isa<Arity>()) {
         auto arity_val = arity->value();
@@ -144,7 +143,7 @@ const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug d
         pred = arity_app->arg();
     }
     if (pred != nullptr)
-        return w.app(w.app(callee->op(1), pred), w.app(callee, pred));
+        return w.app(w.app(callee->op(1), pred), w.app(callee, pred), dbg);
     return nullptr;
 }
 
@@ -235,8 +234,8 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     assertf(callee_type->domain()->assignable(arg),
             "callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
 
-    if (auto normalizer = callee->normalizer()) {
-        if (auto result = normalizer(callee, arg, dbg))
+    if (callee->has_normalizer() && !callee_type->codomain()->isa<Pi>()) {
+        if (auto result = curried_callee(callee)->as<Axiom>()->normalizer()(callee, arg, dbg))
             return result;
     }
 
