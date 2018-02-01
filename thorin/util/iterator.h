@@ -74,13 +74,16 @@ filter_iterator<I, P> make_filter(I begin, I end, P pred) { return filter_iterat
 
 //------------------------------------------------------------------------------
 
-template<class I, class OutT, class F>
+template<class I, class F>
 class map_iterator {
+private:
+    static I _i; static F _f; // just dummys for decltype magic below
+
 public:
     typedef typename std::iterator_traits<I>::difference_type difference_type;
-    typedef OutT value_type;
-    typedef OutT& reference;
-    typedef OutT* pointer;
+    typedef decltype(_f(*_i)) value_type;
+    typedef value_type& reference;
+    typedef value_type* pointer;
     typedef std::forward_iterator_tag iterator_category;
 
     map_iterator(I iterator, I end, F function)
@@ -118,7 +121,6 @@ public:
     friend void swap(map_iterator& i1, map_iterator& i2) { using std::swap; swap(i1, i2); }
 
 private:
-
     I iterator_;
     I end_;
     F function_;
@@ -146,28 +148,34 @@ template<class I>
 auto range(I begin, I end) -> Range<I> { return Range<I>(begin, end); }
 
 template<class T>
-auto range(const T& t) -> Range<decltype(t.begin())> { return range(t.begin(), t.end()); }
+auto range(const T& t) -> auto { return range(t.begin(), t.end()); }
 
 template<class T>
-auto reverse_range(const T& t) -> Range<decltype(t.rbegin())> { return range(t.rbegin(), t.rend()); }
+auto range(T& t) -> auto { return range(t.begin(), t.end()); }
+
+template<class T>
+auto reverse_range(const T& t) -> auto { return range(t.rbegin(), t.rend()); }
+
+template<class T>
+auto reverse_range(T& t) -> auto { return range(t.rbegin(), t.rend()); }
 
 template<class I, class P>
-auto range(I begin, I end, P predicate) -> Range<filter_iterator<I, P>> {
-    typedef filter_iterator<I, P> Filter;
+auto range(I begin, I end, P predicate) -> auto {
     return range(Filter(begin, end, predicate), Filter(end, end, predicate));
 }
 
-template<class V, class I, class P>
-auto range(I begin, I end, P predicate) -> Range<filter_iterator<I, P, V>> {
-    typedef filter_iterator<I, P, V> Filter;
-    return range(Filter(begin, end, predicate), Filter(end, end, predicate));
+template<class T, class P>
+auto range(const T& t, P predicate) -> auto {
+    return range(filter_iterator(t.begin(), t.end(), predicate), filter_iterator(t.end(), t.end(), predicate));
 }
 
 template<class I, class F>
-auto map_range(I begin, I end, F function) -> Range<map_iterator<I, decltype(function(*begin)), F>> {
-    typedef map_iterator<I, decltype(function(*begin)), F> Map;
-    return range(Map(begin, end, function), Map(end, end, function));
+auto map_range(I begin, I end, F f) -> auto {
+    return range(map_iterator(begin, end, f), map_iterator(end, end, f));
 }
+
+template<class T, class F>
+auto map_range(const T& t, F f) -> auto { return map_range(t.begin(), t.end(), f); }
 
 //------------------------------------------------------------------------------
 

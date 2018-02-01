@@ -1,10 +1,14 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <algorithm>
+#include <variant>
+
 #include "thorin/def.h"
 #include "thorin/world.h"
 #include "thorin/frontend/token.h"
 #include "thorin/frontend/lexer.h"
+#include "thorin/util/iterator.h"
 
 namespace thorin {
 
@@ -39,27 +43,21 @@ private:
         uint32_t col;
     };
 
-    const Def* parse_var_or_binder();
+    const Def* parse_debruijn();
     const Def* parse_cn_type();
     const Def* parse_pi();
     const Def* parse_sigma_or_variadic();
     const Def* parse_lambda();
+    const Def* parse_optional_qualifier();
     const Def* parse_qualified_kind();
     const Def* parse_tuple_or_pack();
     const Def* parse_lit();
     const Def* parse_param();
     const Def* parse_extract_or_insert(Tracker, const Def*);
     const Def* parse_literal();
-
-    struct Binder {
-        std::string name;
-        size_t depth;               // binding depth
-        std::vector<size_t> ids;    // sequence of extract indices
-
-        Binder(std::string name = "", size_t depth = 0)
-            : name(name), depth(depth)
-        {}
-    };
+    const Def* parse_identifier();
+    std::vector<const Def*> parse_sigma_ops();
+    DefArray parse_lambda_ops();
 
     DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const char* context, const Def* first = nullptr) {
         DefVector elems;
@@ -67,7 +65,7 @@ private:
         if (first != nullptr)
             elems.emplace_back(first);
 
-        if (ahead_[0].isa(end)) {
+        if (ahead().isa(end)) {
             eat(end);
             return elems;
         }
@@ -76,7 +74,7 @@ private:
             eat(sep);
 
         elems.emplace_back(f());
-        while (ahead_[0].isa(sep)) {
+        while (ahead().isa(sep)) {
             eat(sep);
             elems.emplace_back(f());
         }
@@ -89,44 +87,49 @@ private:
     void eat(Token::Tag);
     void expect(Token::Tag, const char* context);
     bool accept(Token::Tag);
-    void push_identifiers(const Def* bruijn) {
-        depth_++;
-        bruijn_.push_back(bruijn);
-    }
-    void pop_identifiers() {
-        while (!binders_.empty()) {
-            if (binders_.back().depth < depth_) break;
-            binders_.pop_back();
-        }
-        bruijn_.pop_back();
-        depth_--;
-    }
-    void shift_identifiers(size_t count) {
-        // shift identifiers declared within a sigma by adding extracts
-        std::vector<Binder> shifted;
-        size_t new_depth = depth_ - count;
-        while (!binders_.empty()) {
-            auto& binder = binders_.back();
-            if (binder.depth < new_depth) break;
-            Binder new_binder;
-            new_binder.ids.push_back(binder.depth - new_depth);
-            new_binder.ids.insert(new_binder.ids.end(), binder.ids.begin(), binder.ids.end());
-            new_binder.depth = new_depth;
-            new_binder.name  = binder.name;
-            shifted.emplace_back(std::move(new_binder));
-            binders_.pop_back();
-        }
-        binders_.insert(binders_.end(), shifted.begin(), shifted.end());
-        bruijn_.resize(bruijn_.size() - count);
-        depth_ = new_depth;
-    }
+
+
+    typedef std::variant<const Def*, size_t> DefOrBinder;
+    struct Binder {
+        Symbol name;
+        size_t depth;               // binding depth
+        std::vector<size_t> indices;    // sequence of extract indices
+        DefOrBinder shadow;
+
+        Binder(Symbol name, size_t depth, DefOrBinder shadow)
+            : name(name), depth(depth), shadow(shadow)
+        {}
+    };
+    struct Declaration {
+        Symbol name;
+        const Def* def;
+        DefOrBinder shadow;
+
+        Declaration(Symbol name, const Def* def, DefOrBinder shadow)
+            : name(name), def(def), shadow(shadow)
+        {}
+    };
+
+    void push_debruijn_type(const Def* type);
+    void pop_debruijn_binders();
+    void shift_binders(size_t count);
+    DefOrBinder lookup(const Tracker&, Symbol);
+    void insert_identifier(Symbol, const Def* = nullptr);
+    void push_decl_scope();
+    void pop_decl_scope();
 
     World& world_;
     Lexer& lexer_;
 
-    std::vector<const Def*> bruijn_;
-    std::vector<Binder> binders_;
     Token ahead_[2];
+
+    // manage a stack of scopes for lets, nominals, variables and debruijn
+    thorin::HashMap<Symbol, DefOrBinder, Symbol::Hash> id2defbinder_;
+    std::vector<Declaration> declarations_;
+    std::vector<size_t> scopes_;
+
+    std::vector<const Def*> debruijn_types_;
+    std::vector<Binder> binders_;
     size_t depth_ = 0;
 };
 

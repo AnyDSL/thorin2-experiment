@@ -121,7 +121,12 @@ Token Lexer::lex() {
             return {location(), Token::Tag::L_Angle};
         }
         if (accept('>')) return {location(), Token::Tag::R_Angle};
-        if (accept(':')) return {location(), Token::Tag::Colon};
+        if (accept(':')) {
+            if (accept(':')) return {location(), Token::Tag::ColonColon};
+            else if (accept('=')) return {location(), Token::Tag::ColonEqual};
+            else return {location(), Token::Tag::Colon};
+        }
+        if (accept('=')) return {location(), Token::Tag::Equal};
         if (accept(',')) return {location(), Token::Tag::Comma};
         if (accept('.')) return {location(), Token::Tag::Dot};
         if (accept(';')) return {location(), Token::Tag::Semicolon};
@@ -153,6 +158,17 @@ Token Lexer::lex() {
             auto lit = parse_literal();
             return {location(), lit};
         }
+
+        // arity descriptor for index literals
+        u64 index_arity = 0;
+        auto is_arity_subscript = [] (uint32_t p) { return p > 0x002079 && p < 0x002090; };
+        auto update_index_arity = [&] (uint32_t p) { index_arity = 10 * index_arity + (p - 0x002080); };
+        if (auto opt = accept_opt([&] (uint32_t p) { return p != 0x002080 && is_arity_subscript(p); }))
+            update_index_arity(*opt);
+        while (auto opt = accept_opt(is_arity_subscript))
+            update_index_arity(*opt);
+        if (index_arity != 0)
+            return {location(), {Literal::Tag::Lit_index_arity, index_arity}};
 
         // identifier
         if (accept_if(sym)) {
@@ -220,15 +236,21 @@ Literal Lexer::parse_literal() {
             if (accept("64", false)) return {Literal::Tag::Lit_s64, s64(strtoll(str().c_str(), nullptr, base))};
         }
 
-        if (!sign && accept('u', false)) {
-            if (accept("8", false))  return {Literal::Tag::Lit_u8,   u8( strtoul(str().c_str(), nullptr, base))};
-            if (accept("16", false)) return {Literal::Tag::Lit_u16, u16( strtoul(str().c_str(), nullptr, base))};
-            if (accept("32", false)) return {Literal::Tag::Lit_u32, u32( strtoul(str().c_str(), nullptr, base))};
-            if (accept("64", false)) return {Literal::Tag::Lit_u64, u64(strtoull(str().c_str(), nullptr, base))};
-        }
+        if (!sign) {
+            if (accept('u', false)) {
+                if (accept("8", false))  return {Literal::Tag::Lit_u8,   u8( strtoul(str().c_str(), nullptr, base))};
+                if (accept("16", false)) return {Literal::Tag::Lit_u16, u16( strtoul(str().c_str(), nullptr, base))};
+                if (accept("32", false)) return {Literal::Tag::Lit_u32, u32( strtoul(str().c_str(), nullptr, base))};
+                if (accept("64", false)) return {Literal::Tag::Lit_u64, u64(strtoull(str().c_str(), nullptr, base))};
+            }
 
-        if (!sign && accept(0x002090))
-            return {Literal::Tag::Lit_arity, u64(strtoull(str().c_str(), nullptr, base))};
+            if (accept(0x002090))
+                return {Literal::Tag::Lit_arity, u64(strtoull(str().c_str(), nullptr, base))};
+
+            if (peek() > 0x002080 && peek() < 0x002090) {
+                return {Literal::Tag::Lit_index, u64(strtoull(str().c_str(), nullptr, base))};
+            }
+        }
     }
 
     if (base == 10 && accept('r', false)) {

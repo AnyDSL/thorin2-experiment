@@ -44,10 +44,10 @@ TEST(Qualifiers, Variants) {
     auto l = w.linear();
     auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
 
-    EXPECT_EQ(u, u->qualifier(w));
-    EXPECT_EQ(u, r->qualifier(w));
-    EXPECT_EQ(u, a->qualifier(w));
-    EXPECT_EQ(u, l->qualifier(w));
+    EXPECT_EQ(u, u->qualifier());
+    EXPECT_EQ(u, r->qualifier());
+    EXPECT_EQ(u, a->qualifier());
+    EXPECT_EQ(u, l->qualifier());
 
     EXPECT_EQ(u, lub({u}));
     EXPECT_EQ(r, lub({r}));
@@ -61,7 +61,7 @@ TEST(Qualifiers, Variants) {
     EXPECT_EQ(l, lub({u, l, r, r}));
 
     auto v = w.var(w.qualifier_type(), 0);
-    EXPECT_EQ(u, v->qualifier(w));
+    EXPECT_EQ(u, v->qualifier());
     EXPECT_EQ(v, lub({v}));
     EXPECT_EQ(v, lub({u, v, u}));
     EXPECT_EQ(l, lub({v, l}));
@@ -89,13 +89,13 @@ TEST(Qualifiers, Kinds) {
     auto anat = w.axiom(w.star(a), {"anat"});
     auto rnat = w.axiom(w.star(r), {"rnat"});
     auto vtype = w.lit(w.star(v), {0}, {"rnat"});
-    EXPECT_EQ(w.sigma({anat, w.star()})->qualifier(w), a);
-    EXPECT_EQ(w.sigma({anat, rnat})->qualifier(w), l);
-    EXPECT_EQ(w.sigma({vtype, rnat})->qualifier(w), lub({v, r}));
-    EXPECT_EQ(w.sigma({anat, w.star(l)})->qualifier(w), a);
+    EXPECT_EQ(w.sigma({anat, w.star()})->qualifier(), a);
+    EXPECT_EQ(w.sigma({anat, rnat})->qualifier(), l);
+    EXPECT_EQ(w.sigma({vtype, rnat})->qualifier(), lub({v, r}));
+    EXPECT_EQ(w.sigma({anat, w.star(l)})->qualifier(), a);
 
-    EXPECT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier(w));
-    EXPECT_EQ(l, w.variant({w.star(r), w.star(l)})->qualifier(w));
+    EXPECT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier());
+    EXPECT_EQ(l, w.variant({w.star(r), w.star(l)})->qualifier());
 }
 
 #if 0
@@ -115,32 +115,32 @@ TEST(Substructural, Misc) {
     //auto LNat = w.type_nat(l);
     auto RNat = w.type_rsw64();
     auto an0 = w.val_asw64(0);
-    ASSERT_NE(an0, w.val_asw64(0));
+    EXPECT_NE(an0, w.val_asw64(0));
     auto l_a0 = w.lambda(Unit, w.val_asw64(0), {"l_a0"});
     auto l_a0_app = w.app(l_a0);
-    ASSERT_NE(l_a0_app, w.app(l_a0));
+    EXPECT_NE(l_a0_app, w.app(l_a0));
     auto anx = w.var(ANat, 0, {"x"});
     auto anid = w.lambda(ANat, anx, {"anid"});
     w.app(anid, an0);
     // We need to check substructural types later, so building a second app is possible:
-    ASSERT_FALSE(is_error(w.app(anid, an0)));
+    EXPECT_FALSE(is_error(w.app(anid, an0)));
 
     auto tuple_type = w.sigma({ANat, RNat});
-    ASSERT_EQ(tuple_type->qualifier(), w.qualifier(L));
+    EXPECT_EQ(tuple_type->qualifier(), w.qualifier(L));
     auto an1 = w.axiom(ANat, {"1"});
     auto rn0 = w.axiom(RNat, {"0"});
     auto tuple = w.tuple({an1, rn0});
-    ASSERT_EQ(tuple->type(), tuple_type);
+    EXPECT_EQ(tuple->type(), tuple_type);
     auto tuple_app0 = w.extract(tuple, 0_s);
-    ASSERT_EQ(w.extract(tuple, 0_s), tuple_app0);
+    EXPECT_EQ(w.extract(tuple, 0_s), tuple_app0);
 
     auto a_id_type = w.pi(Nat, Nat, a);
     auto nx = w.var(Nat, 0, {"x"});
     auto a_id = w.lambda(Nat, nx, a, {"a_id"});
-    ASSERT_EQ(a_id_type, a_id->type());
+    EXPECT_EQ(a_id_type, a_id->type());
     auto n0 = w.axiom(Nat, {"0"});
     //auto a_id_app = w.app(a_id, n0);
-    ASSERT_FALSE(is_error(w.app(a_id, n0)));
+    EXPECT_FALSE(is_error(w.app(a_id, n0)));
 
     // λᴬT:*.λx:ᴬT.x
     auto aT1 = w.var(w.star(A), 0, {"T"});
@@ -214,7 +214,6 @@ TEST(Substructural, AffineCapabilityRefs) {
     // TODO asserts to typecheck correct and incorrect usage
 }
 
-#if 0
 TEST(Substructural, AffineFractionalCapabilityRefs) {
     World w;
     auto a = w.affine();
@@ -225,6 +224,7 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
 
     w.axiom(w.pi(w.sigma({Star, Star}), Star), {"FRef"});
     auto Write = w.sigma_type(0, {"Wr"});
+    w.make_external(Write);
     // TODO Replace Star by a more precise kind allowing only Wr/Rd
     auto Read = w.axiom(w.pi(Star, Star), {"Rd"});
     w.axiom(w.pi(w.sigma({Star, Star}), w.star(a)), {"FCap"});
@@ -261,4 +261,3 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
     print_value_type(free);
     // TODO asserts to typecheck correct and incorrect usage
 }
-#endif

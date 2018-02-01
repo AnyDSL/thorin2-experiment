@@ -26,6 +26,12 @@ inline __declspec(noreturn) void thorin_dummy_function() { abort(); }
 #define assert_unused(x) ((void) (0 && (x)))
 #endif
 
+#if (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(__i386__))
+#define THORIN_BREAK { asm("int3"); }
+#else
+#define THORIN_BREAK { volatile int* p = nullptr; *p = 42; }
+#endif
+
 #define THORIN_IMPLIES(a, b) (!(a) || ((a) && (b)))
 
 // http://stackoverflow.com/questions/1489932/how-to-concatenate-twice-with-the-c-preprocessor-and-expand-a-macro-as-in-arg

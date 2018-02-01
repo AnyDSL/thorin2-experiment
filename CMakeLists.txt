@@ -31,6 +31,7 @@ include_directories(.)
 add_executable(coc 
     test/arity.cpp
     test/bitset.cpp
+    test/cn.cpp
     test/lambda.cpp
     test/lexer.cpp
     test/main.cpp
@@ -46,8 +47,6 @@ add_executable(coc
     thorin/def.cpp
     thorin/def.h
     thorin/qualifier.h
-    thorin/reduce.cpp
-    thorin/reduce.h
     thorin/world.cpp
     thorin/world.h
     thorin/core/fold.h
@@ -56,12 +55,32 @@ add_executable(coc
     thorin/core/tables.h
     thorin/core/world.cpp
     thorin/core/world.h
+    thorin/analyses/cfg.cpp
+    thorin/analyses/cfg.h
+    thorin/analyses/domfrontier.cpp
+    thorin/analyses/domfrontier.h
+    thorin/analyses/domtree.cpp
+    thorin/analyses/domtree.h
+    thorin/analyses/looptree.cpp
+    thorin/analyses/looptree.h
+    thorin/analyses/schedule.cpp
+    thorin/analyses/schedule.h
+    thorin/analyses/scope.cpp
+    thorin/analyses/scope.h
+    thorin/analyses/verify.cpp
+    thorin/analyses/verify.h
     thorin/frontend/lexer.cpp
     thorin/frontend/lexer.h
     thorin/frontend/parser.cpp
     thorin/frontend/parser.h
     thorin/frontend/token.h
     thorin/frontend/token.cpp
+    thorin/transform/import.cpp
+    thorin/transform/import.h
+    thorin/transform/mangle.cpp
+    thorin/transform/mangle.h
+    thorin/transform/reduce.cpp
+    thorin/transform/reduce.h
     thorin/util/array.h
     thorin/util/bitset.cpp
     thorin/util/bitset.h

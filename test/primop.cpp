@@ -7,19 +7,19 @@ namespace thorin::core {
 TEST(Primop, Types) {
     World w;
 
-    ASSERT_EQ(w.type_i(16), w.app(w.type_i(), w.lit_nat_16()));
-    ASSERT_EQ(w.type_i(64), w.app(w.type_i(), w.lit_nat_64()));
+    EXPECT_EQ(w.type_i(16), w.app(w.type_i(), w.lit_nat_16()));
+    EXPECT_EQ(w.type_i(64), w.app(w.type_i(), w.lit_nat_64()));
 
-    ASSERT_EQ(w.type_r(64), w.app(w.type_r(), w.lit_nat_64()));
-    ASSERT_EQ(w.type_r(16), w.app(w.type_r(), w.lit_nat_16()));
+    EXPECT_EQ(w.type_r(64), w.app(w.type_r(), w.lit_nat_64()));
+    EXPECT_EQ(w.type_r(16), w.app(w.type_r(), w.lit_nat_16()));
 }
 
 template<class T, class O, O o>
 void test_fold(World& w, const Def* type) {
     auto t = w.app(type, w.lit_nat(sizeof(T)*8));
     auto a = w.op<o>(w.lit(t, T(23)), w.lit(t, T(42)));
-    ASSERT_EQ(a->type(), t);
-    ASSERT_EQ(a, w.lit(t, T(65)));
+    EXPECT_EQ(a->type(), t);
+    EXPECT_EQ(a, w.lit(t, T(65)));
 
     auto m1 = w.tuple({w.tuple({w.lit(t, T(0)), w.lit(t, T(1)), w.lit(t, T(2))}),
                        w.tuple({w.lit(t, T(3)), w.lit(t, T(4)), w.lit(t, T(5))})});
@@ -27,13 +27,13 @@ void test_fold(World& w, const Def* type) {
                        w.tuple({w.lit(t, T(9)), w.lit(t,T(10)), w.lit(t, T(11))})});
     auto p1 = w.pack(2, w.pack(3, w.lit(t, T(23))));
     auto p2 = w.pack(2, w.pack(3, w.lit(t, T(42))));
-    ASSERT_EQ(w.op<o>(m1, m2), w.tuple({w.tuple({w.lit(t, T(6)),  w.lit(t,  T(8)), w.lit(t, T(10))}),
+    EXPECT_EQ(w.op<o>(m1, m2), w.tuple({w.tuple({w.lit(t, T(6)),  w.lit(t,  T(8)), w.lit(t, T(10))}),
                                         w.tuple({w.lit(t, T(12)), w.lit(t, T(14)), w.lit(t, T(16))})}));
-    ASSERT_EQ(w.op<o>(p1, m2), w.tuple({w.tuple({w.lit(t, T(29)), w.lit(t, T(30)), w.lit(t, T(31))}),
+    EXPECT_EQ(w.op<o>(p1, m2), w.tuple({w.tuple({w.lit(t, T(29)), w.lit(t, T(30)), w.lit(t, T(31))}),
                                         w.tuple({w.lit(t, T(32)), w.lit(t, T(33)), w.lit(t, T(34))})}));
-    ASSERT_EQ(w.op<o>(m1, p2), w.tuple({w.tuple({w.lit(t, T(42)), w.lit(t, T(43)), w.lit(t, T(44))}),
+    EXPECT_EQ(w.op<o>(m1, p2), w.tuple({w.tuple({w.lit(t, T(42)), w.lit(t, T(43)), w.lit(t, T(44))}),
                                         w.tuple({w.lit(t, T(45)), w.lit(t, T(46)), w.lit(t, T(47))})}));
-    ASSERT_EQ(w.op<o>(p1, p2), w.pack({2, 3}, w.lit(t, T(65))));
+    EXPECT_EQ(w.op<o>(p1, p2), w.pack({2, 3}, w.lit(t, T(65))));
 }
 
 TEST(Primop, ConstFolding) {
@@ -46,10 +46,10 @@ TEST(Primop, ConstFolding) {
     THORIN_R_TYPES(CODE)
 #undef CODE
 
-    ASSERT_EQ(w.op<IOp::ashr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(u8(-1)));
-    ASSERT_EQ(w.op<IOp::lshr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(127_u8));
+    EXPECT_EQ(w.op<IOp::ashr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(u8(-1)));
+    EXPECT_EQ(w.op<IOp::lshr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(127_u8));
 
-    ASSERT_EQ(w.op<WOp::add>(WFlags::nuw, w.lit_i(0xff_u8), w.lit_i(1_u8)), w.error(w.type_i(8)));
+    EXPECT_EQ(w.op<WOp::add>(WFlags::nuw, w.lit_i(0xff_u8), w.lit_i(1_u8)), w.bottom(w.type_i(8)));
 }
 
 template<class T>
@@ -60,38 +60,38 @@ void test_icmp(World& w) {
     auto lt = w.lit_true();
     auto lf = w.lit_false();
 
-    ASSERT_EQ(w.op<ICmp::eq >(l23, l23), lt);
-    ASSERT_EQ(w.op<ICmp::ne >(l23, l23), lf);
-    ASSERT_EQ(w.op<ICmp::sge>(l23, l23), lt);
-    ASSERT_EQ(w.op<ICmp::sgt>(l23, l23), lf);
-    ASSERT_EQ(w.op<ICmp::sle>(l23, l23), lt);
-    ASSERT_EQ(w.op<ICmp::slt>(l23, l23), lf);
-    ASSERT_EQ(w.op<ICmp::uge>(l23, l23), lt);
-    ASSERT_EQ(w.op<ICmp::ugt>(l23, l23), lf);
-    ASSERT_EQ(w.op<ICmp::ule>(l23, l23), lt);
-    ASSERT_EQ(w.op<ICmp::ult>(l23, l23), lf);
+    EXPECT_EQ(w.op<ICmp::eq >(l23, l23), lt);
+    EXPECT_EQ(w.op<ICmp::ne >(l23, l23), lf);
+    EXPECT_EQ(w.op<ICmp::sge>(l23, l23), lt);
+    EXPECT_EQ(w.op<ICmp::sgt>(l23, l23), lf);
+    EXPECT_EQ(w.op<ICmp::sle>(l23, l23), lt);
+    EXPECT_EQ(w.op<ICmp::slt>(l23, l23), lf);
+    EXPECT_EQ(w.op<ICmp::uge>(l23, l23), lt);
+    EXPECT_EQ(w.op<ICmp::ugt>(l23, l23), lf);
+    EXPECT_EQ(w.op<ICmp::ule>(l23, l23), lt);
+    EXPECT_EQ(w.op<ICmp::ult>(l23, l23), lf);
 
-    ASSERT_EQ(w.op<ICmp::eq >(l23, l42), lf);
-    ASSERT_EQ(w.op<ICmp::ne >(l23, l42), lt);
-    ASSERT_EQ(w.op<ICmp::sge>(l23, l42), lf);
-    ASSERT_EQ(w.op<ICmp::sgt>(l23, l42), lf);
-    ASSERT_EQ(w.op<ICmp::sle>(l23, l42), lt);
-    ASSERT_EQ(w.op<ICmp::slt>(l23, l42), lt);
-    ASSERT_EQ(w.op<ICmp::uge>(l23, l42), lt);
-    ASSERT_EQ(w.op<ICmp::ugt>(l23, l42), lt);
-    ASSERT_EQ(w.op<ICmp::ule>(l23, l42), lf);
-    ASSERT_EQ(w.op<ICmp::ult>(l23, l42), lf);
+    EXPECT_EQ(w.op<ICmp::eq >(l23, l42), lf);
+    EXPECT_EQ(w.op<ICmp::ne >(l23, l42), lt);
+    EXPECT_EQ(w.op<ICmp::sge>(l23, l42), lf);
+    EXPECT_EQ(w.op<ICmp::sgt>(l23, l42), lf);
+    EXPECT_EQ(w.op<ICmp::sle>(l23, l42), lt);
+    EXPECT_EQ(w.op<ICmp::slt>(l23, l42), lt);
+    EXPECT_EQ(w.op<ICmp::uge>(l23, l42), lt);
+    EXPECT_EQ(w.op<ICmp::ugt>(l23, l42), lt);
+    EXPECT_EQ(w.op<ICmp::ule>(l23, l42), lf);
+    EXPECT_EQ(w.op<ICmp::ult>(l23, l42), lf);
 
-    ASSERT_EQ(w.op<ICmp::eq >(l42, l23), lf);
-    ASSERT_EQ(w.op<ICmp::ne >(l42, l23), lt);
-    ASSERT_EQ(w.op<ICmp::sge>(l42, l23), lt);
-    ASSERT_EQ(w.op<ICmp::sgt>(l42, l23), lt);
-    ASSERT_EQ(w.op<ICmp::sle>(l42, l23), lf);
-    ASSERT_EQ(w.op<ICmp::slt>(l42, l23), lf);
-    ASSERT_EQ(w.op<ICmp::uge>(l42, l23), lf);
-    ASSERT_EQ(w.op<ICmp::ugt>(l42, l23), lf);
-    ASSERT_EQ(w.op<ICmp::ule>(l42, l23), lt);
-    ASSERT_EQ(w.op<ICmp::ult>(l42, l23), lt);
+    EXPECT_EQ(w.op<ICmp::eq >(l42, l23), lf);
+    EXPECT_EQ(w.op<ICmp::ne >(l42, l23), lt);
+    EXPECT_EQ(w.op<ICmp::sge>(l42, l23), lt);
+    EXPECT_EQ(w.op<ICmp::sgt>(l42, l23), lt);
+    EXPECT_EQ(w.op<ICmp::sle>(l42, l23), lf);
+    EXPECT_EQ(w.op<ICmp::slt>(l42, l23), lf);
+    EXPECT_EQ(w.op<ICmp::uge>(l42, l23), lf);
+    EXPECT_EQ(w.op<ICmp::ugt>(l42, l23), lf);
+    EXPECT_EQ(w.op<ICmp::ule>(l42, l23), lt);
+    EXPECT_EQ(w.op<ICmp::ult>(l42, l23), lt);
 }
 
 template<class T>
@@ -102,26 +102,26 @@ void test_rcmp(World& w) {
     auto lt = w.lit_true();
     auto lf = w.lit_false();
 
-    ASSERT_EQ(w.op<RCmp::oeq>(l23, l23), lt);
-    ASSERT_EQ(w.op<RCmp::one>(l23, l23), lf);
-    ASSERT_EQ(w.op<RCmp::oge>(l23, l23), lt);
-    ASSERT_EQ(w.op<RCmp::ogt>(l23, l23), lf);
-    ASSERT_EQ(w.op<RCmp::ole>(l23, l23), lt);
-    ASSERT_EQ(w.op<RCmp::olt>(l23, l23), lf);
+    EXPECT_EQ(w.op<RCmp::oeq>(l23, l23), lt);
+    EXPECT_EQ(w.op<RCmp::one>(l23, l23), lf);
+    EXPECT_EQ(w.op<RCmp::oge>(l23, l23), lt);
+    EXPECT_EQ(w.op<RCmp::ogt>(l23, l23), lf);
+    EXPECT_EQ(w.op<RCmp::ole>(l23, l23), lt);
+    EXPECT_EQ(w.op<RCmp::olt>(l23, l23), lf);
 
-    ASSERT_EQ(w.op<RCmp::oeq>(l23, l42), lf);
-    ASSERT_EQ(w.op<RCmp::one>(l23, l42), lt);
-    ASSERT_EQ(w.op<RCmp::oge>(l23, l42), lf);
-    ASSERT_EQ(w.op<RCmp::ogt>(l23, l42), lf);
-    ASSERT_EQ(w.op<RCmp::ole>(l23, l42), lt);
-    ASSERT_EQ(w.op<RCmp::olt>(l23, l42), lt);
+    EXPECT_EQ(w.op<RCmp::oeq>(l23, l42), lf);
+    EXPECT_EQ(w.op<RCmp::one>(l23, l42), lt);
+    EXPECT_EQ(w.op<RCmp::oge>(l23, l42), lf);
+    EXPECT_EQ(w.op<RCmp::ogt>(l23, l42), lf);
+    EXPECT_EQ(w.op<RCmp::ole>(l23, l42), lt);
+    EXPECT_EQ(w.op<RCmp::olt>(l23, l42), lt);
 
-    ASSERT_EQ(w.op<RCmp::oeq>(l42, l23), lf);
-    ASSERT_EQ(w.op<RCmp::one>(l42, l23), lt);
-    ASSERT_EQ(w.op<RCmp::oge>(l42, l23), lt);
-    ASSERT_EQ(w.op<RCmp::ogt>(l42, l23), lt);
-    ASSERT_EQ(w.op<RCmp::ole>(l42, l23), lf);
-    ASSERT_EQ(w.op<RCmp::olt>(l42, l23), lf);
+    EXPECT_EQ(w.op<RCmp::oeq>(l42, l23), lf);
+    EXPECT_EQ(w.op<RCmp::one>(l42, l23), lt);
+    EXPECT_EQ(w.op<RCmp::oge>(l42, l23), lt);
+    EXPECT_EQ(w.op<RCmp::ogt>(l42, l23), lt);
+    EXPECT_EQ(w.op<RCmp::ole>(l42, l23), lf);
+    EXPECT_EQ(w.op<RCmp::olt>(l42, l23), lf);
 }
 
 TEST(Primop, Cmp) {
@@ -134,30 +134,40 @@ TEST(Primop, Cmp) {
 #undef CODE
 }
 
+TEST(Primop, Cast) {
+    World w;
+    auto x = w.op<Cast::rcast>(16, w.lit_r(23.f));
+    auto y = w.op<Cast::r2s>(8, w.lit_r(-1.f));
+    x->dump(); x->type()->dump();
+    y->dump(); y->type()->dump();
+}
+
 TEST(Primop, Normalize) {
     World w;
     auto a = w.axiom(w.type_i(8), {"a"});
     auto b = w.axiom(w.type_i(8), {"b"});
-    auto c = w.axiom(w.type_i(8), {"c"});
-    auto d = w.axiom(w.type_i(8), {"d"});
     auto l0 = w.lit_i(0_u8), l2 = w.lit_i(2_u8), l3 = w.lit_i(3_u8), l5 = w.lit_i(5_u8);
 
     auto add = [&] (auto a, auto b) { return w.op<WOp::add>(a, b); };
     auto sub = [&] (auto a, auto b) { return w.op<WOp::sub>(a, b); };
     auto mul = [&] (auto a, auto b) { return w.op<WOp::mul>(a, b); };
-    ASSERT_EQ(add(a, l0), a);
-    ASSERT_EQ(add(l0, a), a);
-    ASSERT_EQ(add(a, a), mul(a, l2));
-    ASSERT_EQ(add(a, b), add(b, a));
-    ASSERT_EQ(sub(a, a), l0);
 
-    ASSERT_EQ(add(add(b, l3), a), add(l3, add(a, b)));
-    ASSERT_EQ(add(b, add(a, l3)), add(l3, add(a, b)));
-    ASSERT_EQ(add(add(b, l2), add(a, l3)), add(b, add(a, l5)));
-    ASSERT_EQ(add(add(b, l2), add(a, l3)), add(b, add(a, l5)));
+    EXPECT_EQ(add(a, l0), a);
+    EXPECT_EQ(add(l0, a), a);
+    EXPECT_EQ(add(a, a), mul(a, l2));
+    EXPECT_EQ(add(a, b), add(b, a));
+    EXPECT_EQ(sub(a, a), l0);
 
-    // this test is not super stable as the operand ordering is quite random
-    ASSERT_EQ(add(add(d, c), add(b, a)), add(b, add(a, add(c, d))));
+    EXPECT_EQ(add(add(b, l3), a), add(l3, add(a, b)));
+    EXPECT_EQ(add(b, add(a, l3)), add(l3, add(a, b)));
+    EXPECT_EQ(add(add(b, l2), add(a, l3)), add(b, add(a, l5)));
+    EXPECT_EQ(add(add(b, l2), add(a, l3)), add(b, add(a, l5)));
+
+    auto x = w.axiom(w.type_r(16), {"x"});
+    EXPECT_FALSE(w.op<ROp::rmul>(x, w.lit_r(0._r16))->isa<Lit>());
+    EXPECT_FALSE(w.op<ROp::rmul>(RFlags::nnan, x, w.lit_r(0._r16))->isa<Lit>());
+    EXPECT_EQ(w.op<ROp::rmul>(RFlags::fast, w.lit_r(0._r16), x), w.lit_r(0._r16));
+    EXPECT_EQ(w.op<ROp::rmul>(RFlags::fast, w.lit_r(-0._r16), x), w.lit_r(-0._r16));
 }
 
 TEST(Primop, Ptr) {
@@ -168,17 +178,17 @@ TEST(Primop, Ptr) {
     m = w.extract(e, 0_u64);
     auto p1 = w.op_slot(w.type_r(32), f);
     auto p2 = w.op_slot(w.type_r(32), f);
-    ASSERT_NE(p1, p2);
-    ASSERT_EQ(p1->type(), w.type_ptr(w.type_r(32)));
-    ASSERT_EQ(p2->type(), w.type_ptr(w.type_r(32)));
+    EXPECT_NE(p1, p2);
+    EXPECT_EQ(p1->type(), w.type_ptr(w.type_r(32)));
+    EXPECT_EQ(p2->type(), w.type_ptr(w.type_r(32)));
     auto s1 = w.op_store(m, p1, w.lit_r(23.f));
     //auto s2 = w.op_store(m, p1, w.lit_r(23.f));
-    //ASSERT_NE(s1, s2);
+    //EXPECT_NE(s1, s2);
     auto l1 = w.op_load(s1, p1);
     //auto l2 = w.op_load(s1, p1);
-    //ASSERT_NE(l1, l2);
-    ASSERT_EQ(w.extract(l1, 0_u64)->type(), w.type_mem());
-    ASSERT_EQ(w.extract(l1, 1_u64)->type(), w.type_r(32));
+    //EXPECT_NE(l1, l2);
+    EXPECT_EQ(w.extract(l1, 0_u64)->type(), w.type_mem());
+    EXPECT_EQ(w.extract(l1, 1_u64)->type(), w.type_r(32));
 }
 
 }

@@ -23,7 +23,7 @@ enum class QualifierTag {
     u = Unlimited, r = Relevant, a = Affine, l = Linear,
 };
 
-const std::array<QualifierTag, 4> QualifierTags = {{QualifierTag::u, QualifierTag::r, QualifierTag::a, QualifierTag::l}};
+constexpr std::array<QualifierTag, 4> QualifierTags = {{QualifierTag::u, QualifierTag::r, QualifierTag::a, QualifierTag::l}};
 
 /// Linear is the largest, Unlimited the smallest.
 inline bool operator<(QualifierTag lhs, QualifierTag rhs) {
@@ -32,10 +32,9 @@ inline bool operator<(QualifierTag lhs, QualifierTag rhs) {
     if (rhs == QualifierTag::Linear) return true;
     return false;
 }
-
-inline bool operator<=(QualifierTag lhs, QualifierTag rhs) {
-    return lhs == rhs || lhs < rhs;
-}
+inline bool operator> (QualifierTag lhs, QualifierTag rhs){ return rhs < lhs; }
+inline bool operator<=(QualifierTag lhs, QualifierTag rhs){ return !(lhs > rhs); }
+inline bool operator>=(QualifierTag lhs, QualifierTag rhs){ return !(lhs < rhs); }
 
 constexpr const char* qualifier2str(QualifierTag q) {
     switch (q) {
@@ -52,13 +51,13 @@ inline std::ostream& operator<<(std::ostream& ostream, const QualifierTag q) {
 }
 
 /// least upper bound
-inline QualifierTag lub(QualifierTag lhs, QualifierTag rhs) {
-    return QualifierTag(static_cast<int>(lhs) | static_cast<int>(rhs));
+inline QualifierTag lub(QualifierTag a, QualifierTag b) {
+    return QualifierTag(static_cast<int>(a) | static_cast<int>(b));
 }
 
 /// greatest lower bound
-inline QualifierTag glb(QualifierTag lhs, QualifierTag rhs) {
-    return QualifierTag(static_cast<int>(lhs) & static_cast<int>(rhs));
+inline QualifierTag glb(QualifierTag a, QualifierTag b) {
+    return QualifierTag(static_cast<int>(a) & static_cast<int>(b));
 }
 
 }

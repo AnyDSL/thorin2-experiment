@@ -1,12 +1,30 @@
 #ifndef THORIN_WORLD_H
+
 #define THORIN_WORLD_H
 
 #include <memory>
 #include <string>
 
 #include "thorin/def.h"
+#include "thorin/util/iterator.h"
 
 namespace thorin {
+
+struct TypeError {
+    TypeError(std::string&& msg)
+        : msg(std::move(msg))
+    {}
+    std::string msg;
+};
+
+template<typename... Args>
+[[noreturn]] void errorf_(const char* fmt, Args... args) {
+    std::ostringstream oss;
+    streamf(oss, fmt, std::forward<Args>(args)...);
+    throw TypeError(std::move(oss.str()));
+}
+
+//------------------------------------------------------------------------------
 
 class World {
 public:
@@ -18,11 +36,25 @@ public:
 
     typedef HashSet<const Def*, DefHash> DefSet;
 
+    struct BreakHash {
+        static uint64_t hash(size_t i) { return i; }
+        static bool eq(size_t i1, size_t i2) { return i1 == i2; }
+        static size_t sentinel() { return size_t(-1); }
+    };
+
+    typedef HashSet<size_t, BreakHash> Breakpoints;
+
     World& operator=(const World&) = delete;
     World(const World&) = delete;
 
-    World();
+    World(Debug dbg = {});
     ~World();
+
+    //@{ get Debug information
+    Debug& debug() const { return debug_; }
+    Location location() const { return debug_; }
+    const std::string& name() const { return debug().name(); }
+    //@}
 
     //@{ create universe and kinds
     const Universe* universe() const { return universe_; }
@@ -57,10 +89,10 @@ public:
     //@}
 
     //@{ create Pi
-    const Pi* pi(const Def* domain, const Def* body, Debug dbg = {}) {
-        return pi(domain, body, unlimited(), dbg);
+    const Pi* pi(const Def* domain, const Def* codomain, Debug dbg = {}) {
+        return pi(domain, codomain, unlimited(), dbg);
     }
-    const Pi* pi(const Def* domain, const Def* body, const Def* qualifier, Debug dbg = {});
+    const Pi* pi(const Def* domain, const Def* codomain, const Def* qualifier, Debug dbg = {});
     //@}
 
     //@{ create Lambda
@@ -83,7 +115,7 @@ public:
     const Def* app(const Def* callee, const Def* arg, Debug dbg = {});
     const Def* raw_app(const Def* callee, Defs args, Debug dbg = {}) { return raw_app(callee, tuple(args, dbg), dbg); }
     const Def* raw_app(const Def* callee, const Def* arg, Debug dbg = {}) {
-        auto type = callee->type()->as<Pi>()->apply(*this, arg);
+        auto type = callee->type()->as<Pi>()->apply(arg);
         return unify<App>(2, type, callee, arg, dbg);
     }
     //@}
@@ -128,9 +160,8 @@ public:
         return variadic(arity(a, QualifierTag::Unlimited, dbg), body, dbg);
     }
     const Def* variadic(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
-        return variadic(DefArray(a.size(), [&](auto i) {
-                    return this->arity(a[i], QualifierTag::Unlimited, dbg);
-                }), body, dbg);
+        return variadic(DefArray(a.size(),
+                [&](auto i) { return this->arity(a[i], QualifierTag::Unlimited, dbg); }), body, dbg);
     }
     //@}
 
@@ -191,20 +222,26 @@ public:
     const Def* arity_eliminator() const { return arity_eliminator_; }
     //@}
 
-    //@{ misc factory methods
-    const Def* any(const Def* type, const Def* def, Debug dbg = {});
-    const Axiom* axiom(const Def* type, Debug dbg = {});
-    const Axiom* axiom(const char* s) { return find(axioms_, s); }
-    const Axiom* axiom(const char* name, const char* s);
-    const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
+    //@{ axioms and rules
+    Axiom* axiom(const Def* type, size_t num_rules, Normalizer, Debug dbg = {});
+    Axiom* axiom(const Def* type, Debug dbg = {}) { return axiom(type, 0, nullptr, dbg); }
+    Axiom* axiom(const char* name, const char* s, size_t num_rules = 0, Normalizer = nullptr);
+    /// lookup @p Axiom by @p name.
+    const Axiom* axiom(const char* name) { return find(axioms_, name); }
+    const RuleType* rule_type(const Def* domain, const Def* codomain, Debug dbg = {}) {
+        return unify<RuleType>(2, *this, domain, codomain, dbg);
+    }
+    const Rule* rule(const Def* domain, const Def* lhs, const Def* rhs, Debug dbg = {}) {
+        return unify<Rule>(2, rule_type(domain, lhs->type()), lhs, rhs, dbg);
+    }
+    const Rule* rule(const char*) { return nullptr; }
+    //@}
+
+    //@{ pick, intersection and match, variant
+    const Def* pick(const Def* type, const Def* def, Debug dbg = {});
     const Def* intersection(Defs defs, Debug dbg = {});
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
-    const Error* error(const Def* type) { return unify<Error>(0, type); }
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
-    const Def* pick(const Def* type, const Def* def, Debug dbg = {});
-    const Def* singleton(const Def* def, Debug dbg = {});
-    const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
-    const Var* var(const Def* type, u64 index, Debug dbg = {}) { return unify<Var>(0, type, index, dbg); }
     const Def* variant(Defs defs, Debug dbg = {});
     const Def* variant(const Def* type, Defs defs, Debug dbg = {});
     Variant* variant(const Def* type, size_t num_ops, Debug dbg = {}) {
@@ -213,11 +250,23 @@ public:
     }
     //@}
 
+    //@{ misc factory methods
+    const Def* any(const Def* type, const Def* def, Debug dbg = {});
+    const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
+    const Def* singleton(const Def* def, Debug dbg = {});
+    const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
+    const Var* var(const Def* type, u64 index, Debug dbg = {}) { return unify<Var>(0, type, index, dbg); }
+    //@}
+
+    //@{ top/bottom
+    const Bottom* bottom(const Def* type) { return unify<Bottom>(0, type); }
+    const Top* top(const Def* type) { return unify<Top>(0, type); }
+    //@}
+
     //@{ bool and nat types
     const Arity* type_bool() { return type_bool_; }
     const Axiom* type_nat() { return type_nat_; }
     //@}
-
 
     //@{ values for bool and nat
     const Lit* lit_nat(int64_t val, Location location = {});
@@ -238,75 +287,121 @@ public:
     //@{ continuations
     const CnType* cn_type(const Def* domain, Debug dbg = {});
     const CnType* cn_type(Defs domain, Debug dbg = {}) { return cn_type(sigma(domain), dbg); }
-    const Cn*     cn(const Def* domain, Debug dbg = {});
+    Cn* cn(const Def* domain, Debug dbg = {});
+    const Param* param(const Cn* cn, Debug dbg = {}) { return unify<Param>(1, cn->type()->op(0), cn, dbg); }
+    //@}
+
+    //@{ intrinsics (AKA built-in Cont%inuations)
+    const Axiom* cn_br()    const { return cn_br_; }
+    const Axiom* cn_match() const { return cn_match_; }
+    Cn* cn_end()   const { return cn_end_; }
+    //@}
+
+    //@{ externals
+    const StrMap<const Def*>& externals() const { return externals_; }
+    void make_external(const Def* def) {
+        auto [i, success] = externals_.emplace(def->name().c_str(), def);
+        assert_unused(success || i->second == def);
+    }
+    bool is_external(const Def* def) const { return externals_.contains(def->name().c_str()); }
+    const Def* lookup_external(const char* s) const {
+        auto i = externals_.find(s);
+        assert(i != externals_.end());
+        return i->second;
+    }
+    auto external_cns() const { return map_range(range(externals_,
+                [](auto p) { return p.second->template isa<Cn>(); }),
+                [](auto p) { return p.second->as_cn(); });
+    }
+    //@}
+
+    //@{ debugging infrastructure
+#ifndef NDEBUG
+    void breakpoint(size_t number) { breakpoints_.insert(number); }
+    const Breakpoints& breakpoints() const { return breakpoints_; }
+    void swap_breakpoints(World& other) { swap(this->breakpoints_, other.breakpoints_); }
+    bool track_history() const { return track_history_; }
+    void enable_history(bool flag = true) { track_history_ = flag; }
+#endif
+    bool is_typechecking_enabled() const { return typechecking_enabled_; }
+    void enable_typechecking(bool on = true) { typechecking_enabled_ = on; }
     //@}
 
     //@{ misc
     const DefSet& defs() const { return defs_; }
-
-    const App* curry(Normalizer normalizer, const Def* callee, const Def* arg, Debug dbg) {
-        return raw_app(callee, arg, dbg)->set_normalizer(normalizer)->as<App>();
-    }
+    auto cns() const { return map_range(range(defs_,
+                [](auto def) { return def->isa_cn(); }),
+                [](auto def) { return def->as_cn(); }); }
     //@}
 
     friend void swap(World& w1, World& w2) {
         using std::swap;
-        swap(w1.defs_, w2.defs_);
+        swap(w1.debug_,            w2.debug_);
+        swap(w1.defs_,             w2.defs_);
+        swap(w1.externals_,        w2.externals_);
+        swap(w1.axioms_,           w2.axioms_);
+        swap(w1.universe_->world_, w2.universe_->world_);
+#ifndef NDEBUG
+        swap(w1.breakpoints_,      w2.breakpoints_);
+        swap(w1.track_history_,    w2.track_history_);
+#endif
     }
 
 private:
-    template<bool glb, class I>
-    const Def* bound(Range<I> ops, const Def* q, bool require_qualifier = true);
-    template<class I>
-    const Def* type_lub(Range<I> ops, const Def* q, bool require_qualifier = true) {
-        auto types = map_range(ops.begin(), ops.end(), [&] (auto def) -> const Def* { return def->type(); });
-        return bound<false>(types, q, require_qualifier);
-    }
-    const Def* type_lub(Defs ops, const Def* q, bool require_qualifier = true) { return type_lub(range(ops), q, require_qualifier); }
-    template<class I>
-    const Def* lub(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<false>(ops, q, require_qualifier); }
-    const Def* lub(Defs ops, const Def* q, bool require_qualifier = true) { return lub(range(ops), q, require_qualifier); }
-    template<class I>
-    const Def* type_glb(Range<I> ops, const Def* q, bool require_qualifier = true) {
-        auto types = map_range(ops.begin(), ops.end(), [&] (auto def) -> const Def* { return def->type(); });
-        return bound<true>(types, q, require_qualifier);
-    }
-    const Def* type_glb(Defs ops, const Def* q, bool require_qualifier = true) { return glb(range(ops), q, require_qualifier); }
-    template<class I>
-    const Def* glb(Range<I> ops, const Def* q, bool require_qualifier = true) { return bound<true>(ops, q, require_qualifier); }
-    const Def* glb(Defs ops, const Def* q, bool require_qualifier = true) { return glb(range(ops), q, require_qualifier); }
+    struct Lattice {
+        QualifierTag min, max;
+        bool (*q_less)(QualifierTag, QualifierTag);
+        QualifierTag (*q_join)(QualifierTag, QualifierTag);
+        const Def* (World::*join)(const Def*, Defs, Debug);
+        const char* short_name;
+        const char* full_name;
+    };
 
-    template<bool glb, class I>
-    const Def* qualifier_bound(Range<I> defs, std::function<const Def*(const SortedDefSet&)> f);
+    static constexpr Lattice LUB{QualifierTag::u, QualifierTag::l,
+                                 &thorin::operator<, thorin::lub, &thorin::World::variant,
+                                 "less",    "least upper bound"};
+    static constexpr Lattice GLB{QualifierTag::l, QualifierTag::u,
+                                 &thorin::operator<, thorin::lub, &thorin::World::intersection,
+                                 "greater", "greatest lower bound"};
+
     template<class I>
-    const Def* qualifier_lub(Range<I> defs, std::function<const Def*(const SortedDefSet&)> f) {
-        return qualifier_bound<false>(defs, f);
-    }
-    const Def* qualifier_lub(Defs defs, std::function<const Def*(const SortedDefSet&)> f) {
-        return qualifier_lub(range(defs), f);
+    const Def* bound(Lattice, Range<I> ops, const Def* q, bool require_qualifier = true);
+    const Def* bound(Lattice l, Defs ops, const Def* q, bool require_qualifier = true) {
+        return bound(l, range(ops), q, require_qualifier);
     }
     template<class I>
-    const Def* qualifier_glb(Range<I> defs, std::function<const Def*(const SortedDefSet&)> f) {
-        return qualifier_bound<true >(defs, f);
+    const Def* type_bound(Lattice l, Range<I> ops, const Def* q, bool require_qualifier = true) {
+        return bound(l, map_range(ops, [&] (auto def) {
+                    assertf(!def->is_universe(), "{} has no type, can't be used as subexpression in types", def);
+                    return def->type();
+                }), q, require_qualifier);
     }
-    const Def* qualifier_glb(Defs defs, std::function<const Def*(const SortedDefSet&)> f) {
-        return qualifier_glb(range(defs), f);
+    const Def* type_bound(Lattice l, Defs ops, const Def* q, bool require_qualifier = true) {
+        return type_bound(l, range(ops), q, require_qualifier);
+    }
+    template<class I, class F>
+    const Def* qualifier_bound(Lattice l, Range<I> defs, F f);
+    template<class F>
+    const Def* qualifier_bound(Lattice l, Defs defs, F f) {
+        return qualifier_bound(l, range(defs), f);
     }
 
 protected:
     template<class T, class... Args>
     const T* unify(size_t num_ops, Args&&... args) {
         auto def = alloc<T>(num_ops, args...);
+#ifndef NDEBUG
+        if (breakpoints_.contains(def->gid())) THORIN_BREAK;
+#endif
         assert(!def->is_nominal());
-        auto p = defs_.emplace(def);
-        if (p.second) {
-            def->finalize(*this);
+        auto [i, success] = defs_.emplace(def);
+        if (success) {
+            def->finalize();
             return def;
         }
 
-        --Def::gid_counter_;
         dealloc(def);
-        return static_cast<const T*>(*p.first);
+        return static_cast<const T*>(*i);
     }
 
     template<class T, class... Args>
@@ -323,11 +418,21 @@ protected:
         char buffer[Size];
     };
 
-    static bool alloc_guard_;
+#ifndef NDEBUG
+    struct Lock {
+        Lock() {
+            assert((alloc_guard_ = !alloc_guard_) && "you are not allowed to recursively invoke alloc");
+        }
+        ~Lock() { alloc_guard_ = !alloc_guard_; }
+        static bool alloc_guard_;
+    };
+#else
+    struct Lock { ~Lock() {} };
+#endif
 
     template<class T, class... Args>
     T* alloc(size_t num_ops, Args&&... args) {
-        assert((alloc_guard_ = !alloc_guard_) && "you are not allowed to recursively invoke alloc");
+        Lock lock;
         size_t num_bytes = sizeof(T) + sizeof(const Def*) * num_ops;
         assert(num_bytes < Zone::Size);
 
@@ -342,9 +447,6 @@ protected:
         buffer_index_ += num_bytes;
         assert(buffer_index_ % alignof(T) == 0);
 
-#ifndef NDEBUG
-        alloc_guard_ = !alloc_guard_;
-#endif
         return result;
     }
 
@@ -357,12 +459,13 @@ protected:
         assert(buffer_index_ % alignof(T) == 0);
     }
 
+    mutable Debug debug_;
     std::unique_ptr<Zone> root_page_;
     Zone* cur_page_;
     size_t buffer_index_ = 0;
-    HashMap<const char*, const Axiom*, StrHash> axioms_;
-
     DefSet defs_;
+    StrMap<const Axiom*> axioms_;
+    StrMap<const Def*> externals_;
     const Universe* universe_;
     const QualifierType* qualifier_type_;
     const Axiom* arity_succ_;
@@ -385,11 +488,21 @@ protected:
     const Lit* lit_nat_0_;
     std::array<const Lit*, 2> lit_bool_;
     std::array<const Lit*, 7> lit_nat_;
+    const Axiom* cn_br_;
+    const Axiom* cn_match_;
+    Cn* cn_end_;
+#ifndef NDEBUG
+    Breakpoints breakpoints_;
+    bool track_history_ = false;
+    bool typechecking_enabled_ = true;
+#else
+    bool typechecking_enabled_ = false;
+#endif
 };
 
 inline const Def* app_callee(const Def* def) { return def->as<App>()->callee(); }
 inline const Def* app_arg(const Def* def) { return def->as<App>()->arg(); }
-inline const Def* app_arg(World& world, const Def* def, size_t i) { return world.extract(app_arg(def), i); }
+inline const Def* app_arg(const Def* def, u64 i) { return def->world().extract(app_arg(def), i); }
 
 }
 

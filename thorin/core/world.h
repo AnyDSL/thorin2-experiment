@@ -16,7 +16,7 @@ std::array<const Def*, 2> infer_width_and_shape(World&, const Def*);
 
 class World : public ::thorin::World {
 public:
-    World();
+    World(Debug dbg = {});
 
     //@{ types and type constructors
     const Axiom* type_i() { return type_i_; }
@@ -40,13 +40,13 @@ public:
         return lit(type_i(sizeof(I)*8), {val});
     }
     template<class R> const Lit* lit_r(R val) {
-        static_assert(std::is_floating_point<R>());
+        static_assert(std::is_floating_point<R>() || std::is_same<R, r16>());
         return lit(type_r(sizeof(R)*8), {val});
     }
     //@}
 
     //@{ arithmetic operations for WOp
-    template<WOp o> const Axiom* op() { return wop_[size_t(o)]; }
+    template<WOp o> const Axiom* op() { return WOp_[size_t(o)]; }
     template<WOp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<o>(WFlags::none, a, b, dbg); }
     template<WOp o> const Def* op(WFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
@@ -58,7 +58,7 @@ public:
     //@}
 
     //@{ arithmetic operations for MOp
-    template<MOp o> const Axiom* op() { return mop_[size_t(o)]; }
+    template<MOp o> const Axiom* op() { return MOp_[size_t(o)]; }
     template<MOp o> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
         return op<o>(width, shape, m, a, b, dbg);
@@ -69,7 +69,7 @@ public:
     //@}
 
     //@{ arithmetic operations for IOp
-    template<IOp o> const Axiom* op() { return iop_[size_t(o)]; }
+    template<IOp o> const Axiom* op() { return IOp_[size_t(o)]; }
     template<IOp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
         return op<o>(width, shape, a, b, dbg);
@@ -80,7 +80,7 @@ public:
     //@}
 
     //@{ arithmetic operations for ROp
-    template<ROp o> const Axiom* op() { return rop_[size_t(o)]; }
+    template<ROp o> const Axiom* op() { return ROp_[size_t(o)]; }
     template<ROp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<o>(RFlags::none, a, b, dbg); }
     template<ROp o> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
@@ -92,7 +92,7 @@ public:
     //@}
 
     //@{ icmp
-    template<ICmp o> const Axiom* op() { return icmp_[size_t(o)]; }
+    template<ICmp o> const Axiom* op() { return ICmp_[size_t(o)]; }
     template<ICmp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
         return op<o>(width, shape, a, b, dbg);
@@ -103,7 +103,7 @@ public:
     //@}
 
     //@{ rcmp
-    template<RCmp o> const Axiom* op() { return rcmp_[size_t(o)]; }
+    template<RCmp o> const Axiom* op() { return RCmp_[size_t(o)]; }
     template<RCmp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<o>(RFlags::none, a, b, dbg); }
     template<RCmp o> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
@@ -114,7 +114,8 @@ public:
     }
 
     //@{ cast
-    template<Cast o> const Axiom* op() const { return cast_[size_t(o)]; }
+    template<Cast o> const Axiom* op() const { return Cast_[size_t(o)]; }
+    template<Cast o> const Def* op(s64 dst_width, const Def* a, Debug dbg = {}) { return op<o>(lit_nat(dst_width), a, dbg); }
     template<Cast o> const Def* op(const Def* dst_width, const Def* a, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
         return op<o>(dst_width, width, shape, a, dbg);
@@ -142,10 +143,6 @@ public:
     //@}
 
     //@{ intrinsics (AKA built-in Cont%inuations)
-    const Axiom* cn_br();
-    const Axiom* cn_match();
-    const Axiom* cn_pe_info();
-    const Axiom* cn_end();
     const Axiom* cn_amdgpu();
     const Axiom* cn_cuda();
     const Axiom* cn_hls();
@@ -157,28 +154,34 @@ public:
     const Axiom* cn_vectorize();
     //@}
 
+    //@{ array operations
+    const Axiom* op_map();
+    const Axiom* op_fold();
+    const Axiom* op_reduce();
+    //@}
+
 private:
     const Axiom* type_i_;
     const Axiom* type_r_;
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
-    std::array<const Axiom*, Num<WOp >> wop_;
-    std::array<const Axiom*, Num<MOp >> mop_;
-    std::array<const Axiom*, Num<IOp >> iop_;
-    std::array<const Axiom*, Num<ROp >> rop_;
-    std::array<const Axiom*, Num<ICmp>> icmp_;
-    std::array<const Axiom*, Num<RCmp>> rcmp_;
-    std::array<const Axiom*, Num<Cast>> cast_;
+    std::array<const Axiom*, Num<WOp >> WOp_;
+    std::array<const Axiom*, Num<MOp >> MOp_;
+    std::array<const Axiom*, Num<IOp >> IOp_;
+    std::array<const Axiom*, Num<ROp >> ROp_;
+    std::array<const Axiom*, Num<ICmp>> ICmp_;
+    std::array<const Axiom*, Num<RCmp>> RCmp_;
+    std::array<const Axiom*, Num<Cast>> Cast_;
     const Axiom* op_enter_;
     const Axiom* op_lea_;
     const Axiom* op_load_;
     const Axiom* op_slot_;
     const Axiom* op_store_;
-    const Axiom* cn_br_;
-    const Axiom* cn_match_;
+    const Axiom* op_map_;
+    const Axiom* op_fold_;
+    const Axiom* op_reduce_;
     const Axiom* cn_pe_info_;
-    const Axiom* cn_end_;
     const Axiom* cn_amdgpu_;
     const Axiom* cn_cuda_;
     const Axiom* cn_hls_;
