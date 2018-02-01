@@ -30,6 +30,7 @@ public:
         assert_unused(success);
         return new_def;
     }
+    void check_todo(const Def*, const Def*);
 
     Def2Def old2new_;
     World world_;
