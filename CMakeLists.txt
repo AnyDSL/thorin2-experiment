@@ -37,7 +37,7 @@ add_executable(coc
     test/main.cpp
     test/nominal.cpp
     test/pack.cpp
-    test/parser.cpp
+    test/parse.cpp
     test/primop.cpp
     test/sigma.cpp
     test/singleton.cpp
@@ -96,6 +96,8 @@ add_executable(coc
     thorin/util/log.h
     thorin/util/stream.cpp
     thorin/util/stream.h
+    thorin/util/symbol.cpp
+    thorin/util/symbol.h
     thorin/util/types.h
     thorin/util/utility.h
 )

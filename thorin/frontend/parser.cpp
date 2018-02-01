@@ -1,6 +1,7 @@
 #include "thorin/frontend/parser.h"
 
 #include "thorin/transform/reduce.h"
+#include "thorin/util/log.h"
 
 namespace thorin {
 
@@ -381,9 +382,9 @@ Parser::DefOrBinder Parser::lookup(const Tracker& t, Symbol identifier) {
 
     auto decl = id2defbinder_.find(identifier);
     if (decl == id2defbinder_.end()) {
-        if (const Def* a = world_.axiom(identifier.str()))
+        if (auto a = world_.lookup_axiom(identifier))
             return a;
-        else if (auto e = world_.lookup_external(identifier.str()))
+        else if (auto e = world_.lookup_external(identifier))
             return e;
         else
             assertf(false, "'{}' at {} not found in current scope", identifier.str(), t.location());

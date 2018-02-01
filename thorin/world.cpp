@@ -271,8 +271,8 @@ Axiom* World::axiom(const Def* type, size_t num_rules, Normalizer normalizer, De
     return a;
 }
 
-Axiom* World::axiom(const char* name, const char* s, size_t num_rules, Normalizer normalizer) {
-    return axiom(parse(*this, s), num_rules, normalizer, {name});
+Axiom* World::axiom(Symbol name, const char* s, size_t num_rules, Normalizer normalizer) {
+    return axiom(parse(*this, s), num_rules, normalizer, name);
 }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {

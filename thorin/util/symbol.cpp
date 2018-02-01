@@ -14,15 +14,10 @@ static const char* duplicate(const char* s) { return strdup(s); }
 #endif // _MSC_VER
 
 void Symbol::insert(const char* s) {
-    auto i = table_.find(s);
-    if (i == table_.end())
-        i = table_.insert(duplicate(s)).first;
+    auto i = table_.map.find(s);
+    if (i == table_.map.end())
+        i = table_.map.emplace(duplicate(s)).first;
     str_ = *i;
-}
-
-void Symbol::destroy() {
-    for (auto s : table_)
-        free((void*) const_cast<char*>(s));
 }
 
 std::string Symbol::remove_quotation() const {
