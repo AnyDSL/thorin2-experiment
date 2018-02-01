@@ -194,7 +194,7 @@ public:
     /// In Debug build if World::enable_history is true, this thing keeps the gid to track a history of gid%s.
     Debug debug_history() const;
     Location location() const { return debug_; }
-    const std::string& name() const { return debug().name(); }
+    Symbol name() const { return debug().name(); }
     std::string unique_name() const;
     //@}
 
