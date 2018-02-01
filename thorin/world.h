@@ -424,7 +424,7 @@ protected:
         static bool alloc_guard_;
     };
 #else
-    struct Lock {}
+    struct Lock { ~Lock() {} };
 #endif
 
     template<class T, class... Args>

@@ -150,7 +150,9 @@ const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug d
 
 //------------------------------------------------------------------------------
 
+#ifndef NDEBUG
 bool World::Lock::alloc_guard_ = false;
+#endif
 
 World::World(Debug dbg)
     : debug_(dbg)
@@ -205,8 +207,7 @@ const Def* World::any(const Def* type, const Def* def, Debug dbg) {
         return def;
     }
 
-    auto variants = type->ops();
-    assert(any_of(def->type(), variants) && "type must be a part of the variant type");
+    assert(any_of(def->type(), type->ops()) && "type must be a part of the variant type");
 
     return unify<Any>(1, type->as<Variant>(), def, dbg);
 }
@@ -428,8 +429,8 @@ const Pi* World::pi(const Def* domain, const Def* codomain, const Def* q, Debug 
 }
 
 const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
-    if (auto def_type = def->type()->isa<Intersection>()) {
-        assert(any_of(type, def_type->ops()) && "picked type must be a part of the intersection type");
+    if (auto intersection = def->type()->isa<Intersection>()) {
+        assert_unused(any_of(type, intersection->ops()) && "picked type must be a part of the intersection type");
         return unify<Pick>(1, type, def, dbg);
     }
 
@@ -671,13 +672,12 @@ static const Def* build_match_type(Defs handlers) {
 }
 
 const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
-    auto def_type = def->type();
     if (handlers.size() == 1) {
-        assert(!def_type->isa<Variant>());
+        assert(!def->type()->isa<Variant>());
         return app(handlers.front(), def, dbg);
     }
     auto matched_type = def->type()->as<Variant>();
-    assert(def_type->num_ops() == handlers.size() && "number of handlers does not match number of cases");
+    assert(def->type()->num_ops() == handlers.size() && "number of handlers does not match number of cases");
 
     DefArray sorted_handlers(handlers);
     std::sort(sorted_handlers.begin(), sorted_handlers.end(),

@@ -280,7 +280,7 @@ Token Parser::next() {
 }
 
 void Parser::eat(Token::Tag tag) {
-    assert(ahead_[0].isa(tag));
+    assert_unused(ahead_[0].isa(tag));
     next();
 }
 

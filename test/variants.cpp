@@ -31,7 +31,7 @@ TEST(Variants, positive_tests) {
     auto match_nat = w.match(any_nat23, handlers);
     match_nat->dump(); // 23
     auto o_match_nat = w.match(any_nat23, {handle_bool, handle_nat});
-    assert(match_nat == o_match_nat);
+    assert_unused(match_nat == o_match_nat);
     auto match_bool = w.match(any_bool, handlers);
     match_bool->dump(); // 0
     auto match = w.match(assumed_var, handlers);
