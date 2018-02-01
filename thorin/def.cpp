@@ -45,11 +45,12 @@ DefArray unique_gid_sorted(Defs defs) {
     return result;
 }
 
-Normalizer get_normalizer(const Def* def) {
-    if (auto app = def->isa<App>())
-        return app->normalizer();
-    else if (auto axiom = def->isa<Axiom>())
-        return axiom->normalizer();
+const Axiom* get_axiom(const Def* def) {
+    if (auto app = def->isa<App>()) {
+        assert(app->callee()->isa<Axiom>() || !app->callee()->is_nominal());
+        return app->axiom();
+    } else if (auto axiom = def->isa<Axiom>())
+        return axiom;
     return nullptr;
 }
 

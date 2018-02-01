@@ -18,6 +18,7 @@
 namespace thorin {
 
 class App;
+class Axiom;
 class Cn;
 class Def;
 class Tracker;
@@ -25,7 +26,7 @@ class Param;
 class World;
 
 typedef const Def* (*Normalizer)(const Def*, const Def*, Debug);
-Normalizer get_normalizer(const Def* def);
+const Axiom* get_axiom(const Def* def);
 
 //------------------------------------------------------------------------------
 
@@ -1125,7 +1126,7 @@ class App : public Def {
 private:
     App(const Def* type, const Def* callee, const Def* arg, Debug dbg)
         : Def(Tag::App, type, {callee, arg}, THORIN_OPS_PTR, dbg)
-        , normalizer_(get_normalizer(callee))
+        , axiom_(get_axiom(callee))
     {}
 
 public:
@@ -1136,16 +1137,16 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Normalizer normalizer() const { return normalizer_; }
+    const Axiom* axiom() const { return axiom_; }
     std::ostream& vstream(std::ostream&) const override;
 
     union {
         mutable const Def* cache_;
-        mutable Normalizer normalizer_;
+        mutable const Axiom* axiom_;
     };
 
     friend const Def* Def::destructing_type() const;
-    friend Normalizer get_normalizer(const Def*);
+    friend const Axiom* get_axiom(const Def*);
     friend class World;
 };
 
