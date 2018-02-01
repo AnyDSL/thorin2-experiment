@@ -319,10 +319,12 @@ public:
         using std::swap;
         swap(w1.debug_,            w2.debug_);
         swap(w1.defs_,             w2.defs_);
+        swap(w1.externals_,        w2.externals_);
+        swap(w1.axioms_,           w2.axioms_);
         swap(w1.universe_->world_, w2.universe_->world_);
 #ifndef NDEBUG
-        swap(w1.breakpoints_,   w2.breakpoints_);
-        swap(w1.track_history_, w2.track_history_);
+        swap(w1.breakpoints_,      w2.breakpoints_);
+        swap(w1.track_history_,    w2.track_history_);
 #endif
     }
 
