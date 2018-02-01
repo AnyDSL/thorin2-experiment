@@ -50,13 +50,14 @@ void Scope::run() {
 }
 
 const DefSet& Scope::free() const {
-    if (!free_)
+    if (!free_) {
         free_ = std::make_unique<DefSet>();
 
-    for (auto def : defs_) {
-        for (auto op : def->ops()) {
-            if (!contains(op))
-                free_->emplace(op);
+        for (auto def : defs_) {
+            for (auto op : def->ops()) {
+                if (!contains(op))
+                    free_->emplace(op);
+            }
         }
     }
 
