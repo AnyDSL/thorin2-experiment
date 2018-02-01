@@ -1,2 +1,5 @@
 *.o
 build/
+
+# this file is auto-generated
+thorin/core/_normalize.cpp
