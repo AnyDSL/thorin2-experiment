@@ -474,7 +474,7 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
         if (a == 1) return reduce(body, index(1, 0));
         if (body->free_vars().test(0))
             return sigma(DefArray(a, [&](auto i) {
-                        return reduce(body, shift_free_vars(this->index(a, i), i)); }), dbg);
+                        return shift_free_vars(reduce(body, this->index(a, i)), i); }), dbg);
     }
 
     assert(body->type()->is_kind() || body->type()->is_universe());
