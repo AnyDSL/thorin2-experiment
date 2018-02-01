@@ -206,11 +206,9 @@ public:
     //@}
 
     //@{ axioms and rules
-    Axiom* axiom(const Def* type, size_t num_rules, Normalizer = nullptr, Debug dbg = {});
-    Axiom* axiom(const Def* type, Normalizer n, Debug dbg = {}) { return axiom(type, 0, n, dbg); }
+    Axiom* axiom(const Def* type, size_t num_rules, Normalizer, Debug dbg = {});
     Axiom* axiom(const Def* type, Debug dbg = {}) { return axiom(type, 0, nullptr, dbg); }
     Axiom* axiom(const char* name, const char* s, size_t num_rules = 0, Normalizer = nullptr);
-    Axiom* axiom(const char* name, const char* s, Normalizer n) { return axiom(name, s, 0, n); }
     /// lookup @p Axiom by @p name.
     const Axiom* axiom(const char* name) { return find(axioms_, name); }
     const RuleType* rule_type(const Def* domain, const Def* codomain, Debug dbg = {}) {

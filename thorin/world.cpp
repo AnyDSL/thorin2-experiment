@@ -182,7 +182,7 @@ World::World(Debug dbg)
     index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸(q)].ASucc p");       // {"0ⁱ"}
     index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p"); // {"Sⁱ"}
 
-    arity_eliminator_       = axiom("Eₐ",  "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a", normalize_arity_eliminator);
+    arity_eliminator_       = axiom("Eₐ",  "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a", 0, normalize_arity_eliminator);
     arity_eliminator_arity_ = axiom("R𝔸ₐ", "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q");
     arity_eliminator_multi_ = axiom("R𝕄ₐ", "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q");
     arity_eliminator_star_  = axiom("R*ₐ",  "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q");
