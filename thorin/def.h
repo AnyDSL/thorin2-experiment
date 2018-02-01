@@ -983,6 +983,10 @@ public:
     const Def* callee() const { return op(1); }
     const Def* arg() const { return op(2); }
     const CnType* type() const { return Def::type()->as<CnType>(); }
+    /**
+     * Since @p Param%s are @em structural, this getter simply creates a new @p Param with itself as operand.
+     * Due to hash-consing there will only be maximal one @p Param object.
+     */
     const Param* param(Debug dbg = {}) const;
     /// @p Extract%s the @c i th element from @p Param.
     const Def* param(u64 i, Debug dbg = {}) const;
@@ -1023,7 +1027,11 @@ using CnMap = GIDMap<Cn*, To>;
 using CnSet = GIDSet<Cn*>;
 using Cn2Cn = CnMap<Cn*>;
 
-/// The @p Param%eter associated to a continuation @p Cn.
+/**
+ * The @p Param%eter associated to a continuation @p Cn.
+ * The parameter has a single operands: its associated @p Cn.
+ * This way parameters are actualy @em structural.
+ */
 class Param : public Def {
 private:
     Param(const Def* type, const Cn* cn, Debug dbg)
