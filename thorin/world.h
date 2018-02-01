@@ -289,6 +289,7 @@ public:
     const Rule* rule(const Def* domain, const Def* lhs, const Def* rhs, Debug dbg = {}) {
         return unify<Rule>(2, rule_type(domain, lhs->type()), lhs, rhs, dbg);
     }
+    const Rule* rule(const char*) { return nullptr; }
     //@}
 
     //@{ misc
