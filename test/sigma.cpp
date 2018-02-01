@@ -21,15 +21,15 @@ TEST(Sigma, ExtractAndSingleton) {
 
     auto fst = w.lambda(NxN, w.extract(w.var(NxN, 0), 0_u64));
     auto snd = w.lambda(NxN, w.extract(w.var(NxN, 0), 1));
-    ASSERT_EQ(w.app(fst, {n23, n42}), w.lit_nat(23));
-    ASSERT_EQ(w.app(snd, {n23, n42}), w.lit_nat(42));
+    EXPECT_EQ(w.app(fst, {n23, n42}), w.lit_nat(23));
+    EXPECT_EQ(w.app(snd, {n23, n42}), w.lit_nat(42));
 
     auto poly = w.axiom(w.pi(w.star(), w.star()), {"Poly"});
     auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))}, {"sig"})->as<Sigma>();
-    ASSERT_TRUE(sigma->is_dependent());
+    EXPECT_TRUE(sigma->is_dependent());
     auto sigma_val = w.axiom(sigma,{"val"});
     auto fst_sigma = w.extract(sigma_val, 0_s);
-    ASSERT_EQ(fst_sigma->type(), w.star());
+    EXPECT_EQ(fst_sigma->type(), w.star());
     auto snd_sigma = w.extract(sigma_val, 1);
     snd_sigma->type()->dump();
     auto single_sigma = w.singleton(sigma_val);
@@ -61,13 +61,13 @@ TEST(Sigma, EtaConversion) {
     auto N = w.type_nat();
     auto B = w.type_bool();
 
-    ASSERT_EQ(w.extract(w.tuple({v, v, v}), w.var(w.arity(3), 17)), v);
+    EXPECT_EQ(w.extract(w.tuple({v, v, v}), w.var(w.arity(3), 17)), v);
     auto v43 = w.var(w.arity_kind(), 43);
-    ASSERT_EQ(w.pack(w.var(w.arity_kind(), 42), w.extract(w.var(w.variadic(v43, N), 23), w.var(v43, 0))),
+    EXPECT_EQ(w.pack(w.var(w.arity_kind(), 42), w.extract(w.var(w.variadic(v43, N), 23), w.var(v43, 0))),
               w.var(w.variadic(v43, N), 22));
 
     auto t = w.axiom(w.sigma({N, B}), {"t"});
-    ASSERT_EQ(w.tuple({w.extract(t, 0_s), w.extract(t, 1_s)}), t);
+    EXPECT_EQ(w.tuple({w.extract(t, 0_s), w.extract(t, 1_s)}), t);
 }
 
 // TODO add a test for passing around dependent sigma types, e.g. like the following
@@ -86,5 +86,5 @@ TEST(Sigma, EtaConversion) {
 //     // passing d : dt(..) to typ(n1, d) is broken, as the variables in the type of d don't refer to n1 in the body of the pi and thus the app of typ doesn't type... do we need casting/ascribing here?
 //     auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), (size_t)0), (size_t)1),
 //                         w.extract(w.var(sig, 0), (size_t)1)})));
-//     ASSERT_EQ(parse(w, "Π[[n0 : nat, n1: nat], d: dt(n1)]. typ(n1, d)", env), def);
+//     EXPECT_EQ(parse(w, "Π[[n0 : nat, n1: nat], d: dt(n1)]. typ(n1, d)", env), def);
 // }

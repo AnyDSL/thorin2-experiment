@@ -12,23 +12,23 @@ TEST(Lexer, Tokens) {
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::L_Brace));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::R_Brace));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::L_Paren));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::R_Paren));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::L_Angle));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::R_Angle));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::L_Bracket));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::R_Bracket));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Colon));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Comma));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Dot));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Star));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Pi));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Cn));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Bool));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Eof));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::L_Brace));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::R_Brace));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::L_Paren));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::R_Paren));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::L_Angle));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::R_Angle));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::L_Bracket));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::R_Bracket));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Colon));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Comma));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Dot));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Star));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Pi));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Cn));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Bool));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Eof));
 }
 
 TEST(Lexer, Literals) {
@@ -90,11 +90,11 @@ TEST(Lexer, Literals) {
 
     for (int i = 0; i < n; i++) {
         auto tok = lexer.lex();
-        ASSERT_TRUE(tok.isa(Token::Tag::Literal)) << "index " << i;
-        ASSERT_TRUE(tok.literal().tag == tags[i]) << "index " << i;
-        ASSERT_TRUE(tok.literal().box == boxes[i]) << "index " << i;
+        EXPECT_TRUE(tok.isa(Token::Tag::Literal)) << "index " << i;
+        EXPECT_TRUE(tok.literal().tag == tags[i]) << "index " << i;
+        EXPECT_TRUE(tok.literal().box == boxes[i]) << "index " << i;
     }
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Eof));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Eof));
 }
 
 TEST(Lexer, Utf8) {
@@ -102,12 +102,12 @@ TEST(Lexer, Utf8) {
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Pi));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Qualifier_Type));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Arity_Kind));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Multi_Arity_Kind));
-    ASSERT_TRUE(lexer.lex().isa(Token::Tag::Eof));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Pi));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Qualifier_Type));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Arity_Kind));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Multi_Arity_Kind));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Eof));
 }
 
 TEST(Lexer, Eof) {
@@ -115,6 +115,6 @@ TEST(Lexer, Eof) {
 
     Lexer lexer(is, "stdin");
     for (int i = 0; i < 100; i++) {
-        ASSERT_TRUE(lexer.lex().isa(Token::Tag::Eof));
+        EXPECT_TRUE(lexer.lex().isa(Token::Tag::Eof));
     }
 }

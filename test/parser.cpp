@@ -10,29 +10,29 @@ using namespace thorin;
 
 TEST(Parser, Simple) {
     World w;
-    ASSERT_EQ(parse(w, "bool"), w.type_bool());
-    ASSERT_EQ(parse(w, "nat"), w.type_nat());
+    EXPECT_EQ(parse(w, "bool"), w.type_bool());
+    EXPECT_EQ(parse(w, "nat"), w.type_nat());
 }
 
 TEST(Parser, SimplePi) {
     World w;
     auto def = w.pi(w.star(), w.pi(w.var(w.star(), 0), w.var(w.star(), 1)));
-    ASSERT_EQ(parse(w, "ΠT:*. ΠU:T. T"), def);
+    EXPECT_EQ(parse(w, "ΠT:*. ΠU:T. T"), def);
 }
 
 TEST(Parser, SimpleLambda) {
     World w;
     auto def = w.lambda(w.star(), w.lambda(w.var(w.star(), 0), w.var(w.var(w.star(), 1), 0)));
-    ASSERT_EQ(parse(w, "λT:*. λx:T. x"), def);
+    EXPECT_EQ(parse(w, "λT:*. λx:T. x"), def);
 }
 
 TEST(Parser, SimpleSigma) {
     World w;
 
-    ASSERT_EQ(parse(w, "[]"), w.unit());
+    EXPECT_EQ(parse(w, "[]"), w.unit());
 
     auto s = w.sigma({w.star(), w.var(w.star(), 0)});
-    ASSERT_EQ(parse(w, "[T:*, T]"), s);
+    EXPECT_EQ(parse(w, "[T:*, T]"), s);
 }
 
 TEST(Parser, SimpleVariadic) {
@@ -42,7 +42,7 @@ TEST(Parser, SimpleVariadic) {
 
     // TODO simplify further once we can parse arity literals
     auto v = w.pi(M, w.pi(w.variadic(w.var(M, 0), S), S));
-    ASSERT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. *"), v);
+    EXPECT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. *"), v);
 }
 
 TEST(Parser, Kinds) {
@@ -85,7 +85,7 @@ TEST(Parser, ComplexVariadics) {
     auto v = w.pi(M, w.pi(w.variadic(w.var(M, 0), S),
                           w.variadic(w.var(M, 1),
                                      w.extract(w.var(w.variadic(w.var(M, 2), S), 1), w.var(w.var(M, 2), 0)))));
-    ASSERT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. [i:a; x#i]"), v);
+    EXPECT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. [i:a; x#i]"), v);
 }
 
 TEST(Parser, NestedBinders) {
@@ -97,7 +97,7 @@ TEST(Parser, NestedBinders) {
     auto typ2 = w.axiom(w.pi(sig, S), {"typ2"});
     auto def = w.pi(sig, w.pi(w.app(typ, w.tuple({w.extract(w.var(sig, 0), 1), w.extract(w.var(sig, 0), 0_u64)})),
                               w.app(typ2, w.var(sig, 1))));
-    ASSERT_EQ(parse(w, "Πp:[n: nat, m: nat]. Πtyp(m, n). typ2(p)"), def);
+    EXPECT_EQ(parse(w, "Πp:[n: nat, m: nat]. Πtyp(m, n). typ2(p)"), def);
 }
 
 TEST(Parser, NestedBinders2) {
@@ -109,7 +109,7 @@ TEST(Parser, NestedBinders2) {
     auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), 1), 1),
                                              w.extract(w.extract(w.var(sig, 0), 1), 0_u64),
                                              w.extract(w.var(sig, 0), 1)})));
-    ASSERT_EQ(parse(w, "Π[m: nat, n: [n0 : nat, n1: nat]]. typ(n1, n0, n)"), def);
+    EXPECT_EQ(parse(w, "Π[m: nat, n: [n0 : nat, n1: nat]]. typ(n1, n0, n)"), def);
 }
 
 TEST(Parser, NestedDependentBinders) {
@@ -122,7 +122,7 @@ TEST(Parser, NestedDependentBinders) {
     auto typ = w.axiom(w.pi(w.sigma({N, w.app(dtyp, w.var(N, 0))}), S), {"typ"});
     auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), 0_u64), 1),
                                              w.extract(w.var(sig, 0), 1)})));
-    ASSERT_EQ(parse(w, "Π[[n0 : nat, n1: nat], d: dt(n1)]. typ(n1, d)"), def);
+    EXPECT_EQ(parse(w, "Π[[n0 : nat, n1: nat], d: dt(n1)]. typ(n1, d)"), def);
 }
 
 TEST(Parser, IntArithOp) {
@@ -135,5 +135,5 @@ TEST(Parser, IntArithOp) {
     auto dom = w.sigma({w.app(type_i, w.var(sig, 0)), w.app(type_i, w.var(sig, 1))});
     auto def = w.pi(MA, w.pi(sig, w.pi(dom, w.app(type_i, w.var(sig, 1)))));
     auto i_arithop = parse(w, "Πs: 𝕄. Π[q: ℚ, f: nat, w: nat]. Π[int(q, f, w),  int(q, f, w)].  int(q, f, w)");
-    ASSERT_EQ(i_arithop, def);
+    EXPECT_EQ(i_arithop, def);
 }

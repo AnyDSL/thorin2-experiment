@@ -12,6 +12,6 @@ TEST(Singleton, free_vars) {
     auto star = w.star();
 
     auto single = w.singleton(w.var(w.var(star, 1), 0));
-    ASSERT_TRUE(single->free_vars().test(0));
-    ASSERT_TRUE(single->free_vars().test(1));
+    EXPECT_TRUE(single->free_vars().test(0));
+    EXPECT_TRUE(single->free_vars().test(1));
 }

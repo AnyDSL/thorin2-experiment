@@ -25,14 +25,14 @@ TEST(Cn, Simpel) {
     w.make_external(k);
 
     Scope scope(k);
-    ASSERT_TRUE(scope.contains(k));
-    ASSERT_TRUE(scope.contains(t));
-    ASSERT_TRUE(scope.contains(f));
-    ASSERT_TRUE(scope.contains(n));
-    ASSERT_TRUE(scope.contains(x));
-    ASSERT_TRUE(scope.contains(r));
-    ASSERT_TRUE(scope.contains(cmp));
-    ASSERT_FALSE(scope.contains(i0));
+    EXPECT_TRUE(scope.contains(k));
+    EXPECT_TRUE(scope.contains(t));
+    EXPECT_TRUE(scope.contains(f));
+    EXPECT_TRUE(scope.contains(n));
+    EXPECT_TRUE(scope.contains(x));
+    EXPECT_TRUE(scope.contains(r));
+    EXPECT_TRUE(scope.contains(cmp));
+    EXPECT_FALSE(scope.contains(i0));
 }
 
 TEST(Cn, Poly) {
@@ -43,7 +43,7 @@ TEST(Cn, Poly) {
     w.make_external(k);
 
     Scope scope(k);
-    ASSERT_TRUE(scope.contains(k));
+    EXPECT_TRUE(scope.contains(k));
 }
 
 }

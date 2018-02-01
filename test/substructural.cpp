@@ -115,32 +115,32 @@ TEST(Substructural, Misc) {
     //auto LNat = w.type_nat(l);
     auto RNat = w.type_rsw64();
     auto an0 = w.val_asw64(0);
-    ASSERT_NE(an0, w.val_asw64(0));
+    EXPECT_NE(an0, w.val_asw64(0));
     auto l_a0 = w.lambda(Unit, w.val_asw64(0), {"l_a0"});
     auto l_a0_app = w.app(l_a0);
-    ASSERT_NE(l_a0_app, w.app(l_a0));
+    EXPECT_NE(l_a0_app, w.app(l_a0));
     auto anx = w.var(ANat, 0, {"x"});
     auto anid = w.lambda(ANat, anx, {"anid"});
     w.app(anid, an0);
     // We need to check substructural types later, so building a second app is possible:
-    ASSERT_FALSE(is_error(w.app(anid, an0)));
+    EXPECT_FALSE(is_error(w.app(anid, an0)));
 
     auto tuple_type = w.sigma({ANat, RNat});
-    ASSERT_EQ(tuple_type->qualifier(), w.qualifier(L));
+    EXPECT_EQ(tuple_type->qualifier(), w.qualifier(L));
     auto an1 = w.axiom(ANat, {"1"});
     auto rn0 = w.axiom(RNat, {"0"});
     auto tuple = w.tuple({an1, rn0});
-    ASSERT_EQ(tuple->type(), tuple_type);
+    EXPECT_EQ(tuple->type(), tuple_type);
     auto tuple_app0 = w.extract(tuple, 0_s);
-    ASSERT_EQ(w.extract(tuple, 0_s), tuple_app0);
+    EXPECT_EQ(w.extract(tuple, 0_s), tuple_app0);
 
     auto a_id_type = w.pi(Nat, Nat, a);
     auto nx = w.var(Nat, 0, {"x"});
     auto a_id = w.lambda(Nat, nx, a, {"a_id"});
-    ASSERT_EQ(a_id_type, a_id->type());
+    EXPECT_EQ(a_id_type, a_id->type());
     auto n0 = w.axiom(Nat, {"0"});
     //auto a_id_app = w.app(a_id, n0);
-    ASSERT_FALSE(is_error(w.app(a_id, n0)));
+    EXPECT_FALSE(is_error(w.app(a_id, n0)));
 
     // λᴬT:*.λx:ᴬT.x
     auto aT1 = w.var(w.star(A), 0, {"T"});
