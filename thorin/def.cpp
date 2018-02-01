@@ -473,8 +473,8 @@ const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { re
  * stub
  */
 
-Axiom*   Axiom  ::stub(World& to, const Def* type, Debug dbg) const { return const_cast<Axiom*>(to.axiom(type, dbg)); }
-Cn*      Cn     ::stub(World&   , const Def*     , Debug    ) const { return /*TODO*/ nullptr; }
+Axiom*   Axiom  ::stub(World& to, const Def* type, Debug dbg) const { return to.axiom(type, num_ops(), normalizer(), dbg); }
+Cn*      Cn     ::stub(World& to, const Def* type, Debug dbg) const { return to.cn(type->as<CnType>()->domain(), dbg); }
 Lambda*  Lambda ::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.lambda (type->as<Pi>(),  dbg); }
 Sigma*   Sigma  ::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.sigma  (type, num_ops(), dbg); }
 Variant* Variant::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.variant(type, num_ops(), dbg); }

@@ -896,38 +896,6 @@ private:
 
 typedef const Def* (*Normalizer)(const Def*, const Def*, Debug);
 
-class Axiom : public Def {
-private:
-    Axiom(const Def* type, size_t num_rules, Debug dbg)
-        : Def(Tag::Axiom, type, num_rules, THORIN_OPS_PTR, dbg)
-    {
-        assert(type->free_vars().none());
-    }
-
-public:
-    auto rules() const { return map_range(ops(), [](auto def) { return def->template as<Axiom>(); }); }
-    const Def* arity() const override;
-    Axiom* stub(World&, const Def*, Debug) const override;
-    bool has_values() const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
-    //@{ get/set Normalizer
-    Normalizer normalizer() const { return normalizer_; }
-    const Def* set_normalizer(Normalizer normalizer) const {
-        set_has_normalizer();
-        normalizer_ = normalizer;
-        return this;
-    }
-    //@}
-
-private:
-    std::ostream& vstream(std::ostream&) const override;
-
-    mutable Normalizer normalizer_ = nullptr;
-
-    friend class World;
-};
-
 // TODO remember which field in the box was actually used to have a better output
 class Lit : public Def {
 private:
@@ -1149,6 +1117,34 @@ public:
 
 private:
     std::ostream& vstream(std::ostream&) const override;
+
+    friend class World;
+};
+
+class Axiom : public Def {
+private:
+    Axiom(const Def* type, size_t num_rules, Normalizer normalizer, Debug dbg)
+        : Def(Tag::Axiom, type, num_rules, THORIN_OPS_PTR, dbg)
+        , normalizer_(normalizer)
+    {
+        if (normalizer)
+            set_has_normalizer();
+        assert(type->free_vars().none());
+    }
+
+public:
+    auto rules() const { return map_range(ops(), [](auto def) { return def->template as<Rule>(); }); }
+    Normalizer normalizer() const { return normalizer_; }
+
+    const Def* arity() const override;
+    Axiom* stub(World&, const Def*, Debug) const override;
+    bool has_values() const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+private:
+    std::ostream& vstream(std::ostream&) const override;
+
+    Normalizer normalizer_;
 
     friend class World;
 };

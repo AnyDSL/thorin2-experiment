@@ -40,27 +40,34 @@ World::World(Debug dbg)
     type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
     type_frame_ = axiom(star(), {"F"});
 
-    auto type_wop  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
-    auto type_mop  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]");
-    auto type_iop  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
-    auto type_rop  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ");
-    auto type_icmp = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]");
-    auto type_rcmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]");
+    auto type_WOp  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
+    auto type_MOp  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]");
+    auto type_IOp  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
+    auto type_ROp  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ");
+    auto type_ICmp = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]");
+    auto type_RCmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]");
 
-    for (auto o : WOp ()) wop_ [size_t(o)] = axiom(type_wop,  { op2str(o)});
-    for (auto o : MOp ()) mop_ [size_t(o)] = axiom(type_mop,  { op2str(o)});
-    for (auto o : IOp ()) iop_ [size_t(o)] = axiom(type_iop,  { op2str(o)});
-    for (auto o : ROp ()) rop_ [size_t(o)] = axiom(type_rop,  { op2str(o)});
-    for (auto o : ICmp()) icmp_[size_t(o)] = axiom(type_icmp, {cmp2str(o)});
-    for (auto o : RCmp()) rcmp_[size_t(o)] = axiom(type_rcmp, {cmp2str(o)});
+#define CODE(T, o) \
+    T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## o, {op2str(T::o)});
+    THORIN_W_OP (CODE)
+    THORIN_M_OP (CODE)
+    THORIN_I_OP (CODE)
+    THORIN_R_OP (CODE)
+#undef CODE
 
-    cast_[size_t(Cast::scast)] = axiom("scast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]");
-    cast_[size_t(Cast::ucast)] = axiom("ucast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]");
-    cast_[size_t(Cast::rcast)] = axiom("rcast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s; real dw]");
-    cast_[size_t(Cast::s2r  )] = axiom("s2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]");
-    cast_[size_t(Cast::u2r  )] = axiom("u2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]");
-    cast_[size_t(Cast::r2s  )] = axiom("r2s",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]");
-    cast_[size_t(Cast::r2u  )] = axiom("r2u",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]");
+#define CODE(T, o) \
+    T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});
+    THORIN_I_CMP(CODE)
+    THORIN_R_CMP(CODE)
+#undef CODE
+
+    Cast_[size_t(Cast::scast)] = axiom("scast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]");
+    Cast_[size_t(Cast::ucast)] = axiom("ucast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]");
+    Cast_[size_t(Cast::rcast)] = axiom("rcast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s; real dw]");
+    Cast_[size_t(Cast::s2r  )] = axiom("s2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]");
+    Cast_[size_t(Cast::u2r  )] = axiom("u2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]");
+    Cast_[size_t(Cast::r2s  )] = axiom("r2s",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]");
+    Cast_[size_t(Cast::r2u  )] = axiom("r2u",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]");
 
     op_lea_   = axiom("lea",   "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; (Ts#j)], as), i: s]. ptr((Ts#i), as)");
     op_load_  = axiom("load",  "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]");
@@ -154,18 +161,6 @@ World::World(Debug dbg)
     rule("[f: nat, w: nat, x: int w]. ior  f w 1ₐ (iand f w 1ₐ (y, x), x) -> x");
 
     cn_pe_info_ = axiom("pe_info", "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T, cn[]]");
-
-#define CODE(T, o) op<T::o>()->set_normalizer(normalize_ ## o);
-    THORIN_W_OP (CODE)
-    THORIN_M_OP (CODE)
-    THORIN_I_OP (CODE)
-    THORIN_R_OP (CODE)
-#undef CODE
-
-#define CODE(T, o) op<T::o>()->set_normalizer(normalize_ ## T<T::o>);
-    THORIN_I_CMP(CODE)
-    THORIN_R_CMP(CODE)
-#undef CODE
 }
 
 const Def* World::op_enter(const Def* mem, Debug dbg) {

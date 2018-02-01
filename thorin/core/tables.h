@@ -178,7 +178,7 @@ constexpr const char* op2str(ROp o) {
     }
 }
 
-constexpr const char* cmp2str(ICmp o) {
+constexpr const char* op2str(ICmp o) {
     switch (o) {
 #define CODE(T, o) case T::o: return "icmp_" #o;
     THORIN_I_CMP(CODE)
@@ -187,7 +187,7 @@ constexpr const char* cmp2str(ICmp o) {
     }
 }
 
-constexpr const char* cmp2str(RCmp o) {
+constexpr const char* op2str(RCmp o) {
     switch (o) {
 #define CODE(T, o) case T::o: return "rcmp_" #o;
     THORIN_R_CMP(CODE)
