@@ -318,8 +318,8 @@ const Def* Parser::parse_identifier() {
             assertf(false, "TODO unimplemented nominal {} with type {} at {}",
                     structural, type, tracker.location());
         // rebuild the structural def with the real nominal def and finally set the ops of the nominal def
-        auto reduced = structural->reduce(world_, nominal);
-        nominal->set(world_, reduced->ops());
+        auto reduced = reduce(structural, nominal);
+        nominal->set(reduced->ops());
         // now we can parse the rest with the real mapping
         insert_identifier(id, nominal);
         eat(Token::Tag::Semicolon);
@@ -333,7 +333,7 @@ const Def* Parser::parse_identifier() {
             auto binder_idx = std::get<size_t>(decl);
             const Binder& it = binders_[binder_idx];
             auto index = depth_ - it.depth;
-            auto type = debruijn_types_[it.depth]->shift_free_vars(world_, index);
+            auto type = shift_free_vars(debruijn_types_[it.depth], index);
             const Def* var = world_.var(type, index - 1, tracker.location());
             for (auto i : reverse_range(it.indices))
                 var = world_.extract(var, i, tracker.location());
@@ -383,7 +383,7 @@ Parser::DefOrBinder Parser::lookup(const Tracker& t, Symbol identifier) {
     if (decl == id2defbinder_.end()) {
         if (const Def* a = world_.axiom(identifier.str()))
             return a;
-        else if (auto e = world_.lookup_external(id.c_str()))
+        else if (auto e = world_.lookup_external(identifier.str()))
             return e;
         else
             assertf(false, "'{}' at {} not found in current scope", identifier.str(), t.location());

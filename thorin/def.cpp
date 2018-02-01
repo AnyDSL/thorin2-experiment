@@ -123,11 +123,11 @@ Def* Def::set(size_t i, const Def* def) {
     return this;
 }
 
-Def* Def::set(World& world, Defs defs) {
+Def* Def::set(Defs defs) {
     assertf(std::all_of(ops().begin(), ops().end(), [](auto op) { return op == nullptr; }), "all ops must be unset");
     assertf(std::all_of(defs.begin(), defs.end(), [](auto def) { return def != nullptr; }), "all new ops must be non-null");
     std::copy(defs.begin(), defs.end(), ops_);
-    finalize(world);
+    finalize();
     return this;
 }
 
