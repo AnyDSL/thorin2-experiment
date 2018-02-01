@@ -2,7 +2,7 @@
 
 src_dirs = [
     "thorin/",
-    "thorin/*/",
+    "thorin/**/",
 ]
 
 exclude_patterns = [
