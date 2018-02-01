@@ -43,7 +43,7 @@ const Def* World::bound(Lattice l, Range<I> defs, const Def* q, bool require_qua
             // TODO might want to assert that this will always be a kind?
             inferred_q = qualifier(l.min);
         } else {
-            auto qualifier = def->qualifier()->shift_free_vars(-i);
+            auto qualifier = shift_free_vars(def->qualifier(), -i);
             inferred_q = (this->*(l.join))(qualifier_type(), {inferred_q, qualifier}, {});
         }
 
@@ -438,7 +438,7 @@ const Def* World::lambda(const Def* domain, const Def* body, const Def* type_qua
         bool eta_property = app->arg()->isa<Var>() && app->arg()->as<Var>()->index() == 0;
 
         if (!app->callee()->free_vars().test(0) && eta_property)
-            return app->callee()->shift_free_vars(-1);
+            return shift_free_vars(app->callee(), -1);
     }
 
     return unify<Lambda>(1, p, body, dbg);
@@ -457,9 +457,9 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
             assert(!v->body()->free_vars().test(0));
             auto a = a_literal->value();
             assert(a != 1);
-            auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(a-1)));
+            auto result = flatten(body, DefArray(a, shift_free_vars(v->body(), a-1)));
             for (size_t i = a; i-- != 0;)
-                result = variadic(v->body()->shift_free_vars(i-1), result, dbg);
+                result = variadic(shift_free_vars(v->body(), i-1), result, dbg);
             return result;
         }
     }
@@ -474,11 +474,11 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
         if (a == 1) return reduce(body, index(1, 0));
         if (body->free_vars().test(0))
             return sigma(DefArray(a, [&](auto i) {
-                        return reduce(body, this->index(a, i))->shift_free_vars(i); }), dbg);
+                        return reduce(body, shift_free_vars(this->index(a, i), i)); }), dbg);
     }
 
     assert(body->type()->is_kind() || body->type()->is_universe());
-    return unify<Variadic>(2, body->type()->shift_free_vars(-1), arity, body, dbg);
+    return unify<Variadic>(2, shift_free_vars(body->type(), -1), arity, body, dbg);
 }
 
 const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
@@ -505,7 +505,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && all_of(defs)) {
         assert(q == nullptr || defs.front()->qualifier() == q);
-        return variadic(arity(defs.size(), QualifierTag::Unlimited, dbg), defs.front()->shift_free_vars(-1), dbg);
+        return variadic(arity(defs.size(), QualifierTag::Unlimited, dbg), shift_free_vars(defs.front(), -1), dbg);
     }
 
     return unify<Sigma>(defs.size(), type, defs, dbg);
@@ -554,9 +554,9 @@ const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
             assert(!v->body()->free_vars().test(0));
             auto a = a_literal->value();
             assert(a != 1);
-            auto result = flatten(body, DefArray(a, v->body()->shift_free_vars(a-1)));
+            auto result = flatten(body, DefArray(a, shift_free_vars(v->body(), a-1)));
             for (size_t i = a; i-- != 0;)
-                result = pack(v->body()->shift_free_vars(i-1), result, dbg);
+                result = pack(shift_free_vars(v->body(), i-1), result, dbg);
             return result;
         }
     }
@@ -576,7 +576,7 @@ const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
     if (auto extract = body->isa<Extract>()) {
         if (auto var = extract->index()->isa<Var>()) {
             if (var->index() == 0 && !extract->scrutinee()->free_vars().test(0))
-                return extract->scrutinee()->shift_free_vars(-1);
+                return shift_free_vars(extract->scrutinee(), -1);
         }
     }
 
@@ -597,7 +597,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
     if (size == 1)
         return defs.front();
     auto type = sigma(DefArray(defs.size(),
-                               [&](auto i) { return defs[i]->type()->shift_free_vars(i); }), dbg);
+                               [&](auto i) { return shift_free_vars(defs[i]->type(), i); }), dbg);
 
     auto eta_property = [&]() {
         const Def* same = nullptr;
@@ -623,7 +623,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
 
     if (size != 0) {
         if (all_of(defs))
-            return pack(arity(size, QualifierTag::Unlimited, dbg), defs.front()->shift_free_vars(1), dbg);
+            return pack(arity(size, QualifierTag::Unlimited, dbg), shift_free_vars(defs.front(), 1), dbg);
         else if (auto same = eta_property())
             return same;
     }

@@ -1,5 +1,6 @@
 #include "thorin/core/world.h"
 #include "thorin/core/fold.h"
+#include "thorin/transform/reduce.h"
 
 namespace thorin::core {
 
@@ -27,7 +28,7 @@ static std::array<const Def*, 2> shrink_shape(const Def* def) {
     if (def->isa<Arity>())
         return {{def, w.arity(1)}};
     if (auto sigma = def->isa<Sigma>())
-        return {{sigma->op(0), w.sigma(sigma->ops().skip_front())->shift_free_vars(-1)}};
+        return {{sigma->op(0), shift_free_vars(w.sigma(sigma->ops().skip_front()), -1)}};
     auto variadic = def->as<Variadic>();
     return {{variadic->arity(), w.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())}};
 }

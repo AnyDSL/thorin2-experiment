@@ -1,4 +1,6 @@
-#include "parser.h"
+#include "thorin/frontend/parser.h"
+
+#include "thorin/transform/reduce.h"
 
 namespace thorin {
 
@@ -85,7 +87,7 @@ const Def* Parser::parse_var_or_binder() {
             });
             if (it != binders_.rend()) {
                 auto index = depth_ - it->depth;
-                auto type = bruijn_[it->depth]->shift_free_vars(index);
+                auto type = shift_free_vars(bruijn_[it->depth], index);
                 const Def* var = world_.var(type, index - 1, tracker.location());
                 for (auto i : it->ids)
                     var = world_.extract(var, i, tracker.location());

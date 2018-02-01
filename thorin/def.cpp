@@ -312,7 +312,7 @@ const Def* Sigma::kind_qualifier() const {
         return unlimited;
     auto qualifiers = DefArray(num_ops(), [&](auto i) {
        // XXX qualifiers should/must not be dependent within a sigma, as we couldn't express the qualifier of the sigma itself then
-       return this->op(i)->has_values() ? this->op(i)->qualifier()->shift_free_vars(-i) : unlimited; });
+       return this->op(i)->has_values() ? shift_free_vars(this->op(i)->qualifier(), -i) : unlimited; });
     return w.variant(w.qualifier_type(), qualifiers);
 }
 
@@ -325,7 +325,7 @@ const Def* Star::kind_qualifier() const { return op(0); }
 
 const Def* Variadic::kind_qualifier() const {
     assert(is_kind());
-    return body()->has_values() ? body()->qualifier()->shift_free_vars(1) : world().unlimited();
+    return body()->has_values() ? shift_free_vars(body()->qualifier(), 1) : world().unlimited();
 }
 
 const Def* Variant::kind_qualifier() const {
@@ -505,10 +505,6 @@ const Def* Lambda::apply(const Def* arg) const {
     return world().app(this, arg);
 }
 
-const Def* Def::shift_free_vars(size_t shift) const {
-    return thorin::shift_free_vars(this, shift);
-}
-
 //------------------------------------------------------------------------------
 
 /*
@@ -679,7 +675,7 @@ void Sigma::typecheck_vars(Environment& types, EnvDefSet& checked) const {
 
 void Var::typecheck_vars(Environment& types, EnvDefSet&) const {
     auto reverse_index = types.size() - 1 - index();
-    auto shifted_type = type()->shift_free_vars(-index() - 1);
+    auto shifted_type = shift_free_vars(type(), -index() - 1);
     auto env_type = types[reverse_index];
     assertf(env_type == shifted_type,
             "The shifted type {} of variable {} does not match the type {} declared by the binder.", shifted_type,

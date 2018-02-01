@@ -262,7 +262,6 @@ public:
 @endcode
     */
     virtual size_t shift(size_t i) const;
-    const Def* shift_free_vars(size_t shift) const;
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
     virtual Def* stub(World&, const Def*, Debug) const { THORIN_UNREACHABLE; }
     Def* stub(World& world, const Def* type) const { return stub(world, type, debug_history()); }
