@@ -45,11 +45,12 @@ DefArray unique_gid_sorted(Defs defs) {
     return result;
 }
 
-Normalizer get_normalizer(const Def* def) {
-    if (auto app = def->isa<App>())
-        return app->normalizer();
-    else if (auto axiom = def->isa<Axiom>())
-        return axiom->normalizer();
+const Axiom* get_axiom(const Def* def) {
+    if (auto app = def->isa<App>()) {
+        assert(app->callee()->isa<Axiom>() || !app->callee()->is_nominal());
+        return app->axiom();
+    } else if (auto axiom = def->isa<Axiom>())
+        return axiom;
     return nullptr;
 }
 
@@ -119,6 +120,14 @@ Def* Def::set(size_t i, const Def* def) {
     ops_[i] = def;
     if (i == num_ops() - 1)
         finalize();
+    return this;
+}
+
+Def* Def::set(Defs defs) {
+    assertf(std::all_of(ops().begin(), ops().end(), [](auto op) { return op == nullptr; }), "all ops must be unset");
+    assertf(std::all_of(defs.begin(), defs.end(), [](auto def) { return def != nullptr; }), "all new ops must be non-null");
+    std::copy(defs.begin(), defs.end(), ops_);
+    finalize();
     return this;
 }
 

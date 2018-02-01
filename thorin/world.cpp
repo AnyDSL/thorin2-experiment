@@ -235,9 +235,11 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     errorf(callee_type->domain()->assignable(arg),
             "callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
 
-    if (auto normalizer = get_normalizer(callee); normalizer && !callee_type->codomain()->isa<Pi>()) {
-        if (auto result = normalizer(callee, arg, dbg))
-            return result;
+    if (auto axiom = get_axiom(callee); axiom && !callee_type->codomain()->isa<Pi>()) {
+        if (auto normalizer = axiom->normalizer()) {
+            if (auto result = normalizer(callee, arg, dbg))
+                return result;
+        }
     }
 
     auto type = callee_type->apply(arg);

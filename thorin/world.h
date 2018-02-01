@@ -371,7 +371,10 @@ private:
     }
     template<class I>
     const Def* type_bound(Lattice l, Range<I> ops, const Def* q, bool require_qualifier = true) {
-        return bound(l, map_range(ops, [&] (auto def) { return def->type(); }), q, require_qualifier);
+        return bound(l, map_range(ops, [&] (auto def) {
+                    assertf(!def->is_universe(), "{} has no type, can't be used as subexpression in types", def);
+                    return def->type();
+                }), q, require_qualifier);
     }
     const Def* type_bound(Lattice l, Defs ops, const Def* q, bool require_qualifier = true) {
         return type_bound(l, range(ops), q, require_qualifier);
