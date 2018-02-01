@@ -44,6 +44,7 @@ private:
     const Def* parse_pi();
     const Def* parse_sigma_or_variadic();
     const Def* parse_lambda();
+    const Def* parse_optional_qualifier();
     const Def* parse_qualified_kind();
     const Def* parse_tuple_or_pack();
     const Def* parse_lit();

@@ -48,6 +48,8 @@ struct Literal {
         THORIN_TYPES(CODE)
 #undef CODE
         Lit_arity,
+        Lit_index,
+        Lit_index_arity,
         Lit_untyped
     };
 

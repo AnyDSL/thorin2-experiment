@@ -178,9 +178,7 @@ const Def* Parser::parse_lambda() {
     return world_.lambda(domain, body, tracker.location());
 }
 
-const Def* Parser::parse_qualified_kind() {
-    auto kind_tag = ahead().tag();
-    eat(kind_tag);
+const Def* Parser::parse_optional_qualifier() {
     const Def* qualifier = world_.unlimited();
     auto tag = ahead().tag();
     if (tag == Token::Tag::Backslash
@@ -192,6 +190,13 @@ const Def* Parser::parse_qualified_kind() {
         || tag == Token::Tag::QualifierL) {
         qualifier = parse_def();
     }
+    return qualifier;
+}
+
+const Def* Parser::parse_qualified_kind() {
+    auto kind_tag = ahead().tag();
+    eat(kind_tag);
+    const Def* qualifier = parse_optional_qualifier();
     switch (kind_tag) {
         case Token::Tag::Star:
             return world_.star(qualifier);
@@ -213,10 +218,10 @@ const Def* Parser::parse_tuple_or_pack() {
 
     auto first = parse_def();
     if (accept(Token::Tag::Semicolon)) {
-        push_identifiers(first);
+        push_debruijn_type(first);
         auto body = parse_def();
         expect(Token::Tag::R_Paren, "pack");
-        pop_identifiers();
+        pop_debruijn_binders();
         return world_.pack(first, body, tracker.location());
     }
 
@@ -228,10 +233,10 @@ const Def* Parser::parse_lit() {
     Tracker tracker(this);
 
     eat(Token::Tag::L_Brace);
-    if (!ahead_[0].isa(Token::Tag::Literal))
-        ELOG_LOC(ahead_[0].location(), "literal expected in {}");
+    if (!ahead().isa(Token::Tag::Literal))
+        ELOG_LOC(ahead().location(), "literal expected in {}");
 
-    auto box = ahead_[0].literal().box;
+    auto box = ahead().literal().box;
     eat(Token::Tag::Literal);
 
     expect(Token::Tag::Colon, "literal");
@@ -252,52 +257,214 @@ const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {
 }
 
 const Def* Parser::parse_literal() {
+    Tracker tracker(this);
     assert(ahead().isa(Token::Tag::Literal));
     auto literal = next().literal();
+    if (literal.tag == Literal::Tag::Lit_index) {
+        assert(ahead().isa(Token::Tag::Literal));
+        auto index_arity = next().literal();
+        assert(index_arity.tag == Literal::Tag::Lit_index_arity);
+        const Def* qualifier = parse_optional_qualifier();
+        return world_.index(world_.arity(index_arity.box.get_u64(), qualifier), literal.box.get_u64(), tracker.location());
+    }
     if (literal.tag == Literal::Tag::Lit_arity) {
-        auto tag = ahead().tag();
-        const Def* qualifier = world_.unlimited();
-        if (tag == Token::Tag::Backslash
-            || tag == Token::Tag::Identifier
-            || tag == Token::Tag::L_Paren
-            || tag == Token::Tag::QualifierU
-            || tag == Token::Tag::QualifierR
-            || tag == Token::Tag::QualifierA
-            || tag == Token::Tag::QualifierL) {
-            qualifier = parse_def();
-        }
-        return world_.arity(literal.box.get_u64(), qualifier);
+        const Def* qualifier = parse_optional_qualifier();
+        return world_.arity(literal.box.get_u64(), qualifier, tracker.location());
     }
 
     assertf(false, "unhandled literal {}", literal.box.get_u64());
 }
 
 Token Parser::next() {
-    auto result = ahead_[0];
+    auto result = ahead();
     ahead_[0] = ahead_[1];
     ahead_[1] = lexer_.lex();
     return result;
 }
 
 void Parser::eat(Token::Tag tag) {
-    assert_unused(ahead_[0].isa(tag));
+    assert_unused(ahead().isa(tag));
     next();
 }
 
 void Parser::expect(Token::Tag tag, const char* context) {
-    if (!ahead_[0].isa(tag)) {
-        ELOG_LOC(ahead_[0].location(), "expected '{}', got '{}' while parsing {}",
-                Token::tag_to_string(tag), Token::tag_to_string(ahead_[0].tag()), context);
+    if (!ahead().isa(tag)) {
+        ELOG_LOC(ahead().location(), "expected '{}', got '{}' while parsing {}",
+                Token::tag_to_string(tag), Token::tag_to_string(ahead().tag()), context);
     }
     next();
 }
 
 bool Parser::accept(Token::Tag tag) {
-    if (!ahead_[0].isa(tag))
+    if (!ahead().isa(tag))
         return false;
     next();
     return true;
 }
+
+const Def* Parser::parse_identifier() {
+    Tracker tracker(this);
+    auto id = ahead().identifier();
+    next();
+    const Def* def = nullptr;
+    if (accept(Token::Tag::Colon)) {
+        // binder
+        def = parse_def();
+        insert_identifier(id);
+    } else if (accept(Token::Tag::Equal)) { // id = e; def
+        // let
+        // TODO parse multiple lets/nominals into one scope for mutual recursion and such
+        push_decl_scope();
+        auto let = parse_def();
+        expect(Token::Tag::Semicolon, "a let definition");
+        insert_identifier(id, let);
+        def = parse_def();
+        pop_decl_scope();
+    } else if (accept(Token::Tag::ColonColon)) { // id :: type := e; def
+        // TODO parse multiple lets/nominals into one scope for mutual recursion and such
+        auto type = parse_def();
+        expect(Token::Tag::ColonEqual, "a nominal definition");
+        // we first abuse the variable to debruijn lookup to parse the whole def structurally
+        insert_identifier(id);
+        push_debruijn_type(type);
+        auto structural = parse_def();
+        pop_debruijn_binders();
+        // build the stub
+        Def* nominal = nullptr;
+        Debug dbg(tracker.location(), id.str());
+        if (auto lambda = structural->isa<Lambda>())
+            nominal = world_.lambda(lambda->type(), dbg);
+        else if (auto sigma = structural->isa<Sigma>())
+            nominal = world_.sigma(type, sigma->num_ops(), dbg);
+        else
+            assertf(false, "TODO unimplemented nominal {} with type {} at {}",
+                    structural, type, tracker.location());
+        // rebuild the structural def with the real nominal def and finally set the ops of the nominal def
+        auto reduced = structural->reduce(world_, nominal);
+        nominal->set(world_, reduced->ops());
+        // now we can parse the rest with the real mapping
+        insert_identifier(id, nominal);
+        eat(Token::Tag::Semicolon);
+        push_decl_scope();
+        def = parse_def();
+        pop_decl_scope();
+    } else {
+        // use
+        auto decl = lookup(tracker, id);
+        if (std::holds_alternative<size_t>(decl)) {
+            auto binder_idx = std::get<size_t>(decl);
+            const Binder& it = binders_[binder_idx];
+            auto index = depth_ - it.depth;
+            auto type = debruijn_types_[it.depth]->shift_free_vars(world_, index);
+            const Def* var = world_.var(type, index - 1, tracker.location());
+            for (auto i : reverse_range(it.indices))
+                var = world_.extract(var, i, tracker.location());
+            def = var;
+        } else { // nominal, let, or axiom
+            return std::get<const Def*>(decl);
+        }
+    }
+    return def;
+}
+
+void Parser::push_debruijn_type(const Def* bruijn) {
+    depth_++;
+    debruijn_types_.push_back(bruijn);
+}
+
+void Parser::pop_debruijn_binders() {
+    depth_--;
+    while (!binders_.empty()) {
+        auto binder = binders_.back();
+        if (binder.depth < depth_) break;
+        if (std::holds_alternative<const Def*>(binder.shadow) && std::get<const Def*>(binder.shadow) == nullptr)
+            id2defbinder_.erase(binder.name);
+        else
+            id2defbinder_[binder.name] = binder.shadow;
+        binders_.pop_back();
+    }
+    debruijn_types_.pop_back();
+}
+
+void Parser::shift_binders(size_t count) {
+    // shift binders declared within a sigma by adding extracts
+    size_t new_depth = depth_ - count;
+    for (Binder& binder : reverse_range(binders_)) {
+        if (binder.depth < new_depth) break;
+        binder.indices.push_back(binder.depth - new_depth);
+        binder.depth = new_depth;
+    }
+    debruijn_types_.resize(debruijn_types_.size() - count);
+    depth_ = new_depth;
+}
+
+Parser::DefOrBinder Parser::lookup(const Tracker& t, Symbol identifier) {
+    assert(!identifier.empty() && "identifier is empty");
+
+    auto decl = id2defbinder_.find(identifier);
+    if (decl == id2defbinder_.end()) {
+        if (const Def* a = world_.axiom(identifier.str()))
+            return a;
+        else
+            assertf(false, "'{}' at {} not found in current scope", identifier.str(), t.location());
+    }
+    return decl->second;
+}
+
+void Parser::insert_identifier(Symbol identifier, const Def* def) {
+    assert(!identifier.empty() && "identifier is empty");
+
+    DefOrBinder shadow = (const Def*) nullptr;
+    auto decl = id2defbinder_.find(identifier);
+    if (decl != id2defbinder_.end())
+        shadow = decl->second;
+
+    DefOrBinder mapping = def;
+    if (def)
+        declarations_.emplace_back(identifier, def, shadow);
+    else {
+        // nullptr means we want a binder
+        mapping = binders_.size();
+        binders_.emplace_back(identifier, depth_, shadow);
+    }
+
+    id2defbinder_[identifier] = mapping;
+}
+
+void Parser::push_decl_scope() { scopes_.push_back(declarations_.size()); }
+
+void Parser::pop_decl_scope() {
+    size_t scope = scopes_.back();
+    // iterate from the back, such that earlier shadowing declarations re-set the shadow correctly
+    for (size_t i = declarations_.size() - 1, e = scope - 1; i != e; --i) {
+        auto decl = declarations_[i];
+
+        auto current = id2defbinder_.find(decl.name);
+        if (current != id2defbinder_.end()) {
+            if (std::holds_alternative<size_t>(current->second)) {
+                // if a binder has been declared in this scope and it is still around,
+                // it overrides this id and also whatever we shadowed, but instead of
+                // shadowing this id it instead shadows the previous shadow
+                auto binder = binders_[std::get<size_t>(current->second)];
+                assert(std::get<const Def*>(binder.shadow) == decl.def);
+                binder.shadow = decl.shadow;
+                continue; // nothing else to unbind/rebind
+            } else {
+                assert(std::get<const Def*>(current->second) == decl.def);
+            }
+        }
+
+        if (std::holds_alternative<const Def*>(decl.shadow) && std::get<const Def*>(decl.shadow) == nullptr)
+            id2defbinder_.erase(decl.name);
+        else
+            id2defbinder_[decl.name] = decl.shadow;
+    }
+
+    declarations_.resize(scope, {Symbol("dummy"), nullptr, 1});
+    scopes_.pop_back();
+}
+
+//------------------------------------------------------------------------------
 
 const Def* parse(World& world, const char* str) {
     std::istringstream is(str, std::ios::binary);

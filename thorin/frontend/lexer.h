@@ -17,6 +17,15 @@ private:
     Literal parse_literal();
 
     template <typename Pred>
+    std::optional<uint32_t> accept_opt(Pred pred) {
+        if (pred(peek())) {
+            auto ret = peek();
+            next();
+            return {ret};
+        }
+        return std::nullopt;
+    }
+    template <typename Pred>
     bool accept_if(Pred pred, bool append = true) {
         if (pred(peek())) {
             if (append) str_.append(peek_bytes_);

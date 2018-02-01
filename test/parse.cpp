@@ -45,6 +45,28 @@ TEST(Parser, SimpleVariadic) {
     EXPECT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. *"), v);
 }
 
+TEST(Parser, Arities) {
+    World w;
+    EXPECT_EQ(parse(w, "0ₐ"), w.arity(0));
+    EXPECT_EQ(parse(w, "42ₐ"), w.arity(42));
+    EXPECT_EQ(parse(w, "0ₐᵁ"), w.arity(0));
+    EXPECT_EQ(parse(w, "1ₐᴿ"), w.arity(1, w.relevant()));
+    EXPECT_EQ(parse(w, "2ₐᴬ"), w.arity(2, w.affine()));
+    EXPECT_EQ(parse(w, "3ₐᴸ"), w.arity(3, w.linear()));
+    EXPECT_EQ(parse(w, "Πq:ℚ.42ₐq"), w.pi(w.qualifier_type(), w.arity(42, w.var(w.qualifier_type(), 0))));
+}
+
+TEST(Parser, Indices) {
+    World w;
+    EXPECT_EQ(parse(w, "0₁"), w.index(1, 0));
+    EXPECT_EQ(parse(w, "42₁₉₀"), w.index(190, 42));
+    EXPECT_EQ(parse(w, "4₅ᵁ"), w.index(w.arity(5, w.unlimited()), 4));
+    EXPECT_EQ(parse(w, "4₅ᴿ"), w.index(w.arity(5, w.relevant()), 4));
+    EXPECT_EQ(parse(w, "4₅ᴬ"), w.index(w.arity(5, w.affine()), 4));
+    EXPECT_EQ(parse(w, "4₅ᴸ"), w.index(w.arity(5, w.linear()), 4));
+    EXPECT_EQ(parse(w, "λq:ℚ.4₅q"), w.lambda(w.qualifier_type(), w.index(w.arity(5, w.var(w.qualifier_type(), 0)), 4)));
+}
+
 TEST(Parser, Kinds) {
     World w;
     EXPECT_EQ(parse(w, "*"), w.star());
@@ -65,16 +87,6 @@ TEST(Parser, Kinds) {
     EXPECT_EQ(parse(w, "𝕄ᴬ"), w.multi_arity_kind(QualifierTag::Affine));
     EXPECT_EQ(parse(w, "𝕄ᴸ"), w.multi_arity_kind(QualifierTag::Linear));
     EXPECT_EQ(parse(w, "Πq:ℚ.𝕄q"), w.pi(w.qualifier_type(), w.multi_arity_kind(w.var(w.qualifier_type(), 0))));
-}
-
-TEST(Parser, Arities) {
-    World w;
-    EXPECT_EQ(parse(w, "0ₐ"), w.arity(0));
-    EXPECT_EQ(parse(w, "0ₐᵁ"), w.arity(0));
-    EXPECT_EQ(parse(w, "1ₐᴿ"), w.arity(1, w.relevant()));
-    EXPECT_EQ(parse(w, "2ₐᴬ"), w.arity(2, w.affine()));
-    EXPECT_EQ(parse(w, "3ₐᴸ"), w.arity(3, w.linear()));
-    EXPECT_EQ(parse(w, "Πq:ℚ.42ₐq"), w.pi(w.qualifier_type(), w.arity(42, w.var(w.qualifier_type(), 0))));
 }
 
 TEST(Parser, ComplexVariadics) {
