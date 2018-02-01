@@ -1131,7 +1131,7 @@ private:
     std::ostream& vstream(std::ostream&) const override;
 
     union {
-        mutable const Def* cache_ = nullptr;
+        mutable const Def* cache_;
         mutable Normalizer normalizer_;
     };
 

@@ -19,6 +19,7 @@ class CFNode;
 /**
  * A @p Scope represents a region of @p Cn%s which are live from the view of an @p entry @p Cn.
  * Transitively, all user's of the @p entry's parameters are pooled into this @p Scope.
+ * Each @p Scope contains the dummy @p Cn @p World::cn_end to mark the end of a @p Scope.
  */
 class Scope : public Streamable {
 public:
