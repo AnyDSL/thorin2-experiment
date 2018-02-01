@@ -41,19 +41,20 @@ DefArray unique_gid_sorted(Defs defs) {
     return result;
 }
 
+Normalizer get_normalizer(const Def* def) {
+    if (auto app = def->isa<App>())
+        return app->normalizer();
+    else if (auto axiom = def->isa<Axiom>())
+        return axiom->normalizer();
+    return nullptr;
+}
+
 static bool check_same_sorted_ops(Def::Sort sort, Defs ops) {
 #ifndef NDEBUG
     auto all = std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); });
     assertf(all, "operands must be of the same sort");
 #endif
     return true;
-}
-
-const Def* curried_callee(const Def* def) {
-    auto res = def;
-    while (auto app = res->isa<App>())
-        res = app->callee();
-    return res;
 }
 
 //------------------------------------------------------------------------------

@@ -227,8 +227,8 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     assertf(callee_type->domain()->assignable(arg),
             "callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
 
-    if (callee->has_normalizer() && !callee_type->codomain()->isa<Pi>()) {
-        if (auto result = curried_callee(callee)->as<Axiom>()->normalizer()(callee, arg, dbg))
+    if (auto normalizer = get_normalizer(callee); normalizer && !callee_type->codomain()->isa<Pi>()) {
+        if (auto result = normalizer(callee, arg, dbg))
             return result;
     }
 
@@ -238,18 +238,18 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
 
     if (callee->is_nominal())
         return app;
-    if (auto cache = app->cache_)
-        return cache;
 
     if (auto lambda = app->callee()->isa<Lambda>()) {
+        if (auto cache = app->cache_)
+            return cache;
+
         auto pi_type = app->callee()->type()->as<Pi>();
         // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body?
-        if (!lambda->maybe_affine() && !pi_type->codomain()->maybe_affine() && !lambda->is_nominal()) {
+        if (!lambda->maybe_affine() && !pi_type->codomain()->maybe_affine())
             return app->cache_ = reduce(lambda->body(), app->arg());
-        }
     }
 
-    return app->cache_ = app;
+    return app;
 }
 
 Axiom* World::axiom(const Def* type, size_t num_rules, Normalizer normalizer, Debug dbg) {

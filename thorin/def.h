@@ -24,6 +24,9 @@ class Tracker;
 class Param;
 class World;
 
+typedef const Def* (*Normalizer)(const Def*, const Def*, Debug);
+Normalizer get_normalizer(const Def* def);
+
 /**
  * References a user.
  * A Def @c u which uses Def @c d as @c i^th operand is a Use with Use::index_ @c i of Def @c d.
@@ -139,7 +142,6 @@ protected:
         , tag_(unsigned(tag))
         , nominal_(true)
         , contains_cn_(false)
-        , has_normalizer_(false)
         , ops_(ops_ptr)
     {
         std::fill_n(ops_, num_ops, nullptr);
@@ -154,7 +156,6 @@ protected:
         , tag_(unsigned(tag))
         , nominal_(false)
         , contains_cn_(false)
-        , has_normalizer_(false)
         , ops_(ops_ptr)
     {
         std::copy(ops.begin(), ops.end(), ops_);
@@ -226,7 +227,6 @@ public:
     /// A nominal Def is always different from each other Def.
     bool is_nominal() const { return nominal_; }
     Tag tag() const { return Tag(tag_); }
-    bool has_normalizer() const { return has_normalizer_; }
     //@}
 
     //@{ type checking
@@ -298,8 +298,6 @@ protected:
     virtual bool equal(const Def*) const;
     //@}
 
-    void set_has_normalizer() const { has_normalizer_ = true; }
-
 private:
     /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
     virtual const Def* kind_qualifier() const;
@@ -323,11 +321,10 @@ private:
     uint32_t num_ops_;
     union {
         struct {
-            unsigned gid_                    : 23;
+            unsigned gid_                    : 24;
             unsigned tag_                    :  6;
             unsigned nominal_                :  1;
             unsigned contains_cn_            :  1;
-            mutable unsigned has_normalizer_ :  1;
             // this sum must be 32   ^^^
         };
     };
@@ -508,31 +505,6 @@ private:
 
     friend class World;
 };
-
-class App : public Def {
-private:
-    App(const Def* type, const Def* callee, const Def* arg, Debug dbg)
-        : Def(Tag::App, type, {callee, arg}, THORIN_OPS_PTR, dbg)
-    {
-        has_normalizer_ = callee->has_normalizer_;
-    }
-
-public:
-    const Def* callee() const { return op(0); }
-    const Def* arg() const { return op(1); }
-
-    const Def* arity() const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
-private:
-    mutable const Def* cache_ = nullptr;
-    std::ostream& vstream(std::ostream&) const override;
-
-    friend const Def* Def::destructing_type() const;
-    friend class World;
-};
-
-const Def* curried_callee(const Def* def);
 
 //------------------------------------------------------------------------------
 
@@ -889,8 +861,6 @@ private:
     friend class World;
 };
 
-typedef const Def* (*Normalizer)(const Def*, const Def*, Debug);
-
 // TODO remember which field in the box was actually used to have a better output
 class Lit : public Def {
 private:
@@ -1122,8 +1092,6 @@ private:
         : Def(Tag::Axiom, type, num_rules, THORIN_OPS_PTR, dbg)
         , normalizer_(normalizer)
     {
-        if (normalizer)
-            set_has_normalizer();
         assert(type->free_vars().none());
     }
 
@@ -1141,6 +1109,34 @@ private:
 
     Normalizer normalizer_;
 
+    friend class World;
+};
+
+class App : public Def {
+private:
+    App(const Def* type, const Def* callee, const Def* arg, Debug dbg)
+        : Def(Tag::App, type, {callee, arg}, THORIN_OPS_PTR, dbg)
+        , normalizer_(get_normalizer(callee))
+    {}
+
+public:
+    const Def* callee() const { return op(0); }
+    const Def* arg() const { return op(1); }
+
+    const Def* arity() const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+
+private:
+    Normalizer normalizer() const { return normalizer_; }
+    std::ostream& vstream(std::ostream&) const override;
+
+    union {
+        mutable const Def* cache_ = nullptr;
+        mutable Normalizer normalizer_;
+    };
+
+    friend const Def* Def::destructing_type() const;
+    friend Normalizer get_normalizer(const Def*);
     friend class World;
 };
 
