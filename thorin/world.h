@@ -282,18 +282,19 @@ public:
 
     //@{ externals
     const StrMap<const Def*>& externals() const { return externals_; }
-    auto external_cns() const { return map_range(range(externals_,
-                [](auto p) { return p.second->template isa<Cn>(); }),
-                [](auto p) { return p.second->as_cn(); });
-    }
     void make_external(const Def* def) {
         auto [i, success] = externals_.emplace(def->name().c_str(), def);
         assert_unused(success || i->second == def);
     }
+    bool is_external(const Def* def) const { return externals_.contains(def->name().c_str()); }
     const Def* lookup_external(const char* s) const {
         auto i = externals_.find(s);
         assert(i != externals_.end());
         return i->second;
+    }
+    auto external_cns() const { return map_range(range(externals_,
+                [](auto p) { return p.second->template isa<Cn>(); }),
+                [](auto p) { return p.second->as_cn(); });
     }
     //@}
 

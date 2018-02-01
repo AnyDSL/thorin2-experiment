@@ -64,6 +64,15 @@ const Def* curried_callee(const Def* def) {
 
 uint32_t Def::gid_counter_ = 1;
 
+Debug Def::debug_history() const {
+#ifndef NDEBUG
+    auto& w = world();
+    if (!isa<Axiom>() && !w.is_external(this))
+        return w.track_history() ? Debug(location(), unique_name()) : debug();
+#endif
+    return debug();
+}
+
 const Def* Def::destructing_type() const {
     if (auto app = type()->isa<App>()) {
         if (auto cache = app->cache_) {

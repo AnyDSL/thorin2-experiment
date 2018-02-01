@@ -186,6 +186,8 @@ public:
 
     //@{ get Debug information
     Debug& debug() const { return debug_; }
+    /// In Debug build if World::enable_history is true, this thing keeps the gid to track a history of gid%s.
+    Debug debug_history() const;
     Location location() const { return debug_; }
     const std::string& name() const { return debug().name(); }
     std::string unique_name() const;
@@ -263,14 +265,7 @@ public:
     const Def* shift_free_vars(size_t shift) const;
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
     virtual Def* stub(World&, const Def*, Debug) const { THORIN_UNREACHABLE; }
-    Def* stub(World& world, const Def* type) const {
-        if (!name().empty()) {
-            Debug new_dbg(debug());
-            new_dbg.set(name() + std::to_string(Def::gid_counter()));
-            return stub(world, type, new_dbg);
-        }
-        return stub(world, type, debug());
-    }
+    Def* stub(World& world, const Def* type) const { return stub(world, type, debug_history()); }
     //@}
 
     //@{ replace
