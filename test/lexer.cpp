@@ -32,12 +32,12 @@ TEST(Lexer, Tokens) {
 }
 
 TEST(Lexer, Literals) {
-    std::string str = "1s8 1s16 1s32 1s64 1u8 1u16 1u32 1u64 1.0r16 1.0r32 1.0r64 +1s32 -1s32 0xFFs32 -0xFFs32 0o10s32 -0o10s32 0b10s32 -0b10s32";
+    std::string str = "1s8 1s16 1s32 1s64 1u8 1u16 1u32 1u64 1.0r16 1.0r32 1.0r64 +1s32 -1s32 0xFFs32 -0xFFs32 0o10s32 -0o10s32 0b10s32 -0b10s32 0ₐ 0₁";
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
 
-    constexpr int n = 19;
+    constexpr int n = 22;
     Literal::Tag tags[n] = {
         Literal::Tag::Lit_s8,
         Literal::Tag::Lit_s16,
@@ -60,7 +60,9 @@ TEST(Lexer, Literals) {
         Literal::Tag::Lit_s32,
         Literal::Tag::Lit_s32,
         Literal::Tag::Lit_s32,
-        Literal::Tag::Lit_s32
+        Literal::Tag::Lit_s32,
+        Literal::Tag::Lit_arity,
+        Literal::Tag::Lit_index, Literal::Tag::Lit_index_arity
     };
 
     Box boxes[n] = {
@@ -85,14 +87,16 @@ TEST(Lexer, Literals) {
         Box(s32(8)),
         Box(s32(-8)),
         Box(s32(2)),
-        Box(s32(-2))
+        Box(s32(-2)),
+        Box(u64(0)),
+        Box(u64(0)), Box(u64(1)),
     };
 
     for (int i = 0; i < n; i++) {
         auto tok = lexer.lex();
-        EXPECT_TRUE(tok.isa(Token::Tag::Literal)) << "index " << i;
-        EXPECT_TRUE(tok.literal().tag == tags[i]) << "index " << i;
-        EXPECT_TRUE(tok.literal().box == boxes[i]) << "index " << i;
+        EXPECT_TRUE(tok.isa(Token::Tag::Literal)) << "at index " << i;
+        EXPECT_EQ(tok.literal().tag, tags[i]) << "at index " << i;
+        EXPECT_EQ(tok.literal().box, boxes[i]) << "at index " << i;
     }
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Eof));
 }

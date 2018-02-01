@@ -151,7 +151,13 @@ template<class T>
 auto range(const T& t) -> auto { return range(t.begin(), t.end()); }
 
 template<class T>
+auto range(T& t) -> auto { return range(t.begin(), t.end()); }
+
+template<class T>
 auto reverse_range(const T& t) -> auto { return range(t.rbegin(), t.rend()); }
+
+template<class T>
+auto reverse_range(T& t) -> auto { return range(t.rbegin(), t.rend()); }
 
 template<class I, class P>
 auto range(I begin, I end, P predicate) -> auto {
