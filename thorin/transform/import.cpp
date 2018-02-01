@@ -26,7 +26,15 @@ const Def* Importer::import(Tracker old_def) {
         return new_nominal;
     }
 
-    return insert(old_def, old_def->rebuild(world(), new_type, new_ops));
+    auto new_def = old_def->rebuild(world(), new_type, new_ops);
+    if (old_def->num_ops() == new_def->num_ops()) {
+        for (size_t i = 0, e = old_def->num_ops(); !todo_ && i != e; ++i)
+            todo_ |= old2new_[old_def->op(i)] == new_def->op(i);
+    } else {
+        todo_ = true;
+    }
+
+    return insert(old_def, new_def);
 }
 
 }
