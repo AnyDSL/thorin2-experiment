@@ -2,14 +2,11 @@
 
 src_dirs = [
     "thorin/",
-    "thorin/core/",
-    "thorin/frontend/",
-    "thorin/matchers/",
-    "thorin/util/",
+    "thorin/*/",
 ]
 
 exclude_patterns = [
-    "thorin/util/ycomp.*",
+    "thorin/util/ycomp.cpp",
 ]
 
 coc_srcs = glob(
