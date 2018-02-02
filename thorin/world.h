@@ -304,7 +304,7 @@ public:
         auto [i, success] = externals_.emplace(def->name().c_str(), def);
         assert_unused(success || i->second == def);
     }
-    bool is_external(const Def* def) const { return externals_.contains(def->name().c_str()); }
+    bool is_external(const Def* def) const { return externals_.contains(def->name()); }
     const Def* lookup_external(Symbol s) const {
         auto i = externals_.find(s);
         assert(i != externals_.end());

@@ -137,6 +137,7 @@ TEST(Parser, NestedDependentBinders) {
 
 
     // TODO this is broken
+    w.axiom("int", "Πnat. *");
     w.axiom("add",  "Πf: nat. Πw: nat. Πs: 𝕄. Π[ [s; int w], [s; int w]]. [s; int w]");
     parse(w, "Π[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x)");
 
