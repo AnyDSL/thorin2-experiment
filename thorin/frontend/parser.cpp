@@ -79,6 +79,27 @@ const Def* Parser::parse_debruijn() {
         eat(Token::Tag::Literal);
         if (lit.tag == Literal::Tag::Lit_untyped) {
             auto index = lit.box.get_u64();
+            if (accept(Token::Tag::ColonColon)) {
+                const Def* type = nullptr;
+                switch (ahead().tag()) {
+                    case Token::Tag::Backslash:  type = parse_debruijn(); break;
+                    case Token::Tag::Identifier: type = parse_identifier(); break;
+                    case Token::Tag::Pi:         type = parse_pi(); break;
+                    case Token::Tag::L_Bracket:  type = parse_sigma_or_variadic(); break;
+                    case Token::Tag::Qualifier_Type: type = world_.qualifier_type(); break;
+                    case Token::Tag::Star:
+                    case Token::Tag::Arity_Kind:
+                    case Token::Tag::Multi_Arity_Kind: type = parse_qualified_kind(); break;
+                    case Token::Tag::Literal:
+                        if (ahead().literal().tag == Literal::Tag::Lit_arity) {
+                            type = parse_literal();
+                            break;
+                        }
+                        [[fallthrough]];
+                    default: assertf(false, "expected type for De Bruijn variable after '::'");
+                }
+                return world_.var(type, index, tracker.location());
+            }
             return world_.var(debruijn_types_[debruijn_types_.size() - index - 1], index, tracker.location());
         } else
             assertf(false, "untyped literal expected after '\'");
