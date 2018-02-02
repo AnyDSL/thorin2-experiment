@@ -89,11 +89,13 @@ add_executable(core-rule-compiler
     thorin/core/main.cpp
 )
 
-set_target_properties(core-rule-compiler
-    PROPERTIES CXX_STANDARD 17
+set_target_properties(core-rule-compiler PROPERTIES
+    CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )
+
+target_compile_definitions(core-rule-compiler PRIVATE THORIN_RULES=1)
 
 ADD_CUSTOM_COMMAND(
     COMMAND $<TARGET_FILE:core-rule-compiler>
@@ -150,8 +152,8 @@ add_executable(coc-gtest
 
 #add_dependencies(coc-gtest generate-core-normalizer)
 
-set_target_properties(coc-gtest
-    PROPERTIES CXX_STANDARD 17
+set_target_properties(coc-gtest PROPERTIES
+    CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )
