@@ -135,10 +135,10 @@ Def* Def::set(Defs defs) {
 void Def::finalize() {
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         assert(op(i) != nullptr);
-        const auto& p = op(i)->uses_.emplace(this, i);
-        assert_unused(p.second);
-        free_vars_   |= op(i)->free_vars() >> shift(i);
-        contains_cn_ |= op(i)->tag() == Tag::Cn || op(i)->contains_cn();
+        checked_emplace(op(i)->uses_, Use{this, i});
+        free_vars_    |= op(i)->free_vars() >> shift(i);
+        contains_cn_  |= op(i)->tag() == Tag::Cn || op(i)->contains_cn();
+        is_dependent_ |= is_dependent_ || op(i)->free_vars().any_end(i);
     }
 
     if (type() != nullptr)
@@ -869,14 +869,6 @@ std::ostream& Variant::vstream(std::ostream& os) const {
 /*
  * misc
  */
-
-bool Sigma::is_dependent() const {
-    for (size_t i = 0, e = num_ops(); i != e; ++i) {
-        if (op(i)->free_vars().any_end(i))
-            return true;
-    }
-    return false;
-}
 
 const Param* Cn::param(Debug dbg) const { return world().param(this, dbg); }
 const Def* Cn::param(u64 i, Debug dbg) const { return world().extract(param(), i, dbg); }

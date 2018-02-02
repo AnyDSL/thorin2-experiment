@@ -145,6 +145,7 @@ protected:
         , tag_(unsigned(tag))
         , nominal_(true)
         , contains_cn_(false)
+        , is_dependent_(false)
         , ops_(ops_ptr)
     {
         std::fill_n(ops_, num_ops, nullptr);
@@ -159,6 +160,7 @@ protected:
         , tag_(unsigned(tag))
         , nominal_(false)
         , contains_cn_(false)
+        , is_dependent_(false)
         , ops_(ops_ptr)
     {
         std::copy(ops.begin(), ops.end(), ops_);
@@ -231,6 +233,7 @@ public:
     /// A nominal Def is always different from each other Def.
     bool is_nominal() const { return nominal_; }
     Tag tag() const { return Tag(tag_); }
+    bool is_dependent() const { return is_dependent_; }
     //@}
 
     //@{ type checking
@@ -324,11 +327,12 @@ private:
     uint32_t num_ops_;
     union {
         struct {
-            unsigned gid_                    : 24;
-            unsigned tag_                    :  6;
-            unsigned nominal_                :  1;
-            unsigned contains_cn_            :  1;
-            // this sum must be 32   ^^^
+            unsigned gid_          : 23;
+            unsigned tag_          :  6;
+            unsigned nominal_      :  1;
+            unsigned contains_cn_  :  1;
+            unsigned is_dependent_ :  1;
+            // this sum must be 32  ^^^
         };
     };
 
@@ -539,7 +543,6 @@ public:
     bool has_values() const override;
     bool assignable(const Def* def) const override;
     bool is_unit() const { return ops().empty(); }
-    bool is_dependent() const;
     Sigma* set(size_t i, const Def* def) { return Def::set(i, def)->as<Sigma>(); };
     Sigma* set(Defs defs) { return Def::set(defs)->as<Sigma>(); }
 
