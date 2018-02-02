@@ -117,7 +117,7 @@ Token Lexer::lex() {
         if (accept('[')) return {location(), Token::Tag::L_Bracket};
         if (accept(']')) return {location(), Token::Tag::R_Bracket};
         if (accept('<')) {
-            if (accept('-')) return {location(), Token::Tag::Arrow};
+            if (accept('-')) return {location(), Token::Tag::L_Arrow};
             return {location(), Token::Tag::L_Angle};
         }
         if (accept('>')) return {location(), Token::Tag::R_Angle};
@@ -154,10 +154,13 @@ Token Lexer::lex() {
         if (accept(0x001D2C)) return {location(), Token::Tag::QualifierA};
         if (accept(0x001D38)) return {location(), Token::Tag::QualifierL};
 
-        if (dec(peek()) || sgn(peek())) {
-            auto lit = parse_literal();
-            return {location(), lit};
+        if (accept('+')) return {location(), parse_literal(false)};
+        if (accept('-')) {
+            if (accept('>')) return {location(), Token::Tag::R_Arrow};
+            return {location(), parse_literal(true)};
         }
+
+        if (dec(peek())) return {location(), parse_literal(false)};
 
         // arity descriptor for index literals
         u64 index_arity = 0;
@@ -185,7 +188,7 @@ Token Lexer::lex() {
     }
 }
 
-Literal Lexer::parse_literal() {
+Literal Lexer::parse_literal(bool sign) {
     int base = 10;
 
     auto parse_digits = [&] () {
@@ -196,11 +199,6 @@ Literal Lexer::parse_literal() {
             case 16: while (accept_if(hex)) {} break;
         }
     };
-
-    // sign
-    bool sign = false;
-    if (accept('+')) {}
-    else if (accept('-')) { sign = true; }
 
     // prefix starting with '0'
     if (accept('0', false)) {

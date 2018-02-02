@@ -19,6 +19,8 @@ namespace thorin {
     f(R_Bracket,        "]") \
     f(L_Angle,          "<") \
     f(R_Angle,          ">") \
+    f(L_Arrow,          "<-") \
+    f(R_Arrow,          "->") \
     f(Colon,            ":") \
     f(ColonColon,       "::") \
     f(ColonEqual,       ":=") \
@@ -28,7 +30,6 @@ namespace thorin {
     f(Semicolon,        ";") \
     f(Star,             "*") \
     f(Sharp,            "#") \
-    f(Arrow,            "<-") \
     f(QualifierU,       "ᵁ") \
     f(QualifierR,       "ᴿ") \
     f(QualifierA,       "ᴬ") \

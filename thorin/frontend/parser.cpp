@@ -72,6 +72,17 @@ const Def* Parser::parse_def() {
     assertf(false, "definition expected at {}", ahead());
 }
 
+#ifdef THORIN_RULES
+std::array<const Def*, 3> Parser::parse_rule() {
+    auto domain = parse_def();
+    expect(Token::Tag::Dot, "rule");
+    auto lhs = parse_def();
+    expect(Token::Tag::R_Arrow, "rule");
+    auto rhs = parse_def();
+    return {domain, lhs, rhs};
+}
+#endif
+
 const Def* Parser::parse_debruijn() {
     Tracker tracker(this);
     // De Bruijn index
@@ -227,7 +238,7 @@ const Def* Parser::parse_lit() {
 
 const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {
     auto b = parse_def();
-    if (accept(Token::Tag::Arrow)) {
+    if (accept(Token::Tag::L_Arrow)) {
         auto c = parse_def();
         return world_.insert(a, b, c, tracker.location());
     }

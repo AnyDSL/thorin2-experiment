@@ -14,7 +14,7 @@ public:
     const char* filename() const { return filename_; }
 
 private:
-    Literal parse_literal();
+    Literal parse_literal(bool sign);
 
     template <typename Pred>
     std::optional<uint32_t> accept_opt(Pred pred) {

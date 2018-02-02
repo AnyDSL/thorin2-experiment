@@ -23,6 +23,9 @@ public:
     }
 
     const Def* parse_def();
+#ifdef THORIN_RULES
+    std::array<const Def*, 3> parse_rule();
+#endif
 
 private:
     struct Tracker {
