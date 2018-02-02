@@ -228,10 +228,6 @@ QualifierType::QualifierType(World& world)
     : Def(Tag::QualifierType, world.universe(), 0, THORIN_OPS_PTR, {"ℚ"})
 {}
 
-RuleType::RuleType(World& world, const Def* domain, const Def* codomain, Debug dbg)
-    : Def(Tag::RuleType, world.universe(), {domain, codomain}, THORIN_OPS_PTR, dbg)
-{}
-
 Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
     : Sigma(world.universe(), num_ops, dbg)
 {}
@@ -371,8 +367,6 @@ const Def* Param         ::arity() const { return destructing_type()->arity(); }
 const Def* Pi            ::arity() const { return world().arity(1); }
 const Def* Qualifier     ::arity() const { return world().arity(1); }
 const Def* QualifierType ::arity() const { return world().arity(1); }
-const Def* Rule          ::arity() const { return world().arity(1); }
-const Def* RuleType      ::arity() const { return world().arity(1); }
 const Def* Sigma         ::arity() const { return world().arity(num_ops()); }
 const Def* Singleton     ::arity() const { return op(0)->arity(); }
 const Def* Star          ::arity() const { return world().arity(1); }
@@ -391,8 +385,6 @@ size_t Def     ::shift(size_t  ) const { return 0; }
 size_t Lambda  ::shift(size_t i) const { assert_unused(i == 0); return 1; }
 size_t Pack    ::shift(size_t i) const { assert_unused(i == 0); return 1; }
 size_t Pi      ::shift(size_t i) const { return i; }
-size_t Rule    ::shift(size_t  ) const { return 1; }
-size_t RuleType::shift(size_t i) const { return i; }
 size_t Sigma   ::shift(size_t i) const { return i; }
 size_t Variadic::shift(size_t i) const { return i; }
 
@@ -476,8 +468,6 @@ const Def* Sigma         ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.sigma(t->qualifier(), ops, debug());
 }
-const Def* Rule          ::rebuild(World& to, const Def* t, Defs ops) const { return to.rule(t->as<RuleType>()->domain(), ops[0], ops[1], debug()); }
-const Def* RuleType      ::rebuild(World& to, const Def*  , Defs ops) const { return to.rule_type(ops[0], ops[1], debug()); }
 const Def* Singleton     ::rebuild(World& to, const Def*  , Defs ops) const { return to.singleton(ops[0]); }
 const Def* Star          ::rebuild(World& to, const Def*  , Defs ops) const { return to.star(ops[0]); }
 const Def* Top           ::rebuild(World& to, const Def* t, Defs    ) const { return to.top(t); }
@@ -493,7 +483,7 @@ const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { re
  * stub
  */
 
-Axiom*   Axiom  ::stub(World& to, const Def* type, Debug dbg) const { return to.axiom(type, num_ops(), normalizer(), dbg); }
+Axiom*   Axiom  ::stub(World& to, const Def* type, Debug dbg) const { return to.axiom(type, normalizer(), dbg); }
 Cn*      Cn     ::stub(World& to, const Def* type, Debug dbg) const { return to.cn(type->as<CnType>()->domain(), dbg); }
 Lambda*  Lambda ::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.lambda (type->as<Pi>(),  dbg); }
 Sigma*   Sigma  ::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.sigma  (type, num_ops(), dbg); }
@@ -834,14 +824,6 @@ std::ostream& Qualifier::vstream(std::ostream& os) const {
 
 std::ostream& QualifierType::vstream(std::ostream& os) const {
     return os << name();
-}
-
-std::ostream& Rule::vstream(std::ostream& os) const {
-    return streamf(os, "rule {}. {} -> {}", domain(), lhs(), rhs());
-}
-
-std::ostream& RuleType::vstream(std::ostream& os) const {
-    return streamf(os, "ℛ {}. {}", domain(), codomain());
 }
 
 std::ostream& Sigma::vstream(std::ostream& os) const {

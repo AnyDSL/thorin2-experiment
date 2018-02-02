@@ -135,6 +135,10 @@ TEST(Parser, NestedDependentBinders) {
     auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), 0_u64), 1),
                                              w.extract(w.var(sig, 0), 1)})));
     EXPECT_EQ(parse(w, "Π[[n0 : nat, n1: nat], d: dt(n1)]. typ(n1, d)"), def);
+
+    w.axiom("int", "Πnat. *");
+    w.axiom("add", "Πf: nat. Πw: nat. Πs: 𝕄. Π[ [s; int w], [s; int w]]. [s; int w]");
+    EXPECT_TRUE(parse(w, "λ[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x)")->isa<Lambda>());
 }
 
 TEST(Parser, IntArithOp) {
