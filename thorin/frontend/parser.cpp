@@ -160,7 +160,6 @@ const Def* Parser::parse_optional_qualifier() {
     switch (ahead().tag()) {
         case Token::Tag::Backslash:  q = parse_debruijn(); break;
         case Token::Tag::Identifier: q = parse_identifier(); break;
-        case Token::Tag::L_Paren:    q = parse_tuple_or_pack(); break;
         case Token::Tag::QualifierU: next(); q = world_.unlimited(); break;
         case Token::Tag::QualifierR: next(); q = world_.relevant(); break;
         case Token::Tag::QualifierA: next(); q = world_.affine(); break;

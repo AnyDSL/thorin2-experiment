@@ -62,7 +62,7 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
                 // way of counting
                 size_t arg_index = shift() - (var->index() - offset) - 1;
                 assertf(new_type->assignable(args_[arg_index]), "cannot assign {} to {}", args_[arg_index], new_type);
-                return shift_free_vars(args_[arg_index], -offset);
+                return shift_free_vars(args_[arg_index], offset);
             }
         }
 

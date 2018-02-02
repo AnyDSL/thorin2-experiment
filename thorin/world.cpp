@@ -181,11 +181,11 @@ World::World(Debug dbg)
     for (size_t j = 0; j != lit_nat_.size(); ++j)
         lit_nat_[j] = lit_nat(1 << int64_t(j));
 
-    arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: 𝔸(q)].𝔸(q)");         // {"Sₐ"}
-    index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸(q)].ASucc p");       // {"0ⁱ"}
-    index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: 𝔸(q)].Πa.ASucc p"); // {"Sⁱ"}
+    arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: 𝔸q].𝔸q");         // {"Sₐ"}
+    index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸q].ASucc p");       // {"0ⁱ"}
+    index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: 𝔸q].Πa.ASucc p"); // {"Sⁱ"}
 
-    arity_eliminator_       = axiom("Eₐ",  "Πq: ℚ.ΠP: [Π𝔸(q).*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa: 𝔸(q).P a", 0, normalize_arity_eliminator);
+    arity_eliminator_       = axiom("Eₐ",  "Πq: ℚ.ΠP: [Π𝔸q.*q].ΠP(0ₐq).Π[Πa:𝔸q.ΠP a.P(ASucc (q,a))].Πa: 𝔸q.P a", normalize_arity_eliminator);
     arity_eliminator_arity_ = axiom("R𝔸ₐ", "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q");
     arity_eliminator_multi_ = axiom("R𝕄ₐ", "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q");
     arity_eliminator_star_  = axiom("R*ₐ",  "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q");
@@ -261,8 +261,8 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     return app;
 }
 
-Axiom* World::axiom(const Def* type, size_t num_rules, Normalizer normalizer, Debug dbg) {
-    auto a = insert<Axiom>(num_rules, type, num_rules, normalizer, dbg);
+Axiom* World::axiom(const Def* type, Normalizer normalizer, Debug dbg) {
+    auto a = insert<Axiom>(0, type, normalizer, dbg);
     auto s = dbg.name().c_str();
     if (s[0] != '\0') {
         assert(!axioms_.contains(s));
@@ -271,8 +271,8 @@ Axiom* World::axiom(const Def* type, size_t num_rules, Normalizer normalizer, De
     return a;
 }
 
-Axiom* World::axiom(Symbol name, const char* s, size_t num_rules, Normalizer normalizer) {
-    return axiom(parse(*this, s), num_rules, normalizer, name);
+Axiom* World::axiom(Symbol name, const char* s, Normalizer normalizer) {
+    return axiom(parse(*this, s), normalizer, name);
 }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
@@ -292,15 +292,11 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
 
             if (auto sigma = type->isa<Sigma>()) {
                 auto type = sigma->op(i);
-                //size_t skipped_shifts = 0;
                 for (size_t delta = 1; delta <= i; ++delta) {
-                    //if (type->free_vars().none_begin(skipped_shifts)) {
-                    //    ++skipped_shifts;
-                    //    continue;
-                    //}
-
                     // this also shifts any Var with i > skipped_shifts by -1
-                    type = reduce(type, extract(def, i - delta));
+                    auto op_idx = i - delta;
+                    auto prev_op = shift_free_vars(extract(def, op_idx), op_idx);
+                    type = reduce(type, prev_op);
                 }
                 return unify<Extract>(2, type, def, index, dbg);
             }
