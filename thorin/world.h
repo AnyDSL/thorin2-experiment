@@ -300,7 +300,6 @@ public:
     bool is_external(const Def* def) const { return externals_.contains(def->name()); }
     const Def* lookup_external(Symbol s) const {
         auto i = externals_.find(s);
-        assert(i != externals_.end());
         return i->second;
     }
     auto external_cns() const { return map_range(range(externals_,
