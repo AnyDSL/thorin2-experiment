@@ -54,13 +54,6 @@ public:
     }
     ~BitSet() { dealloc(); }
 
-    /// clears all bits
-    void clear() {
-        dealloc();
-        num_words_ = 1;
-        word_ = 0;
-    }
-
     //@{ get, set, clear, toggle, and test bits
     bool test(size_t i) const {
         if ((i/64_s) >= num_words())
@@ -68,29 +61,13 @@ public:
         return *(words() + i/64_s) & (1_u64 << i%64_u64);
     }
 
-    BitSet& set(size_t i) {
-        enlarge(i);
-        *(words() + i/64_s) |= (1_u64 << i%64_u64);
-        return *this;
-    }
+    BitSet& set   (size_t i) { enlarge(i); *(words() + i/64_s) |=  (1_u64 << i%64_u64); return *this; }
+    BitSet& toggle(size_t i) { enlarge(i); *(words() + i/64_s) ^=  (1_u64 << i%64_u64); return *this; }
+    BitSet& clear (size_t i) { enlarge(i); *(words() + i/64_s) &= ~(1_u64 << i%64_u64); return *this; }
+    /// clears all bits
+    void clear() { dealloc(); num_words_ = 1; word_ = 0; }
 
-    BitSet& clear(size_t i) {
-        enlarge(i);
-        *(words() + i/64_s) &= ~(1_u64 << i%64_u64);
-        return *this;
-    }
-
-    BitSet& toggle(size_t i) {
-        enlarge(i);
-        *(words() + i/64_s) ^= 1_u64 << i%64_u64;
-        return *this;
-    }
-
-    reference operator[](size_t i) {
-        enlarge(i);
-        return reference(words() + i/64_s, i%64_u64);
-    }
-
+    reference operator[](size_t i) { enlarge(i); return reference(words() + i/64_s, i%64_u64); }
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
     //@}
 
@@ -149,11 +126,9 @@ private:
     BitSet& op_assign(const BitSet& other) {
         if (this->num_words() < other.num_words())
             this->enlarge(other.num_bits()-1);
-        else if (other.num_words() < this->num_words())
-            other.enlarge(this->num_bits()-1);
         auto  this_words = this->words();
         auto other_words = other.words();
-        for (size_t i = 0, e = num_words(); i != e; ++i)
+        for (size_t i = 0, e = other.num_words(); i != e; ++i)
             this_words[i] = F()(this_words[i], other_words[i]);
         return *this;
     }
