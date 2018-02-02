@@ -10,26 +10,11 @@
 
 namespace thorin {
 
-#define THORIN_TOKENS(f) \
+#define THORIN_APP_ARG_TOKENS(f) \
     f(L_Brace,          "{") \
-    f(R_Brace,          "}") \
     f(L_Paren,          "(") \
-    f(R_Paren,          ")") \
     f(L_Bracket,        "[") \
-    f(R_Bracket,        "]") \
     f(L_Angle,          "<") \
-    f(R_Angle,          ">") \
-    f(L_Arrow,          "<-") \
-    f(R_Arrow,          "->") \
-    f(Colon,            ":") \
-    f(ColonColon,       "::") \
-    f(ColonEqual,       ":=") \
-    f(Comma,            ",") \
-    f(Dot,              ".") \
-    f(Equal,            "=") \
-    f(Semicolon,        ";") \
-    f(Star,             "*") \
-    f(Sharp,            "#") \
     f(QualifierU,       "ᵁ") \
     f(QualifierR,       "ᴿ") \
     f(QualifierA,       "ᴬ") \
@@ -38,13 +23,32 @@ namespace thorin {
     f(Pi,               "\\pi") \
     f(Sigma,            "\\sigma") \
     f(Lambda,           "\\lambda") \
-    f(Qualifier_Type,   "\\qualifier_type") \
+    f(Bool,             "bool") \
+    f(Identifier,       "identifier") \
+    f(Literal,          "literal")
+
+#define THORIN_SORT_TOKENS(f) \
     f(Arity_Kind,       "\\arity_kind") \
     f(Multi_Arity_Kind, "\\multi_arity_kind") \
-    f(Bool,             "bool") \
+    f(Qualifier_Type,   "\\qualifier_type") \
+    f(Star,             "*")
+
+#define THORIN_OP_TOKENS(f) \
+    f(L_Arrow,          "<-") \
+    f(R_Arrow,          "->") \
+    f(R_Brace,          "}") \
+    f(R_Paren,          ")") \
+    f(R_Bracket,        "]") \
+    f(R_Angle,          ">") \
+    f(Colon,            ":") \
+    f(ColonColon,       "::") \
+    f(ColonEqual,       ":=") \
+    f(Comma,            ",") \
+    f(Dot,              ".") \
+    f(Equal,            "=") \
+    f(Semicolon,        ";") \
+    f(Sharp,            "#") \
     f(Cn,               "cn") \
-    f(Identifier,       "identifier") \
-    f(Literal,          "literal") \
     f(Eof,              "eof")
 
 struct Literal {
@@ -71,7 +75,9 @@ class Token {
 public:
     enum class Tag {
 #define CODE(T, S) T,
-        THORIN_TOKENS(CODE)
+        THORIN_APP_ARG_TOKENS(CODE)
+        THORIN_SORT_TOKENS(CODE)
+        THORIN_OP_TOKENS(CODE)
 #undef CODE
     };
 
@@ -99,21 +105,32 @@ public:
     Location location() const { return location_; }
 
     bool isa(Tag tag) const { return tag_ == tag; }
+    bool is_app_arg() const {
+        switch (tag_) {
+#define CODE(T, S) case Tag::T:
+            THORIN_APP_ARG_TOKENS(CODE)
+#undef CODE
+                return true;
+            default: return false;
+        }
+    }
 
     static std::string tag_to_string(Tag tag) {
         switch (tag) {
 #define CODE(T, S) case Tag::T: return S;
-            THORIN_TOKENS(CODE)
+            THORIN_APP_ARG_TOKENS(CODE)
+            THORIN_SORT_TOKENS(CODE)
+            THORIN_OP_TOKENS(CODE)
 #undef CODE
             default: THORIN_UNREACHABLE;
         }
     }
 
 private:
-    Tag      tag_;
+    Tag tag_;
     Location location_;
 
-    Literal     literal_;
+    Literal literal_;
     Symbol identifier_;
 };
 

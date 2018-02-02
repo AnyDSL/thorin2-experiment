@@ -372,7 +372,7 @@ const Lit* World::index(const Arity* a, u64 i, Location location) {
 }
 
 const Def* World::index_zero(const Def* arity, Location location) {
-    assert(arity->type()->isa<ArityKind>());
+    errorf(arity->type()->isa<ArityKind>(), "expected {} to have an 𝔸 type", arity);
     if (auto a = arity->isa<Arity>())
         return index(a->value() + 1, 0, location);
 
