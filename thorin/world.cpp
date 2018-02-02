@@ -294,11 +294,14 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
 
             if (auto sigma = type->isa<Sigma>()) {
                 auto type = sigma->op(i);
-                for (size_t delta = 1; delta <= i; ++delta) {
-                    // this also shifts any Var with i > skipped_shifts by -1
-                    auto op_idx = i - delta;
-                    auto prev_op = shift_free_vars(extract(def, op_idx), op_idx);
-                    type = reduce(type, prev_op);
+                if (!sigma->is_dependent())
+                    type = shift_free_vars(type, -i);
+                else {
+                    for (ptrdiff_t def_idx = i - 1; def_idx >= 0; --def_idx) {
+                        // this also shifts any Var with i > skipped_shifts by -1
+                        auto prev_def = shift_free_vars(extract(def, def_idx), def_idx);
+                        type = reduce(type, prev_def);
+                    }
                 }
                 return unify<Extract>(2, type, def, index, dbg);
             }
