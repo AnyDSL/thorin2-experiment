@@ -80,12 +80,13 @@ Debug Def::debug_history() const {
 
 const Def* Def::destructing_type() const {
     if (auto app = type()->isa<App>()) {
-        if (auto cache = app->cache_) {
+        if (auto cache = app->cache()) {
             assert(app->callee()->is_nominal());
             return cache;
         }
         if (auto lambda = app->callee()->isa<Lambda>(); lambda != nullptr && lambda->is_nominal()) {
             auto res = thorin::reduce(lambda->body(), app->arg());
+            assert(app->state_ == App::State::Has_None);
             app->cache_ = res;
             return res;
         }

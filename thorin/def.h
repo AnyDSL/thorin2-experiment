@@ -1092,7 +1092,11 @@ private:
     App(const Def* type, const Def* callee, const Def* arg, Debug dbg)
         : Def(Tag::App, type, {callee, arg}, THORIN_OPS_PTR, dbg)
         , axiom_(get_axiom(callee))
-    {}
+    {
+#ifndef NDEBUG
+        state_ = axiom_ == nullptr ? State::Has_None : State::Has_Axiom;
+#endif
+    }
 
 public:
     const Def* callee() const { return op(0); }
@@ -1102,13 +1106,18 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    const Axiom* axiom() const { return axiom_; }
+    const Axiom* axiom() const { assert(state_ == State::Has_Axiom); return axiom_; }
+    const Def* cache() const { assert(state_ == State::Has_Cache || state_ == State::Has_None); return cache_; }
     std::ostream& vstream(std::ostream&) const override;
 
     union {
         mutable const Def* cache_;
         mutable const Axiom* axiom_;
     };
+#ifndef NDEBUG
+    enum class State { Has_Cache, Has_Axiom, Has_None };
+    State state_;
+#endif
 
     friend const Def* Def::destructing_type() const;
     friend const Axiom* get_axiom(const Def*);
