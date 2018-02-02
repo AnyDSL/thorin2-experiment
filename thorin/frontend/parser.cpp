@@ -71,7 +71,7 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Location>>& de
 }
 
 #ifdef THORIN_RULES
-std::array<const Def*, 3> Parser::parse_rule() {
+rules::Rule Parser::parse_rule() {
     auto domain = parse_def();
     push_debruijn_type(domain);
     expect(Token::Tag::Dot, "rule");
@@ -485,7 +485,7 @@ const Def* parse(World& world, const char* str) {
 }
 
 #ifdef THORIN_RULES
-std::array<const Def*, 3> parse_rule(World& world, const char* str) {
+rules::Rule parse_rule(World& world, const char* str) {
     std::istringstream is(str, std::ios::binary);
     Lexer lexer(is, "stdin");
     return Parser(world, lexer).parse_rule();

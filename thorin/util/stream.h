@@ -60,7 +60,7 @@ std::ostream& streamf(std::ostream& os, const char* fmt, T val, Args... args) {
             }
             fmt = detail::handle_fmt_specifier(os, fmt, val);
             // call even when *fmt == 0 to detect extra arguments
-            return streamf(os, fmt, args...);
+            return streamf(os, fmt, std::forward<Args>(args)...);
         } else if (*fmt == '}') {
             if (*next == '}') {
                 os << '}';
@@ -85,6 +85,9 @@ template <class charT, class traits>
 std::basic_ostream<charT,traits>& endl(std::basic_ostream<charT,traits>& os) {
     return os << std::endl << std::string(detail::get_indent() * 4, ' ');
 }
+
+template<typename... Args>
+std::ostream& streamln(std::ostream& os, const char* fmt, Args... args) { return streamf(os, fmt, std::forward<Args>(args)...) << endl; }
 
 template <class charT, class traits>
 std::basic_ostream<charT,traits>& up(std::basic_ostream<charT,traits>& os) { detail::inc_indent(); return os; }

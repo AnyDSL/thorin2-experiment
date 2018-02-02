@@ -1,15 +1,12 @@
 #include "thorin/core/world.h"
 #include "thorin/frontend/parser.h"
+#include "thorin/rules/compiler.h"
 
 #include <iostream>
 #include <sstream>
 
-namespace thorin::core {
-
 void emit() {
 #if 0
-    World w;
-    auto [d, l, r] = parse_rule(w, "[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x) -> x");
     d->dump();
     l->dump();
     r->dump();
@@ -100,9 +97,15 @@ void emit() {
 #endif
 }
 
-}
+using namespace thorin::core;
+using namespace thorin::rules;
 
 int main(int, const char**) {
-    thorin::core::emit();
+    World w;
+    Compiler compiler;
+    compiler.register_rule(w.op<WOp::add>(), parse_rule(w, "[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x) -> x"));
+    compiler.register_rule(w.op<WOp::mul>(), parse_rule(w, "[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x) -> x"));
+    //compiler.register_rule(w.op<WOp::mul>(), parse_rule(w, "[f: nat, w: nat, x: int w]. add f w 1ₐ (x, x) -> mul f w 1ₐ ({2u64: int w}, x)"));
+    compiler.emit();
     return EXIT_SUCCESS;
 }

@@ -10,6 +10,10 @@
 #include "thorin/frontend/lexer.h"
 #include "thorin/util/iterator.h"
 
+#ifdef THORIN_RULES
+#include "thorin/rules/rule.h"
+#endif
+
 namespace thorin {
 
 class Parser {
@@ -24,7 +28,7 @@ public:
 
     const Def* parse_def();
 #ifdef THORIN_RULES
-    std::array<const Def*, 3> parse_rule();
+    rules::Rule parse_rule();
 #endif
 
 private:
@@ -140,7 +144,7 @@ private:
 const Def* parse(World& world, const char* str);
 
 #ifdef THORIN_RULES
-std::array<const Def*, 3> parse_rule(World& world, const char*);
+rules::Rule parse_rule(World& world, const char*);
 #endif
 
 }

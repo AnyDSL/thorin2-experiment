@@ -63,10 +63,10 @@ private:
     static bool print_loc_;
 };
 
-template<typename... Args>
-std::ostream& outf(const char* fmt, Args... args) { return streamf(std::cout, fmt, std::forward<Args>(args)...); }
-template<typename... Args>
-std::ostream& errf(const char* fmt, Args... args) { return streamf(std::cerr, fmt, std::forward<Args>(args)...); }
+template<typename... Args> std::ostream& outf (const char* fmt, Args... args) { return streamf (std::cout, fmt, std::forward<Args>(args)...); }
+template<typename... Args> std::ostream& errf (const char* fmt, Args... args) { return streamf (std::cerr, fmt, std::forward<Args>(args)...); }
+template<typename... Args> std::ostream& outln(const char* fmt, Args... args) { return streamln(std::cout, fmt, std::forward<Args>(args)...); }
+template<typename... Args> std::ostream& errln(const char* fmt, Args... args) { return streamln(std::cerr, fmt, std::forward<Args>(args)...); }
 
 }
 
