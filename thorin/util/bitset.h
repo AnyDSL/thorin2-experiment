@@ -125,9 +125,9 @@ public:
     //@}
 
     //@{ boolean operators
-    BitSet& operator&=(const BitSet& other);
-    BitSet& operator|=(const BitSet& other);
-    BitSet& operator^=(const BitSet& other);
+    BitSet& operator&=(const BitSet& other) { return op_assign<std::bit_and<uint64_t>>(other); }
+    BitSet& operator|=(const BitSet& other) { return op_assign<std::bit_or <uint64_t>>(other); }
+    BitSet& operator^=(const BitSet& other) { return op_assign<std::bit_xor<uint64_t>>(other); }
     BitSet operator&(BitSet b) const { BitSet res(*this); res &= b; return res; }
     BitSet operator|(BitSet b) const { BitSet res(*this); res |= b; return res; }
     BitSet operator^(BitSet b) const { BitSet res(*this); res ^= b; return res; }
@@ -145,6 +145,19 @@ public:
     BitSet& operator=(BitSet other) { swap(*this, other); return *this; }
 
 private:
+    template<class F>
+    BitSet& op_assign(const BitSet& other) {
+        if (this->num_words() < other.num_words())
+            this->enlarge(other.num_bits()-1);
+        else if (other.num_words() < this->num_words())
+            other.enlarge(this->num_bits()-1);
+        auto  this_words = this->words();
+        auto other_words = other.words();
+        for (size_t i = 0, e = num_words(); i != e; ++i)
+            this_words[i] = F()(this_words[i], other_words[i]);
+        return *this;
+    }
+
     void dealloc() const;
     void enlarge(size_t i) const;
     const uint64_t* words() const { return num_words_ == 1 ? &word_ : words_; }

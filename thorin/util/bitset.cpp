@@ -72,24 +72,6 @@ BitSet& BitSet::operator>>=(uint64_t shift) {
     return *this;
 }
 
-// TODO optimize this and remove macro
-
-#define THORIN_BITSET_OPS(f) f(&) f(|) f(^)
-#define CODE(op)                                        \
-BitSet& BitSet::operator op ## =(const BitSet& other) { \
-    if (this->num_words() < other.num_words())          \
-        this->enlarge(other.num_bits()-1);              \
-    else if (other.num_words() < this->num_words())     \
-        other.enlarge(this->num_bits()-1);              \
-    auto  this_words = this->words();                   \
-    auto other_words = other.words();                   \
-    for (size_t i = 0, e = num_words(); i != e; ++i)    \
-        this_words[i] op ## = other_words[i];           \
-    return *this;                                       \
-}
-THORIN_BITSET_OPS(CODE)
-#undef CODE
-
 void BitSet::enlarge(size_t i) const {
     size_t num_new_words = (i+64_s) / 64_s;
     if (num_new_words > num_words_) {
