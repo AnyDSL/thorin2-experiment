@@ -15,31 +15,32 @@ size_t BitSet::count() const {
     return result;
 }
 
-bool BitSet::any() const {
+inline static uint64_t begin_mask(size_t i) { return -1_u64 << (        i  % 64_s); }
+inline static uint64_t   end_mask(size_t i) { return -1_u64 >> ((64_s - i) % 64_s); }
+
+bool BitSet::any_range(const size_t begin, size_t end) const {
+    end = std::min(end, num_bits());
+    size_t i = begin / 64_s;
+    if (end - begin < 64_s)
+        return words()[i] & (begin_mask(begin) & end_mask(end));
+
     bool result = false;
-    auto w = words();
-    for (size_t i = 0, e = num_words(); !result && i != e; ++i)
-        result |= w[i] & -1_u64;
+    if (auto mask = begin_mask(begin); mask != -1_u64) {
+        result |= words()[i] & mask;
+        ++i;
+    }
+
+    for (size_t e = end / 64_s; !result && i != e; ++i)
+        result |= words()[i];
+
+    if (auto mask = end_mask(end); mask != -1_u64)
+        result |= words()[i] & mask;
+
     return result;
 }
 
-bool BitSet::any_range(const size_t begin, const size_t end) const {
-    // TODO optimize
-    bool result = false;
-    for (size_t i = begin; !result && i != end; ++i)
-        result |= test(i);
-    return result;
-}
-
-bool BitSet::none() const {
-    bool result = true;
-    auto w = words();
-    for (size_t i = 0, e = num_words(); result && i != e; ++i)
-        result &= w[i] == 0_u64;
-    return result;
-}
-
-bool BitSet::none_range(const size_t begin, const size_t end) const {
+bool BitSet::none_range(const size_t begin, size_t end) const {
+    end = std::min(end, num_bits());
     // TODO optimize
     bool result = true;
     for (size_t i = begin; result && i != end; ++i)
