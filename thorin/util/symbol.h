@@ -37,11 +37,11 @@ private:
 
     struct Table {
         ~Table() {
-            for (auto s : map)
+            for (auto s : set)
                 free((void*) const_cast<char*>(s));
         }
 
-        HashSet<const char*, StrHash> map;
+        HashSet<const char*, StrHash> set;
     };
 
     void insert(const char* str);
