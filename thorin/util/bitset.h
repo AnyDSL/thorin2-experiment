@@ -87,7 +87,7 @@ public:
     /// Is no bit in range set?
     //@{
     /// Is no bit in @c [begin,end[ set?
-    bool none_range(const size_t begin, const size_t end) const;
+    bool none_range(const size_t begin, const size_t end) const { return !any_range(begin, end); }
     /// Is no bit in @c [0,end[ set?
     bool none_end(const size_t end) const { return none_range(0, end); }
     /// Is no bit in @c [begin,infinity[ set?

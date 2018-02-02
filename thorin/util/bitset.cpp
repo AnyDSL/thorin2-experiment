@@ -39,23 +39,13 @@ bool BitSet::any_range(const size_t begin, size_t end) const {
     return result;
 }
 
-bool BitSet::none_range(const size_t begin, size_t end) const {
-    end = std::min(end, num_bits());
-    // TODO optimize
-    bool result = true;
-    for (size_t i = begin; result && i != end; ++i)
-        result &= !test(i);
-    return result;
-}
-
 BitSet& BitSet::operator>>=(uint64_t shift) {
     uint64_t div = shift/64_u64;
     uint64_t rem = shift%64_u64;
     auto w = words();
 
-    // TODO clean up
     if (div >= num_words())
-        std::fill_n(w, num_words(), 0);
+        clear();
     else {
         for (size_t i = 0, e = num_words()-div; i != e; ++i)
             w[i] = w[i+div];
