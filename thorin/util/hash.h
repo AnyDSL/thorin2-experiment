@@ -630,6 +630,14 @@ V checked_emplace(HashMap<Key, T, H>& map, Key&& key, V&& val) {
     return val;
 }
 
+/// Checks whether emplace worked and asserts if not.
+template<class Key, class H, class V>
+V checked_emplace(HashSet<Key, H>& set, V&& val) {
+    auto succ = set.emplace(val).second;
+    assert_unused(succ);
+    return val;
+}
+
 //------------------------------------------------------------------------------
 
 }
