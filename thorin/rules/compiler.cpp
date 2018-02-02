@@ -1,5 +1,7 @@
 #include "thorin/rules/compiler.h"
 
+#include "thorin/util/stream.h"
+
 namespace thorin::rules {
 
 void emit() {

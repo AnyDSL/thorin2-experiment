@@ -139,6 +139,10 @@ private:
 
 const Def* parse(World& world, const char* str);
 
+#ifdef THORIN_RULES
+std::array<const Def*, 3> parse_rule(World& world, const char*);
+#endif
+
 }
 
 #endif
