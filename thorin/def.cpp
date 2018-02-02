@@ -2,6 +2,7 @@
 
 #include "thorin/world.h"
 #include "thorin/transform/reduce.h"
+#include "thorin/util/log.h"
 
 namespace thorin {
 
@@ -193,7 +194,7 @@ void Def::replace(Tracker with) const {
     }
 }
 
-std::string Def::unique_name() const { return name() + '_' + std::to_string(gid()); }
+std::string Def::unique_name() const { return name().str() + '_' + std::to_string(gid()); }
 
 Cn* Def::as_cn() const { return const_cast<Cn*>(as<Cn>()); }
 Cn* Def::isa_cn() const { return const_cast<Cn*>(isa<Cn>()); }

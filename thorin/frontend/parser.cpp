@@ -1,6 +1,7 @@
 #include "thorin/frontend/parser.h"
 
 #include "thorin/transform/reduce.h"
+#include "thorin/util/log.h"
 
 namespace thorin {
 
@@ -20,6 +21,17 @@ namespace thorin {
 //     |    e#e <- e    (insert)
 
 const Def* Parser::parse_def() {
+    Tracker tracker(this);
+    std::vector<std::pair<const Def*, Location>> defs;
+    parse_curried_defs(defs);
+    assert(!defs.empty());
+    const Def* def = defs.front().first;
+    for (auto [ arg, loc ] : range(defs.begin()+1, defs.end()))
+        def = world_.app(def, arg, loc);
+    return def;
+}
+
+void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Location>>& defs) {
     Tracker tracker(this);
     const Def* def = nullptr;
 
@@ -44,31 +56,18 @@ const Def* Parser::parse_def() {
     else if (accept(Token::Tag::QualifierL))        def = world_.linear();
     else if (accept(Token::Tag::Multi_Arity_Kind))  def = world_.multi_arity_kind();
 
-    if (def != nullptr) {
-        if (accept(Token::Tag::Sharp))
-            def = parse_extract_or_insert(tracker, def);
-        // if another expression follows - we build an app
-        auto tag = ahead().tag();
-        if (tag == Token::Tag::Pi
-               || tag == Token::Tag::Lambda
-               || tag == Token::Tag::Star
-               || tag == Token::Tag::Backslash
-               || tag == Token::Tag::Identifier
-               || tag == Token::Tag::L_Bracket
-               || tag == Token::Tag::L_Brace
-               || tag == Token::Tag::L_Paren
-               || tag == Token::Tag::Qualifier_Type
-               || tag == Token::Tag::Arity_Kind
-               || tag == Token::Tag::Multi_Arity_Kind) {
-            auto arg = parse_def();
-            return world_.app(def, arg, tracker.location());
-        }
-    }
+    if (def == nullptr)
+        ELOG_LOC(ahead().location(), "expected some expression");
 
-    if (def != nullptr)
-        return def;
+    if (accept(Token::Tag::Sharp))
+        def = parse_extract_or_insert(tracker, def);
+    // TODO insert <-
 
-    assertf(false, "definition expected at {}", ahead());
+    defs.emplace_back(def, tracker.location());
+
+    // an expression follows that can be an argument for an app
+    if (ahead().is_app_arg())
+        parse_curried_defs(defs);
 }
 
 const Def* Parser::parse_debruijn() {
@@ -157,18 +156,19 @@ const Def* Parser::parse_lambda() {
 }
 
 const Def* Parser::parse_optional_qualifier() {
-    const Def* qualifier = world_.unlimited();
-    auto tag = ahead().tag();
-    if (tag == Token::Tag::Backslash
-        || tag == Token::Tag::Identifier
-        || tag == Token::Tag::L_Paren
-        || tag == Token::Tag::QualifierU
-        || tag == Token::Tag::QualifierR
-        || tag == Token::Tag::QualifierA
-        || tag == Token::Tag::QualifierL) {
-        qualifier = parse_def();
+    const Def* q = world_.unlimited();
+    switch (ahead().tag()) {
+        case Token::Tag::Backslash:  q = parse_debruijn(); break;
+        case Token::Tag::Identifier: q = parse_identifier(); break;
+        case Token::Tag::L_Paren:    q = parse_tuple_or_pack(); break;
+        case Token::Tag::QualifierU: next(); q = world_.unlimited(); break;
+        case Token::Tag::QualifierR: next(); q = world_.relevant(); break;
+        case Token::Tag::QualifierA: next(); q = world_.affine(); break;
+        case Token::Tag::QualifierL: next(); q = world_.linear(); break;
+        default: break;
     }
-    return qualifier;
+
+    return q;
 }
 
 const Def* Parser::parse_qualified_kind() {
@@ -212,7 +212,7 @@ const Def* Parser::parse_lit() {
 
     eat(Token::Tag::L_Brace);
     if (!ahead().isa(Token::Tag::Literal))
-        ELOG_LOC(ahead().location(), "literal expected in {}");
+        ELOG_LOC(ahead().location(), "literal expected");
 
     auto box = ahead().literal().box;
     eat(Token::Tag::Literal);
@@ -244,8 +244,7 @@ const Def* Parser::parse_literal() {
         assert(index_arity.tag == Literal::Tag::Lit_index_arity);
         const Def* qualifier = parse_optional_qualifier();
         return world_.index(world_.arity(index_arity.box.get_u64(), qualifier), literal.box.get_u64(), tracker.location());
-    }
-    if (literal.tag == Literal::Tag::Lit_arity) {
+    } else if (literal.tag == Literal::Tag::Lit_arity) {
         const Def* qualifier = parse_optional_qualifier();
         return world_.arity(literal.box.get_u64(), qualifier, tracker.location());
     }
@@ -381,9 +380,9 @@ Parser::DefOrBinder Parser::lookup(const Tracker& t, Symbol identifier) {
 
     auto decl = id2defbinder_.find(identifier);
     if (decl == id2defbinder_.end()) {
-        if (const Def* a = world_.axiom(identifier.str()))
+        if (auto a = world_.lookup_axiom(identifier))
             return a;
-        else if (auto e = world_.lookup_external(identifier.str()))
+        else if (auto e = world_.lookup_external(identifier))
             return e;
         else
             assertf(false, "'{}' at {} not found in current scope", identifier.str(), t.location());

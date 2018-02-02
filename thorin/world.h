@@ -3,10 +3,12 @@
 #define THORIN_WORLD_H
 
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include "thorin/def.h"
 #include "thorin/util/iterator.h"
+#include "thorin/util/symbol.h"
 
 namespace thorin {
 
@@ -53,7 +55,7 @@ public:
     //@{ get Debug information
     Debug& debug() const { return debug_; }
     Location location() const { return debug_; }
-    const std::string& name() const { return debug().name(); }
+    Symbol name() const { return debug().name(); }
     //@}
 
     //@{ create universe and kinds
@@ -225,9 +227,8 @@ public:
     //@{ axioms and rules
     Axiom* axiom(const Def* type, size_t num_rules, Normalizer, Debug dbg = {});
     Axiom* axiom(const Def* type, Debug dbg = {}) { return axiom(type, 0, nullptr, dbg); }
-    Axiom* axiom(const char* name, const char* s, size_t num_rules = 0, Normalizer = nullptr);
-    /// lookup @p Axiom by @p name.
-    const Axiom* axiom(const char* name) { return find(axioms_, name); }
+    Axiom* axiom(Symbol name, const char* s, size_t num_rules = 0, Normalizer = nullptr);
+    const Axiom* lookup_axiom(Symbol name) { return find(axioms_, name); }
     const RuleType* rule_type(const Def* domain, const Def* codomain, Debug dbg = {}) {
         return unify<RuleType>(2, *this, domain, codomain, dbg);
     }
@@ -298,13 +299,13 @@ public:
     //@}
 
     //@{ externals
-    const StrMap<const Def*>& externals() const { return externals_; }
+    const SymbolMap<const Def*>& externals() const { return externals_; }
     void make_external(const Def* def) {
         auto [i, success] = externals_.emplace(def->name().c_str(), def);
         assert_unused(success || i->second == def);
     }
     bool is_external(const Def* def) const { return externals_.contains(def->name().c_str()); }
-    const Def* lookup_external(const char* s) const {
+    const Def* lookup_external(Symbol s) const {
         auto i = externals_.find(s);
         assert(i != externals_.end());
         return i->second;
@@ -464,8 +465,8 @@ protected:
     Zone* cur_page_;
     size_t buffer_index_ = 0;
     DefSet defs_;
-    StrMap<const Axiom*> axioms_;
-    StrMap<const Def*> externals_;
+    SymbolMap<const Axiom*> axioms_;
+    SymbolMap<const Def*> externals_;
     const Universe* universe_;
     const QualifierType* qualifier_type_;
     const Axiom* arity_succ_;

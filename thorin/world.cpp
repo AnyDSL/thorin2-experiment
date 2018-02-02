@@ -253,9 +253,8 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
         if (auto cache = app->cache_)
             return cache;
 
-        auto pi_type = app->callee()->type()->as<Pi>();
         // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body?
-        if (!lambda->maybe_affine() && !pi_type->codomain()->maybe_affine())
+        if (!lambda->maybe_affine() && !lambda->codomain()->maybe_affine())
             return app->cache_ = reduce(lambda->body(), app->arg());
     }
 
@@ -272,8 +271,8 @@ Axiom* World::axiom(const Def* type, size_t num_rules, Normalizer normalizer, De
     return a;
 }
 
-Axiom* World::axiom(const char* name, const char* s, size_t num_rules, Normalizer normalizer) {
-    return axiom(parse(*this, s), num_rules, normalizer, {name});
+Axiom* World::axiom(Symbol name, const char* s, size_t num_rules, Normalizer normalizer) {
+    return axiom(parse(*this, s), num_rules, normalizer, name);
 }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
@@ -373,7 +372,7 @@ const Lit* World::index(const Arity* a, u64 i, Location location) {
 }
 
 const Def* World::index_zero(const Def* arity, Location location) {
-    assert(arity->type()->isa<ArityKind>());
+    errorf(arity->type()->isa<ArityKind>(), "expected {} to have an 𝔸 type", arity);
     if (auto a = arity->isa<Arity>())
         return index(a->value() + 1, 0, location);
 
