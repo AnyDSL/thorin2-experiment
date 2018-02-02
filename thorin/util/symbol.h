@@ -18,6 +18,9 @@ public:
     Symbol() { insert(""); }
     Symbol(const char* str) { insert(str); }
     Symbol(const std::string& str) { insert(str.c_str()); }
+    Symbol(Symbol&&) = default;
+    Symbol(const Symbol&) = default;
+    Symbol& operator=(const Symbol&) = default;
 
     const char* c_str() const { return str_; }
     std::string str() const { return str_; }
