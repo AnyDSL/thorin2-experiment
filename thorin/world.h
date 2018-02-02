@@ -224,18 +224,11 @@ public:
     const Def* arity_eliminator() const { return arity_eliminator_; }
     //@}
 
-    //@{ axioms and rules
-    Axiom* axiom(const Def* type, size_t num_rules, Normalizer, Debug dbg = {});
-    Axiom* axiom(const Def* type, Debug dbg = {}) { return axiom(type, 0, nullptr, dbg); }
-    Axiom* axiom(Symbol name, const char* s, size_t num_rules = 0, Normalizer = nullptr);
+    //@{ axioms
+    Axiom* axiom(const Def* type, Normalizer, Debug dbg = {});
+    Axiom* axiom(const Def* type, Debug dbg = {}) { return axiom(type, nullptr, dbg); }
+    Axiom* axiom(Symbol name, const char* s, Normalizer = nullptr);
     const Axiom* lookup_axiom(Symbol name) { return find(axioms_, name); }
-    const RuleType* rule_type(const Def* domain, const Def* codomain, Debug dbg = {}) {
-        return unify<RuleType>(2, *this, domain, codomain, dbg);
-    }
-    const Rule* rule(const Def* domain, const Def* lhs, const Def* rhs, Debug dbg = {}) {
-        return unify<Rule>(2, rule_type(domain, lhs->type()), lhs, rhs, dbg);
-    }
-    const Rule* rule(const char*) { return nullptr; }
     //@}
 
     //@{ pick, intersection and match, variant

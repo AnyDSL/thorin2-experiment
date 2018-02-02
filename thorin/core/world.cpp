@@ -47,102 +47,8 @@ World::World(Debug dbg)
     auto type_ICmp = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]");
     auto type_RCmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]");
 
-    std::array<Array<const char*>, Num<WOp>> rules_WOp;
-    rules_WOp[size_t(WOp::add)] = {
-        "[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x) -> x",
-        "[f: nat, w: nat, x: int w]. add f w 1ₐ (x, x) -> mul f w x 1ₐ ({2u64: int w}, x)",
-    };
-    rules_WOp[size_t(WOp::sub)] = {
-        "[f: nat, w: nat, x: int w]. add f w 1ₐ (x, {0u64: int w}) -> x",
-        "[f: nat, w: nat, x: int w]. add f w 1ₐ (x, x) -> {0u64: int w})",
-    };
-    rules_WOp[size_t(WOp::mul)] = {
-        "[f: nat, w: nat, x: int w]. mul f w 1ₐ ({1u64: int w}, x) -> x",
-        "[f: nat, w: nat, x: int w]. mul f w 1ₐ ({0u64: int w}, x) -> {0u64: int w}",
-    };
-    rules_WOp[size_t(WOp::shl)] = {
-        "[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x) -> {0u64: int w}",
-        "[f: nat, w: nat, x: int w]. add f w 1ₐ (x, {0u64: int w}) -> x",
-    };
-
-    std::array<Array<const char*>, Num<MOp>> rules_MOp;
-    rules_MOp[size_t(MOp::sdiv)] = {};
-    rules_MOp[size_t(MOp::udiv)] = {};
-    rules_MOp[size_t(MOp::smod)] = {};
-    rules_MOp[size_t(MOp::umod)] = {};
-
-    std::array<Array<const char*>, Num<ICmp>> rules_ICmp;
-    rules_ICmp[size_t(ICmp::t)] = {
-        "[w: nat, s: 𝕄, x: int w, y: int w]. icmp_t f w (x, y) -> true",
-    };
-    rules_ICmp[size_t(ICmp::f)] = {
-        "[w: nat, s: 𝕄, x: int w, y: int w]. icmp_f f w (x, y) -> false",
-    };
-    rules_ICmp[size_t(ICmp::sge)] = {
-        "[w: nat, s: 𝕄, x: int w, y: int w]. icmp_sge  f w (x, y) -> icmp_sle  f w (y, x)",
-    };
-    rules_ICmp[size_t(ICmp::sgt)] = {
-        "[w: nat, s: 𝕄, x: int w, y: int w]. icmp_sgt  f w (x, y) -> icmp_slt  f w (y, x)",
-    };
-    rules_ICmp[size_t(ICmp::ugt)] = {
-        "[w: nat, s: 𝕄, x: int w, y: int w]. icmp_ugt  f w (x, y) -> icmp_ult  f w (y, x)",
-    };
-    rules_ICmp[size_t(ICmp::uge)] = {
-        "[w: nat, s: 𝕄, x: int w, y: int w]. icmp_uge  f w (x, y) -> icmp_ule  f w (y, x)",
-    };
-    rules_ICmp[size_t(ICmp::sugt)] = {
-        "[w: nat, s: 𝕄, x: int w, y: int w]. icmp_sugt f w (x, y) -> icmp_sult f w (y, x)",
-    };
-    rules_ICmp[size_t(ICmp::suge)] = {
-        "[w: nat, s: 𝕄, x: int w, y: int w]. icmp_suge f w (x, y) -> icmp_sule f w (y, x)",
-    };
-    rules_ICmp[size_t(ICmp::eq)] = {
-        "[w: nat, s: 𝕄, x: int w]. icmp_eq   f w (x, x) -> true",
-    };
-    rules_ICmp[size_t(ICmp::ne)] = {
-        "[w: nat, s: 𝕄, x: int w]. icmp_ne   f w (x, x) -> false",
-    };
-    rules_ICmp[size_t(ICmp::sle)] = {
-        "[w: nat, s: 𝕄, x: int w]. icmp_sle  f w (x, x) -> true",
-    };
-    rules_ICmp[size_t(ICmp::ule)] = {
-        "[w: nat, s: 𝕄, x: int w]. icmp_ule  f w (x, x) -> true",
-    };
-    rules_ICmp[size_t(ICmp::sule)] = {
-        "[w: nat, s: 𝕄, x: int w]. icmp_sule f w (x, x) -> true",
-    };
-    // iand
-    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ ({0u64: int w}, x) -> {0u64: int w}");
-    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ ({-1us64: int w}, x) -> x");
-    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ (x, x) -> x");
-    // ior
-    rule("[f: nat, w: nat, x: int w]. ior f w 1ₐ ({0u64: int w}, x) -> x");
-    rule("[f: nat, w: nat, x: int w]. ior f w 1ₐ ({-1us64: int w}, x) -> {0u64: int w}");
-    rule("[f: nat, w: nat, x: int w]. ior f w 1ₐ (x, x) -> x");
-    // ixor
-    rule("[f: nat, w: nat, x: int w]. ixor f w 1ₐ (x, x) -> {0u64: int w}");
-    rule("[f: nat, w: nat, x: int w]. ixor f w 1ₐ ({-1s64: int w}, (ixor f w 1ₐ ({-1s64: int w}, x))) -> x"); // double negation
-    // absorption
-    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ (x, ior  f w 1ₐ (x, y)) -> x");
-    rule("[f: nat, w: nat, x: int w]. ior  f w 1ₐ (x, iand f w 1ₐ (x, y)) -> x");
-    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ (x, ior  f w 1ₐ (y, x)) -> x");
-    rule("[f: nat, w: nat, x: int w]. ior  f w 1ₐ (x, iand f w 1ₐ (y, x)) -> x");
-    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ (ior  f w 1ₐ (x, y), x) -> x");
-    rule("[f: nat, w: nat, x: int w]. ior  f w 1ₐ (iand f w 1ₐ (x, y), x) -> x");
-    rule("[f: nat, w: nat, x: int w]. iand f w 1ₐ (ior  f w 1ₐ (y, x), x) -> x");
-    rule("[f: nat, w: nat, x: int w]. ior  f w 1ₐ (iand f w 1ₐ (y, x), x) -> x");
-
-    // switch over to this thing when rule system works
-#define CODE(T, o) {                                                                    \
-        auto num = rules_ ## T[size_t(T::o)].size();                                    \
-        auto a = axiom(type_ ## T, num, normalize_ ## o, {op2str(T::o)});               \
-        for (size_t i = 0; i != num; ++i)                                               \
-            a->set(i, rule(rules_ ## T[size_t(T::o)][i]));                              \
-        T ## _[size_t(T::o)] = a;                                                       \
-    }
-#undef CODE
 #define CODE(T, o) \
-    T ## _[size_t(T::o)] = axiom(type_ ## T, 0, normalize_ ## o, {op2str(T::o)});
+    T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## o, {op2str(T::o)});
     THORIN_W_OP (CODE)
     THORIN_M_OP (CODE)
     THORIN_I_OP (CODE)
@@ -150,18 +56,18 @@ World::World(Debug dbg)
 #undef CODE
 
 #define CODE(T, o) \
-    T ## _[size_t(T::o)] = axiom(type_ ## T, 0, normalize_ ## T<T::o>, {op2str(T::o)});
+    T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});
     THORIN_I_CMP(CODE)
     THORIN_R_CMP(CODE)
 #undef CODE
 
-    Cast_[size_t(Cast::scast)] = axiom("scast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]", 0, normalize_scast);
-    Cast_[size_t(Cast::ucast)] = axiom("ucast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]", 0, normalize_ucast);
-    Cast_[size_t(Cast::rcast)] = axiom("rcast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s; real dw]", 0, normalize_rcast);
-    Cast_[size_t(Cast::s2r  )] = axiom("s2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]", 0, normalize_s2r);
-    Cast_[size_t(Cast::u2r  )] = axiom("u2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]", 0, normalize_u2r);
-    Cast_[size_t(Cast::r2s  )] = axiom("r2s",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]", 0, normalize_r2s);
-    Cast_[size_t(Cast::r2u  )] = axiom("r2u",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]", 0, normalize_r2u);
+    Cast_[size_t(Cast::scast)] = axiom("scast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]", normalize_scast);
+    Cast_[size_t(Cast::ucast)] = axiom("ucast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]", normalize_ucast);
+    Cast_[size_t(Cast::rcast)] = axiom("rcast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s; real dw]", normalize_rcast);
+    Cast_[size_t(Cast::s2r  )] = axiom("s2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]", normalize_s2r);
+    Cast_[size_t(Cast::u2r  )] = axiom("u2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]", normalize_u2r);
+    Cast_[size_t(Cast::r2s  )] = axiom("r2s",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]", normalize_r2s);
+    Cast_[size_t(Cast::r2u  )] = axiom("r2u",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]", normalize_r2u);
 
     op_lea_   = axiom("lea",   "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; Ts#j], as), i: s]. ptr(Ts#i, as)");
     op_load_  = axiom("load",  "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]");
