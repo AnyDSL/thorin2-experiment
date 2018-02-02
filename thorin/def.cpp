@@ -416,7 +416,7 @@ uint64_t Var  ::vhash() const { return thorin::hash_combine(Def::vhash(), index(
  */
 
 bool Def::equal(const Def* other) const {
-    if (is_nominal())
+    if (this->is_nominal() || other->is_nominal())
         return this == other;
 
     bool result = this->fields() == other->fields() && this->type() == other->type();
