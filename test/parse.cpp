@@ -150,6 +150,17 @@ TEST(Parser, IntArithOp) {
     EXPECT_EQ(i_arithop, def);
 }
 
+TEST(Parser, Apps) {
+    World w;
+    auto a5 = w.arity(5, QualifierTag::Affine);
+    auto i0_5 = w.index(a5, 0);
+    auto ma = w.multi_arity_kind(QualifierTag::Affine);
+    EXPECT_EQ(parse(w, "(λs: 𝕄ᴬ. λq: ℚ. λi: s. (s, q, i)) 5ₐᴬ ᴿ 0₅ᴬ"), w.tuple({a5, w.relevant(), i0_5}));
+    auto ax = w.axiom(w.pi(ma, w.pi(w.qualifier_type(), w.star())), {"ax"});
+    EXPECT_EQ(parse(w, "(ax 5ₐᴬ) ᴿ"), w.app(w.app(ax, a5), w.relevant()));
+    EXPECT_EQ(parse(w, "ax 5ₐᴬ ᴿ"), w.app(w.app(ax, a5), w.relevant()));
+}
+
 TEST(Parser, Let) {
     World w;
     auto S = w.star();

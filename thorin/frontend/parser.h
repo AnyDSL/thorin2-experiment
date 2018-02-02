@@ -43,6 +43,7 @@ private:
         uint32_t col;
     };
 
+    void parse_curried_defs(std::vector<std::pair<const Def*, Location>>&);
     const Def* parse_debruijn();
     const Def* parse_cn_type();
     const Def* parse_pi();
