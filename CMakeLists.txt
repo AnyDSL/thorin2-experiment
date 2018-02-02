@@ -22,7 +22,7 @@ endif()
 # prevent overriding the parent project's compiler/linker settings on Windows
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-# Add googletest directly to our build. 
+# Add googletest directly to our build.
 # This defines the gtest and gtest_main targets.
 add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
 
@@ -76,17 +76,20 @@ set(UTIL_SRC
     thorin/util/utility.h
 )
 
-add_executable(core-rule-compiler 
-    ${BASE_SRC} 
-    ${CORE_SRC} 
-    ${FRONTEND_SRC} 
-    ${UTIL_SRC} 
-    thorin/transform/reduce.cpp 
+add_executable(core-rule-compiler
+    ${BASE_SRC}
+    ${CORE_SRC}
+    ${FRONTEND_SRC}
+    ${RULES_SRC}
+    ${UTIL_SRC}
+    thorin/rules/compiler.cpp
+    thorin/rules/compiler.h
+    thorin/transform/reduce.cpp
     thorin/transform/reduce.h
     thorin/core/main.cpp
 )
 
-set_target_properties(core-rule-compiler 
+set_target_properties(core-rule-compiler
     PROPERTIES CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
@@ -101,11 +104,11 @@ ADD_CUSTOM_COMMAND(
     VERBATIM
 )
 
-add_executable(coc-gtest          
-    ${BASE_SRC} 
-    ${CORE_SRC} 
-    ${FRONTEND_SRC} 
-    ${UTIL_SRC} 
+add_executable(coc-gtest
+    ${BASE_SRC}
+    ${CORE_SRC}
+    ${FRONTEND_SRC}
+    ${UTIL_SRC}
     ${CMAKE_CURRENT_SOURCE_DIR}/thorin/core/_normalize.cpp
     #thorin/core/_normalize.cpp
     thorin/analyses/cfg.cpp
@@ -147,7 +150,7 @@ add_executable(coc-gtest
 
 #add_dependencies(coc-gtest generate-core-normalizer)
 
-set_target_properties(coc-gtest 
+set_target_properties(coc-gtest
     PROPERTIES CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
