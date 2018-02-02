@@ -80,12 +80,13 @@ Debug Def::debug_history() const {
 
 const Def* Def::destructing_type() const {
     if (auto app = type()->isa<App>()) {
-        if (auto cache = app->cache_) {
+        if (auto cache = app->cache()) {
             assert(app->callee()->is_nominal());
             return cache;
         }
         if (auto lambda = app->callee()->isa<Lambda>(); lambda != nullptr && lambda->is_nominal()) {
             auto res = thorin::reduce(lambda->body(), app->arg());
+            assert(app->state_ == App::State::Has_None);
             app->cache_ = res;
             return res;
         }
@@ -135,10 +136,10 @@ Def* Def::set(Defs defs) {
 void Def::finalize() {
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         assert(op(i) != nullptr);
-        const auto& p = op(i)->uses_.emplace(this, i);
-        assert_unused(p.second);
-        free_vars_   |= op(i)->free_vars() >> shift(i);
-        contains_cn_ |= op(i)->tag() == Tag::Cn || op(i)->contains_cn();
+        checked_emplace(op(i)->uses_, Use{this, i});
+        free_vars_    |= op(i)->free_vars() >> shift(i);
+        contains_cn_  |= op(i)->tag() == Tag::Cn || op(i)->contains_cn();
+        is_dependent_ |= is_dependent_ || op(i)->free_vars().any_end(i);
     }
 
     if (type() != nullptr)
@@ -415,7 +416,7 @@ uint64_t Var  ::vhash() const { return thorin::hash_combine(Def::vhash(), index(
  */
 
 bool Def::equal(const Def* other) const {
-    if (is_nominal())
+    if (this->is_nominal() || other->is_nominal())
         return this == other;
 
     bool result = this->fields() == other->fields() && this->type() == other->type();
@@ -869,14 +870,6 @@ std::ostream& Variant::vstream(std::ostream& os) const {
 /*
  * misc
  */
-
-bool Sigma::is_dependent() const {
-    for (size_t i = 0, e = num_ops(); i != e; ++i) {
-        if (op(i)->free_vars().any_end(i))
-            return true;
-    }
-    return false;
-}
 
 const Param* Cn::param(Debug dbg) const { return world().param(this, dbg); }
 const Def* Cn::param(u64 i, Debug dbg) const { return world().extract(param(), i, dbg); }

@@ -55,6 +55,12 @@ TEST(Tuple, TypeExtract) {
     EXPECT_THROW(w.extract(w.var(sig, 1), w.var(arity2, 0))->type(), TypeError);
 }
 
+TEST(Tuple, TypeExtractFreeVars) {
+    World w;
+
+    EXPECT_EQ(parse(w, "\\0::[x:nat, y:nat, \\4::*]#2₃")->type(), w.var(w.star(), 2));
+}
+
 TEST(Sigma, EtaConversion) {
     World w;
     auto v = w.lit_nat_32();

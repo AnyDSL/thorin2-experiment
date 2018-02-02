@@ -35,6 +35,13 @@ TEST(Parser, SimpleSigma) {
     EXPECT_EQ(parse(w, "[T:*, T]"), s);
 }
 
+TEST(Parser, DeBruijn) {
+    World w;
+    auto S = w.star();
+    EXPECT_EQ(parse(w, "λ*.\\0"), w.lambda(S, w.var(S, 0)));
+    EXPECT_EQ(parse(w, "λ*.\\1::nat"), w.lambda(S, w.var(w.type_nat(), 1)));
+}
+
 TEST(Parser, SimpleVariadic) {
     World w;
     auto S = w.star();

@@ -94,24 +94,28 @@ public:
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
     //@}
 
-    //@{ Is any bit range set?
-    bool any() const;
+    /// @name any
+    /// Is any bit range set?
+    //@{
     /// Is any bit in @c [begin,end[ set?
     bool any_range(const size_t begin, const size_t end) const;
     /// Is any bit in @c [0,end[ set?
     bool any_end(const size_t end) const { return any_range(0, end); }
     /// Is any bit in @c [begin,infinity[ set?
     bool any_begin(const size_t begin) const { return any_range(begin, num_bits()); }
+    bool any() const { return any_range(0, num_bits()); }
     //@}
 
-    //@{ Is no bit in range set?
-    bool none() const;
+    /// @name none
+    /// Is no bit in range set?
+    //@{
     /// Is no bit in @c [begin,end[ set?
     bool none_range(const size_t begin, const size_t end) const;
     /// Is no bit in @c [0,end[ set?
     bool none_end(const size_t end) const { return none_range(0, end); }
     /// Is no bit in @c [begin,infinity[ set?
     bool none_begin(const size_t begin) const { return none_range(begin, num_bits()); }
+    bool none() const { return none_range(0, num_bits()); }
     //@}
 
     //@{ shift

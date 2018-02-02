@@ -21,7 +21,6 @@ namespace thorin {
     f(QualifierL,       "ᴸ") \
     f(Backslash,        "\\") \
     f(Pi,               "\\pi") \
-    f(Sigma,            "\\sigma") \
     f(Lambda,           "\\lambda") \
     f(Bool,             "bool") \
     f(Identifier,       "identifier") \
