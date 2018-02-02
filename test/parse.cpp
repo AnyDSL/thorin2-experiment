@@ -134,6 +134,12 @@ TEST(Parser, NestedDependentBinders) {
     auto typ = w.axiom(w.pi(w.sigma({N, w.app(dtyp, w.var(N, 0))}), S), {"typ"});
     auto def = w.pi(sig, w.app(typ, w.tuple({w.extract(w.extract(w.var(sig, 0), 0_u64), 1),
                                              w.extract(w.var(sig, 0), 1)})));
+
+
+    // TODO this is broken
+    w.axiom("add",  "Πf: nat. Πw: nat. Πs: 𝕄. Π[ [s; int w], [s; int w]]. [s; int w]");
+    parse(w, "Π[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x)");
+
     EXPECT_EQ(parse(w, "Π[[n0 : nat, n1: nat], d: dt(n1)]. typ(n1, d)"), def);
 }
 
