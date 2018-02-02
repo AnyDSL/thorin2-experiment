@@ -872,7 +872,7 @@ private:
 class Lit : public Def {
 private:
     Lit(const Def* type, Box box, Debug dbg)
-        : Def(Tag::Axiom, type, Defs(), THORIN_OPS_PTR, dbg)
+        : Def(Tag::Lit, type, Defs(), THORIN_OPS_PTR, dbg)
         , box_(box)
     {}
 
