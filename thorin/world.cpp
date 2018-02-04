@@ -678,7 +678,7 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
         assert(!def->type()->isa<Variant>());
         return app(handlers.front(), def, dbg);
     }
-    auto matched_type = def->type()->as<Variant>();
+    auto matched_type [[maybe_unused]] = def->type()->as<Variant>();
     assert(def->type()->num_ops() == handlers.size() && "number of handlers does not match number of cases");
 
     DefArray sorted_handlers(handlers);

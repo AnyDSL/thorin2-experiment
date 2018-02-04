@@ -54,8 +54,9 @@ void Cycles::analyze_call(Cn* cn) {
         }
 
         def2color_[cn] = Black;
-    } else
+    } else {
         assertf(def2color_[cn] != Gray, "detected cycle: '{}'", cn);
+    }
 }
 
 void Cycles::analyze(ParamSet& params, Cn* cn, const Def* def) {

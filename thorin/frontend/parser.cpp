@@ -101,10 +101,13 @@ const Def* Parser::parse_debruijn() {
                 return world_.var(type, index, tracker.location());
             }
             return world_.var(debruijn_types_[debruijn_types_.size() - index - 1], index, tracker.location());
-        } else
+        } else {
             assertf(false, "untyped literal expected after '\'");
+            THORIN_UNREACHABLE;
+        }
     } else {
         assertf(false, "number expected after '\'");
+        THORIN_UNREACHABLE;
     }
 }
 
@@ -270,6 +273,7 @@ const Def* Parser::parse_literal() {
     }
 
     assertf(false, "unhandled literal {}", literal.box.get_u64());
+    THORIN_UNREACHABLE;
 }
 
 Token Parser::next() {
@@ -333,9 +337,10 @@ const Def* Parser::parse_identifier() {
             nominal = world_.lambda(lambda->type(), dbg);
         else if (auto sigma = structural->isa<Sigma>())
             nominal = world_.sigma(type, sigma->num_ops(), dbg);
-        else
+        else {
             assertf(false, "TODO unimplemented nominal {} with type {} at {}",
                     structural, type, tracker.location());
+        }
         // rebuild the structural def with the real nominal def and finally set the ops of the nominal def
         auto reduced = reduce(structural, nominal);
         nominal->set(reduced->ops());
@@ -404,8 +409,9 @@ Parser::DefOrBinder Parser::lookup(const Tracker& t, Symbol identifier) {
             return a;
         else if (auto e = world_.lookup_external(identifier))
             return e;
-        else
+        else {
             assertf(false, "'{}' at {} not found in current scope", identifier.str(), t.location());
+        }
     }
     return decl->second;
 }
