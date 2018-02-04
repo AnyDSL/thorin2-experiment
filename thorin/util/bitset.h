@@ -37,8 +37,8 @@ public:
     };
 
     BitSet()
-        : num_words_(1)
-        , word_(0)
+        : word_(0)
+        , num_words_(1)
     {}
     BitSet(const BitSet& other)
         : BitSet()
@@ -47,8 +47,8 @@ public:
         std::copy_n(other.words(), other.num_words(), words());
     }
     BitSet(BitSet&& other)
-        : num_words_(std::move(other.num_words_))
-        , words_(std::move(other.words_))
+        : words_(std::move(other.words_))
+        , num_words_(std::move(other.num_words_))
     {
         other.words_ = nullptr;
     }
@@ -140,12 +140,17 @@ private:
     size_t num_words() const { return num_words_; }
     size_t num_bits() const { return num_words_*64_s; }
 
-    mutable size_t num_words_;
     union {
         mutable uint64_t* words_;
         uint64_t word_;
     };
+    mutable uint32_t num_words_;
+
+public:
+    uint32_t padding = 0;
 };
+
+static_assert(sizeof(BitSet) == 16);
 
 }
 

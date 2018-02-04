@@ -86,8 +86,8 @@ const Def* Def::destructing_type() const {
         }
         if (auto lambda = app->callee()->isa<Lambda>(); lambda != nullptr && lambda->is_nominal()) {
             auto res = thorin::reduce(lambda->body(), app->arg());
-            assert(app->state_ == App::State::Has_None);
-            app->cache_ = res;
+            assert(app->state() == App::State::Has_None);
+            app->extra().cache_ = res;
             return res;
         }
     }
@@ -119,7 +119,7 @@ bool Def::maybe_affine() const {
 Def* Def::set(size_t i, const Def* def) {
     assert(!op(i) && "already set");
     assert(def && "setting null pointer");
-    ops_[i] = def;
+    ops_ptr()[i] = def;
     if (i == num_ops() - 1)
         finalize();
     return this;
@@ -128,7 +128,7 @@ Def* Def::set(size_t i, const Def* def) {
 Def* Def::set(Defs defs) {
     assertf(std::all_of(ops().begin(), ops().end(), [](auto op) { return op == nullptr; }), "all ops must be unset");
     assertf(std::all_of(defs.begin(), defs.end(), [](auto def) { return def != nullptr; }), "all new ops must be non-null");
-    std::copy(defs.begin(), defs.end(), ops_);
+    std::copy(defs.begin(), defs.end(), ops_ptr());
     finalize();
     return this;
 }
@@ -150,9 +150,9 @@ void Def::finalize() {
 }
 
 void Def::unset(size_t i) {
-    assert(ops_[i] && "must be set");
+    assert(ops_ptr()[i] && "must be set");
     unregister_use(i);
-    ops_[i] = nullptr;
+    ops_ptr()[i] = nullptr;
 }
 
 void Def::unregister_uses() const {
@@ -161,7 +161,7 @@ void Def::unregister_uses() const {
 }
 
 void Def::unregister_use(size_t i) const {
-    auto def = ops_[i];
+    auto def = ops_ptr()[i];
     assert(def->uses_.contains(Use(this, i)));
     def->uses_.erase(Use(this, i));
     assert(!def->uses_.contains(Use(this, i)));
@@ -207,26 +207,27 @@ Cn* Def::isa_cn() const { return const_cast<Cn*>(isa<Cn>()); }
  */
 
 ArityKind::ArityKind(World& world, const Def* qualifier)
-    : Def(Tag::ArityKind, world.universe(), {qualifier}, THORIN_OPS_PTR, {"𝔸"})
+    : Def(Tag::ArityKind, world.universe(), {qualifier}, {"𝔸"})
 {}
 
 Intersection::Intersection(const Def* type, const SortedDefSet& ops, Debug dbg)
-    : Def(Tag::Intersection, type, range(ops), THORIN_OPS_PTR, dbg)
+    : Def(Tag::Intersection, type, range(ops), dbg)
 {
     check_same_sorted_ops(sort(), this->ops());
 }
 
 MultiArityKind::MultiArityKind(World& world, const Def* qualifier)
-    : Def(Tag::MultiArityKind, world.universe(), {qualifier}, THORIN_OPS_PTR, {"𝕄"})
+    : Def(Tag::MultiArityKind, world.universe(), {qualifier}, {"𝕄"})
 {}
 
 Qualifier::Qualifier(World& world, QualifierTag q)
-    : Def(Tag::Qualifier, world.qualifier_type(), 0, THORIN_OPS_PTR, {qualifier2str(q)})
-    , qualifier_tag_(q)
-{}
+    : Def(Tag::Qualifier, world.qualifier_type(), 0, {qualifier2str(q)})
+{
+    extra().qualifier_tag_ = q;
+}
 
 QualifierType::QualifierType(World& world)
-    : Def(Tag::QualifierType, world.universe(), 0, THORIN_OPS_PTR, {"ℚ"})
+    : Def(Tag::QualifierType, world.universe(), 0, {"ℚ"})
 {}
 
 Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
@@ -234,11 +235,11 @@ Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
 {}
 
 Star::Star(World& world, const Def* qualifier)
-    : Def(Tag::Star, world.universe(), {qualifier}, THORIN_OPS_PTR, {"*"})
+    : Def(Tag::Star, world.universe(), {qualifier}, {"*"})
 {}
 
 Variant::Variant(const Def* type, const SortedDefSet& ops, Debug dbg)
-    : Def(Tag::Variant, type, range(ops), THORIN_OPS_PTR, dbg)
+    : Def(Tag::Variant, type, range(ops), dbg)
 {
     // TODO does same sorted ops really hold? ex: matches that return different sorted stuff? allowed?
     check_same_sorted_ops(sort(), this->ops());
@@ -406,7 +407,7 @@ uint64_t Def::vhash() const {
 }
 
 uint64_t Arity::vhash() const { return thorin::hash_combine(Def::vhash(), value()); }
-uint64_t Lit  ::vhash() const { return thorin::hash_combine(Def::vhash(), box_.get_u64()); }
+uint64_t Lit  ::vhash() const { return thorin::hash_combine(Def::vhash(), box().get_u64()); }
 uint64_t Var  ::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
 
 //------------------------------------------------------------------------------
@@ -463,7 +464,7 @@ const Def* Pick          ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* Qualifier     ::rebuild(World& to, const Def*  , Defs    ) const { return to.qualifier(qualifier_tag_); }
+const Def* Qualifier     ::rebuild(World& to, const Def*  , Defs    ) const { return to.qualifier(qualifier_tag()); }
 const Def* QualifierType ::rebuild(World& to, const Def*  , Defs    ) const { return to.qualifier_type(); }
 const Def* Sigma         ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
@@ -875,7 +876,7 @@ const Param* Cn::param(Debug dbg) const { return world().param(this, dbg); }
 const Def* Cn::param(u64 i, Debug dbg) const { return world().extract(param(), i, dbg); }
 
 Cn* Cn::set(const Def* filter, const Def* callee, const Def* arg, Debug dbg) {
-    jump_debug_ = dbg;
+    extra().jump_debug_ = dbg;
     return Def::set(0, filter)->Def::set(1, callee)->Def::set(2, arg)->as<Cn>();
 }
 

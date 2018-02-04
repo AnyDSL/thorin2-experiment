@@ -393,7 +393,7 @@ protected:
             return def;
         }
 
-        dealloc(def);
+        dealloc<T>(def);
         return static_cast<const T*>(*i);
     }
 
@@ -422,11 +422,17 @@ protected:
 #else
     struct Lock { ~Lock() {} };
 #endif
-
+    template<class T> static size_t num_bytes_of(size_t num_ops) {
+        size_t result = std::is_empty<typename T::Extra>() ? 0 : sizeof(typename T::Extra);
+        result += sizeof(Def) + sizeof(const Def*)*num_ops;
+        return (result + (sizeof(void*)-1)) & ~(sizeof(void*)-1); // align properly
+    }
     template<class T, class... Args>
     T* alloc(size_t num_ops, Args&&... args) {
+        static_assert(sizeof(Def) == sizeof(T), "you are not allowed to introduce any additional data in subclasses of Def - use see 'Extra' struct");
         Lock lock;
-        size_t num_bytes = sizeof(T) + sizeof(const Def*) * num_ops;
+        size_t num_bytes = num_bytes_of<T>(num_ops);
+        num_bytes = (num_bytes + (sizeof(void*) - 1)) & ~(sizeof(void*)-1);
         assert(num_bytes < Zone::Size);
 
         if (buffer_index_ + num_bytes >= Zone::Size) {
@@ -445,7 +451,8 @@ protected:
 
     template<class T>
     void dealloc(const T* def) {
-        size_t num_bytes = sizeof(T) + def->num_ops() * sizeof(const Def*);
+        size_t num_bytes = num_bytes_of<T>(def->num_ops());
+        num_bytes = (num_bytes + (sizeof(void*) - 1)) & ~(sizeof(void*)-1);
         def->~T();
         if (ptrdiff_t(buffer_index_ - num_bytes) > 0) // don't care otherwise
             buffer_index_-= num_bytes;
