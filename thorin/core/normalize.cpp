@@ -274,39 +274,13 @@ static const Def* try_mfold(const Def* callee, const Def* m, const Def* a, const
     return normalize_mtuple(callee, m, a, b, dbg);
 }
 
-const Def* normalize_sdiv(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
+template<MOp op>
+const Def* normalize_MOp(const Def* callee, const Def* arg, Debug dbg) {
+    auto& world = static_cast<World&>(callee->world());
     auto [m, a, b] = msplit(arg);
-    if (auto result = try_mfold<Fold_sdiv>(callee, m, a, b, dbg)) return result;
+    if (auto result = try_mfold<FoldMOp<op>::template Fold>(callee, m, a, b, dbg)) return result;
 
-    return w.raw_app(callee, {m, a, b}, dbg);
-}
-
-const Def* normalize_udiv(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    auto [m, a, b] = msplit(arg);
-    //if (auto result = try_wfold<Fold_sub>(callee, a, b, dbg)) return result;
-
-    return w.raw_app(callee, {m, a, b}, dbg);
-}
-
-const Def* normalize_smod(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    auto [m, a, b] = msplit(arg);
-    //if (auto result = try_wfold<Fold_sub>(callee, a, b, dbg)) return result;
-
-    return w.raw_app(callee, {m, a, b}, dbg);
-}
-
-const Def* normalize_umod(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    auto [m, a, b] = msplit(arg);
-    //if (auto result = try_wfold<Fold_sub>(callee, a, b, dbg)) return result;
-
-    return w.raw_app(callee, {m, a, b}, dbg);
+    return world.raw_app(callee, {m, a, b}, dbg);
 }
 
 /*
@@ -436,6 +410,7 @@ const Def* normalize_Cast(const Def* callee, const Def* arg, Debug dbg) {
 
 // instantiate templates
 #define CODE(T, o) template const Def* normalize_ ## T<T::o>(const Def*, const Def*, Debug);
+    THORIN_M_OP (CODE)
     THORIN_I_OP (CODE)
     THORIN_R_OP (CODE)
     THORIN_I_CMP(CODE)
