@@ -159,24 +159,24 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
                     }
                 case int64_t(WFlags::nsw):
                     switch (w) {
-                        case  8: return world.lit(t, F< 8, true, false>::run(ba, bb));
-                        case 16: return world.lit(t, F<16, true, false>::run(ba, bb));
-                        case 32: return world.lit(t, F<32, true, false>::run(ba, bb));
-                        case 64: return world.lit(t, F<64, true, false>::run(ba, bb));
+                        case  8: return world.lit(t, F< 8,  true, false>::run(ba, bb));
+                        case 16: return world.lit(t, F<16,  true, false>::run(ba, bb));
+                        case 32: return world.lit(t, F<32,  true, false>::run(ba, bb));
+                        case 64: return world.lit(t, F<64,  true, false>::run(ba, bb));
                     }
                 case int64_t(WFlags::nuw):
                     switch (w) {
-                        case  8: return world.lit(t, F< 8, false, true>::run(ba, bb));
-                        case 16: return world.lit(t, F<16, false, true>::run(ba, bb));
-                        case 32: return world.lit(t, F<32, false, true>::run(ba, bb));
-                        case 64: return world.lit(t, F<64, false, true>::run(ba, bb));
+                        case  8: return world.lit(t, F< 8, false,  true>::run(ba, bb));
+                        case 16: return world.lit(t, F<16, false,  true>::run(ba, bb));
+                        case 32: return world.lit(t, F<32, false,  true>::run(ba, bb));
+                        case 64: return world.lit(t, F<64, false,  true>::run(ba, bb));
                     }
                 case int64_t(WFlags::nsw | WFlags::nuw):
                     switch (w) {
-                        case  8: return world.lit(t, F< 8, true,  true>::run(ba, bb));
-                        case 16: return world.lit(t, F<16, true,  true>::run(ba, bb));
-                        case 32: return world.lit(t, F<32, true,  true>::run(ba, bb));
-                        case 64: return world.lit(t, F<64, true,  true>::run(ba, bb));
+                        case  8: return world.lit(t, F< 8,  true,  true>::run(ba, bb));
+                        case 16: return world.lit(t, F<16,  true,  true>::run(ba, bb));
+                        case 32: return world.lit(t, F<32,  true,  true>::run(ba, bb));
+                        case 64: return world.lit(t, F<64,  true,  true>::run(ba, bb));
                     }
             }
         } catch (BottomException) {

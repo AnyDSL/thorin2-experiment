@@ -168,6 +168,11 @@ TEST(Primop, Normalize) {
     EXPECT_FALSE(w.op<ROp::rmul>(RFlags::nnan, x, w.lit_r(0._r16))->isa<Lit>());
     EXPECT_EQ(w.op<ROp::rmul>(RFlags::fast, w.lit_r(0._r16), x), w.lit_r(0._r16));
     EXPECT_EQ(w.op<ROp::rmul>(RFlags::fast, w.lit_r(-0._r16), x), w.lit_r(-0._r16));
+
+    //auto m = w.axiom(w.type_mem(), {"m"});
+    // TODO why are those things not equal?
+    //EXPECT_EQ(w.op<MOp::sdiv>(m, l3, l0), w.tuple({m, w.bottom(w.type_i(8))}));
+    //EXPECT_EQ(w.op<MOp::sdiv>(m, a, l0), w.bottom(w.type_i(8)));
 }
 
 TEST(Primop, Ptr) {

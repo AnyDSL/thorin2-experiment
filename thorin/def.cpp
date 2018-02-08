@@ -753,8 +753,8 @@ std::ostream& CnType::vstream(std::ostream& os) const {
     return streamf(os, "cn {}", domain());
 }
 
-std::ostream& Bottom::vstream(std::ostream& os) const { return streamf(os, "{⊥: {}}", type()); }
-std::ostream& Top   ::vstream(std::ostream& os) const { return streamf(os, "{⊤: {}}", type()); }
+std::ostream& Bottom::vstream(std::ostream& os) const { return streamf(os, "{{⊥: {}}}", type()); }
+std::ostream& Top   ::vstream(std::ostream& os) const { return streamf(os, "{{⊤: {}}}", type()); }
 
 std::ostream& Extract::vstream(std::ostream& os) const {
     return scrutinee()->name_stream(os) << "#" << index();

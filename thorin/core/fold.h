@@ -70,10 +70,10 @@ template<> struct FoldWOp<WOp::shl> {
 
 // TODO handle division by zero
 template<MOp> struct FoldMOp {};
-template<> struct FoldMOp<MOp::sdiv> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() / b.get<T>()); } }; };
-template<> struct FoldMOp<MOp::udiv> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() / b.get<T>()); } }; };
-template<> struct FoldMOp<MOp::smod> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() % b.get<T>()); } }; };
-template<> struct FoldMOp<MOp::umod> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() % b.get<T>()); } }; };
+template<> struct FoldMOp<MOp::sdiv> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; T r = b.get<T>(); if (r == 0) throw BottomException(); return T(a.get<T>() / r); } }; };
+template<> struct FoldMOp<MOp::udiv> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; T r = b.get<T>(); if (r == 0) throw BottomException(); return T(a.get<T>() / r); } }; };
+template<> struct FoldMOp<MOp::smod> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; T r = b.get<T>(); if (r == 0) throw BottomException(); return T(a.get<T>() % r); } }; };
+template<> struct FoldMOp<MOp::umod> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; T r = b.get<T>(); if (r == 0) throw BottomException(); return T(a.get<T>() % r); } }; };
 
 template<IOp> struct FoldIOp {};
 template<> struct FoldIOp<IOp::ashr> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2s<w>::type T; return T(a.get<T>() >> b.get<T>()); } }; };
