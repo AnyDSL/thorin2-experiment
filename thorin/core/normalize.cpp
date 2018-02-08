@@ -131,9 +131,9 @@ static const Def* reassociate(const Def* callee, const Def* a, const Def* b, Deb
     return commute(callee, a, b, dbg);
 }
 
-bool is_commutative(ROp op) { return op == ROp::radd || op == ROp::rmul; }
 bool is_commutative(WOp op) { return op == WOp:: add || op == WOp:: mul; }
 bool is_commutative(IOp op) { return op == IOp::iand || op == IOp:: ior || op == IOp::ixor; }
+bool is_commutative(ROp op) { return op == ROp::radd || op == ROp::rmul; }
 
 /*
  * WArithop
