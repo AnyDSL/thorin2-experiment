@@ -133,6 +133,7 @@ static const Def* reassociate(const Def* callee, const Def* a, const Def* b, Deb
 
 bool is_commutative(ROp op) { return op == ROp::radd || op == ROp::rmul; }
 bool is_commutative(WOp op) { return op == WOp:: add || op == WOp:: mul; }
+bool is_commutative(IOp op) { return op == IOp::iand || op == IOp:: ior || op == IOp::ixor; }
 
 /*
  * WArithop
@@ -312,53 +313,36 @@ const Def* normalize_umod(const Def* callee, const Def* arg, Debug dbg) {
  * IArithop
  */
 
-const Def* normalize_ashr(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
+template<IOp op>
+const Def* normalize_IOp(const Def* callee, const Def* arg, Debug dbg) {
+    auto& world = static_cast<World&>(callee->world());
 
     auto [a, b] = split(arg);
-    if (auto result = try_ifold<Fold_ashr>(callee, a, b, dbg)) return result;
+    if (auto result = try_ifold<FoldIOp<op>::template Fold>(callee, a, b, dbg)) return result;
 
-    return w.raw_app(callee, {a, b}, dbg);
-}
+    if (is_commutative(op)) {
+        if (auto la = foldable_to_left(a, b)) {
+            if (is_zero(la)) {
+                switch (op) {
+                    case IOp::iand: return la;
+                    case IOp::ior:  return b;
+                    default: THORIN_UNREACHABLE;
+                }
+            }
 
-const Def* normalize_lshr(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    auto [a, b] = split(arg);
-    if (auto result = try_ifold<Fold_lshr>(callee, a, b, dbg)) return result;
-
-    return w.raw_app(callee, {a, b}, dbg);
-}
-
-const Def* normalize_iand(const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(arg);
-    if (auto result = try_ifold<Fold_iand>(callee, a, b, dbg)) return result;
-
-    if (auto la = foldable_to_left(a, b)) {
-        if (is_zero  (la)) return la;
-        if (is_allset(la)) return  b;
+            if (is_allset(la)) {
+                switch (op) {
+                    case IOp::iand: return b;
+                    case IOp::ior:  return la;
+                    default: THORIN_UNREACHABLE;
+                }
+            }
+        }
     }
 
-    return reassociate(callee, a, b, dbg);
-}
-
-const Def* normalize_ior(const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(arg);
-    if (auto result = try_ifold<Fold_ior>(callee, a, b, dbg)) return result;
-
-    if (auto la = foldable_to_left(a, b)) {
-        if (is_zero  (la)) return  b;
-        if (is_allset(la)) return la;
-    }
-
-    return reassociate(callee, a, b, dbg);
-}
-
-const Def* normalize_ixor(const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(arg);
-    if (auto result = try_ifold<Fold_ixor>(callee, a, b, dbg)) return result;
-
-    return reassociate(callee, a, b, dbg);
+    if (is_commutative(op))
+        return reassociate(callee, a, b, dbg);
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
 /*
@@ -452,6 +436,7 @@ const Def* normalize_Cast(const Def* callee, const Def* arg, Debug dbg) {
 
 // instantiate templates
 #define CODE(T, o) template const Def* normalize_ ## T<T::o>(const Def*, const Def*, Debug);
+    THORIN_I_OP (CODE)
     THORIN_R_OP (CODE)
     THORIN_I_CMP(CODE)
     THORIN_R_CMP(CODE)

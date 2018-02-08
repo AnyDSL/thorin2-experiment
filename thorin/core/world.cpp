@@ -51,11 +51,11 @@ World::World(Debug dbg)
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## o, {op2str(T::o)});
     THORIN_W_OP (CODE)
     THORIN_M_OP (CODE)
-    THORIN_I_OP (CODE)
 #undef CODE
 
 #define CODE(T, o) \
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});
+    THORIN_I_OP (CODE)
     THORIN_R_OP (CODE)
     THORIN_I_CMP(CODE)
     THORIN_R_CMP(CODE)
