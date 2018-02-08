@@ -389,6 +389,7 @@ static const Def* try_rfold(const Def* callee, const Def* a, const Def* b, Debug
 
 template<ROp op>
 const Def* normalize_ROp(const Def* callee, const Def* arg, Debug dbg) {
+    auto& world = static_cast<World&>(callee->world());
     auto [a, b] = split(arg);
     if (auto result = try_rfold<FoldROp<op>::template Fold>(callee, a, b, dbg)) return result;
 
@@ -409,7 +410,7 @@ const Def* normalize_ROp(const Def* callee, const Def* arg, Debug dbg) {
             return reassociate(callee, a, b, dbg);
         return commute(callee, a, b, dbg);
     }
-    return w.raw_app(callee, {a, b}, dbg);
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
 /*
