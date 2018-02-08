@@ -437,58 +437,25 @@ const Def* normalize_RCmp(const Def* callee, const Def* arg, Debug dbg) {
     return w.raw_app(callee, {a, b}, dbg);
 }
 
+/*
+ * cast
+ */
+
+template<Cast op>
+const Def* normalize_Cast(const Def* callee, const Def* arg, Debug dbg) {
+    auto& world = static_cast<World&>(callee->world());
+
+    if (auto result =  normalize_tuple(callee, arg, dbg))
+        return result;
+    return world.raw_app(callee, arg, dbg);
+}
+
 // instantiate templates
 #define CODE(T, o) template const Def* normalize_ ## T<T::o>(const Def*, const Def*, Debug);
     THORIN_R_OP (CODE)
     THORIN_I_CMP(CODE)
     THORIN_R_CMP(CODE)
+    THORIN_CAST(CODE)
 #undef CODE
-
-/*
- * cast
- */
-
-const Def* normalize_scast(const Def* callee, const Def* arg, Debug dbg) {
-    //auto& w = static_cast<World&>(callee->world());
-
-    return normalize_tuple(callee, arg, dbg);
-    //return w.raw_app(callee, arg, dbg);
-}
-
-const Def* normalize_ucast(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    return w.raw_app(callee, arg, dbg);
-}
-
-const Def* normalize_rcast(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    return w.raw_app(callee, arg, dbg);
-}
-
-const Def* normalize_s2r(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    return w.raw_app(callee, arg, dbg);
-}
-
-const Def* normalize_u2r(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    return w.raw_app(callee, arg, dbg);
-}
-
-const Def* normalize_r2s(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    return w.raw_app(callee, arg, dbg);
-}
-
-const Def* normalize_r2u(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    return w.raw_app(callee, arg, dbg);
-}
 
 }
