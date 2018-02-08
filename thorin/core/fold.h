@@ -70,11 +70,12 @@ template<int w> struct Fold_iand { static Box run(Box a, Box b) { typedef typena
 template<int w> struct Fold_ior  { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() |  b.get<T>()); } };
 template<int w> struct Fold_ixor { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() ^  b.get<T>()); } };
 
-template<int w> struct Fold_radd { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() +  b.get<T>()); } };
-template<int w> struct Fold_rsub { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() -  b.get<T>()); } };
-template<int w> struct Fold_rmul { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() *  b.get<T>()); } };
-template<int w> struct Fold_rdiv { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() /  b.get<T>()); } };
-template<int w> struct Fold_rrem { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(rem(a.get<T>(), b.get<T>())); } };
+template<ROp> struct FoldROp {};
+template<> struct FoldROp<ROp::radd> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() +  b.get<T>()); } }; };
+template<> struct FoldROp<ROp::rsub> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() -  b.get<T>()); } }; };
+template<> struct FoldROp<ROp::rmul> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() *  b.get<T>()); } }; };
+template<> struct FoldROp<ROp::rdiv> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() /  b.get<T>()); } }; };
+template<> struct FoldROp<ROp::rmod> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(rem(a.get<T>(), b.get<T>())); } }; };
 
 template<ICmp> struct FoldICmp {};
 template<> struct FoldICmp<ICmp::t  > { template<int w> struct Fold { static Box run(Box  , Box  ) { return {true}; } }; };

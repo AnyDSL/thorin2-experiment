@@ -131,6 +131,9 @@ static const Def* reassociate(const Def* callee, const Def* a, const Def* b, Deb
     return commute(callee, a, b, dbg);
 }
 
+bool is_commutative(ROp op) { return op == ROp::radd || op == ROp::rmul; }
+bool is_commutative(WOp op) { return op == WOp:: add || op == WOp:: mul; }
+
 /*
  * WArithop
  */
@@ -384,64 +387,28 @@ static const Def* try_rfold(const Def* callee, const Def* a, const Def* b, Debug
     return normalize_tuple(callee, a, b, dbg);
 }
 
-const Def* normalize_radd(const Def* callee, const Def* arg, Debug dbg) {
+template<ROp op>
+const Def* normalize_ROp(const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(arg);
-    if (auto result = try_rfold<Fold_radd>(callee, a, b, dbg)) return result;
+    if (auto result = try_rfold<FoldROp<op>::template Fold>(callee, a, b, dbg)) return result;
 
     auto f = RFlags(get_nat(app_arg(app_callee(app_callee(callee)))));
     auto w = get_nat(app_arg(app_callee(callee)));
 
-    if (auto la = foldable_to_left(a, b)) {
-        if (is_rzero(w, la))
-            return b;
+    if (is_commutative(op)) {
+        if (auto la = foldable_to_left(a, b)) {
+            if (is_rzero(w, la)) {
+                if (op == ROp::radd) return b;
+                if (op == ROp::rmul && has_feature(f, RFlags::finite | RFlags::nsz)) return la;
+            }
+        }
     }
 
-    if (has_feature(f, RFlags::reassoc))
-        return reassociate(callee, a, b, dbg);
-    return commute(callee, a, b, dbg);
-}
-
-const Def* normalize_rsub(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    auto [a, b] = split(arg);
-    if (auto result = try_rfold<Fold_rsub>(callee, a, b, dbg)) return result;
-
-    return w.raw_app(callee, {a, b}, dbg);
-}
-
-const Def* normalize_rmul(const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(arg);
-    if (auto result = try_rfold<Fold_rmul>(callee, a, b, dbg)) return result;
-
-    auto f = RFlags(get_nat(app_arg(app_callee(app_callee(callee)))));
-    auto w = get_nat(app_arg(app_callee(callee)));
-
-    if (auto la = foldable_to_left(a, b)) {
-        if (has_feature(f, RFlags::finite | RFlags::nsz) && is_rzero(w, la))
-            return la;
+    if (is_commutative(op)) {
+        if (has_feature(f, RFlags::reassoc))
+            return reassociate(callee, a, b, dbg);
+        return commute(callee, a, b, dbg);
     }
-
-    if (has_feature(f, RFlags::reassoc))
-        return reassociate(callee, a, b, dbg);
-    return commute(callee, a, b, dbg);
-}
-
-const Def* normalize_rdiv(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    auto [a, b] = split(arg);
-    if (auto result = try_rfold<Fold_rdiv>(callee, a, b, dbg)) return result;
-
-    return w.raw_app(callee, {a, b}, dbg);
-}
-
-const Def* normalize_rmod(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    auto [a, b] = split(arg);
-    if (auto result = try_rfold<Fold_rrem>(callee, a, b, dbg)) return result;
-
     return w.raw_app(callee, {a, b}, dbg);
 }
 
@@ -459,7 +426,6 @@ const Def* normalize_ICmp(const Def* callee, const Def* arg, Debug dbg) {
     return w.raw_app(callee, {a, b}, dbg);
 }
 
-
 template<RCmp op>
 const Def* normalize_RCmp(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
@@ -472,6 +438,7 @@ const Def* normalize_RCmp(const Def* callee, const Def* arg, Debug dbg) {
 
 // instantiate templates
 #define CODE(T, o) template const Def* normalize_ ## T<T::o>(const Def*, const Def*, Debug);
+    THORIN_R_OP (CODE)
     THORIN_I_CMP(CODE)
     THORIN_R_CMP(CODE)
 #undef CODE
