@@ -187,51 +187,44 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
     return normalize_tuple(callee, a, b, dbg);
 }
 
-const Def* normalize_add(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
+template<WOp op>
+const Def* normalize_WOp(const Def* callee, const Def* arg, Debug dbg) {
+    auto& world = static_cast<World&>(callee->world());
 
     auto [a, b] = split(arg);
-    if (auto result = try_wfold<Fold_add>(callee, a, b, dbg)) return result;
+    if (auto result = try_wfold<FoldWOp<op>::template Fold>(callee, a, b, dbg)) return result;
 
-    if (auto la = foldable_to_left(a, b)) {
-        if (is_zero(la)) return b;
+    if (is_commutative(op)) {
+        if (auto la = foldable_to_left(a, b)) {
+            if (is_zero(la)) {
+                switch (op) {
+                    case WOp::add: return b;
+                    case WOp::mul: return la;
+                    default: THORIN_UNREACHABLE;
+                }
+            }
+            if (is_one(la)) {
+                switch (op) {
+                    case WOp::add: break;
+                    case WOp::mul: return b;
+                    default: THORIN_UNREACHABLE;
+                }
+            }
+        }
     }
 
-    if (a == b) return w.op<WOp::mul>(w.lit(a->type(), {2_u64}), a, dbg);
-
-    return reassociate(callee, a, b, dbg);
-}
-
-const Def* normalize_sub(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    auto [a, b] = split(arg);
-    if (auto result = try_wfold<Fold_sub>(callee, a, b, dbg)) return result;
-
-    if (a == b) return w.lit(a->type(), {0_u64});
-
-    return w.raw_app(callee, {a, b}, dbg);
-}
-
-const Def* normalize_mul(const Def* callee, const Def* arg, Debug dbg) {
-    auto [a, b] = split(arg);
-    if (auto result = try_wfold<Fold_mul>(callee, a, b, dbg)) return result;
-
-    if (auto la = foldable_to_left(a, b)) {
-        if (is_zero(la)) return la;
-        if (is_one (la)) return b;
+    if (a == b) {
+        switch (op) {
+            case WOp::add: return world.op<WOp::mul>(world.lit(a->type(), {2_u64}), a, dbg);
+            case WOp::sub: return world.lit(a->type(), {0_u64});
+            case WOp::mul: break;
+            case WOp::shl: break;
+        }
     }
 
-    return reassociate(callee, a, b, dbg);
-}
-
-const Def* normalize_shl(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = static_cast<World&>(callee->world());
-
-    auto [a, b] = split(arg);
-    if (auto result = try_wfold<Fold_shl>(callee, a, b, dbg)) return result;
-
-    return w.raw_app(callee, {a, b}, dbg);
+    if (is_commutative(op))
+        return reassociate(callee, a, b, dbg);
+    return world.raw_app(callee, {a, b}, dbg);
 }
 
 /*
@@ -410,6 +403,7 @@ const Def* normalize_Cast(const Def* callee, const Def* arg, Debug dbg) {
 
 // instantiate templates
 #define CODE(T, o) template const Def* normalize_ ## T<T::o>(const Def*, const Def*, Debug);
+    THORIN_W_OP (CODE)
     THORIN_M_OP (CODE)
     THORIN_I_OP (CODE)
     THORIN_R_OP (CODE)

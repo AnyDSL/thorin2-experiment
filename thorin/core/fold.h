@@ -11,55 +11,61 @@ namespace thorin::core {
 
 struct BottomException {};
 
-template<int w, bool nsw, bool nuw>
-struct Fold_add {
-    static Box run(Box a, Box b) {
-        auto x = a.template get<typename w2u<w>::type>();
-        auto y = b.template get<typename w2u<w>::type>();
-        decltype(x) res = x + y;
-        if (nuw && res < x) throw BottomException();
-        // TODO nsw
-        return {res};
-    }
+template<WOp> struct FoldWOp {};
+
+template<> struct FoldWOp<WOp::add> {
+    template<int w, bool nsw, bool nuw> struct Fold {
+        static Box run(Box a, Box b) {
+            auto x = a.template get<typename w2u<w>::type>();
+            auto y = b.template get<typename w2u<w>::type>();
+            decltype(x) res = x + y;
+            if (nuw && res < x) throw BottomException();
+            // TODO nsw
+            return {res};
+        }
+    };
 };
 
-template<int w, bool nsw, bool nuw>
-struct Fold_sub {
-    static Box run(Box a, Box b) {
-        typedef typename w2u<w>::type UT;
-        auto x = a.template get<UT>();
-        auto y = b.template get<UT>();
-        decltype(x) res = x - y;
-        //if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
-        // TODO nsw
-        return {res};
-    }
+template<> struct FoldWOp<WOp::sub> {
+    template<int w, bool nsw, bool nuw> struct Fold {
+        static Box run(Box a, Box b) {
+            typedef typename w2u<w>::type UT;
+            auto x = a.template get<UT>();
+            auto y = b.template get<UT>();
+            decltype(x) res = x - y;
+            //if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
+            // TODO nsw
+            return {res};
+        }
+    };
 };
 
-template<int w, bool nsw, bool nuw>
-struct Fold_mul {
-    static Box run(Box a, Box b) {
-        typedef typename w2u<w>::type UT;
-        auto x = a.template get<UT>();
-        auto y = b.template get<UT>();
-        decltype(x) res = x * y;
-        if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
-        // TODO nsw
-        return {res};
-    }
+template<> struct FoldWOp<WOp::mul> {
+    template<int w, bool nsw, bool nuw> struct Fold {
+        static Box run(Box a, Box b) {
+            typedef typename w2u<w>::type UT;
+            auto x = a.template get<UT>();
+            auto y = b.template get<UT>();
+            decltype(x) res = x * y;
+            if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
+            // TODO nsw
+            return {res};
+        }
+    };
 };
 
-template<int w, bool nsw, bool nuw>
-struct Fold_shl {
-    static Box run(Box a, Box b) {
-        typedef typename w2u<w>::type UT;
-        auto x = a.template get<UT>();
-        auto y = b.template get<UT>();
-        decltype(x) res = x << y;
-        //if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
-        // TODO nsw
-        return {res};
-    }
+template<> struct FoldWOp<WOp::shl> {
+    template<int w, bool nsw, bool nuw> struct Fold {
+        static Box run(Box a, Box b) {
+            typedef typename w2u<w>::type UT;
+            auto x = a.template get<UT>();
+            auto y = b.template get<UT>();
+            decltype(x) res = x << y;
+            //if (nuw && y && x > std::numeric_limits<UT>::max() / y) throw BottomException();
+            // TODO nsw
+            return {res};
+        }
+    };
 };
 
 // TODO handle division by zero

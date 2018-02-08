@@ -48,12 +48,8 @@ World::World(Debug dbg)
     auto type_RCmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]");
 
 #define CODE(T, o) \
-    T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## o, {op2str(T::o)});
-    THORIN_W_OP (CODE)
-#undef CODE
-
-#define CODE(T, o) \
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});
+    THORIN_W_OP (CODE)
     THORIN_M_OP (CODE)
     THORIN_I_OP (CODE)
     THORIN_R_OP (CODE)

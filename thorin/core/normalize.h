@@ -10,10 +10,7 @@ class Def;
 
 namespace core {
 
-#define CODE(T, o) const Def* normalize_ ## o(const Def*, const Def*, Debug);
-    THORIN_W_OP(CODE)
-#undef CODE
-
+template<WOp > const Def* normalize_WOp (const Def*, const Def*, Debug);
 template<MOp > const Def* normalize_MOp (const Def*, const Def*, Debug);
 template<IOp > const Def* normalize_IOp (const Def*, const Def*, Debug);
 template<ROp > const Def* normalize_ROp (const Def*, const Def*, Debug);
