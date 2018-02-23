@@ -1,9 +1,7 @@
 #ifndef THORIN_DEF_H
 #define THORIN_DEF_H
 
-#include <numeric>
 #include <set>
-#include <stack>
 
 #include "thorin/util/array.h"
 #include "thorin/util/bitset.h"
@@ -277,8 +275,10 @@ public:
     */
     virtual size_t shift(size_t i) const;
     virtual const Def* rebuild(World&, const Def*, Defs) const = 0;
-    virtual Def* stub(World&, const Def*, Debug) const { THORIN_UNREACHABLE; }
-    Def* stub(World& world, const Def* type) const { return stub(world, type, debug_history()); }
+    virtual Def* vstub(World&, const Def*, Debug) const { THORIN_UNREACHABLE; }
+    Def* stub(World& world, const Def* type, Debug dbg) const { return vstub(world, type, dbg); }
+    Def* stub(World& world, const Def* type) const { return vstub(world, type, debug_history()); }
+    Def* stub(const Def* type) const { return vstub(world(), type, debug_history()); }
     //@}
 
     //@{ replace
@@ -518,7 +518,7 @@ public:
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
-    Lambda* stub(World&, const Def*, Debug) const override;
+    Lambda* vstub(World&, const Def*, Debug) const override;
 
 private:
     std::ostream& vstream(std::ostream&) const override;
@@ -561,7 +561,7 @@ public:
 
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
-    Sigma* stub(World&, const Def*, Debug) const override;
+    Sigma* vstub(World&, const Def*, Debug) const override;
     void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
 
 private:
@@ -715,7 +715,7 @@ public:
     const Def* kind_qualifier() const override;
     bool has_values() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
-    Variant* stub(World&, const Def*, Debug) const override;
+    Variant* vstub(World&, const Def*, Debug) const override;
 
 private:
     std::ostream& vstream(std::ostream&) const override;
@@ -1020,6 +1020,12 @@ public:
     const Def* param(u64 i, Debug dbg = {}) const;
     //@}
 
+    //@{
+    Debug& jump_debug() const { return extra().jump_debug_; }
+    Location jump_location() const { return jump_debug(); }
+    Symbol jump_name() const { return jump_debug().name(); }
+    //@}
+
     //@{ succs/preds
     Cns direct_preds() const;
     Cns direct_succs() const;
@@ -1040,7 +1046,7 @@ public:
 
     const Def* arity() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
-    Cn* stub(World& to, const Def* type, Debug dbg) const override;
+    Cn* vstub(World& to, const Def* type, Debug dbg) const override;
 
 private:
     std::ostream& vstream(std::ostream&) const override;
@@ -1099,7 +1105,7 @@ public:
     Normalizer normalizer() const { return extra().normalizer_; }
 
     const Def* arity() const override;
-    Axiom* stub(World&, const Def*, Debug) const override;
+    Axiom* vstub(World&, const Def*, Debug) const override;
     bool has_values() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 

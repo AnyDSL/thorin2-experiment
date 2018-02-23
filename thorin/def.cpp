@@ -482,14 +482,14 @@ const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { re
 //------------------------------------------------------------------------------
 
 /*
- * stub
+ * vstub
  */
 
-Axiom*   Axiom  ::stub(World& to, const Def* type, Debug dbg) const { return to.axiom(type, normalizer(), dbg); }
-Cn*      Cn     ::stub(World& to, const Def* type, Debug dbg) const { return to.cn(type->as<CnType>()->domain(), dbg); }
-Lambda*  Lambda ::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.lambda (type->as<Pi>(),  dbg); }
-Sigma*   Sigma  ::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.sigma  (type, num_ops(), dbg); }
-Variant* Variant::stub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.variant(type, num_ops(), dbg); }
+Axiom*   Axiom  ::vstub(World& to, const Def* type, Debug dbg) const { return to.axiom(type, normalizer(), dbg); }
+Cn*      Cn     ::vstub(World& to, const Def* type, Debug dbg) const { return to.cn(type->as<CnType>()->domain(), dbg); }
+Lambda*  Lambda ::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.lambda (type->as<Pi>(),  dbg); }
+Sigma*   Sigma  ::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.sigma  (type, num_ops(), dbg); }
+Variant* Variant::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.variant(type, num_ops(), dbg); }
 
 //------------------------------------------------------------------------------
 
