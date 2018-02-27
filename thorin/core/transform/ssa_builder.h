@@ -54,7 +54,7 @@ public:
     void store(const Def* val, Debug) const;
     const Def* def() const { return def_; }
     operator bool() { return tag() != Empty; }
-    bool use_lea() const;
+    bool use_lea() const { /*TODO*/ return false; }
 
     Value& operator= (Value other) { swap(*this, other); return *this; }
     friend void swap(Value& v1, Value& v2) {

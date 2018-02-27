@@ -41,6 +41,7 @@ add_executable(coc-gtest
     test/primop.cpp
     test/sigma.cpp
     test/singleton.cpp
+    test/ssa.cpp
     test/substructural.cpp
     test/variadic.cpp
     test/variants.cpp
