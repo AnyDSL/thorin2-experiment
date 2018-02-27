@@ -6,7 +6,7 @@
 
 namespace thorin::core {
 
-TEST(Cn, Simpel) {
+TEST(Cn, Simple) {
     World w;
     auto C = w.cn_type(w.unit());
     auto k = w.cn(parse(w, "[int {32s64: nat}, cn int {32s64: nat}]"), {"k"});
