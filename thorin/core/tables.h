@@ -45,7 +45,40 @@ constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & featu
 /// All cast instructions that cast from/to real/signed/unsigned.
 #define THORIN_CAST(m) m(Cast, scast) m(Cast, ucast) m(Cast, rcast) m(Cast, s2r) m(Cast, u2r) m(Cast, r2s) m(Cast, r2u)
 
-#define THORIN_I_CMP(m)           /* E S U G                                      */ \
+#define THORIN_I_CMP(m)           /* E LU LV GU GV                                */ \
+                     m(ICmp, t)   /* o  o  o  o  o - always true                  */ \
+                     m(ICmp, _)   /* o  o  o  o  x - always true                  */ \
+                     m(ICmp, _)   /* o  o  o  x  o - always true                  */ \
+                     m(ICmp, _)   /* o  o  o  x  x - always true                  */ \
+                     m(ICmp, _)   /* o  o  x  o  o - always true                  */ \
+                     m(ICmp, _)   /* o  o  x  o  x - always true                  */ \
+                     m(ICmp, _)   /* o  o  x  x  o - always true                  */ \
+                     m(ICmp, _)   /* o  o  x  x  x - always true                  */ \
+                     m(ICmp, _)   /* o  x  o  o  o - always true                  */ \
+                     m(ICmp, _)   /* o  x  o  o  x - always true                  */ \
+                     m(ICmp, _)   /* o  x  o  x  o - always true                  */ \
+                     m(ICmp, _)   /* o  x  o  x  x - always true                  */ \
+                     m(ICmp, _)   /* o  x  x  o  o - always true                  */ \
+                     m(ICmp, _)   /* o  x  x  o  x - always true                  */ \
+                     m(ICmp, _)   /* o  x  x  x  o - always true                  */ \
+                     m(ICmp, ne)  /* o  x  x  x  x - always true                  */ \
+                     m(ICmp, eq)  /* x  o  o  o  o - always true                  */ \
+                     m(ICmp, _)   /* x  o  o  o  x - always true                  */ \
+                     m(ICmp, _)   /* x  o  o  x  o - always true                  */ \
+                     m(ICmp, _)   /* x  o  o  x  x - always true                  */ \
+                     m(ICmp, _)   /* x  o  x  o  o - always true                  */ \
+                     m(ICmp, _)   /* x  o  x  o  x - always true                  */ \
+                     m(ICmp, _)   /* x  o  x  x  o - always true                  */ \
+                     m(ICmp, _)   /* x  o  x  x  x - always true                  */ \
+                     m(ICmp, _)   /* x  x  o  o  o - always true                  */ \
+                     m(ICmp, _)   /* x  x  o  o  x - always true                  */ \
+                     m(ICmp, _)   /* x  x  o  x  o - always true                  */ \
+                     m(ICmp, _)   /* x  x  o  x  x - always true                  */ \
+                     m(ICmp, _)   /* x  x  x  o  o - always true                  */ \
+                     m(ICmp, _)   /* x  x  x  o  x - always true                  */ \
+                     m(ICmp, _)   /* x  x  x  x  o - always true                  */ \
+                     m(ICmp, f)   /* x  x  x  x  x - always false                 */ \
+
                      m(ICmp, t)   /* o o o o - always true                        */ \
                      m(ICmp, sugt)/* o o o x - signed and unsigned greater than   */ \
                      m(ICmp, ult) /* o o x o - unsigned less than                 */ \
