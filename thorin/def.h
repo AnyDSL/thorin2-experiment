@@ -126,7 +126,6 @@ public:
         Lit, Axiom,
         Pick, Intersection,
         Qualifier, QualifierType,
-        Rule, RuleType,
         Star, Universe,
         Bottom, Top,
         Singleton,
