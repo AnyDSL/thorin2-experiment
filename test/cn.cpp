@@ -9,7 +9,9 @@ namespace thorin::core {
 TEST(Cn, Simple) {
     World w;
     auto C = w.cn_type(w.unit());
+    C->dump();
     auto k = w.cn(parse(w, "[int {32s64: nat}, cn int {32s64: nat}]"), {"k"});
+    k->type()->dump();
     auto x = k->param(0, {"x"});
     auto r = k->param(1, {"r"});
     auto t = w.cn(C, {"t"});

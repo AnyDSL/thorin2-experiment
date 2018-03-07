@@ -253,7 +253,6 @@ Variant::Variant(const Def* type, const SortedDefSet& ops, Debug dbg)
 
 bool Arity::has_values() const { return true; }
 bool Axiom::has_values() const { return sort() == Sort::Type && !type()->has_values(); }
-bool CnType::has_values() const { return true; }
 bool Intersection::has_values() const {
     return std::all_of(ops().begin(), ops().end(), [&](auto op){ return op->has_values(); });
 }
@@ -289,11 +288,6 @@ const Def* Def::kind_qualifier() const {
 }
 
 const Def* ArityKind::kind_qualifier() const { return op(0); }
-
-const Def* CnType::kind_qualifier() const {
-    // TODO
-    return world().unlimited();
-}
 
 const Def* MultiArityKind::kind_qualifier() const { return op(0); }
 
@@ -360,7 +354,6 @@ const Def* ArityKind     ::arity() const { return world().arity(1); }
 const Def* App           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Axiom         ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Cn            ::arity() const { return world().arity(1); }
-const Def* CnType        ::arity() const { return world().arity(1); }
 const Def* Bottom        ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 // const Def* Intersection::arity() const { return TODO; }
 const Def* Lit           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
@@ -445,7 +438,6 @@ const Def* Arity         ::rebuild(World& to, const Def* t, Defs    ) const { re
 const Def* ArityKind     ::rebuild(World& to, const Def*  , Defs ops) const { return to.arity_kind(ops[0]); }
 const Def* Axiom         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Cn            ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
-const Def* CnType        ::rebuild(World& to, const Def*  , Defs ops) const { return to.cn_type(ops[0], debug()); }
 const Def* Bottom        ::rebuild(World& to, const Def* t, Defs    ) const { return to.bottom(t); }
 const Def* Extract       ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
@@ -486,7 +478,7 @@ const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { re
  */
 
 Axiom*   Axiom  ::vstub(World& to, const Def* type, Debug dbg) const { return to.axiom(type, normalizer(), dbg); }
-Cn*      Cn     ::vstub(World& to, const Def* type, Debug dbg) const { return to.cn(type->as<CnType>()->domain(), dbg); }
+Cn*      Cn     ::vstub(World& to, const Def* type, Debug dbg) const { return to.cn(type->as<Pi>()->domain(), dbg); }
 Lambda*  Lambda ::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.lambda (type->as<Pi>(),  dbg); }
 Sigma*   Sigma  ::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.sigma  (type, num_ops(), dbg); }
 Variant* Variant::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.variant(type, num_ops(), dbg); }
@@ -542,7 +534,6 @@ bool Pi::vsubtype_of(const Def* def) const {
 // bool Variadic::vsubtype_of(const Def* def) const {
 // }
 
-bool CnType        ::assignable(const Def* def) const { return def->destructing_type()->subtype_of(this); }
 bool MultiArityKind::assignable(const Def* def) const { return def->destructing_type()->subtype_of(this); }
 bool Pi            ::assignable(const Def* def) const { return def->destructing_type()->subtype_of(this); }
 
@@ -747,10 +738,6 @@ std::ostream& Axiom::vstream(std::ostream& os) const {
 
 std::ostream& Cn::vstream(std::ostream& os) const {
     return streamf(os, "{}({})", callee(), arg());
-}
-
-std::ostream& CnType::vstream(std::ostream& os) const {
-    return streamf(os, "cn {}", domain());
 }
 
 std::ostream& Bottom::vstream(std::ostream& os) const { return streamf(os, "{{⊥: {}}}", type()); }

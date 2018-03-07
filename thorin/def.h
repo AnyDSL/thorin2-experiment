@@ -121,7 +121,7 @@ public:
         Any, Match, Variant,
         App, Lambda, Pi,
         Arity, ArityKind, MultiArityKind,
-        Cn, Param, CnType,
+        Cn, Param,
         Extract, Insert, Tuple, Pack, Sigma, Variadic,
         Lit, Axiom,
         Pick, Intersection,
@@ -971,29 +971,6 @@ private:
 
 //------------------------------------------------------------------------------
 
-/// Type type of a continuation @p Cn.
-class CnType : public Def {
-private:
-    CnType(const Def* type, const Def* domain, Debug dbg)
-        : Def(Tag::CnType, type, {domain}, dbg)
-    {}
-
-public:
-    const Def* domain() const { return op(0); }
-
-    const Def* arity() const override;
-    bool assignable(const Def* def) const override;
-    bool has_values() const override;
-    const Def* kind_qualifier() const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
-private:
-    //bool vsubtype_of(World&, const Def* def) const override;
-    std::ostream& vstream(std::ostream&) const override;
-
-    friend class World;
-};
-
 typedef std::vector<Cn*> Cns;
 
 /// A continuation value.
@@ -1001,7 +978,7 @@ class Cn : public Def {
 private:
     struct Extra { mutable Debug jump_debug_; };
 
-    Cn(const CnType* type, Debug dbg)
+    Cn(const Pi* type, Debug dbg)
         : Def(Tag::Cn, type, 3, dbg)
     {}
 
@@ -1010,7 +987,7 @@ public:
     const Def* filter() const { return op(0); }
     const Def* callee() const { return op(1); }
     const Def* arg() const { return op(2); }
-    const CnType* type() const { return Def::type()->as<CnType>(); }
+    const Pi* type() const { return Def::type()->as<Pi>(); }
     /**
      * Since @p Param%s are @em structural, this getter simply creates a new @p Param with itself as operand.
      * Due to hash-consing there will only be maximal one @p Param object.

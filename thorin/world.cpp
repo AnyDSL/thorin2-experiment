@@ -710,13 +710,6 @@ const Lit* World::lit_nat(int64_t val, Location location) {
     return result;
 }
 
-const CnType* World::cn_type(const Def* domain, Debug dbg) {
-    // TODO
-    //auto type = type_bound(LUB, domain, false);
-    auto type = star();
-    return unify<CnType>(1, type, domain, dbg);
-}
-
 Cn* World::cn(const Def* domain, Debug dbg) {
     return insert<Cn>(3, cn_type(domain), dbg);
 }

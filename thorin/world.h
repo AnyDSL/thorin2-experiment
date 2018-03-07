@@ -94,6 +94,8 @@ public:
         return pi(domain, codomain, unlimited(), dbg);
     }
     const Pi* pi(const Def* domain, const Def* codomain, const Def* qualifier, Debug dbg = {});
+    const Pi* cn_type(const Def* domain, Debug dbg = {}) { return pi(domain, bottom(star()), dbg); }
+    const Pi* cn_type(Defs domain, Debug dbg = {}) { return cn_type(sigma(domain), dbg); }
     //@}
 
     //@{ create Lambda
@@ -107,6 +109,8 @@ public:
                 "function type {} of a nominal lambda may not contain free variables", type);
         return insert<Lambda>(1, type, dbg);
     }
+    Cn* cn(const Def* domain, Debug dbg = {});
+    const Param* param(const Cn* cn, Debug dbg = {}) { return unify<Param>(1, cn->type()->op(0), cn, dbg); }
     //@}
 
     //@{ create App
@@ -275,13 +279,6 @@ public:
     const Lit* lit(bool val) { return lit_bool_[size_t(val)]; }
     const Lit* lit_false() { return lit_bool_[0]; }
     const Lit* lit_true()  { return lit_bool_[1]; }
-    //@}
-
-    //@{ continuations
-    const CnType* cn_type(const Def* domain, Debug dbg = {});
-    const CnType* cn_type(Defs domain, Debug dbg = {}) { return cn_type(sigma(domain), dbg); }
-    Cn* cn(const Def* domain, Debug dbg = {});
-    const Param* param(const Cn* cn, Debug dbg = {}) { return unify<Param>(1, cn->type()->op(0), cn, dbg); }
     //@}
 
     //@{ intrinsics (AKA built-in Cont%inuations)
