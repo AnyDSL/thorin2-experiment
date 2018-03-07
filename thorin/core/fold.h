@@ -1,5 +1,5 @@
-#ifndef THORIN_UTIL_FOLD_H
-#define THORIN_UTIL_FOLD_H
+#ifndef THORIN_CORE_FOLD_H
+#define THORIN_CORE_FOLD_H
 
 #include "thorin/core/tables.h"
 #include "thorin/util/types.h"

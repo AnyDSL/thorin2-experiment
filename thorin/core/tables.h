@@ -1,5 +1,5 @@
-#ifndef THORIN_TABLES_H
-#define THORIN_TABLES_H
+#ifndef THORIN_CORE_TABLES_H
+#define THORIN_CORE_TABLES_H
 
 #include "thorin/util/utility.h"
 
