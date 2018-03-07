@@ -425,7 +425,7 @@ protected:
     }
     template<class T, class... Args>
     T* alloc(size_t num_ops, Args&&... args) {
-        static_assert(sizeof(Def) == sizeof(T), "you are not allowed to introduce any additional data in subclasses of Def - use see 'Extra' struct");
+        static_assert(sizeof(Def) == sizeof(T), "you are not allowed to introduce any additional data in subclasses of Def - use 'Extra' struct");
         Lock lock;
         size_t num_bytes = num_bytes_of<T>(num_ops);
         num_bytes = (num_bytes + (sizeof(void*) - 1)) & ~(sizeof(void*)-1);
