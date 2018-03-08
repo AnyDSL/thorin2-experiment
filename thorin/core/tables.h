@@ -44,7 +44,7 @@ enum class RFlags : int64_t {
                      m(ICmp,    g)   /*  o  o x o o - greater (same sign)                             */ \
                      m(ICmp,   ge)   /*  o  o x o x - greater or equal                                */ \
                      m(ICmp,   gl)   /*  o  o x x o - greater or less                                 */ \
-                     m(ICmp,   ss)   /*  o  o x x x - same sign                                       */ \
+                     m(ICmp,  gle)   /*  o  o x x x - greater or less or equal == same sign           */ \
                      m(ICmp,   mp)   /*  o  x o o o - minus plus                                      */ \
                      m(ICmp,  mpe)   /*  o  x o o x - minus plus or equal                             */ \
                      m(ICmp,   sl)   /*  o  x o x o - signed less                                     */ \
@@ -118,6 +118,7 @@ enum class ICmp : size_t {
 #undef CODE
     ng = sule,
     nl = suge,
+    ss = gle,
 };
 
 enum class RCmp : size_t {
