@@ -18,7 +18,7 @@ TEST(Cn, Simple) {
     auto f = w.cn(C, {"f"});
     auto n = w.cn(parse(w, "[int {32s64: nat}]"));
     auto i0 = w.lit_i(0_u32);
-    auto cmp = w.op<ICmp::ugt>(x, i0);
+    auto cmp = w.op<ICmp::ug>(x, i0);
     k->br(cmp, t, f);
     t->jump(n, w.lit_i(23_u32));
     f->jump(n, w.lit_i(42_u32));
