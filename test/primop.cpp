@@ -68,8 +68,8 @@ void test_icmp(World& w) {
     EXPECT_EQ(w.op<ICmp::sle>(l23, l23), lt);
     EXPECT_EQ(w.op<ICmp::ug >(l23, l23), lf);
     EXPECT_EQ(w.op<ICmp::uge>(l23, l23), lt);
-    EXPECT_EQ(w.op<ICmp::ul> (l23, l23), lt);
-    EXPECT_EQ(w.op<ICmp::ule>(l23, l23), lf);
+    EXPECT_EQ(w.op<ICmp::ul> (l23, l23), lf);
+    EXPECT_EQ(w.op<ICmp::ule>(l23, l23), lt);
 
     EXPECT_EQ(w.op<ICmp::e  >(l23, l42), lf);
     EXPECT_EQ(w.op<ICmp::ne >(l23, l42), lt);
@@ -102,26 +102,26 @@ void test_rcmp(World& w) {
     auto lt = w.lit_true();
     auto lf = w.lit_false();
 
-    EXPECT_EQ(w.op<RCmp::oeq>(l23, l23), lt);
-    EXPECT_EQ(w.op<RCmp::one>(l23, l23), lf);
-    EXPECT_EQ(w.op<RCmp::oge>(l23, l23), lt);
-    EXPECT_EQ(w.op<RCmp::ogt>(l23, l23), lf);
-    EXPECT_EQ(w.op<RCmp::ole>(l23, l23), lt);
-    EXPECT_EQ(w.op<RCmp::olt>(l23, l23), lf);
+    EXPECT_EQ(w.op<RCmp:: e>(l23, l23), lt);
+    EXPECT_EQ(w.op<RCmp::ne>(l23, l23), lf);
+    EXPECT_EQ(w.op<RCmp::ge>(l23, l23), lt);
+    EXPECT_EQ(w.op<RCmp:: g>(l23, l23), lf);
+    EXPECT_EQ(w.op<RCmp::le>(l23, l23), lt);
+    EXPECT_EQ(w.op<RCmp:: l>(l23, l23), lf);
 
-    EXPECT_EQ(w.op<RCmp::oeq>(l23, l42), lf);
-    EXPECT_EQ(w.op<RCmp::one>(l23, l42), lt);
-    EXPECT_EQ(w.op<RCmp::oge>(l23, l42), lf);
-    EXPECT_EQ(w.op<RCmp::ogt>(l23, l42), lf);
-    EXPECT_EQ(w.op<RCmp::ole>(l23, l42), lt);
-    EXPECT_EQ(w.op<RCmp::olt>(l23, l42), lt);
+    EXPECT_EQ(w.op<RCmp:: o>(l23, l42), lt);
+    EXPECT_EQ(w.op<RCmp::ne>(l23, l42), lt);
+    EXPECT_EQ(w.op<RCmp:: g>(l23, l42), lf);
+    EXPECT_EQ(w.op<RCmp::ge>(l23, l42), lf);
+    EXPECT_EQ(w.op<RCmp:: l>(l23, l42), lt);
+    EXPECT_EQ(w.op<RCmp::le>(l23, l42), lt);
 
-    EXPECT_EQ(w.op<RCmp::oeq>(l42, l23), lf);
-    EXPECT_EQ(w.op<RCmp::one>(l42, l23), lt);
-    EXPECT_EQ(w.op<RCmp::oge>(l42, l23), lt);
-    EXPECT_EQ(w.op<RCmp::ogt>(l42, l23), lt);
-    EXPECT_EQ(w.op<RCmp::ole>(l42, l23), lf);
-    EXPECT_EQ(w.op<RCmp::olt>(l42, l23), lf);
+    EXPECT_EQ(w.op<RCmp:: e>(l42, l23), lf);
+    EXPECT_EQ(w.op<RCmp::ne>(l42, l23), lt);
+    EXPECT_EQ(w.op<RCmp:: g>(l42, l23), lt);
+    EXPECT_EQ(w.op<RCmp::ge>(l42, l23), lt);
+    EXPECT_EQ(w.op<RCmp:: l>(l42, l23), lf);
+    EXPECT_EQ(w.op<RCmp::le>(l42, l23), lf);
 }
 
 TEST(Primop, Cmp) {

@@ -25,15 +25,6 @@ enum class RFlags : int64_t {
     fast = nnan | ninf | nsz | arcp | contract | afn | reassoc,
 };
 
-constexpr WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int64_t(b)); }
-constexpr WFlags operator&(WFlags a, WFlags b) { return WFlags(int64_t(a) & int64_t(b)); }
-
-constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
-constexpr RFlags operator&(RFlags a, RFlags b) { return RFlags(int64_t(a) & int64_t(b)); }
-
-constexpr bool has_feature(WFlags flags, WFlags feature) { return (flags & feature) == feature; }
-constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & feature) == feature; }
-
 /// Integer instructions that might wrap and, hence, take @p WFlags.
 #define THORIN_W_OP(m) m(WOp, add) m(WOp, sub) m(WOp, mul) m(WOp, shl)
 /// Integer instructions that might produce a side effect (division by zero).
@@ -56,18 +47,18 @@ constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & featu
                      m(ICmp,   ss)   /*  o  o x x x - same sign                                       */ \
                      m(ICmp,   mp)   /*  o  x o o o - minus plus                                      */ \
                      m(ICmp,  mpe)   /*  o  x o o x - minus plus or equal                             */ \
-                     m(ICmp,   ul)   /*  o  x o x o - unsigned less                                   */ \
-                     m(ICmp,  ule)   /*  o  x o x x - unsigned less or equal                          */ \
-                     m(ICmp,   sg)   /*  o  x x o o - signed greater                                  */ \
-                     m(ICmp,  sge)   /*  o  x x o x - signed greater or equal                         */ \
+                     m(ICmp,   sl)   /*  o  x o x o - signed less                                     */ \
+                     m(ICmp,  sle)   /*  o  x o x x - signed less or equal                            */ \
+                     m(ICmp,   ug)   /*  o  x x o o - unsigned greater                                */ \
+                     m(ICmp,  uge)   /*  o  x x o x - unsigned greater or equal                       */ \
                      m(ICmp, glmp)   /*  o  x x x o - greater or less or minus plus                   */ \
                      m(ICmp,  npm)   /*  o  x x x x - not plus minus                                  */ \
                      m(ICmp,   pm)   /*  x  o o o o - plus minus                                      */ \
                      m(ICmp,  pme)   /*  x  o o o x - plus minus or equal                             */ \
-                     m(ICmp,   sl)   /*  x  o o x o - signed less                                     */ \
-                     m(ICmp,  sle)   /*  x  o o x x - signed less or equal                            */ \
-                     m(ICmp,   ug)   /*  x  o x o o - unsigned greater                                */ \
-                     m(ICmp,  uge)   /*  x  o x o x - unsigned greater or equal                       */ \
+                     m(ICmp,   ul)   /*  x  o o x o - unsigned less                                   */ \
+                     m(ICmp,  ule)   /*  x  o o x x - unsigned less or equal                          */ \
+                     m(ICmp,   sg)   /*  x  o x o o - signed greater                                  */ \
+                     m(ICmp,  sge)   /*  x  o x o x - signed greater or equal                         */ \
                      m(ICmp, glpm)   /*  x  o x x o - greater or less or plus minus                   */ \
                      m(ICmp,  nmp)   /*  x  o x x x - not minus plus                                  */ \
                      m(ICmp,   ds)   /*  x  x o o o - different sign                                  */ \
@@ -77,25 +68,25 @@ constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & featu
                      m(ICmp,  sug)   /*  x  x x o o - signed or unsigned greater                      */ \
                      m(ICmp, suge)   /*  x  x x o x - signed or unsigned greater or equal == not less */ \
                      m(ICmp,   ne)   /*  x  x x x o - not equal                                       */ \
-                     m(ICmp,    t)   /*  x  x x x x - always true                                     */ \
+                     m(ICmp,    t)   /*  x  x x x x - always true                                     */
 
-#define THORIN_R_CMP(m)           /* O E G L                                      */ \
-                     m(RCmp, t)   /* o o o o - always true                        */ \
-                     m(RCmp, ult) /* o o o x - unordered or less than             */ \
-                     m(RCmp, ugt) /* o o x o - unordered or greater than          */ \
-                     m(RCmp, une) /* o o x x - unordered or not equal             */ \
-                     m(RCmp, ueq) /* o x o o - unordered or equal                 */ \
-                     m(RCmp, ule) /* o x o x - unordered or less than or equal    */ \
-                     m(RCmp, uge) /* o x x o - unordered or greater than or equal */ \
-                     m(RCmp, uno) /* o x x x - unordered (either NaNs)            */ \
-                     m(RCmp, ord) /* x o o o - ordered (no NaNs)                  */ \
-                     m(RCmp, olt) /* x o o x - ordered and less than              */ \
-                     m(RCmp, ogt) /* x o x o - ordered and greater than           */ \
-                     m(RCmp, one) /* x o x x - ordered and not equal              */ \
-                     m(RCmp, oeq) /* x x o o - ordered and equal                  */ \
-                     m(RCmp, ole) /* x x o x - ordered and less than or equal     */ \
-                     m(RCmp, oge) /* x x x o - ordered and greater than or equal  */ \
-                     m(RCmp, f)   /* x x x x - always false                       */
+#define THORIN_R_CMP(m)           /* U G L E                                 */ \
+                     m(RCmp,   f) /* o o o o - always false                  */ \
+                     m(RCmp,   e) /* o o o x - ordered and equal             */ \
+                     m(RCmp,   l) /* o o x o - ordered and less              */ \
+                     m(RCmp,  le) /* o o x x - ordered and less or equal     */ \
+                     m(RCmp,   g) /* o x o o - ordered and greater           */ \
+                     m(RCmp,  ge) /* o x o x - ordered and greater or equal  */ \
+                     m(RCmp,  ne) /* o x x o - ordered and not equal         */ \
+                     m(RCmp,   o) /* o x x x - ordered (no NaNs)             */ \
+                     m(RCmp,   u) /* x o o o - unordered (either NaNs)       */ \
+                     m(RCmp,  ue) /* x o o x - unordered or equal            */ \
+                     m(RCmp,  ul) /* x o x o - unordered or less             */ \
+                     m(RCmp, ule) /* x o x x - unordered or less or equal    */ \
+                     m(RCmp,  ug) /* x x o o - unordered or greater          */ \
+                     m(RCmp, uge) /* x x o x - unordered or greater or equal */ \
+                     m(RCmp, une) /* x x x o - unordered or not equal        */ \
+                     m(RCmp,   t) /* x x x x - always true                   */
 
 enum class WOp : size_t {
 #define CODE(T, o) o,
@@ -138,6 +129,21 @@ enum class Cast : size_t {
     THORIN_CAST(CODE)
 #undef CODE
 };
+
+constexpr WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int64_t(b)); }
+constexpr WFlags operator&(WFlags a, WFlags b) { return WFlags(int64_t(a) & int64_t(b)); }
+
+constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
+constexpr RFlags operator&(RFlags a, RFlags b) { return RFlags(int64_t(a) & int64_t(b)); }
+
+constexpr ICmp operator|(ICmp a, ICmp b) { return ICmp(int64_t(a) | int64_t(b)); }
+constexpr ICmp operator&(ICmp a, ICmp b) { return ICmp(int64_t(a) & int64_t(b)); }
+
+constexpr RCmp operator|(RCmp a, RCmp b) { return RCmp(int64_t(a) | int64_t(b)); }
+constexpr RCmp operator&(RCmp a, RCmp b) { return RCmp(int64_t(a) & int64_t(b)); }
+
+constexpr bool has_feature(WFlags flags, WFlags feature) { return (flags & feature) == feature; }
+constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & feature) == feature; }
 
 template<class T> constexpr auto Num = size_t(-1);
 
