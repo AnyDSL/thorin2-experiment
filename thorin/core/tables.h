@@ -45,56 +45,39 @@ constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & featu
 /// All cast instructions that cast from/to real/signed/unsigned.
 #define THORIN_CAST(m) m(Cast, scast) m(Cast, ucast) m(Cast, rcast) m(Cast, s2r) m(Cast, u2r) m(Cast, r2s) m(Cast, r2u)
 
-#define THORIN_I_CMP(m)           /* E LU LV GU GV                                */ \
-                     m(ICmp, t)   /* o  o  o  o  o - always true                  */ \
-                     m(ICmp, _)   /* o  o  o  o  x - always true                  */ \
-                     m(ICmp, _)   /* o  o  o  x  o - always true                  */ \
-                     m(ICmp, _)   /* o  o  o  x  x - always true                  */ \
-                     m(ICmp, _)   /* o  o  x  o  o - always true                  */ \
-                     m(ICmp, _)   /* o  o  x  o  x - always true                  */ \
-                     m(ICmp, _)   /* o  o  x  x  o - always true                  */ \
-                     m(ICmp, _)   /* o  o  x  x  x - always true                  */ \
-                     m(ICmp, _)   /* o  x  o  o  o - always true                  */ \
-                     m(ICmp, _)   /* o  x  o  o  x - always true                  */ \
-                     m(ICmp, _)   /* o  x  o  x  o - always true                  */ \
-                     m(ICmp, _)   /* o  x  o  x  x - always true                  */ \
-                     m(ICmp, _)   /* o  x  x  o  o - always true                  */ \
-                     m(ICmp, _)   /* o  x  x  o  x - always true                  */ \
-                     m(ICmp, _)   /* o  x  x  x  o - always true                  */ \
-                     m(ICmp, ne)  /* o  x  x  x  x - always true                  */ \
-                     m(ICmp, eq)  /* x  o  o  o  o - always true                  */ \
-                     m(ICmp, _)   /* x  o  o  o  x - always true                  */ \
-                     m(ICmp, _)   /* x  o  o  x  o - always true                  */ \
-                     m(ICmp, _)   /* x  o  o  x  x - always true                  */ \
-                     m(ICmp, _)   /* x  o  x  o  o - always true                  */ \
-                     m(ICmp, _)   /* x  o  x  o  x - always true                  */ \
-                     m(ICmp, _)   /* x  o  x  x  o - always true                  */ \
-                     m(ICmp, _)   /* x  o  x  x  x - always true                  */ \
-                     m(ICmp, _)   /* x  x  o  o  o - always true                  */ \
-                     m(ICmp, _)   /* x  x  o  o  x - always true                  */ \
-                     m(ICmp, _)   /* x  x  o  x  o - always true                  */ \
-                     m(ICmp, _)   /* x  x  o  x  x - always true                  */ \
-                     m(ICmp, _)   /* x  x  x  o  o - always true                  */ \
-                     m(ICmp, _)   /* x  x  x  o  x - always true                  */ \
-                     m(ICmp, _)   /* x  x  x  x  o - always true                  */ \
-                     m(ICmp, f)   /* x  x  x  x  x - always false                 */ \
-
-                     m(ICmp, t)   /* o o o o - always true                        */ \
-                     m(ICmp, sugt)/* o o o x - signed and unsigned greater than   */ \
-                     m(ICmp, ult) /* o o x o - unsigned less than                 */ \
-                     m(ICmp, sgt) /* o o x x - signed greater than                */ \
-                     m(ICmp, slt) /* o x o o - signed less than                   */ \
-                     m(ICmp, ugt) /* o x o x - unsigned greater than              */ \
-                     m(ICmp, sult)/* o x x o - signed and unsigned less than      */ \
-                     m(ICmp, ne)  /* o x x x - not equal                          */ \
-                     m(ICmp, eq)  /* x o o o - equal                              */ \
-                     m(ICmp, suge)/* x o o x - signed and unsigned greater equal  */ \
-                     m(ICmp, ule) /* x o x o - unsigned less or equal             */ \
-                     m(ICmp, sge) /* x o x x - signed greater or equal            */ \
-                     m(ICmp, sle) /* x x o o - signed less or equal               */ \
-                     m(ICmp, uge) /* x x o x - unsigned greater or equal          */ \
-                     m(ICmp, sule)/* x x x o - signed and unsigned less or equal  */ \
-                     m(ICmp, f)   /* x x x x - always false                       */
+#define THORIN_I_CMP(m)              /* PM MP G L E                                                   */ \
+                     m(ICmp,    f)   /*  o  o o o o - always false                                    */ \
+                     m(ICmp,    e)   /*  o  o o o x - equal                                           */ \
+                     m(ICmp,    l)   /*  o  o o x o - less (same sign)                                */ \
+                     m(ICmp,   le)   /*  o  o o x x - less or equal                                   */ \
+                     m(ICmp,    g)   /*  o  o x o o - greater (same sign)                             */ \
+                     m(ICmp,   ge)   /*  o  o x o x - greater or equal                                */ \
+                     m(ICmp,   gl)   /*  o  o x x o - greater or less                                 */ \
+                     m(ICmp,   ss)   /*  o  o x x x - same sign                                       */ \
+                     m(ICmp,   mp)   /*  o  x o o o - minus plus                                      */ \
+                     m(ICmp,  mpe)   /*  o  x o o x - minus plus or equal                             */ \
+                     m(ICmp,   ul)   /*  o  x o x o - unsigned less                                   */ \
+                     m(ICmp,  ule)   /*  o  x o x x - unsigned less or equal                          */ \
+                     m(ICmp,   sg)   /*  o  x x o o - signed greater                                  */ \
+                     m(ICmp,  sge)   /*  o  x x o x - signed greater or equal                         */ \
+                     m(ICmp, glmp)   /*  o  x x x o - greater or less or minus plus                   */ \
+                     m(ICmp,  npm)   /*  o  x x x x - not plus minus                                  */ \
+                     m(ICmp,   pm)   /*  x  o o o o - plus minus                                      */ \
+                     m(ICmp,  pme)   /*  x  o o o x - plus minus or equal                             */ \
+                     m(ICmp,   sl)   /*  x  o o x o - signed less                                     */ \
+                     m(ICmp,  sle)   /*  x  o o x x - signed less or equal                            */ \
+                     m(ICmp,   ug)   /*  x  o x o o - unsigned greater                                */ \
+                     m(ICmp,  uge)   /*  x  o x o x - unsigned greater or equal                       */ \
+                     m(ICmp, glpm)   /*  x  o x x o - greater or less or plus minus                   */ \
+                     m(ICmp,  nmp)   /*  x  o x x x - not minus plus                                  */ \
+                     m(ICmp,   ds)   /*  x  x o o o - different sign                                  */ \
+                     m(ICmp,  dse)   /*  x  x o o x - different sign or equal                         */ \
+                     m(ICmp,  sul)   /*  x  x o x o - signed or unsigned less                         */ \
+                     m(ICmp, sule)   /*  x  x o x x - signed or unsigned less or equal == not greater */ \
+                     m(ICmp,  sug)   /*  x  x x o o - signed or unsigned greater                      */ \
+                     m(ICmp, suge)   /*  x  x x o x - signed or unsigned greater or equal == not less */ \
+                     m(ICmp,   ne)   /*  x  x x x o - not equal                                       */ \
+                     m(ICmp,    t)   /*  x  x x x x - always true                                     */ \
 
 #define THORIN_R_CMP(m)           /* O E G L                                      */ \
                      m(RCmp, t)   /* o o o o - always true                        */ \
