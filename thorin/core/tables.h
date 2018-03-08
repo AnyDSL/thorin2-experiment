@@ -116,6 +116,8 @@ enum class ICmp : size_t {
 #define CODE(T, o) o,
     THORIN_I_CMP(CODE)
 #undef CODE
+    ng = sule,
+    nl = suge,
 };
 
 enum class RCmp : size_t {
