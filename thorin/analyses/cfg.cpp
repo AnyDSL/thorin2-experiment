@@ -23,7 +23,7 @@ void CFNode::link(const CFNode* other) const {
     other->preds_.emplace(this);
 }
 
-std::ostream& CFNode::stream(std::ostream& out) const { return streamf(out, "{}", cn()); }
+std::ostream& CFNode::stream(std::ostream& out) const { return streamf(out, "{}", lambda()); }
 
 //------------------------------------------------------------------------------
 
@@ -32,12 +32,12 @@ CFA::CFA(const Scope& scope)
     , entry_(node(scope.entry()))
     , exit_ (node(scope.exit() ))
 {
-    std::queue<Cn*> cfg_queue;
-    CnSet cfg_done;
+    std::queue<Lambda*> cfg_queue;
+    LambdaSet cfg_done;
 
-    auto cfg_enqueue = [&] (Cn* cn) {
-        if (cfg_done.emplace(cn).second)
-            cfg_queue.push(cn);
+    auto cfg_enqueue = [&] (Lambda* lambda) {
+        if (cfg_done.emplace(lambda).second)
+            cfg_queue.push(lambda);
     };
 
     cfg_queue.push(scope.entry());
@@ -49,8 +49,8 @@ CFA::CFA(const Scope& scope)
 
         auto enqueue = [&] (const Def* def) {
             // TODO order
-            if (/*def->cn_order() > 0 &&*/ scope.contains(def) && done.emplace(def).second) {
-                if (auto dst = def->isa_cn()) {
+            if (/*def->lambda_order() > 0 &&*/ scope.contains(def) && done.emplace(def).second) {
+                if (auto dst = def->isa_lambda()) {
                     cfg_enqueue(dst);
                     node(src)->link(node(dst));
                 } else
@@ -71,10 +71,10 @@ CFA::CFA(const Scope& scope)
     verify();
 }
 
-const CFNode* CFA::node(Cn* cn) {
-    auto& n = nodes_[cn];
+const CFNode* CFA::node(Lambda* lambda) {
+    auto& n = nodes_[lambda];
     if (n == nullptr)
-        n = new CFNode(cn);
+        n = new CFNode(lambda);
     return n;
 }
 
@@ -151,7 +151,7 @@ void CFA::verify() {
     for (const auto& p : nodes()) {
         auto in = p.second;
         if (in != entry() && in->preds_.size() == 0) {
-            VLOG("missing predecessors: {}", in->cn());
+            VLOG("missing predecessors: {}", in->lambda());
             error = true;
         }
     }

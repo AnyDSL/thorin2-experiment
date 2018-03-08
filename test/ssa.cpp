@@ -8,9 +8,9 @@
 namespace thorin::core {
 
 TEST(SSA, Simple) {
+#if 0
     World w;
     SSABuilder builder(w);
-#if 0
 
     // create the four functions:
     auto main = world.lambda(world.fn_type(

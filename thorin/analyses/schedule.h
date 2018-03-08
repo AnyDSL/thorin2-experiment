@@ -18,7 +18,7 @@ public:
         Block() {}
 
         const CFNode* node() const { return node_; }
-        Cn* cn() const { return node()->cn(); }
+        Lambda* lambda() const { return node()->lambda(); }
         ArrayRef<const Def*> defs() const { return defs_; }
         size_t index() const { return index_; }
 

@@ -80,17 +80,17 @@ void Scheduler::compute_def2uses() {
     };
 
     for (auto n : cfg_.reverse_post_order()) {
-        queue.push(n->cn());
-        auto p = done.emplace(n->cn());
+        queue.push(n->lambda());
+        auto p = done.emplace(n->lambda());
         assert_unused(p.second);
     }
 
     while (!queue.empty()) {
         auto def = pop(queue);
         for (size_t i = 0, e = def->num_ops(); i != e; ++i) {
-            // all reachable cns have already been registered above
-            // NOTE we might still see references to unreachable cns in the schedule
-            if (!def->op(i)->isa<Cn>())
+            // all reachable lambdas have already been registered above
+            // NOTE we might still see references to unreachable lambdas in the schedule
+            if (!def->op(i)->isa<Lambda>())
                 enqueue(def, i, def->op(i));
         }
     }
@@ -102,11 +102,11 @@ const CFNode* Scheduler::schedule_early(const Def* def) {
         return i->second;
 
     if (auto param = def->isa<Param>())
-        return def2early_[def] = cfg_[param->cn()];
+        return def2early_[def] = cfg_[param->lambda()];
 
     auto result = cfg_.entry();
     for (auto op : def->ops()) {
-        if (!op->isa_cn() && def2uses_.find(op) != def2uses_.end()) {
+        if (!op->isa_lambda() && def2uses_.find(op) != def2uses_.end()) {
             auto n = schedule_early(op);
             if (domtree_.depth(n) > domtree_.depth(result))
                 result = n;
@@ -121,8 +121,8 @@ const CFNode* Scheduler::schedule_late(const Def* def) {
     if (i != def2late_.end())
         return i->second;
 
-    if (auto cn = def->isa_cn())
-        return def2late_[def] = cfg_[cn];
+    if (auto lambda = def->isa_lambda())
+        return def2late_[def] = cfg_[lambda];
 
     const CFNode* result = nullptr;
     for (auto use : uses(def)) {
@@ -239,8 +239,8 @@ void Schedule::verify() {
     Schedule::Map<const Def*> block2mem(*this);
 
     for (auto& block : *this) {
-        const Def* mem = block.cn()->mem_param();
-        auto idom = block.cn() != scope().entry() ? domtree.idom(block.node()) : block.node();
+        const Def* mem = block.lambda()->mem_param();
+        auto idom = block.lambda() != scope().entry() ? domtree.idom(block.node()) : block.node();
         mem = mem ? mem : block2mem[(*this)[idom]];
         for (auto def : block) {
             if (auto memop = def->isa<MemOp>()) {
@@ -258,17 +258,17 @@ void Schedule::verify() {
 std::ostream& Schedule::stream(std::ostream& os) const {
 #if 0
     for (auto& block : *this) {
-        auto cn = block.cn();
-        if (cn != world().cn_end()) {
-            bool indent = cn != scope().entry();
+        auto lambda = block.lambda();
+        if (lambda != world().lambda_end()) {
+            bool indent = lambda != scope().entry();
             if (indent)
                 os << up;
             os << endl;
-            cn->stream_head(os) << up_endl;
+            lambda->stream_head(os) << up_endl;
             for (auto def : block)
                 def->stream_assignment(os);
 
-            cn->stream_jump(os) << down_endl;
+            lambda->stream_jump(os) << down_endl;
             if (indent)
                 os << down;
         }

@@ -7,7 +7,7 @@ namespace thorin {
 static void verify_top_level(World& world) {
     Scope::for_each(world, [&] (const Scope& scope) {
         for (auto def : scope.free()) {
-            assertf(def->isa_cn(), "top-level continuation '{}' got free def '{}' at location '{}'",
+            assertf(def->isa_lambda(), "top-level continuation '{}' got free def '{}' at location '{}'",
                     scope.entry(), def, def->location());
         }
     });
@@ -27,8 +27,8 @@ public:
 
     World& world() { return world_; }
     void run();
-    void analyze_call(Cn*);
-    void analyze(ParamSet& params, Cn*, const Def*);
+    void analyze_call(Lambda*);
+    void analyze(ParamSet& params, Lambda*, const Def*);
 
 private:
     World& world_;
@@ -36,37 +36,37 @@ private:
 };
 
 void Cycles::run() {
-    for (auto cn : world().cns())
-        analyze_call(cn);
+    for (auto lambda : world().lambdas())
+        analyze_call(lambda);
 }
 
-void Cycles::analyze_call(Cn* cn) {
-    if (def2color_.emplace(cn, Gray).second) {
+void Cycles::analyze_call(Lambda* lambda) {
+    if (def2color_.emplace(lambda, Gray).second) {
         ParamSet params;
-        for (auto op : cn->ops())
-            analyze(params, cn, op);
+        for (auto op : lambda->ops())
+            analyze(params, lambda, op);
 
         for (auto param : params) {
             if (def2color_.emplace(param, Gray).second) {
-                analyze_call(param->cn());
+                analyze_call(param->lambda());
                 def2color_[param] = Black;
             }
         }
 
-        def2color_[cn] = Black;
+        def2color_[lambda] = Black;
     } else {
-        assertf(def2color_[cn] != Gray, "detected cycle: '{}'", cn);
+        assertf(def2color_[lambda] != Gray, "detected cycle: '{}'", lambda);
     }
 }
 
-void Cycles::analyze(ParamSet& params, Cn* cn, const Def* def) {
-    if (!def->isa<Cn>()) {
+void Cycles::analyze(ParamSet& params, Lambda* lambda, const Def* def) {
+    if (!def->isa<Lambda>()) {
         if (def2color_.emplace(def, Black).second) {
             for (auto op : def->ops())
-                analyze(params, cn, op);
+                analyze(params, lambda, op);
         }
     } else if (auto param = def->isa<Param>()) {
-        if (param->cn() != cn) {
+        if (param->lambda() != lambda) {
             auto i = def2color_.find(param);
             if (i != def2color_.end())
                 assertf(i->second != Gray, "detected cycle induced by parameter: '{}'", param);

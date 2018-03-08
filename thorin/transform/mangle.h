@@ -11,11 +11,11 @@ public:
 
     const Scope& scope() const { return scope_; }
     World& world() const { return scope_.world(); }
-    Cn* mangle();
+    Lambda* mangle();
 
 private:
     World& world() { return world_; }
-    //void mangle_body(Cn* ocn, Cn* ncn);
+    //void mangle_body(Lambda* olambda, Lambda* nlambda);
     const Def* mangle(const Def* odef);
     bool within(const Def* def) { return scope().contains(def) || lift_.contains(def); }
 
@@ -23,19 +23,19 @@ private:
     const Scope& scope_;
     Defs args_;
     DefSet lift_;
-    Cn* old_entry_;
-    Cn* new_entry_;
+    Lambda* old_entry_;
+    Lambda* new_entry_;
     Def2Def old2new_;
 };
 
 
-Cn* mangle(const Scope&, Defs args, DefSet lift);
+Lambda* mangle(const Scope&, Defs args, DefSet lift);
 
-inline Cn* drop(const Scope& scope, Defs args) {
+inline Lambda* drop(const Scope& scope, Defs args) {
     return mangle(scope, args, DefSet());
 }
 
-//inline Cn* lift(const Scope& scope, Defs defs) {
+//inline Lambda* lift(const Scope& scope, Defs defs) {
     //return mangle(scope, Array<const Def*>(scope.entry()->num_params()), defs);
 //}
 

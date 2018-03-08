@@ -710,10 +710,6 @@ const Lit* World::lit_nat(int64_t val, Location location) {
     return result;
 }
 
-Cn* World::cn(const Def* domain, Debug dbg) {
-    return insert<Cn>(3, cn_type(domain), dbg);
-}
-
 //------------------------------------------------------------------------------
 
 }

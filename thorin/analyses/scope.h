@@ -17,24 +17,24 @@ class CFA;
 class CFNode;
 
 /**
- * A @p Scope represents a region of @p Cn%s which are live from the view of an @p entry @p Cn.
+ * A @p Scope represents a region of @p Lambda%s which are live from the view of an @p entry @p Lambda.
  * Transitively, all user's of the @p entry's parameters are pooled into this @p Scope.
- * Each @p Scope contains the dummy @p Cn @p World::cn_end to mark the end of a @p Scope.
+ * Each @p Scope contains the dummy @p Lambda @p World::lambda_end to mark the end of a @p Scope.
  */
 class Scope : public Streamable {
 public:
     Scope(const Scope&) = delete;
     Scope& operator=(Scope) = delete;
 
-    explicit Scope(Cn* entry);
+    explicit Scope(Lambda* entry);
     ~Scope();
 
     /// Invoke if you have modified sth in this Scope. @see for_each.
     Scope& update();
 
     //@{ misc getters
-    Cn* entry() const { return entry_; }
-    Cn* exit() const { return exit_; }
+    Lambda* entry() const { return entry_; }
+    Lambda* exit() const { return exit_; }
     World& world() const { return entry_->world(); }
     //@}
 
@@ -61,7 +61,7 @@ public:
     /**
      * Transitively visits all @em reachable Scope%s in @p world that do not have free variables.
      * We call these Scope%s @em top-level Scope%s.
-     * Select with @p elide_empty whether you want to visit trivial Scope%s of Cn%s without body.
+     * Select with @p elide_empty whether you want to visit trivial Scope%s of Lambda%s without body.
      * @attention { If you change anything in the Scope passed to @p f, you must invoke @p update to recompute the Scope. }
      */
     template<bool elide_empty = true> static void for_each(const World& world, std::function<void(Scope&)> f);
@@ -69,8 +69,8 @@ public:
 private:
     void run();
 
-    Cn* entry_;
-    Cn* exit_;
+    Lambda* entry_;
+    Lambda* exit_;
     DefSet defs_;
     mutable std::unique_ptr<DefSet> free_;
     mutable std::unique_ptr<const CFA> cfa_;

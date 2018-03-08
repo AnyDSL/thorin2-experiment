@@ -137,9 +137,9 @@ void Def::finalize() {
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         assert(op(i) != nullptr);
         checked_emplace(op(i)->uses_, Use{this, i});
-        free_vars_    |= op(i)->free_vars() >> shift(i);
-        contains_cn_  |= op(i)->tag() == Tag::Cn || op(i)->contains_cn();
-        is_dependent_ |= is_dependent_ || op(i)->free_vars().any_end(i);
+        free_vars_       |= op(i)->free_vars() >> shift(i);
+        contains_lambda_ |= op(i)->tag() == Tag::Lambda || op(i)->contains_lambda();
+        is_dependent_    |= is_dependent_ || op(i)->free_vars().any_end(i);
     }
 
     if (type() != nullptr)
@@ -197,8 +197,8 @@ void Def::replace(Tracker with) const {
 
 std::string Def::unique_name() const { return name().str() + '_' + std::to_string(gid()); }
 
-Cn* Def::as_cn() const { return const_cast<Cn*>(as<Cn>()); }
-Cn* Def::isa_cn() const { return const_cast<Cn*>(isa<Cn>()); }
+Lambda* Def::as_lambda() const { return const_cast<Lambda*>(as<Lambda>()); }
+Lambda* Def::isa_lambda() const { return const_cast<Lambda*>(isa<Lambda>()); }
 
 //------------------------------------------------------------------------------
 
@@ -353,7 +353,6 @@ const Def* ArityKind     ::arity() const { return world().arity(1); }
 // const Def* Any::arity() const { return TODO; }
 const Def* App           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Axiom         ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
-const Def* Cn            ::arity() const { return world().arity(1); }
 const Def* Bottom        ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 // const Def* Intersection::arity() const { return TODO; }
 const Def* Lit           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
@@ -377,7 +376,7 @@ const Def* Variant       ::arity() const { return world().variant(DefArray(num_o
  */
 
 size_t Def     ::shift(size_t  ) const { return 0; }
-size_t Lambda  ::shift(size_t i) const { assert_unused(i == 0); return 1; }
+size_t Lambda  ::shift(size_t i) const { assert_unused(i == 0); return is_nominal() ? 0 : 1; }
 size_t Pack    ::shift(size_t i) const { assert_unused(i == 0); return 1; }
 size_t Pi      ::shift(size_t i) const { return i; }
 size_t Sigma   ::shift(size_t i) const { return i; }
@@ -437,7 +436,6 @@ const Def* App           ::rebuild(World& to, const Def*  , Defs ops) const { re
 const Def* Arity         ::rebuild(World& to, const Def* t, Defs    ) const { return to.arity(value(), t->op(0), debug()); }
 const Def* ArityKind     ::rebuild(World& to, const Def*  , Defs ops) const { return to.arity_kind(ops[0]); }
 const Def* Axiom         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
-const Def* Cn            ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Bottom        ::rebuild(World& to, const Def* t, Defs    ) const { return to.bottom(t); }
 const Def* Extract       ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
@@ -478,7 +476,6 @@ const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { re
  */
 
 Axiom*   Axiom  ::vstub(World& to, const Def* type, Debug dbg) const { return to.axiom(type, normalizer(), dbg); }
-Cn*      Cn     ::vstub(World& to, const Def* type, Debug dbg) const { return to.cn(type->as<Pi>()->domain(), dbg); }
 Lambda*  Lambda ::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.lambda (type->as<Pi>(),  dbg); }
 Sigma*   Sigma  ::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.sigma  (type, num_ops(), dbg); }
 Variant* Variant::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.variant(type, num_ops(), dbg); }
@@ -736,10 +733,6 @@ std::ostream& Axiom::vstream(std::ostream& os) const {
     return qualifier_stream(os) << name();
 }
 
-std::ostream& Cn::vstream(std::ostream& os) const {
-    return streamf(os, "{}({})", callee(), arg());
-}
-
 std::ostream& Bottom::vstream(std::ostream& os) const { return streamf(os, "{{⊥: {}}}", type()); }
 std::ostream& Top   ::vstream(std::ostream& os) const { return streamf(os, "{{⊤: {}}}", type()); }
 
@@ -859,25 +852,16 @@ std::ostream& Variant::vstream(std::ostream& os) const {
  * misc
  */
 
-const Param* Cn::param(Debug dbg) const { return world().param(this, dbg); }
-const Def* Cn::param(u64 i, Debug dbg) const { return world().extract(param(), i, dbg); }
+const Param* Lambda::param(Debug dbg) const { return world().param(this, dbg); }
+const Def* Lambda::param(u64 i, Debug dbg) const { return world().extract(param(), i, dbg); }
 
-Cn* Cn::set(const Def* filter, const Def* callee, const Def* arg, Debug dbg) {
-    extra().jump_debug_ = dbg;
-    return Def::set(0, filter)->Def::set(1, callee)->Def::set(2, arg)->as<Cn>();
-}
+Lambda* Lambda::jump(const Def* callee, const Def* arg, Debug dbg) { return set(world().app(callee, arg, dbg)); }
+Lambda* Lambda::jump(const Def* callee, Defs args, Debug dbg ) { return jump(callee, world().tuple(args), dbg); }
 
-Cn* Cn::set(const Def* filter, const Def* callee, Defs args, Debug dbg) {
-    return set(filter, callee, world().tuple(args), dbg);
-}
+Lambda* Lambda::br(const Def* cond, const Def* t, const Def* f, Debug dbg) { return jump(world().cn_br(), {cond, t, f}, dbg); }
 
-Cn* Cn::jump(const Def* callee, const Def* arg, Debug dbg) { return set(world().lit_false(), callee, arg, dbg); }
-Cn* Cn::jump(const Def* callee, Defs args, Debug dbg ) { return jump(callee, world().tuple(args), dbg); }
-
-Cn* Cn::br(const Def* cond, const Def* t, const Def* f, Debug dbg) { return jump(world().cn_br(), {cond, t, f}, dbg); }
-
-Cns Cn::preds() const {
-    std::vector<Cn*> preds;
+Lambdas Lambda::preds() const {
+    Lambdas preds;
     std::queue<Use> queue;
     DefSet done;
 
@@ -895,8 +879,8 @@ Cns Cn::preds() const {
 
     while (!queue.empty()) {
         auto use = pop(queue);
-        if (auto cn = use->isa_cn()) {
-            preds.push_back(cn);
+        if (auto lambda = use->isa_lambda()) {
+            preds.push_back(lambda);
             continue;
         }
 
@@ -906,8 +890,8 @@ Cns Cn::preds() const {
     return preds;
 }
 
-Cns Cn::succs() const {
-    std::vector<Cn*> succs;
+Lambdas Lambda::succs() const {
+    Lambdas succs;
     std::queue<const Def*> queue;
     DefSet done;
 
@@ -920,24 +904,36 @@ Cns Cn::succs() const {
 
     done.insert(this);
     if (!empty())
-        enqueue(callee());
-    enqueue(arg());
+        enqueue(body());
 
     while (!queue.empty()) {
         auto def = pop(queue);
-        if (auto cn = def->isa_cn()) {
-            succs.push_back(cn);
+        if (auto lambda = def->isa_lambda()) {
+            succs.push_back(lambda);
             continue;
         }
 
         for (auto op : def->ops()) {
-            if (op->contains_cn())
+            if (op->contains_lambda())
                 enqueue(op);
         }
     }
 
     return succs;
 }
+
+#if 0
+
+Lambda* Cn::set(const Def* filter, const Def* callee, const Def* arg, Debug dbg) {
+    extra().jump_debug_ = dbg;
+    return Def::set(0, filter)->Def::set(1, callee)->Def::set(2, arg)->as<Cn>();
+}
+
+Cn* Cn::set(const Def* filter, const Def* callee, Defs args, Debug dbg) {
+    return set(filter, callee, world().tuple(args), dbg);
+}
+
+#endif
 
 //------------------------------------------------------------------------------
 

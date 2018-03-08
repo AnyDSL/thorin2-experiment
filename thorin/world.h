@@ -105,12 +105,13 @@ public:
     const Def* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {});
     /// @em nominal lambda --- may be recursive
     Lambda* lambda(const Pi* type, Debug dbg = {}) {
+        std::cout << "asdf" << std::endl;
         assertf(type->free_vars().none_begin(1),
                 "function type {} of a nominal lambda may not contain free variables", type);
         return insert<Lambda>(1, type, dbg);
     }
-    Cn* cn(const Def* domain, Debug dbg = {});
-    const Param* param(const Cn* cn, Debug dbg = {}) { return unify<Param>(1, cn->type()->op(0), cn, dbg); }
+    Lambda* cn(const Def* domain, Debug dbg) { return lambda(cn_type(domain), dbg); }
+    const Param* param(const Lambda* lambda, Debug dbg = {}) { return unify<Param>(1, lambda->type()->op(0), lambda, dbg); }
     //@}
 
     //@{ create App
@@ -284,7 +285,7 @@ public:
     //@{ intrinsics (AKA built-in Cont%inuations)
     const Axiom* cn_br()    const { return cn_br_; }
     const Axiom* cn_match() const { return cn_match_; }
-    Cn* cn_end()   const { return cn_end_; }
+    Lambda* cn_end()   const { return cn_end_; }
     //@}
 
     //@{ externals
@@ -298,9 +299,9 @@ public:
         auto i = externals_.find(s);
         return i->second;
     }
-    auto external_cns() const { return map_range(range(externals_,
-                [](auto p) { return p.second->template isa<Cn>(); }),
-                [](auto p) { return p.second->as_cn(); });
+    auto external_lambdas() const { return map_range(range(externals_,
+                [](auto p) { return p.second->template isa<Lambda>(); }),
+                [](auto p) { return p.second->as_lambda(); });
     }
     //@}
 
@@ -318,9 +319,9 @@ public:
 
     //@{ misc
     const DefSet& defs() const { return defs_; }
-    auto cns() const { return map_range(range(defs_,
-                [](auto def) { return def->isa_cn(); }),
-                [](auto def) { return def->as_cn(); }); }
+    auto lambdas() const { return map_range(range(defs_,
+                [](auto def) { return def->isa_lambda(); }),
+                [](auto def) { return def->as_lambda(); }); }
     //@}
 
     friend void swap(World& w1, World& w2) {
@@ -486,7 +487,7 @@ protected:
     std::array<const Lit*, 7> lit_nat_;
     const Axiom* cn_br_;
     const Axiom* cn_match_;
-    Cn* cn_end_;
+    Lambda* cn_end_;
 #ifndef NDEBUG
     Breakpoints breakpoints_;
     bool track_history_ = false;

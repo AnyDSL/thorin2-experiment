@@ -11,7 +11,7 @@
 
 namespace thorin {
 
-Scope::Scope(Cn* entry)
+Scope::Scope(Lambda* entry)
     : entry_(entry)
     , exit_(entry->world().cn_end())
 {
@@ -70,29 +70,29 @@ const B_CFG& Scope::b_cfg() const { return cfa().b_cfg(); }
 
 template<bool elide_empty>
 void Scope::for_each(const World& world, std::function<void(Scope&)> f) {
-    CnSet done;
-    std::queue<Cn*> queue;
+    LambdaSet done;
+    std::queue<Lambda*> queue;
 
-    auto enqueue = [&] (Cn* cn) {
-        const auto& p = done.insert(cn);
+    auto enqueue = [&] (Lambda* lambda) {
+        const auto& p = done.insert(lambda);
         if (p.second)
-            queue.push(cn);
+            queue.push(lambda);
     };
 
-    for (auto cn : world.external_cns()) {
-        assert(!cn->empty() && "external must not be empty");
-        enqueue(cn);
+    for (auto lambda : world.external_lambdas()) {
+        assert(!lambda->empty() && "external must not be empty");
+        enqueue(lambda);
     }
 
     while (!queue.empty()) {
-        auto cn = pop(queue);
-        if (elide_empty && cn->empty())
+        auto lambda = pop(queue);
+        if (elide_empty && lambda->empty())
             continue;
-        Scope scope(cn);
+        Scope scope(lambda);
         f(scope);
 
         for (auto n : scope.f_cfg().reverse_post_order()) {
-            for (auto succ : n->cn()->succs()) {
+            for (auto succ : n->lambda()->succs()) {
                 if (!scope.contains(succ))
                     enqueue(succ);
             }

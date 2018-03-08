@@ -3,6 +3,8 @@
 #include "thorin/core/world.h"
 #include "thorin/util/log.h"
 
+#if 0
+
 namespace thorin::core {
 
 //------------------------------------------------------------------------------
@@ -404,3 +406,5 @@ const Def* SSABuilder::BasicBlock::try_remove_trivial_param(const Def* param) {
 //------------------------------------------------------------------------------
 
 }
+
+#endif

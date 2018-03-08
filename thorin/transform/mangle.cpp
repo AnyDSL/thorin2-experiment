@@ -2,6 +2,8 @@
 
 #include "thorin/world.h"
 
+#if 0
+
 namespace thorin {
 
 Mangler::Mangler(const Scope& scope, Defs args, DefSet lift)
@@ -21,15 +23,15 @@ Mangler::Mangler(const Scope& scope, Defs args, DefSet lift)
 #endif
 }
 
-Cn* Mangler::mangle() {
+Lambda* Mangler::mangle() {
     DefVector param_types;
     for (size_t i = 0, e = args_.size(); i != e; ++i) {
         if (args_[i] == nullptr)
             param_types.emplace_back(old_entry_->param(i)->type());
     }
 
-    auto cn_type = world().cn_type(param_types);
-    new_entry_ = world().cn(cn_type, old_entry_->debug_history());
+    auto lambda_type = world().lambda_type(param_types);
+    new_entry_ = world().lambda(lambda_type, old_entry_->debug_history());
 
     old2new_[old_entry_] = old_entry_;
 
@@ -54,29 +56,29 @@ Cn* Mangler::mangle() {
     return new_entry_->set(new_filter, new_callee, new_arg);
 }
 
-//void Mangler::mangle_body(Cn* old_cn, Cn* new_cn) {
-    //assert(!old_cn->empty());
+//void Mangler::mangle_body(Lambda* old_lambda, Lambda* new_lambda) {
+    //assert(!old_lambda->empty());
 
     //// fold branch and match
-    //// TODO find a way to factor this out in cn.cpp
-    ////if (auto callee = old_cn->callee()->isa_cn()) {
+    //// TODO find a way to factor this out in lambda.cpp
+    ////if (auto callee = old_lambda->callee()->isa_lambda()) {
         ////switch (callee->intrinsic()) {
             ////case Intrinsic::Branch: {
-                ////if (auto lit = mangle(old_cn->arg(0))->isa<PrimLit>()) {
-                    ////auto cont = lit->value().get_bool() ? old_cn->arg(1) : old_cn->arg(2);
-                    ////return new_cn->jump(mangle(cont), {}, old_cn->jump_debug());
+                ////if (auto lit = mangle(old_lambda->arg(0))->isa<PrimLit>()) {
+                    ////auto cont = lit->value().get_bool() ? old_lambda->arg(1) : old_lambda->arg(2);
+                    ////return new_lambda->jump(mangle(cont), {}, old_lambda->jump_debug());
                 ////}
                 ////break;
             ////}
             ////case Intrinsic::Match:
-                ////if (old_cn->num_args() == 2)
-                    ////return new_cn->jump(mangle(old_cn->arg(1)), {}, old_cn->jump_debug());
+                ////if (old_lambda->num_args() == 2)
+                    ////return new_lambda->jump(mangle(old_lambda->arg(1)), {}, old_lambda->jump_debug());
 
-                ////if (auto lit = mangle(old_cn->arg(0))->isa<PrimLit>()) {
-                    ////for (size_t i = 2; i < old_cn->num_args(); i++) {
-                        ////auto new_arg = mangle(old_cn->arg(i));
+                ////if (auto lit = mangle(old_lambda->arg(0))->isa<PrimLit>()) {
+                    ////for (size_t i = 2; i < old_lambda->num_args(); i++) {
+                        ////auto new_arg = mangle(old_lambda->arg(i));
                         ////if (world().extract(new_arg, 0_s)->as<PrimLit>() == lit)
-                            ////return new_cn->jump(world().extract(new_arg, 1), {}, old_cn->jump_debug());
+                            ////return new_lambda->jump(world().extract(new_arg, 1), {}, old_lambda->jump_debug());
                     ////}
                 ////}
                 ////break;
@@ -85,12 +87,12 @@ Cn* Mangler::mangle() {
         ////}
     ////}
 
-    //Array<const Def*> nops(old_cn->num_ops());
+    //Array<const Def*> nops(old_lambda->num_ops());
     //for (size_t i = 0, e = nops.size(); i != e; ++i)
-        //nops[i] = mangle(old_cn->op(i));
+        //nops[i] = mangle(old_lambda->op(i));
 
-    //Defs nargs(nops.skip_front()); // new args of new_cn
-    //auto ntarget = nops.front();   // new target of new_cn
+    //Defs nargs(nops.skip_front()); // new args of new_lambda
+    //auto ntarget = nops.front();   // new target of new_lambda
 
     //// check whether we can optimize tail recursion
     //if (ntarget == old_entry_) {
@@ -105,11 +107,11 @@ Cn* Mangler::mangle() {
 
         ////if (substitute) {
             ////const auto& args = concat(nargs.cut(cut), new_entry_->params().get_back(lift_.size()));
-            ////return new_cn->jump(new_entry_, args, old_cn->jump_debug());
+            ////return new_lambda->jump(new_entry_, args, old_lambda->jump_debug());
         ////}
     //}
 
-    //new_cn->jump(ntarget, nargs, old_cn->jump_debug());
+    //new_lambda->jump(ntarget, nargs, old_lambda->jump_debug());
 //}
 
 const Def* Mangler::mangle(const Def* old_def) {
@@ -140,15 +142,17 @@ const Def* Mangler::mangle(const Def* old_def) {
 
 //------------------------------------------------------------------------------
 
-Cn* mangle(const Scope& scope, Defs args, DefSet lift) {
+Lambda* mangle(const Scope& scope, Defs args, DefSet lift) {
     return Mangler(scope, args, lift).mangle();
 }
 
-//Cn* drop(const Call& call) {
-    //Scope scope(call.callee()->as_cn());
+//Lambda* drop(const Call& call) {
+    //Scope scope(call.callee()->as_lambda());
     //return drop(scope, call.args());
 //}
 
 //------------------------------------------------------------------------------
 
 }
+
+#endif

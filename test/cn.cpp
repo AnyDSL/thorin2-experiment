@@ -6,6 +6,8 @@
 
 namespace thorin::core {
 
+#if 0
+
 TEST(Cn, Simple) {
     World w;
     auto C = w.cn_type(w.unit());
@@ -47,5 +49,6 @@ TEST(Cn, Poly) {
     Scope scope(k);
     EXPECT_TRUE(scope.contains(k));
 }
+#endif
 
 }
