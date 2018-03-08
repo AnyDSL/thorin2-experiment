@@ -128,11 +128,12 @@ TEST(Nominal, Module) {
     auto N = w.type_nat();
 
     // M := λU:*. L := λT:*. [[T, U], {nil := [] | cons := [L T]}
-    // M := λU:*. L := λT:*. [[0, 2], {nil := [] | cons := [L 1]}
+    // M := λU:*. L := λT:*. [[T, 1], {nil := [] | cons := [L T]}
 
     auto L = w.lambda(w.pi(S, S), {"L"});
-    auto l = w.sigma({w.sigma({w.var(S, 0), w.var(S, 2)}),
-                      w.variant({w.sigma_type(0_s, {"nil"}), w.sigma_type(1, {"cons"})->set(0, w.app(L, w.var(S, 1)))})});
+    auto T = L->param({"T"});
+    auto l = w.sigma({w.sigma({T, w.var(S, 1)}),
+                      w.variant({w.sigma_type(0_s, {"nil"}), w.sigma_type(1, {"cons"})->set(0, w.app(L, T))})});
     L->set(l);
 
     l->dump();

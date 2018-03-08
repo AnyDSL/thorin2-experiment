@@ -515,7 +515,7 @@ public:
     const Def* domain() const { return type()->domain(); }
     const Def* codomain() const { return type()->codomain(); }
     /**
-     * Since @p Param%s are @em structural, this getter simply creates a new @p Param with itself as operand.
+     * Since @p Param%s are @em structural, this getter simply creates a @p Param with itself as operand.
      * Due to hash-consing there will only be maximal one @p Param object.
      */
     const Param* param(Debug dbg = {}) const;
