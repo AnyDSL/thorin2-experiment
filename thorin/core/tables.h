@@ -51,7 +51,7 @@ enum class RFlags : int64_t {
                      m(ICmp,  sle)   /*  o  x o x x - signed less or equal                            */ \
                      m(ICmp,   ug)   /*  o  x x o o - unsigned greater                                */ \
                      m(ICmp,  uge)   /*  o  x x o x - unsigned greater or equal                       */ \
-                     m(ICmp, glmp)   /*  o  x x x o - greater or less or minus plus                   */ \
+                     m(ICmp, mpgl)   /*  o  x x x o - minus plus or greater or less                   */ \
                      m(ICmp,  npm)   /*  o  x x x x - not plus minus                                  */ \
                      m(ICmp,   pm)   /*  x  o o o o - plus minus                                      */ \
                      m(ICmp,  pme)   /*  x  o o o x - plus minus or equal                             */ \
@@ -59,7 +59,7 @@ enum class RFlags : int64_t {
                      m(ICmp,  ule)   /*  x  o o x x - unsigned less or equal                          */ \
                      m(ICmp,   sg)   /*  x  o x o o - signed greater                                  */ \
                      m(ICmp,  sge)   /*  x  o x o x - signed greater or equal                         */ \
-                     m(ICmp, glpm)   /*  x  o x x o - greater or less or plus minus                   */ \
+                     m(ICmp, pmgl)   /*  x  o x x o - greater or less or plus minus                   */ \
                      m(ICmp,  nmp)   /*  x  o x x x - not minus plus                                  */ \
                      m(ICmp,   ds)   /*  x  x o o o - different sign                                  */ \
                      m(ICmp,  dse)   /*  x  x o o x - different sign or equal                         */ \
