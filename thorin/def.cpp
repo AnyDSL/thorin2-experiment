@@ -2,6 +2,7 @@
 
 #include "thorin/world.h"
 #include "thorin/transform/reduce.h"
+#include "thorin/transform/mangle.h"
 #include "thorin/util/log.h"
 
 namespace thorin {
@@ -84,8 +85,9 @@ const Def* Def::destructing_type() const {
             assert(app->callee()->is_nominal());
             return cache;
         }
-        if (auto lambda = app->callee()->isa<Lambda>(); lambda != nullptr && lambda->is_nominal()) {
-            auto res = thorin::reduce(lambda->body(), app->arg());
+        if (auto lambda = app->callee()->isa_lambda(); lambda != nullptr && lambda->is_nominal()) {
+            //auto res = thorin::reduce(lambda->body(), app->arg());
+            auto res = drop(lambda, {app->arg()})->body();
             assert(app->state() == App::State::Has_None);
             app->extra().cache_ = res;
             return res;
@@ -376,7 +378,7 @@ const Def* Variant       ::arity() const { return world().variant(DefArray(num_o
  */
 
 size_t Def     ::shift(size_t  ) const { return 0; }
-size_t Lambda  ::shift(size_t i) const { assert_unused(i == 0); return is_nominal() ? 0 : 1; }
+size_t Lambda  ::shift(size_t i) const { assert_unused(i == 0 || i == 1); return is_nominal() ? 0 : 1; }
 size_t Pack    ::shift(size_t i) const { assert_unused(i == 0); return 1; }
 size_t Pi      ::shift(size_t i) const { return i; }
 size_t Sigma   ::shift(size_t i) const { return i; }
@@ -442,7 +444,7 @@ const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { re
 const Def* Intersection  ::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
 const Def* Lambda        ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
-    return to.lambda(t->as<Pi>()->domain(), ops.front(), debug());
+    return to.lambda(t->qualifier(), t->as<Pi>()->domain(), ops[0], ops[1], debug());
 }
 const Def* Lit           ::rebuild(World& to, const Def* t, Defs    ) const { return to.lit(t, box(), debug()); }
 const Def* Match         ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
@@ -852,7 +854,8 @@ std::ostream& Variant::vstream(std::ostream& os) const {
  * misc
  */
 
-const Param* Lambda::param(Debug dbg) const { return world().param(this, dbg); }
+Lambda* Lambda::set(const Def* body) { return set(world().lit_false(), body); }
+const Param* Lambda::param(Debug dbg) const { assert(is_nominal()); return world().param(this, dbg); }
 const Def* Lambda::param(u64 i, Debug dbg) const { return world().extract(param(), i, dbg); }
 
 Lambda* Lambda::jump(const Def* callee, const Def* arg, Debug dbg) { return set(world().app(callee, arg, dbg)); }

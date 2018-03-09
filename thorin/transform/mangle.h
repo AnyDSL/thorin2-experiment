@@ -35,6 +35,11 @@ inline Lambda* drop(const Scope& scope, Defs args) {
     return mangle(scope, args, DefSet());
 }
 
+inline Lambda* drop(Lambda* lambda, Defs args) {
+    Scope scope(lambda);
+    return drop(scope, args);
+}
+
 //inline Lambda* lift(const Scope& scope, Defs defs) {
     //return mangle(scope, Array<const Def*>(scope.entry()->num_params()), defs);
 //}

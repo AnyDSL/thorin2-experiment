@@ -440,7 +440,7 @@ const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
-const Def* World::lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg) {
+const Def* World::lambda(const Def* domain, const Def* filter, const Def* body, const Def* type_qualifier, Debug dbg) {
     auto p = pi(domain, body->type(), type_qualifier, dbg);
 
     if (auto app = body->isa<App>()) {
@@ -450,7 +450,7 @@ const Def* World::lambda(const Def* domain, const Def* body, const Def* type_qua
             return shift_free_vars(app->callee(), -1);
     }
 
-    return unify<Lambda>(1, p, body, dbg);
+    return unify<Lambda>(2, p, filter, body, dbg);
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {

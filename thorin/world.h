@@ -100,14 +100,14 @@ public:
 
     //@{ create Lambda
     const Def* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
-        return lambda(domain, body, unlimited(), dbg);
+        return lambda(domain, lit_true(), body, unlimited(), dbg);
     }
-    const Def* lambda(const Def* domain, const Def* body, const Def* type_qualifier, Debug dbg = {});
+    const Def* lambda(const Def* domain, const Def* filter, const Def* body, const Def* type_qualifier, Debug dbg = {});
     /// @em nominal lambda --- may be recursive
     Lambda* lambda(const Pi* type, Debug dbg = {}) {
         assertf(type->free_vars().none_begin(1),
                 "function type {} of a nominal lambda may not contain free variables", type);
-        return insert<Lambda>(1, type, dbg);
+        return insert<Lambda>(2, type, dbg);
     }
     Lambda* cn(const Def* domain, Debug dbg) { return lambda(cn_type(domain), dbg); }
     const Param* param(const Lambda* lambda, Debug dbg = {}) { return unify<Param>(1, lambda->type()->op(0), lambda, dbg); }

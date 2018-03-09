@@ -254,7 +254,7 @@ public:
     }
     //@}
 
-    //@{ continuation-related stuff
+    //@{ Lambda-related stuff
     Lambda* isa_lambda() const;
     Lambda* as_lambda() const;
     bool contains_lambda() const { return contains_lambda_; }
@@ -500,17 +500,18 @@ typedef std::vector<Lambda*> Lambdas;
 class Lambda : public Def {
 private:
     /// @em structural Lambda
-    Lambda(const Pi* type, const Def* body, Debug dbg)
-        : Def(Tag::Lambda, type, {body}, dbg)
+    Lambda(const Pi* type, const Def* filter, const Def* body, Debug dbg)
+        : Def(Tag::Lambda, type, {filter, body}, dbg)
     {}
     /// @em nominal Lambda
     Lambda(const Pi* type, Debug dbg)
-        : Def(Tag::Lambda, type, 1, dbg)
+        : Def(Tag::Lambda, type, 2, dbg)
     {}
 
 public:
     //@{ getters
-    const Def* body() const { return op(0); }
+    const Def* filter() const { return op(0); }
+    const Def* body() const { return op(1); }
     const Pi* type() const { return Def::type()->as<Pi>(); }
     const Def* domain() const { return type()->domain(); }
     const Def* codomain() const { return type()->codomain(); }
@@ -524,7 +525,9 @@ public:
     //@}
 
     //@{ set body -- nominal Lambda%s only
-    Lambda* set(const Def* body) { return Def::set(0, body)->as<Lambda>(); }
+    Lambda* set(const Def* filter, const Def* body) { return Def::set(0, filter)->set(1, body)->as<Lambda>(); }
+    /// Uses @c false as filter.
+    Lambda* set(const Def* body);
     Lambda* jump(const Def* callee, const Def* arg, Debug dbg = {});
     Lambda* jump(const Def* callee, Defs args, Debug dbg = {});
     Lambda* br(const Def* cond, const Def* t, const Def* f, Debug dbg = {});
@@ -1000,71 +1003,6 @@ private:
 };
 
 //------------------------------------------------------------------------------
-
-///// A continuation value.
-//class Cn : public Def {
-//private:
-    //struct Extra { mutable Debug jump_debug_; };
-
-    //Cn(const Pi* type, Debug dbg)
-        //: Def(Tag::Cn, type, 3, dbg)
-    //{}
-
-//public:
-    ////@{ getters
-    //const Def* filter() const { return op(0); }
-    //const Def* callee() const { return op(1); }
-    //const Def* arg() const { return op(2); }
-    //const Pi* type() const { return Def::type()->as<Pi>(); }
-    /**
-     * Since @p Param%s are @em structural, this getter simply creates a new @p Param with itself as operand.
-     * Due to hash-consing there will only be maximal one @p Param object.
-     */
-    //const Param* param(Debug dbg = {}) const;
-    ///// @p Extract%s the @c i th element from @p Param.
-    //const Def* param(u64 i, Debug dbg = {}) const;
-    ////@}
-
-    ////@{
-    //Debug& jump_debug() const { return extra().jump_debug_; }
-    //Location jump_location() const { return jump_debug(); }
-    //Symbol jump_name() const { return jump_debug().name(); }
-    ////@}
-
-    ////@{ succs/preds
-    //Cns direct_preds() const;
-    //Cns direct_succs() const;
-    //Cns indirect_preds() const;
-    //Cns indirect_succs() const;
-    //Cns preds() const;
-    //Cns succs() const;
-    ////@}
-
-    ////@{ setters/terminators
-    ///// uses @c false as filter
-    //Cn* set(const Def* filter, const Def* callee, const Def* arg, Debug dbg = {});
-    //Cn* set(const Def* filter, const Def* callee, Defs args, Debug dbg = {});
-    //Cn* jump(const Def* callee, const Def* arg, Debug dbg = {});
-    //Cn* jump(const Def* callee, Defs args, Debug dbg = {});
-    //Cn* br(const Def* cond, const Def* t, const Def* f, Debug dbg = {});
-    ////@}
-
-    //const Def* arity() const override;
-    //const Def* rebuild(World&, const Def*, Defs) const override;
-    //Cn* vstub(World& to, const Def* type, Debug dbg) const override;
-
-//private:
-    //std::ostream& vstream(std::ostream&) const override;
-    //Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
-    //const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
-
-    //friend class World;
-//};
-
-//template<class To>
-//using CnMap = GIDMap<Cn*, To>;
-//using CnSet = GIDSet<Cn*>;
-//using Cn2Cn = CnMap<Cn*>;
 
 /**
  * The @p Param%eter associated to a @em nominal @p Lambda.

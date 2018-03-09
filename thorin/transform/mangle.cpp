@@ -2,8 +2,6 @@
 
 #include "thorin/world.h"
 
-#if 0
-
 namespace thorin {
 
 Mangler::Mangler(const Scope& scope, Defs args, DefSet lift)
@@ -30,8 +28,8 @@ Lambda* Mangler::mangle() {
             param_types.emplace_back(old_entry_->param(i)->type());
     }
 
-    auto lambda_type = world().lambda_type(param_types);
-    new_entry_ = world().lambda(lambda_type, old_entry_->debug_history());
+    auto new_pi = world().pi(old_entry_->qualifier(), world().sigma(param_types), old_entry_->codomain());
+    new_entry_ = world().lambda(new_pi, old_entry_->debug_history());
 
     old2new_[old_entry_] = old_entry_;
 
@@ -47,72 +45,10 @@ Lambda* Mangler::mangle() {
         }
     }
 
-    //mangle_body(old_entry_, new_entry_);
-
     auto new_filter = mangle(old_entry_->filter());
-    auto new_callee = mangle(old_entry_->callee());
-    auto new_arg    = mangle(old_entry_->arg());
-
-    return new_entry_->set(new_filter, new_callee, new_arg);
+    auto new_body   = mangle(old_entry_->body());
+    return new_entry_->set(new_filter, new_body);
 }
-
-//void Mangler::mangle_body(Lambda* old_lambda, Lambda* new_lambda) {
-    //assert(!old_lambda->empty());
-
-    //// fold branch and match
-    //// TODO find a way to factor this out in lambda.cpp
-    ////if (auto callee = old_lambda->callee()->isa_lambda()) {
-        ////switch (callee->intrinsic()) {
-            ////case Intrinsic::Branch: {
-                ////if (auto lit = mangle(old_lambda->arg(0))->isa<PrimLit>()) {
-                    ////auto cont = lit->value().get_bool() ? old_lambda->arg(1) : old_lambda->arg(2);
-                    ////return new_lambda->jump(mangle(cont), {}, old_lambda->jump_debug());
-                ////}
-                ////break;
-            ////}
-            ////case Intrinsic::Match:
-                ////if (old_lambda->num_args() == 2)
-                    ////return new_lambda->jump(mangle(old_lambda->arg(1)), {}, old_lambda->jump_debug());
-
-                ////if (auto lit = mangle(old_lambda->arg(0))->isa<PrimLit>()) {
-                    ////for (size_t i = 2; i < old_lambda->num_args(); i++) {
-                        ////auto new_arg = mangle(old_lambda->arg(i));
-                        ////if (world().extract(new_arg, 0_s)->as<PrimLit>() == lit)
-                            ////return new_lambda->jump(world().extract(new_arg, 1), {}, old_lambda->jump_debug());
-                    ////}
-                ////}
-                ////break;
-            ////default:
-                ////break;
-        ////}
-    ////}
-
-    //Array<const Def*> nops(old_lambda->num_ops());
-    //for (size_t i = 0, e = nops.size(); i != e; ++i)
-        //nops[i] = mangle(old_lambda->op(i));
-
-    //Defs nargs(nops.skip_front()); // new args of new_lambda
-    //auto ntarget = nops.front();   // new target of new_lambda
-
-    //// check whether we can optimize tail recursion
-    //if (ntarget == old_entry_) {
-        //std::vector<size_t> cut;
-        //bool substitute = true;
-        //for (size_t i = 0, e = args_.size(); i != e && substitute; ++i) {
-            //if (auto def = args_[i]) {
-                //substitute &= def == nargs[i];
-                //cut.push_back(i);
-            //}
-        //}
-
-        ////if (substitute) {
-            ////const auto& args = concat(nargs.cut(cut), new_entry_->params().get_back(lift_.size()));
-            ////return new_lambda->jump(new_entry_, args, old_lambda->jump_debug());
-        ////}
-    //}
-
-    //new_lambda->jump(ntarget, nargs, old_lambda->jump_debug());
-//}
 
 const Def* Mangler::mangle(const Def* old_def) {
     if (auto new_def = find(old2new_, old_def)) return new_def;
@@ -154,5 +90,3 @@ Lambda* mangle(const Scope& scope, Defs args, DefSet lift) {
 //------------------------------------------------------------------------------
 
 }
-
-#endif
