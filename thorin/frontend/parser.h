@@ -45,7 +45,7 @@ private:
 
     void parse_curried_defs(std::vector<std::pair<const Def*, Location>>&);
     const Def* parse_debruijn();
-    const Def* parse_cn_type();
+    const Def* parse_cn();
     const Def* parse_pi();
     const Def* parse_sigma_or_variadic();
     const Def* parse_lambda();

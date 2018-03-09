@@ -37,7 +37,7 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Location>>& de
 
     if (false) {}
     else if (accept(Token::Tag::Bool))              def = world_.type_bool();
-    else if (ahead().isa(Token::Tag::Cn))           def = parse_cn_type();
+    else if (ahead().isa(Token::Tag::Cn))           def = parse_cn();
     else if (ahead().isa(Token::Tag::Pi))           def = parse_pi();
     else if (ahead().isa(Token::Tag::L_Bracket))    def = parse_sigma_or_variadic();
     else if (ahead().isa(Token::Tag::Lambda))       def = parse_lambda();
@@ -111,11 +111,11 @@ const Def* Parser::parse_debruijn() {
     }
 }
 
-const Def* Parser::parse_cn_type() {
+const Def* Parser::parse_cn() {
     Tracker tracker(this);
     eat(Token::Tag::Cn);
     auto domain = parse_def();
-    return world_.cn_type(domain, tracker.location());
+    return world_.cn(domain, tracker.location());
 }
 
 const Def* Parser::parse_pi() {

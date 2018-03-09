@@ -94,8 +94,8 @@ public:
         return pi(domain, codomain, unlimited(), dbg);
     }
     const Pi* pi(const Def* domain, const Def* codomain, const Def* qualifier, Debug dbg = {});
-    const Pi* cn_type(const Def* domain, Debug dbg = {}) { return pi(domain, bottom(star()), dbg); }
-    const Pi* cn_type(Defs domain, Debug dbg = {}) { return cn_type(sigma(domain), dbg); }
+    const Pi* cn(const Def* domain, Debug dbg = {}) { return pi(domain, bottom(star()), dbg); }
+    const Pi* cn(Defs domain, Debug dbg = {}) { return cn(sigma(domain), dbg); }
     //@}
 
     //@{ create Lambda
@@ -109,7 +109,6 @@ public:
                 "function type {} of a nominal lambda may not contain free variables", type);
         return insert<Lambda>(2, type, dbg);
     }
-    Lambda* cn(const Def* domain, Debug dbg) { return lambda(cn_type(domain), dbg); }
     const Param* param(const Lambda* lambda, Debug dbg = {}) { return unify<Param>(1, lambda->type()->op(0), lambda, dbg); }
     //@}
 

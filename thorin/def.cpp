@@ -444,7 +444,7 @@ const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { re
 const Def* Intersection  ::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
 const Def* Lambda        ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
-    return to.lambda(t->qualifier(), t->as<Pi>()->domain(), ops[0], ops[1], debug());
+    return to.lambda(t->as<Pi>()->domain(), ops[0], ops[1], t->qualifier(), debug());
 }
 const Def* Lit           ::rebuild(World& to, const Def* t, Defs    ) const { return to.lit(t, box(), debug()); }
 const Def* Match         ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }

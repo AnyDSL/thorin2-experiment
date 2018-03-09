@@ -193,7 +193,7 @@ World::World(Debug dbg)
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_match_   = axiom("match",   "cn[T: *, a: 𝔸, [a; [T, cn[]]]]");
-    cn_end_     = cn(cn_type(unit()), {"end"});
+    cn_end_     = lambda(cn(unit()), {"end"});
 }
 
 World::~World() {

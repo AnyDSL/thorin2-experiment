@@ -6,19 +6,17 @@
 
 namespace thorin::core {
 
-#if 0
-
 TEST(Cn, Simple) {
     World w;
-    auto C = w.cn_type(w.unit());
+    auto C = w.cn(w.unit());
     C->dump();
-    auto k = w.cn(parse(w, "[int {32s64: nat}, cn int {32s64: nat}]"), {"k"});
+    auto k = w.lambda(parse(w, "cn[int {32s64: nat}, cn int {32s64: nat}]")->as<Pi>(), {"k"});
     k->type()->dump();
     auto x = k->param(0, {"x"});
     auto r = k->param(1, {"r"});
-    auto t = w.cn(C, {"t"});
-    auto f = w.cn(C, {"f"});
-    auto n = w.cn(parse(w, "[int {32s64: nat}]"));
+    auto t = w.lambda(C, {"t"});
+    auto f = w.lambda(C, {"f"});
+    auto n = w.lambda(parse(w, "cn[int {32s64: nat}]")->as<Pi>());
     auto i0 = w.lit_i(0_u32);
     auto cmp = w.op<ICmp::ug>(x, i0);
     k->br(cmp, t, f);
@@ -41,7 +39,7 @@ TEST(Cn, Simple) {
 
 TEST(Cn, Poly) {
     World w;
-    auto k = w.cn(parse(w, "[T: *, T, cn T]"), {"k"});
+    auto k = w.lambda(parse(w, "cn[T: *, T, cn T]")->as<Pi>(), {"k"});
     k->jump(k->param(2, {"ret"}), k->param(1, {"x"}));
 
     w.make_external(k);
@@ -49,6 +47,5 @@ TEST(Cn, Poly) {
     Scope scope(k);
     EXPECT_TRUE(scope.contains(k));
 }
-#endif
 
 }
