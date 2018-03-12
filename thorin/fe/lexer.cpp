@@ -1,9 +1,9 @@
 #include <stdexcept>
 
 #include "thorin/util/log.h"
-#include "thorin/frontend/lexer.h"
+#include "thorin/fe/lexer.h"
 
-namespace thorin {
+namespace thorin::fe {
 
 // character classes
 inline bool sp(uint32_t c)  { return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v'; }

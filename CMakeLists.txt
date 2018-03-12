@@ -33,18 +33,18 @@ add_executable(coc-gtest
     test/bitset.cpp
     test/cn.cpp
     test/lambda.cpp
-    test/lexer.cpp
     test/main.cpp
     test/nominal.cpp
     test/normalize.cpp
     test/pack.cpp
-    test/parse.cpp
     test/sigma.cpp
     test/singleton.cpp
     test/ssa.cpp
     test/substructural.cpp
     test/variadic.cpp
     test/variants.cpp
+    test/fe/lexer.cpp
+    test/fe/parser.cpp
     test/me/primop.cpp
     thorin/def.cpp
     thorin/def.h
@@ -76,12 +76,12 @@ add_executable(coc-gtest
     thorin/analyses/scope.h
     thorin/analyses/verify.cpp
     thorin/analyses/verify.h
-    thorin/frontend/lexer.cpp
-    thorin/frontend/lexer.h
-    thorin/frontend/parser.cpp
-    thorin/frontend/parser.h
-    thorin/frontend/token.h
-    thorin/frontend/token.cpp
+    thorin/fe/lexer.cpp
+    thorin/fe/lexer.h
+    thorin/fe/parser.cpp
+    thorin/fe/parser.h
+    thorin/fe/token.h
+    thorin/fe/token.cpp
     thorin/transform/import.cpp
     thorin/transform/import.h
     thorin/transform/mangle.cpp

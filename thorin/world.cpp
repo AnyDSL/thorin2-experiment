@@ -3,7 +3,7 @@
 
 #include "thorin/world.h"
 #include "thorin/normalize.h"
-#include "thorin/frontend/parser.h"
+#include "thorin/fe/parser.h"
 #include "thorin/transform/reduce.h"
 
 namespace thorin {
@@ -195,8 +195,8 @@ World::World(Debug dbg)
     for (size_t j = 0; j != lit_nat_.size(); ++j)
         lit_nat_[j] = lit_nat(1 << int64_t(j));
 
-    auto type_BOp  = parse(*this, "Πs: 𝕄. Π[[s; bool], [s; bool]]. [s; bool]");
-    auto type_NOp  = parse(*this, "Πs: 𝕄. Π[[s;  nat], [s;  nat]]. [s;  nat]");
+    auto type_BOp  = fe::parse(*this, "Πs: 𝕄. Π[[s; bool], [s; bool]]. [s; bool]");
+    auto type_NOp  = fe::parse(*this, "Πs: 𝕄. Π[[s;  nat], [s;  nat]]. [s;  nat]");
 
 #define CODE(T, o) \
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});
@@ -212,7 +212,7 @@ World::World(Debug dbg)
     arity_eliminator_arity_ = axiom("R𝔸ₐ", "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q");
     arity_eliminator_multi_ = axiom("R𝕄ₐ", "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q");
     arity_eliminator_star_  = axiom("R*ₐ",  "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q");
-    // index_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
+    // index_eliminator_ = axiom(fe::parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_match_   = axiom("match",   "cn[T: *, a: 𝔸, [a; [T, cn[]]]]");
@@ -297,7 +297,7 @@ Axiom* World::axiom(const Def* type, Normalizer normalizer, Debug dbg) {
 }
 
 Axiom* World::axiom(Symbol name, const char* s, Normalizer normalizer) {
-    return axiom(parse(*this, s), normalizer, name);
+    return axiom(fe::parse(*this, s), normalizer, name);
 }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {

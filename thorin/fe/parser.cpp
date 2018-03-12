@@ -1,9 +1,9 @@
-#include "thorin/frontend/parser.h"
+#include "thorin/fe/parser.h"
 
 #include "thorin/transform/reduce.h"
 #include "thorin/util/log.h"
 
-namespace thorin {
+namespace thorin::fe {
 
 // current syntax
 // b ::=    x : e       (binder)

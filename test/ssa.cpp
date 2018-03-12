@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "thorin/analyses/scope.h"
-#include "thorin/frontend/parser.h"
+#include "thorin/fe/parser.h"
 #include "thorin/core/world.h"
 #include "thorin/core/transform/ssa_builder.h"
 
