@@ -22,42 +22,46 @@ endif()
 # prevent overriding the parent project's compiler/linker settings on Windows
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-# Add googletest directly to our build. 
+# Add googletest directly to our build.
 # This defines the gtest and gtest_main targets.
 add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
 
 include_directories(.)
 
-add_executable(coc-gtest 
+add_executable(coc-gtest
     test/arity.cpp
     test/bitset.cpp
     test/cn.cpp
     test/lambda.cpp
-    test/lexer.cpp
     test/main.cpp
     test/nominal.cpp
+    test/normalize.cpp
     test/pack.cpp
-    test/parse.cpp
-    test/primop.cpp
     test/sigma.cpp
     test/singleton.cpp
     test/ssa.cpp
     test/substructural.cpp
     test/variadic.cpp
     test/variants.cpp
+    test/fe/lexer.cpp
+    test/fe/parser.cpp
+    test/me/primop.cpp
     thorin/def.cpp
     thorin/def.h
+    thorin/normalize.cpp
+    thorin/normalize.h
     thorin/qualifier.h
+    thorin/tables.h
     thorin/world.cpp
     thorin/world.h
-    thorin/core/fold.h
-    thorin/core/normalize.cpp
-    thorin/core/normalize.h
-    thorin/core/tables.h
-    thorin/core/world.cpp
-    thorin/core/world.h
-    thorin/core/transform/ssa_builder.cpp
-    thorin/core/transform/ssa_builder.h
+    thorin/me/fold.h
+    thorin/me/normalize.cpp
+    thorin/me/normalize.h
+    thorin/me/tables.h
+    thorin/me/world.cpp
+    thorin/me/world.h
+    thorin/me/transform/ssa_builder.cpp
+    thorin/me/transform/ssa_builder.h
     thorin/analyses/cfg.cpp
     thorin/analyses/cfg.h
     thorin/analyses/domfrontier.cpp
@@ -72,12 +76,12 @@ add_executable(coc-gtest
     thorin/analyses/scope.h
     thorin/analyses/verify.cpp
     thorin/analyses/verify.h
-    thorin/frontend/lexer.cpp
-    thorin/frontend/lexer.h
-    thorin/frontend/parser.cpp
-    thorin/frontend/parser.h
-    thorin/frontend/token.h
-    thorin/frontend/token.cpp
+    thorin/fe/lexer.cpp
+    thorin/fe/lexer.h
+    thorin/fe/parser.cpp
+    thorin/fe/parser.h
+    thorin/fe/token.h
+    thorin/fe/token.cpp
     thorin/transform/import.cpp
     thorin/transform/import.h
     thorin/transform/mangle.cpp

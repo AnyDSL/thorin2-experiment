@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "thorin/core/world.h"
+#include "thorin/me/world.h"
 
-namespace thorin::core {
+namespace thorin::me {
 
 TEST(Primop, Types) {
     World w;

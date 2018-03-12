@@ -1,5 +1,5 @@
-#ifndef THORIN_TOKEN_H
-#define THORIN_TOKEN_H
+#ifndef THORIN_FE_TOKEN_H
+#define THORIN_FE_TOKEN_H
 
 #include <string>
 
@@ -8,7 +8,7 @@
 #include "thorin/util/types.h"
 #include "thorin/util/utility.h"
 
-namespace thorin {
+namespace thorin::fe {
 
 #define THORIN_APP_ARG_TOKENS(f) \
     f(L_Brace,          "{") \

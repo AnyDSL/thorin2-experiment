@@ -3,9 +3,10 @@
 #include <sstream>
 #include <string>
 
-#include "thorin/frontend/lexer.h"
+#include "thorin/fe/lexer.h"
 
 using namespace thorin;
+using namespace thorin::fe;
 
 TEST(Lexer, Tokens) {
     std::string str ="{ } ( ) < > [ ] : , . * \\pi \\lambda cn bool";

@@ -1,17 +1,15 @@
-#ifndef THORIN_CORE_WORLD_H
-#define THORIN_CORE_WORLD_H
+#ifndef THORIN_ME_WORLD_H
+#define THORIN_ME_WORLD_H
 
 #include <memory>
 #include <string>
 
 #include "thorin/world.h"
-#include "thorin/core/tables.h"
+#include "thorin/me/tables.h"
 
-namespace thorin::core {
+namespace thorin::me {
 
 class World;
-std::array<const Def*, 2> shape_and_body(World&, const Def* def);
-const Def* infer_shape(World&, const Def* def);
 std::array<const Def*, 2> infer_width_and_shape(World&, const Def*);
 
 class World : public ::thorin::World {

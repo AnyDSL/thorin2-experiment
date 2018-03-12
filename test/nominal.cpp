@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "thorin/world.h"
-#include "thorin/frontend/parser.h"
+#include "thorin/fe/parser.h"
 
 using namespace thorin;
 
@@ -145,7 +145,7 @@ TEST(Nominal, Module) {
     auto LNB = w.app(w.app(M, B), N);
     auto LBB = w.app(w.app(M, B), B);
 
-    auto id = parse(w, "λT:*. λx:T. x");
+    auto id = fe::parse(w, "λT:*. λx:T. x");
 
     w.extract(w.axiom(LNN, {"lnn"}), 0_u64)->type()->dump();
     w.extract(w.axiom(LNB, {"lnb"}), 0_u64)->type()->dump();

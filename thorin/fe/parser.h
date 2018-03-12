@@ -1,16 +1,16 @@
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef THORIN_FE_PARSER_H
+#define THORIN_FE_PARSER_H
 
 #include <algorithm>
 #include <variant>
 
 #include "thorin/def.h"
 #include "thorin/world.h"
-#include "thorin/frontend/token.h"
-#include "thorin/frontend/lexer.h"
+#include "thorin/fe/token.h"
+#include "thorin/fe/lexer.h"
 #include "thorin/util/iterator.h"
 
-namespace thorin {
+namespace thorin::fe {
 
 class Parser {
 public:

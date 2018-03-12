@@ -1,11 +1,11 @@
-#include "thorin/core/transform/ssa_builder.h"
+#include "thorin/me/transform/ssa_builder.h"
 
-#include "thorin/core/world.h"
+#include "thorin/me/world.h"
 #include "thorin/util/log.h"
 
 #if 0
 
-namespace thorin::core {
+namespace thorin::me {
 
 //------------------------------------------------------------------------------
 

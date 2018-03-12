@@ -1,9 +1,10 @@
 #include "gtest/gtest.h"
 
 #include "thorin/world.h"
-#include "thorin/frontend/parser.h"
+#include "thorin/fe/parser.h"
 
 using namespace thorin;
+using namespace thorin::fe;
 
 // TODO remove this macro
 #define print_value_type(x) do{ std::cout << "<" << x->gid() << "> " << (x->name() == "" ? #x : x->name()) << " = " << x << ": " << x->type() << endl; }while(0)

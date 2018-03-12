@@ -1,20 +1,14 @@
-#include "thorin/core/world.h"
+#include "thorin/me/world.h"
 
-#include "thorin/core/normalize.h"
-#include "thorin/frontend/parser.h"
+#include "thorin/me/normalize.h"
+#include "thorin/fe/parser.h"
 
-namespace thorin::core {
+namespace thorin::me {
 
 //------------------------------------------------------------------------------
 /*
  * helpers
  */
-
-std::array<const Def*, 2> shape_and_body(World& world, const Def* def) {
-    if (auto variadic = def->isa<Variadic>())
-        return {{variadic->arity(), variadic->body()}};
-    return {{world.arity(1), def}};
-}
 
 std::array<const Def*, 2> infer_width_and_shape(World& world, const Def* def) {
     if (auto variadic = def->type()->isa<Variadic>()) {
@@ -40,12 +34,12 @@ World::World(Debug dbg)
     type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
     type_frame_ = axiom(star(), {"F"});
 
-    auto type_WOp  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
-    auto type_MOp  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]");
-    auto type_IOp  = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
-    auto type_ROp  = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ");
-    auto type_ICmp = parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]");
-    auto type_RCmp = parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]");
+    auto type_WOp  = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
+    auto type_MOp  = fe::parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]");
+    auto type_IOp  = fe::parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
+    auto type_ROp  = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ");
+    auto type_ICmp = fe::parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]");
+    auto type_RCmp = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]");
 
 #define CODE(T, o) \
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});

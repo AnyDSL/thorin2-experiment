@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "thorin/core/world.h"
-#include "thorin/frontend/parser.h"
+#include "thorin/me/world.h"
+#include "thorin/fe/parser.h"
 
 using namespace thorin;
 
@@ -57,7 +57,7 @@ TEST(Variadic, Misc) {
 }
 
 TEST(Variadic, LEA) {
-    core::World w;
+    me::World w;
     auto B = w.type_bool();
     auto N = w.type_nat();
 

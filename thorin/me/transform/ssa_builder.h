@@ -1,11 +1,11 @@
-#ifndef THORIN_CORE_TRANSFORM_SSA_BUILDER_H
-#define THORIN_CORE_TRANSFORM_SSA_BUILDER_H
+#ifndef THORIN_ME_TRANSFORM_SSA_BUILDER_H
+#define THORIN_ME_TRANSFORM_SSA_BUILDER_H
 
 #if 0
 
-#include "thorin/core/world.h"
+#include "thorin/me/world.h"
 
-namespace thorin::core {
+namespace thorin::me {
 
 class SSABuilder;
 class Slot;

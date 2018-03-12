@@ -1,9 +1,10 @@
 #include "gtest/gtest.h"
 
 #include "thorin/world.h"
-#include "thorin/frontend/parser.h"
+#include "thorin/fe/parser.h"
 
 using namespace thorin;
+using namespace thorin::fe;
 
 TEST(Sigma, Assign) {
     World w;

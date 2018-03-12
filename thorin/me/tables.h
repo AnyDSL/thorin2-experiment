@@ -1,9 +1,9 @@
-#ifndef THORIN_CORE_TABLES_H
-#define THORIN_CORE_TABLES_H
+#ifndef THORIN_ME_TABLES_H
+#define THORIN_ME_TABLES_H
 
 #include "thorin/util/utility.h"
 
-namespace thorin::core {
+namespace thorin::me {
 
 enum class WFlags : int64_t {
     none = 0,
@@ -19,21 +19,21 @@ enum class RFlags : int64_t {
     arcp     = 1 << 3, ///< Allow Reciprocal - Allow optimizations to use the reciprocal of an argument rather than perform division.
     contract = 1 << 4, ///< Allow floating-point contraction (e.g. fusing a multiply followed by an addition into a fused multiply-and-add).
     afn      = 1 << 5, ///< Approximate functions - Allow substitution of approximate calculations for functions (sin, log, sqrt, etc). See floating-point intrinsic definitions for places where this can apply to LLVM’s intrinsic math functions.
-    reassoc  = 1 << 6, ///< Allow reassociation transformations for floating-point instructions. This may dramatically change results in floating point.
+    reassoc  = 1 << 6, ///< Allow reassociation transformations for floating-point operations. This may dramatically change results in floating point.
     finite   = nnan | ninf,
     unsafe   = nsz | arcp | reassoc,
     fast = nnan | ninf | nsz | arcp | contract | afn | reassoc,
 };
 
-/// Integer instructions that might wrap and, hence, take @p WFlags.
+/// Integer operations that might wrap and, hence, take @p WFlags.
 #define THORIN_W_OP(m) m(WOp, add) m(WOp, sub) m(WOp, mul) m(WOp, shl)
-/// Integer instructions that might produce a side effect (division by zero).
+/// Integer operations that might produce a side effect (division by zero).
 #define THORIN_M_OP(m) m(MOp, sdiv) m(MOp, udiv) m(MOp, smod) m(MOp, umod)
-/// Integer instructions that neither take wflags nor do they produce a side effect.
+/// Integer operations that neither take wflags nor do they produce a side effect.
 #define THORIN_I_OP(m) m(IOp, ashr) m(IOp, lshr) m(IOp, iand) m(IOp, ior) m(IOp, ixor)
-/// Floating point (real) instructions that take @p RFlags.
+/// Floating point (real) operations that take @p RFlags.
 #define THORIN_R_OP(m) m(ROp, radd) m(ROp, rsub) m(ROp, rmul) m(ROp, rdiv) m(ROp, rmod)
-/// All cast instructions that cast from/to real/signed/unsigned.
+/// All cast operations that cast from/to real/signed/unsigned.
 #define THORIN_CAST(m) m(Cast, scast) m(Cast, ucast) m(Cast, rcast) m(Cast, s2r) m(Cast, u2r) m(Cast, r2s) m(Cast, r2u)
 
 #define THORIN_I_CMP(m)              /* PM MP G L E                                                   */ \
@@ -148,25 +148,6 @@ constexpr RCmp operator&(RCmp a, RCmp b) { return RCmp(int64_t(a) & int64_t(b));
 constexpr bool has_feature(WFlags flags, WFlags feature) { return (flags & feature) == feature; }
 constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & feature) == feature; }
 
-template<class T> constexpr auto Num = size_t(-1);
-
-#define CODE(T, o) + 1_s
-template<> constexpr auto Num<WOp>  = 0_s THORIN_W_OP (CODE);
-template<> constexpr auto Num<MOp>  = 0_s THORIN_M_OP (CODE);
-template<> constexpr auto Num<IOp>  = 0_s THORIN_I_OP (CODE);
-template<> constexpr auto Num<ROp>  = 0_s THORIN_R_OP (CODE);
-template<> constexpr auto Num<ICmp> = 0_s THORIN_I_CMP(CODE);
-template<> constexpr auto Num<RCmp> = 0_s THORIN_R_CMP(CODE);
-template<> constexpr auto Num<Cast> = 0_s THORIN_CAST (CODE);
-#undef CODE
-
-THORIN_ENUM_ITERATOR(WOp)
-THORIN_ENUM_ITERATOR(MOp)
-THORIN_ENUM_ITERATOR(IOp)
-THORIN_ENUM_ITERATOR(ROp)
-THORIN_ENUM_ITERATOR(ICmp)
-THORIN_ENUM_ITERATOR(RCmp)
-
 constexpr const char* op2str(WOp o) {
     switch (o) {
 #define CODE(T, o) case T::o: return #o;
@@ -229,6 +210,20 @@ constexpr const char* cast2str(Cast o) {
         default: THORIN_UNREACHABLE;
     }
 }
+
+}
+
+namespace thorin {
+
+#define CODE(T, o) + 1_s
+template<> constexpr auto Num<me::WOp>  = 0_s THORIN_W_OP (CODE);
+template<> constexpr auto Num<me::MOp>  = 0_s THORIN_M_OP (CODE);
+template<> constexpr auto Num<me::IOp>  = 0_s THORIN_I_OP (CODE);
+template<> constexpr auto Num<me::ROp>  = 0_s THORIN_R_OP (CODE);
+template<> constexpr auto Num<me::ICmp> = 0_s THORIN_I_CMP(CODE);
+template<> constexpr auto Num<me::RCmp> = 0_s THORIN_R_CMP(CODE);
+template<> constexpr auto Num<me::Cast> = 0_s THORIN_CAST (CODE);
+#undef CODE
 
 }
 

@@ -4,9 +4,10 @@
 #include <string>
 
 #include "thorin/world.h"
-#include "thorin/frontend/parser.h"
+#include "thorin/fe/parser.h"
 
 using namespace thorin;
+using namespace thorin::fe;
 
 TEST(Parser, Simple) {
     World w;

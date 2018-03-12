@@ -1,10 +1,10 @@
-#ifndef THORIN_CORE_FOLD_H
-#define THORIN_CORE_FOLD_H
+#ifndef THORIN_ME_FOLD_H
+#define THORIN_ME_FOLD_H
 
-#include "thorin/core/tables.h"
+#include "thorin/me/tables.h"
 #include "thorin/util/types.h"
 
-namespace thorin::core {
+namespace thorin::me {
 
 // This code assumes two-complement arithmetic for unsigned operations.
 // This is *implementation-defined* but *NOT* *undefined behavior*.

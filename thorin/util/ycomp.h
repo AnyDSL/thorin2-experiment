@@ -30,11 +30,11 @@ enum YCompOrientation {
     RightToLeft,
     BottomToTop,
     TopToBottom,
-    Num
+    Num_Orientations
 };
 
 static const char* YCompOrientation_Names[] = { "left_to_right", "right_to_left", "bottom_to_top", "top_to_bottom" };
-static_assert(sizeof(YCompOrientation_Names)/sizeof(char*) == YCompOrientation::Num, "Sizes do not match!");
+static_assert(sizeof(YCompOrientation_Names)/sizeof(char*) == YCompOrientation::Num_Orientations, "Sizes do not match!");
 
 template<class I, class SuccFct>
 class YCompScope {
