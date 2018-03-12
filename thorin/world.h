@@ -11,11 +11,11 @@
 
 namespace thorin {
 
-struct TypeError {
-    TypeError(std::string&& msg)
-        : msg(std::move(msg))
+class TypeError : public std::logic_error {
+public:
+    TypeError(std::string&& what)
+        : std::logic_error(std::move(what))
     {}
-    std::string msg;
 };
 
 template<typename... Args>
