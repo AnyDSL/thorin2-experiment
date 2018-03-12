@@ -68,38 +68,33 @@ const Def* reassociate(const Def* callee, const Def* a, const Def* b, Debug dbg)
     return commute(callee, a, b, dbg);
 }
 
-// TODO merge this with the other overload
-const Def* normalize_tuple(const Def* callee, const Def* a, Debug dbg) {
+const Def* normalize_tuple(const Def* callee, Defs args, Debug dbg) {
     auto& w = callee->world();
-    auto ta = a->isa<Tuple>();
-    auto pa = a->isa<Pack>();
 
-    if (ta || pa) {
+    size_t num = size_t(-1);
+    bool foldable = std::all_of(args.begin(), args.end(), [&](const Def* def) {
+        if (auto tuple = def->isa<Tuple>()) {
+            auto n = tuple->num_ops();
+            assert(num == size_t(-1) || n == num);
+            num = n;
+            return true;
+        } else if (def->isa<Pack>()) {
+            return true;
+        }
+        return false;
+    });
+
+    if (foldable) {
         auto [head, tail] = shrink_shape(app_arg(callee));
         auto new_callee = w.app(app_callee(callee), tail);
-
-        if (ta) return w.tuple(DefArray(ta->num_ops(), [&](auto i) { return w.app(new_callee, ta->op(i), dbg); }));
-        assert(pa);
-        return w.pack(head, w.app(new_callee, pa->body(), dbg), dbg);
-    }
-
-    return nullptr;
-}
-
-const Def* normalize_tuple(const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    auto& w = callee->world();
-    auto ta = a->isa<Tuple>(), tb = b->isa<Tuple>();
-    auto pa = a->isa<Pack>(),  pb = b->isa<Pack>();
-
-    if ((ta || pa) && (tb || pb)) {
-        auto [head, tail] = shrink_shape(app_arg(callee));
-        auto new_callee = w.app(app_callee(callee), tail);
-
-        if (ta && tb) return w.tuple(DefArray(ta->num_ops(), [&](auto i) { return w.app(new_callee, {ta->op(i),  tb->op(i)},  dbg); }));
-        if (ta && pb) return w.tuple(DefArray(ta->num_ops(), [&](auto i) { return w.app(new_callee, {ta->op(i),  pb->body()}, dbg); }));
-        if (pa && tb) return w.tuple(DefArray(tb->num_ops(), [&](auto i) { return w.app(new_callee, {pa->body(), tb->op(i)},  dbg); }));
-        assert(pa && pb);
-        return w.pack(head, w.app(new_callee, {pa->body(), pb->body()}, dbg), dbg);
+        if (std::all_of(args.begin(), args.end(), [&](const Def* def) { return def->isa<Pack>(); })) {
+            auto new_arg = DefArray(args.size(), [&](size_t i) { return args[i]->as<Pack>()->body(); });
+            return w.pack(head, w.app(new_callee, new_arg, dbg), dbg);
+        }
+        auto new_ops = DefArray(num,
+                [&](size_t i) { return w.app(new_callee, DefArray(args.size(),
+                [&](size_t j) { return args[j]->isa<Pack>() ? args[j]->as<Pack>()->body() : args[j]->as<Tuple>()->op(i); }), dbg); });
+        return w.tuple(new_ops, dbg);
     }
 
     return nullptr;
@@ -143,6 +138,7 @@ const Def* normalize_BOp(const Def* callee, const Def* arg, Debug dbg) {
         }
     }
 
+    if (auto result = normalize_tuple(callee, {a, b}, dbg)) return result;
     return reassociate(callee, a, b, dbg);
 }
 
@@ -164,6 +160,7 @@ const Def* normalize_NOp(const Def* callee, const Def* arg, Debug dbg) {
         }
     }
 
+    if (auto result = normalize_tuple(callee, {arg}, dbg)) return result;
     return reassociate(callee, a, b, dbg);
 }
 

@@ -90,7 +90,7 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
         }
     }
 
-    return normalize_tuple(callee, a, b, dbg);
+    return normalize_tuple(callee, {a, b}, dbg);
 }
 
 template<WOp op>
@@ -163,7 +163,7 @@ static const Def* just_try_ifold(const Def* callee, const Def* a, const Def* b) 
 template<template<int> class F>
 static const Def* try_ifold(const Def* callee, const Def* a, const Def* b, Debug dbg) {
     if (auto result = just_try_ifold<F>(callee, a, b)) return result;
-    return normalize_tuple(callee, a, b, dbg);
+    return normalize_tuple(callee, {a, b}, dbg);
 }
 
 template<template<int> class F>
@@ -241,7 +241,7 @@ static const Def* try_rfold(const Def* callee, const Def* a, const Def* b, Debug
         }
     }
 
-    return normalize_tuple(callee, a, b, dbg);
+    return normalize_tuple(callee, {a, b}, dbg);
 }
 
 template<ROp op>
@@ -302,7 +302,7 @@ template<Cast op>
 const Def* normalize_Cast(const Def* callee, const Def* arg, Debug dbg) {
     auto& world = static_cast<World&>(callee->world());
 
-    if (auto result =  normalize_tuple(callee, arg, dbg))
+    if (auto result = normalize_tuple(callee, {arg}, dbg))
         return result;
     return world.raw_app(callee, arg, dbg);
 }
