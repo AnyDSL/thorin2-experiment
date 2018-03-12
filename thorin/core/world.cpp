@@ -10,12 +10,6 @@ namespace thorin::core {
  * helpers
  */
 
-std::array<const Def*, 2> shape_and_body(World& world, const Def* def) {
-    if (auto variadic = def->isa<Variadic>())
-        return {{variadic->arity(), variadic->body()}};
-    return {{world.arity(1), def}};
-}
-
 std::array<const Def*, 2> infer_width_and_shape(World& world, const Def* def) {
     if (auto variadic = def->type()->isa<Variadic>()) {
         if (!variadic->body()->isa<Variadic>())

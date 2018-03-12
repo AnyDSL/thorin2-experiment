@@ -2,6 +2,7 @@
 #include <functional>
 
 #include "thorin/world.h"
+#include "thorin/normalize.h"
 #include "thorin/frontend/parser.h"
 #include "thorin/transform/reduce.h"
 
@@ -17,6 +18,19 @@ namespace thorin {
     if (is_typechecking_enabled() && !(cond)) {  \
         errorf_(__VA_ARGS__);                   \
     }
+
+const Def* infer_shape(World& world, const Def* def) {
+    if (auto variadic = def->type()->isa<Variadic>()) {
+        if (!variadic->body()->isa<Variadic>())
+            return variadic->arity();
+        std::vector<const Def*> arities;
+        const Def* cur = variadic;
+        for (; cur->isa<Variadic>(); cur = cur->as<Variadic>()->body())
+            arities.emplace_back(cur->as<Variadic>()->arity());
+        return world.sigma(arities);
+    }
+    return world.arity(1);
+}
 
 //------------------------------------------------------------------------------
 
@@ -171,15 +185,24 @@ World::World(Debug dbg)
         unit_val_[i] = index_zero(unit_[i]);
     }
 
-    type_bool_ = arity(2);
+    type_bool_ = axiom(star(), {"bool"});
     type_nat_  = axiom(star(), {"nat"});
 
-    lit_bool_[0] = index(2, 0);
-    lit_bool_[1] = index(2, 1);
+    lit_bool_[0] = lit(type_bool(), {false});
+    lit_bool_[1] = lit(type_bool(), {true});
 
     lit_nat_0_   = lit_nat(0);
     for (size_t j = 0; j != lit_nat_.size(); ++j)
         lit_nat_[j] = lit_nat(1 << int64_t(j));
+
+    auto type_BOp  = parse(*this, "Πs: 𝕄. Π[[s; bool], [s; bool]]. [s; bool]");
+    auto type_NOp  = parse(*this, "Πs: 𝕄. Π[[s;  nat], [s;  nat]]. [s;  nat]");
+
+#define CODE(T, o) \
+    T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});
+    THORIN_B_OP(CODE)
+    THORIN_N_OP(CODE)
+#undef CODE
 
     arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: 𝔸q].𝔸q");         // {"Sₐ"}
     index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸q].ASucc p");       // {"0ⁱ"}

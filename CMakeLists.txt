@@ -22,13 +22,13 @@ endif()
 # prevent overriding the parent project's compiler/linker settings on Windows
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-# Add googletest directly to our build. 
+# Add googletest directly to our build.
 # This defines the gtest and gtest_main targets.
 add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
 
 include_directories(.)
 
-add_executable(coc-gtest 
+add_executable(coc-gtest
     test/arity.cpp
     test/bitset.cpp
     test/cn.cpp
@@ -36,18 +36,22 @@ add_executable(coc-gtest
     test/lexer.cpp
     test/main.cpp
     test/nominal.cpp
+    test/normalize.cpp
     test/pack.cpp
     test/parse.cpp
-    test/primop.cpp
     test/sigma.cpp
     test/singleton.cpp
     test/ssa.cpp
     test/substructural.cpp
     test/variadic.cpp
     test/variants.cpp
+    test/me/primop.cpp
     thorin/def.cpp
     thorin/def.h
+    thorin/normalize.cpp
+    thorin/normalize.h
     thorin/qualifier.h
+    thorin/tables.h
     thorin/world.cpp
     thorin/world.h
     thorin/core/fold.h

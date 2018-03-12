@@ -1,3 +1,4 @@
+#include "thorin/normalize.h"
 #include "thorin/core/world.h"
 #include "thorin/core/fold.h"
 #include "thorin/transform/reduce.h"
@@ -8,65 +9,12 @@ namespace thorin::core {
  * helpers
  */
 
-static std::array<const Def*, 2> split(const Def* def) {
-    auto& w = def->world();
-    auto a = w.extract(def, 0_u64);
-    auto b = w.extract(def, 1_u64);
-    return {{a, b}};
-}
-
 static std::array<const Def*, 3> msplit(const Def* def) {
     auto& w = def->world();
     auto a = w.extract(def, 0_u64);
     auto b = w.extract(def, 1_u64);
     auto m = w.extract(def, 2_u64);
     return {{a, b, m}};
-}
-
-static std::array<const Def*, 2> shrink_shape(const Def* def) {
-    auto& w = def->world();
-    if (def->isa<Arity>())
-        return {{def, w.arity(1)}};
-    if (auto sigma = def->isa<Sigma>())
-        return {{sigma->op(0), shift_free_vars(w.sigma(sigma->ops().skip_front()), -1)}};
-    auto variadic = def->as<Variadic>();
-    return {{variadic->arity(), w.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())}};
-}
-
-static const Def* normalize_tuple(const Def* callee, const Def* a, Debug dbg) {
-    auto& w = callee->world();
-    auto ta = a->isa<Tuple>();
-    auto pa = a->isa<Pack>();
-
-    if (ta || pa) {
-        auto [head, tail] = shrink_shape(app_arg(callee));
-        auto new_callee = w.app(app_callee(callee), tail);
-
-        if (ta) return w.tuple(DefArray(ta->num_ops(), [&](auto i) { return w.app(new_callee, ta->op(i), dbg); }));
-        assert(pa);
-        return w.pack(head, w.app(new_callee, pa->body(), dbg), dbg);
-    }
-
-    return nullptr;
-}
-
-static const Def* normalize_tuple(const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    auto& w = callee->world();
-    auto ta = a->isa<Tuple>(), tb = b->isa<Tuple>();
-    auto pa = a->isa<Pack>(),  pb = b->isa<Pack>();
-
-    if ((ta || pa) && (tb || pb)) {
-        auto [head, tail] = shrink_shape(app_arg(callee));
-        auto new_callee = w.app(app_callee(callee), tail);
-
-        if (ta && tb) return w.tuple(DefArray(ta->num_ops(), [&](auto i) { return w.app(new_callee, {ta->op(i),  tb->op(i)},  dbg); }));
-        if (ta && pb) return w.tuple(DefArray(ta->num_ops(), [&](auto i) { return w.app(new_callee, {ta->op(i),  pb->body()}, dbg); }));
-        if (pa && tb) return w.tuple(DefArray(tb->num_ops(), [&](auto i) { return w.app(new_callee, {pa->body(), tb->op(i)},  dbg); }));
-        assert(pa && pb);
-        return w.pack(head, w.app(new_callee, {pa->body(), pb->body()}, dbg), dbg);
-    }
-
-    return nullptr;
 }
 
 static const Def* normalize_mtuple(const Def* callee, const Def* m, const Def* a, const Def* b, Debug dbg) {
@@ -87,48 +35,6 @@ static const Def* normalize_mtuple(const Def* callee, const Def* m, const Def* a
     }
 
     return nullptr;
-}
-
-static inline bool is_foldable(const Def* def) { return def->isa<Lit>() || def->isa<Tuple>() || def->isa<Pack>(); }
-
-static const Lit* foldable_to_left(const Def*& a, const Def*& b) {
-    if (is_foldable(b))
-        std::swap(a, b);
-
-    return a->isa<Lit>();
-}
-
-static const Def* commute(const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    auto& w = callee->world();
-    if (a->gid() > b->gid() && !a->isa<Lit>())
-        return w.raw_app(callee, {b, a}, dbg);
-    return w.raw_app(callee, {a, b}, dbg);
-}
-
-static const Def* reassociate(const Def* callee, const Def* a, const Def* b, Debug dbg) {
-    auto& w = callee->world();
-    std::array<const Def*, 2> args{{a, b}};
-    std::array<std::array<const Def*, 2>, 2> aa{{{{nullptr, nullptr}}, {{nullptr, nullptr}}}};
-    std::array<bool, 2> foldable{{false, false}};
-
-    for (size_t i = 0; i != 2; ++i) {
-        if (auto app = args[i]->isa<App>()) {
-            aa[i] = split(app->arg());
-            foldable[i] = is_foldable(aa[i][0]);
-        }
-    }
-
-    if (foldable[0] && foldable[1]) {
-        auto f = w.app(callee, {aa[0][0], aa[1][0]}, dbg);
-        return w.app(callee, {f, w.app(callee, {aa[0][1], aa[1][1]}, dbg)}, dbg);
-    }
-
-    for (size_t i = 0; i != 2; ++i) {
-        if (foldable[i])
-            return w.app(callee, {aa[i][0], w.app(callee, {args[1-i], aa[i][1]}, dbg)}, dbg);
-    }
-
-    return commute(callee, a, b, dbg);
 }
 
 bool is_commutative(WOp op) { return op == WOp:: add || op == WOp:: mul; }

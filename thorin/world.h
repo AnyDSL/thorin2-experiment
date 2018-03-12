@@ -6,6 +6,7 @@
 #include <string>
 
 #include "thorin/def.h"
+#include "thorin/tables.h"
 #include "thorin/util/iterator.h"
 #include "thorin/util/symbol.h"
 
@@ -24,6 +25,10 @@ template<typename... Args>
     streamf(oss, fmt, std::forward<Args>(args)...);
     throw TypeError(std::move(oss.str()));
 }
+
+class World;
+const Def* infer_shape(World&, const Def* def);
+std::array<const Def*, 2> infer_width_and_shape(World&, const Def*);
 
 //------------------------------------------------------------------------------
 
@@ -261,7 +266,7 @@ public:
     //@}
 
     //@{ bool and nat types
-    const Arity* type_bool() { return type_bool_; }
+    const Axiom* type_bool() { return type_bool_; }
     const Axiom* type_nat() { return type_nat_; }
     //@}
 
@@ -285,6 +290,33 @@ public:
     const Axiom* cn_br()    const { return cn_br_; }
     const Axiom* cn_match() const { return cn_match_; }
     Cn* cn_end()   const { return cn_end_; }
+    //@}
+
+    //@{ boolean operations
+    template<BOp o> const Axiom* op() { return BOp_[size_t(o)]; }
+    template<BOp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
+        auto shape = infer_shape(*this, a);
+        return op<o>(shape, a, b, dbg);
+    }
+    template<BOp o> const Def* op(const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(op<o>(), shape), {a, b}, dbg);
+    }
+    const Def* op_bnot(const Def* a, Debug dbg = {}) {
+        return op_bnot(infer_shape(*this, a), a, dbg);
+    }
+    const Def* op_bnot(const Def* shape, const Def* a, Debug dbg = {}) {
+        return app(app(op<BOp::bxor>(), shape), {variadic(shape, lit_true()), a}, dbg);
+    }
+    //@}
+
+    //@{ nat operations
+    template<NOp o> const Axiom* op() { return NOp_[size_t(o)]; }
+    template<NOp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
+        return op<o>(infer_shape(*this, a), a, b, dbg);
+    }
+    template<NOp o> const Def* op(const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(op<o>(), shape), {a, b}, dbg);
+    }
     //@}
 
     //@{ externals
@@ -479,7 +511,9 @@ protected:
     std::array<const Def*, 4> unit_kind_val_;
     std::array<const ArityKind*, 4> arity_kind_;
     std::array<const MultiArityKind*, 4> multi_arity_kind_;
-    const Arity* type_bool_;
+    std::array<const Axiom*, Num<BOp>> BOp_;
+    std::array<const Axiom*, Num<NOp>> NOp_;
+    const Axiom* type_bool_;
     const Axiom* type_nat_;
     const Lit* lit_nat_0_;
     std::array<const Lit*, 2> lit_bool_;
