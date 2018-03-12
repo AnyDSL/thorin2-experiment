@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "thorin/core/world.h"
+#include "thorin/me/world.h"
 
 namespace thorin {
 

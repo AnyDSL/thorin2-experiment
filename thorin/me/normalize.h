@@ -1,14 +1,14 @@
-#ifndef THORIN_CORE_NORMALIZE_H
-#define THORIN_CORE_NORMALIZE_H
+#ifndef THORIN_ME_NORMALIZE_H
+#define THORIN_ME_NORMALIZE_H
 
-#include "thorin/core/tables.h"
+#include "thorin/me/tables.h"
 #include "thorin/util/location.h"
 
 namespace thorin {
 
 class Def;
 
-namespace core {
+namespace me {
 
 template<WOp > const Def* normalize_WOp (const Def*, const Def*, Debug);
 template<MOp > const Def* normalize_MOp (const Def*, const Def*, Debug);

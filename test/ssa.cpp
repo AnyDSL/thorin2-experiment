@@ -2,10 +2,10 @@
 
 #include "thorin/analyses/scope.h"
 #include "thorin/fe/parser.h"
-#include "thorin/core/world.h"
-#include "thorin/core/transform/ssa_builder.h"
+#include "thorin/me/world.h"
+#include "thorin/me/transform/ssa_builder.h"
 
-namespace thorin::core {
+namespace thorin::me {
 
 TEST(SSA, Simple) {
     World w;

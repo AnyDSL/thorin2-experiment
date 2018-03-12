@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 
 #include "thorin/analyses/scope.h"
-#include "thorin/core/world.h"
+#include "thorin/me/world.h"
 #include "thorin/fe/parser.h"
 
-namespace thorin::core {
+namespace thorin::me {
 
 TEST(Cn, Simple) {
     World w;

@@ -54,14 +54,14 @@ add_executable(coc-gtest
     thorin/tables.h
     thorin/world.cpp
     thorin/world.h
-    thorin/core/fold.h
-    thorin/core/normalize.cpp
-    thorin/core/normalize.h
-    thorin/core/tables.h
-    thorin/core/world.cpp
-    thorin/core/world.h
-    thorin/core/transform/ssa_builder.cpp
-    thorin/core/transform/ssa_builder.h
+    thorin/me/fold.h
+    thorin/me/normalize.cpp
+    thorin/me/normalize.h
+    thorin/me/tables.h
+    thorin/me/world.cpp
+    thorin/me/world.h
+    thorin/me/transform/ssa_builder.cpp
+    thorin/me/transform/ssa_builder.h
     thorin/analyses/cfg.cpp
     thorin/analyses/cfg.h
     thorin/analyses/domfrontier.cpp

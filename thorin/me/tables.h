@@ -1,9 +1,9 @@
-#ifndef THORIN_CORE_TABLES_H
-#define THORIN_CORE_TABLES_H
+#ifndef THORIN_ME_TABLES_H
+#define THORIN_ME_TABLES_H
 
 #include "thorin/util/utility.h"
 
-namespace thorin::core {
+namespace thorin::me {
 
 enum class WFlags : int64_t {
     none = 0,
@@ -216,13 +216,13 @@ constexpr const char* cast2str(Cast o) {
 namespace thorin {
 
 #define CODE(T, o) + 1_s
-template<> constexpr auto Num<core::WOp>  = 0_s THORIN_W_OP (CODE);
-template<> constexpr auto Num<core::MOp>  = 0_s THORIN_M_OP (CODE);
-template<> constexpr auto Num<core::IOp>  = 0_s THORIN_I_OP (CODE);
-template<> constexpr auto Num<core::ROp>  = 0_s THORIN_R_OP (CODE);
-template<> constexpr auto Num<core::ICmp> = 0_s THORIN_I_CMP(CODE);
-template<> constexpr auto Num<core::RCmp> = 0_s THORIN_R_CMP(CODE);
-template<> constexpr auto Num<core::Cast> = 0_s THORIN_CAST (CODE);
+template<> constexpr auto Num<me::WOp>  = 0_s THORIN_W_OP (CODE);
+template<> constexpr auto Num<me::MOp>  = 0_s THORIN_M_OP (CODE);
+template<> constexpr auto Num<me::IOp>  = 0_s THORIN_I_OP (CODE);
+template<> constexpr auto Num<me::ROp>  = 0_s THORIN_R_OP (CODE);
+template<> constexpr auto Num<me::ICmp> = 0_s THORIN_I_CMP(CODE);
+template<> constexpr auto Num<me::RCmp> = 0_s THORIN_R_CMP(CODE);
+template<> constexpr auto Num<me::Cast> = 0_s THORIN_CAST (CODE);
 #undef CODE
 
 }
