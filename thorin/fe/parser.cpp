@@ -162,7 +162,7 @@ const Def* Parser::parse_sigma_or_variadic() {
     return world_.sigma(parse_sigma_ops(), {tracker});
 }
 
-DefArray Parser::parse_lambda_ops() {
+const Def* Parser::parse_lambda() {
     Tracker tracker(this);
     eat(Token::Tag::Lambda);
     auto domain = parse_def();
@@ -170,13 +170,7 @@ DefArray Parser::parse_lambda_ops() {
     expect(Token::Tag::Dot, "λ abstraction");
     auto body = parse_def();
     pop_debruijn_binders();
-    return {domain, body};
-}
-
-const Def* Parser::parse_lambda() {
-    Tracker tracker(this);
-    auto ops = parse_lambda_ops();
-    return world_.lambda(ops[0], ops[1], {tracker});
+    return world_.lambda(domain, body, {tracker});
 }
 
 const Def* Parser::parse_optional_qualifier() {

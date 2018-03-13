@@ -58,7 +58,6 @@ private:
     const Def* parse_literal();
     const Def* parse_identifier();
     std::vector<const Def*> parse_sigma_ops();
-    DefArray parse_lambda_ops();
 
     DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const char* context, const Def* first = nullptr) {
         DefVector elems;
