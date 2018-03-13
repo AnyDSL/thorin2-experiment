@@ -32,7 +32,7 @@ private:
             , col(parser->ahead_[0].location().front_col())
         {}
 
-        Location location() const {
+        operator Location() const {
             auto back_line = parser.ahead_[0].location().back_line();
             auto back_col  = parser.ahead_[0].location().back_col();
             return Location(parser.lexer_.filename(), line, col, back_line, back_col);
@@ -58,7 +58,6 @@ private:
     const Def* parse_literal();
     const Def* parse_identifier();
     std::vector<const Def*> parse_sigma_ops();
-    DefArray parse_lambda_ops();
 
     DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const char* context, const Def* first = nullptr) {
         DefVector elems;
