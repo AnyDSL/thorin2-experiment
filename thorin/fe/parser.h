@@ -32,7 +32,7 @@ private:
             , col(parser->ahead_[0].location().front_col())
         {}
 
-        Location location() const {
+        operator Location() const {
             auto back_line = parser.ahead_[0].location().back_line();
             auto back_col  = parser.ahead_[0].location().back_col();
             return Location(parser.lexer_.filename(), line, col, back_line, back_col);
