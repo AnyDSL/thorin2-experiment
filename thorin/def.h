@@ -184,8 +184,12 @@ public:
     const Def* op(size_t i) const { return ops()[i]; }
     size_t num_ops() const { return num_ops_; }
     bool empty() const { return num_ops() == 0; }
-    Def* set(size_t i, const Def*);
+    /// Sets the @c i'th @p op to @p def.
+    /// @attention { You *must* set the last operand last. This will invoke @p finalize. }
+    Def* set(size_t i, const Def* def);
     Def* set(Defs);
+    /// Returns @c true if all operands are set.
+    bool is_closed() const { return num_ops() == 0 || ops().back() != nullptr; }
     //@}
 
     //@{ get Uses%s
@@ -1013,7 +1017,9 @@ class Param : public Def {
 private:
     Param(const Def* type, const Lambda* lambda, Debug dbg)
         : Def(Tag::Param, type, Defs{lambda}, dbg)
-    {}
+    {
+        assert(lambda->is_nominal());
+    }
 
 public:
     Lambda* lambda() const { return const_cast<Lambda*>(op(0)->as<Lambda>()); }

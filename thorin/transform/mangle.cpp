@@ -28,7 +28,7 @@ Lambda* Mangler::mangle() {
             param_types.emplace_back(old_entry_->param(i)->type());
     }
 
-    auto new_pi = world().pi(old_entry_->qualifier(), world().sigma(param_types), old_entry_->codomain());
+    auto new_pi = world().pi(world().sigma(param_types), old_entry_->codomain(), old_entry_->qualifier());
     new_entry_ = world().lambda(new_pi, old_entry_->debug_history());
 
     old2new_[old_entry_] = old_entry_;

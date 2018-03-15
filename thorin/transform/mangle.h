@@ -40,6 +40,14 @@ inline Lambda* drop(Lambda* lambda, Defs args) {
     return drop(scope, args);
 }
 
+inline Lambda* clone(Lambda* lambda) {
+    Scope scope(lambda);
+    size_t num = 1;
+    if (auto arity = lambda->domain()->arity()->isa<Arity>())
+        num = arity->value();
+    return mangle(scope, DefArray(num), {});
+}
+
 //inline Lambda* lift(const Scope& scope, Defs defs) {
     //return mangle(scope, Array<const Def*>(scope.entry()->num_params()), defs);
 //}

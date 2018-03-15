@@ -733,6 +733,17 @@ const Lit* World::lit_nat(int64_t val, Location location) {
     return result;
 }
 
+
+#ifndef NDEBUG
+
+void World::breakpoint(size_t number) { breakpoints_.insert(number); }
+const World::Breakpoints& World::breakpoints() const { return breakpoints_; }
+void World::swap_breakpoints(World& other) { swap(this->breakpoints_, other.breakpoints_); }
+bool World::track_history() const { return track_history_; }
+void World::enable_history(bool flag) { track_history_ = flag; }
+
+#endif
+
 //------------------------------------------------------------------------------
 
 }

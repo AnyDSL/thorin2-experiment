@@ -114,7 +114,7 @@ public:
                 "function type {} of a nominal lambda may not contain free variables", type);
         return insert<Lambda>(2, type, dbg);
     }
-    const Param* param(const Lambda* lambda, Debug dbg = {}) { return unify<Param>(1, lambda->type()->op(0), lambda, dbg); }
+    const Param* param(const Lambda* lambda, Debug dbg = {}) { return unify<Param>(1, lambda->domain(), lambda, dbg); }
     //@}
 
     //@{ create App
@@ -337,11 +337,11 @@ public:
 
     //@{ debugging infrastructure
 #ifndef NDEBUG
-    void breakpoint(size_t number) { breakpoints_.insert(number); }
-    const Breakpoints& breakpoints() const { return breakpoints_; }
-    void swap_breakpoints(World& other) { swap(this->breakpoints_, other.breakpoints_); }
-    bool track_history() const { return track_history_; }
-    void enable_history(bool flag = true) { track_history_ = flag; }
+    void breakpoint(size_t number);
+    const Breakpoints& breakpoints() const;
+    void swap_breakpoints(World& other);
+    bool track_history() const;
+    void enable_history(bool flag = true);
 #endif
     bool is_typechecking_enabled() const { return typechecking_enabled_; }
     void enable_typechecking(bool on = true) { typechecking_enabled_ = on; }
@@ -427,6 +427,9 @@ protected:
     template<class T, class... Args>
     T* insert(size_t num_ops, Args&&... args) {
         auto def = alloc<T>(num_ops, args...);
+#ifndef NDEBUG
+        if (breakpoints_.contains(def->gid())) THORIN_BREAK;
+#endif
         auto p = defs_.emplace(def);
         assert_unused(p.second);
         return def;

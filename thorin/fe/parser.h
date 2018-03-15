@@ -84,8 +84,8 @@ private:
 
     Token next();
     const Token& ahead(int i = 0) { return ahead_[i]; }
-    void eat(Token::Tag);
-    void expect(Token::Tag, const char* context);
+    Token eat(Token::Tag);
+    Token expect(Token::Tag, const char* context);
     bool accept(Token::Tag);
 
 

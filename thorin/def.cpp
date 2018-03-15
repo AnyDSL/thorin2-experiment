@@ -139,9 +139,11 @@ void Def::finalize() {
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
         assert(op(i) != nullptr);
         checked_emplace(op(i)->uses_, Use{this, i});
-        free_vars_       |= op(i)->free_vars() >> shift(i);
+        if (op(i)->is_closed()) {
+            free_vars_    |= op(i)->free_vars() >> shift(i);
+            is_dependent_ |= is_dependent_ || op(i)->free_vars().any_end(i);
+        }
         contains_lambda_ |= op(i)->tag() == Tag::Lambda || op(i)->contains_lambda();
-        is_dependent_    |= is_dependent_ || op(i)->free_vars().any_end(i);
     }
 
     if (type() != nullptr)
@@ -199,8 +201,8 @@ void Def::replace(Tracker with) const {
 
 std::string Def::unique_name() const { return name().str() + '_' + std::to_string(gid()); }
 
-Lambda* Def::as_lambda() const { return const_cast<Lambda*>(as<Lambda>()); }
-Lambda* Def::isa_lambda() const { return const_cast<Lambda*>(isa<Lambda>()); }
+Lambda* Def::as_lambda() const { if (is_nominal()) return const_cast<Lambda*>(as<Lambda>()); return nullptr; }
+Lambda* Def::isa_lambda() const { if (is_nominal()) return const_cast<Lambda*>(isa<Lambda>()); return nullptr; }
 
 //------------------------------------------------------------------------------
 
@@ -855,7 +857,7 @@ std::ostream& Variant::vstream(std::ostream& os) const {
  */
 
 Lambda* Lambda::set(const Def* body) { return set(world().lit_false(), body); }
-const Param* Lambda::param(Debug dbg) const { assert(is_nominal()); return world().param(this, dbg); }
+const Param* Lambda::param(Debug dbg) const { return world().param(this, dbg); }
 const Def* Lambda::param(u64 i, Debug dbg) const { return world().extract(param(), i, dbg); }
 
 Lambda* Lambda::jump(const Def* callee, const Def* arg, Debug dbg) { return set(world().app(callee, arg, dbg)); }

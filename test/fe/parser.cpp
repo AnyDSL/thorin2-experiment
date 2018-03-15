@@ -196,25 +196,22 @@ TEST(Parser, LetShadow) {
     EXPECT_EQ(parse(w, "λ[x = nat; x:x].x"), w.lambda(nat, w.var(nat, 0)));
 }
 
-void check_nominal(const Def* def, Def::Tag tag, const Def* type, Defs ops) {
+void check_nominal(const Def* def, Def::Tag tag, const Def* type) {
     EXPECT_EQ(def->tag(), tag);
     EXPECT_EQ(def->type(), type);
-    EXPECT_EQ(def->num_ops(), ops.size());
-    for (size_t i = 0, e = ops.size(); i != e; ++i)
-        EXPECT_EQ(def->op(i), ops[i]);
 }
 
 TEST(Parser, NominalLambda) {
     World w;
     auto S = w.star();
-    auto nominal_id = parse(w, "l :: Π*.* := λt:*.t; l");
-    check_nominal(nominal_id, Def::Tag::Lambda, w.pi(S, S), {w.var(S, 0)});
+    auto nominal_id = parse(w, "l :: Π*.* := λt.t; l");
+    check_nominal(nominal_id, Def::Tag::Lambda, w.pi(S, S));
     // the following does not work, as it will be eta-reduced with the current parsing of nominals,
     // but such nominals are quite useless anyway
     // auto nominal_endless_id = parse(w, "l :: Π*.* := λt:*.l t; l");
     // check_nominal(nominal_id, Def::Tag::Lambda, w.pi(S, S), {w.app(nominal_endless_id, w.var(S, 0))});
-    auto ltup = parse(w, "l :: Π*.[*,*] := λt:*.(t, (l t)#0₂); l");
-    check_nominal(ltup, Def::Tag::Lambda, w.pi(S, w.sigma({S, S})), {w.tuple({w.var(S, 0), w.extract(w.app(ltup, w.var(S, 0)), 0_s)})});
+    auto ltup = parse(w, "l :: Π*.[*,*] := λt.(t, (l t)#0₂); l");
+    check_nominal(ltup, Def::Tag::Lambda, w.pi(S, w.sigma({S, S})));
 }
 
 // TODO nominal sigma tests

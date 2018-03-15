@@ -1,6 +1,7 @@
 #include "thorin/transform/reduce.h"
 
 #include "thorin/world.h"
+#include "thorin/transform/mangle.h"
 
 namespace thorin {
 
@@ -74,6 +75,11 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
         auto total_shift = shift() == 1 && !is_shift_only()
                 && args_[0]->isa<Tuple>() ? -args_[0]->num_ops()+1 : shift();
         return world().var(var->type(), var->index() - total_shift, var->debug());
+    }
+
+    if (auto old_lambda = old_def->isa_lambda()) {
+        auto new_lambda = clone(old_lambda);
+        return map_[{old_lambda, offset}] = new_lambda;
     }
 
     Def* new_nominal = nullptr;

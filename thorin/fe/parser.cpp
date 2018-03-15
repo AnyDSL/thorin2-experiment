@@ -277,17 +277,21 @@ Token Parser::next() {
     return result;
 }
 
-void Parser::eat(Token::Tag tag) {
-    assert_unused(ahead().isa(tag));
+Token Parser::eat(Token::Tag tag) {
+    auto result = ahead();
+    assert_unused(result.isa(tag));
     next();
+    return result;
 }
 
-void Parser::expect(Token::Tag tag, const char* context) {
+Token Parser::expect(Token::Tag tag, const char* context) {
+    auto result = ahead();
     if (!ahead().isa(tag)) {
         ELOG_LOC(ahead().location(), "expected '{}', got '{}' while parsing {}",
                 Token::tag_to_string(tag), Token::tag_to_string(ahead().tag()), context);
     }
     next();
+    return result;
 }
 
 bool Parser::accept(Token::Tag tag) {
@@ -299,54 +303,48 @@ bool Parser::accept(Token::Tag tag) {
 
 const Def* Parser::parse_identifier() {
     Tracker tracker(this);
-    auto id = ahead().identifier();
-    next();
+    auto symbol = eat(Token::Tag::Identifier).symbol();
     const Def* def = nullptr;
     if (accept(Token::Tag::Colon)) {
         // binder
         def = parse_def();
-        insert_identifier(id);
+        insert_identifier(symbol);
     } else if (accept(Token::Tag::Equal)) { // id = e; def
         // let
         // TODO parse multiple lets/nominals into one scope for mutual recursion and such
         push_decl_scope();
         auto let = parse_def();
         expect(Token::Tag::Semicolon, "a let definition");
-        insert_identifier(id, let);
+        insert_identifier(symbol, let);
         def = parse_def();
         pop_decl_scope();
     } else if (accept(Token::Tag::ColonColon)) { // id :: type := e; def
         // TODO parse multiple lets/nominals into one scope for mutual recursion and such
         auto type = parse_def();
         expect(Token::Tag::ColonEqual, "a nominal definition");
-        // we first abuse the variable to debruijn lookup to parse the whole def structurally
-        insert_identifier(id);
-        push_debruijn_type(type);
-        auto structural = parse_def();
-        pop_debruijn_binders();
-        // build the stub
-        Def* nominal = nullptr;
-        Debug dbg(tracker, id.str());
-        if (auto lambda = structural->isa<Lambda>())
-            nominal = world_.lambda(lambda->type(), dbg);
-        else if (auto sigma = structural->isa<Sigma>())
-            nominal = world_.sigma(type, sigma->num_ops(), dbg);
-        else {
-            assertf(false, "TODO unimplemented nominal {} with type {} at {}",
-                    structural, type, tracker);
+
+        if (accept(Token::Tag::Lambda)) {
+            auto lambda = world_.lambda(type->as<Pi>(), {tracker}); // TODO properly set back location
+            insert_identifier(symbol, lambda);
+            Tracker tracker(this);
+            push_decl_scope();
+            auto symbol = expect(Token::Tag::Identifier, "parameter name for nomimal λ").symbol();
+            insert_identifier(symbol, lambda->param({tracker, symbol}));
+            expect(Token::Tag::Dot, "λ abstraction");
+            auto body = parse_def();
+            pop_decl_scope();
+            lambda->set(body);
+        } else {
+            assert(false && "TODO");
         }
-        // rebuild the structural def with the real nominal def and finally set the ops of the nominal def
-        auto reduced = reduce(structural, nominal);
-        nominal->set(reduced->ops());
-        // now we can parse the rest with the real mapping
-        insert_identifier(id, nominal);
+
         eat(Token::Tag::Semicolon);
         push_decl_scope();
         def = parse_def();
         pop_decl_scope();
     } else {
         // use
-        auto decl = lookup(tracker, id);
+        auto decl = lookup(tracker, symbol);
         if (std::holds_alternative<size_t>(decl)) {
             auto binder_idx = std::get<size_t>(decl);
             const Binder& it = binders_[binder_idx];

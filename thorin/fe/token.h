@@ -85,13 +85,11 @@ public:
         , location_(loc)
         , literal_(lit)
     {}
-
-    Token(Location loc, const std::string& ident)
+    Token(Location loc, const std::string& identifier)
         : tag_(Tag::Identifier)
         , location_(loc)
-        , identifier_(ident)
+        , symbol_(identifier)
     {}
-
     Token(Location loc, Tag tag)
         : tag_(tag)
         , location_(loc)
@@ -99,7 +97,7 @@ public:
 
     Tag tag() const { return tag_; }
     Literal literal() const { return literal_; }
-    Symbol identifier() const { return identifier_; }
+    Symbol symbol() const { return symbol_; }
     Location location() const { return location_; }
 
     bool isa(Tag tag) const { return tag_ == tag; }
@@ -129,7 +127,7 @@ private:
     Location location_;
 
     Literal literal_;
-    Symbol identifier_;
+    Symbol symbol_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Token& t);
