@@ -557,10 +557,10 @@ bool Sigma::assignable(const Def* def) const {
     } else if (!def->isa<Tuple>())
         return false;
     for (size_t i = 0, e = num_ops(); i != e; ++i) {
-        auto reduced_type = reduce(op(i), defs.get_front(i));
-        // TODO allow conversion from nominal -> structural, instead of simple comparison
-        if (!reduced_type->assignable(defs[i]))
-            return false;
+        //auto reduced_type = reduce(op(i), defs.get_front(i));
+        //// TODO allow conversion from nominal -> structural, instead of simple comparison
+        //if (!reduced_type->assignable(defs[i]))
+            //return false;
     }
     return true;
 }

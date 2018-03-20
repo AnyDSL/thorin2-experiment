@@ -1,6 +1,7 @@
 #include "thorin/transform/reduce.h"
 
 #include "thorin/world.h"
+#include "thorin/util/log.h"
 
 namespace thorin {
 
@@ -16,25 +17,25 @@ struct DefIndexHash {
 
 class Reducer {
 public:
-    Reducer(World& world, Defs args)
+    Reducer(World& world, const Def* arg)
         : world_(world)
-        , args_(args)
-        , shift_(args.size())
+        , arg_(arg)
+        , shift_(1)
     {}
     Reducer(World& world, int64_t shift)
         : world_(world)
-        , args_()
+        , arg_()
         , shift_(shift)
     {}
 
     size_t shift() const { return shift_; }
-    bool is_shift_only() const { return args_.empty(); }
+    bool is_shift_only() const { return arg_ == nullptr; }
     World& world() const { return world_; }
     const Def* reduce(const Def* def, size_t index = 0);
 
 private:
     World& world_;
-    DefArray args_;
+    const Def* arg_;
     int64_t shift_;
     thorin::HashMap<DefIndex, const Def*, DefIndexHash> map_;
     DefMap<const Def*> nominals_;
@@ -56,13 +57,9 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
 
     if (auto var = old_def->isa<Var>()) {
         if (!is_shift_only()) {
-            // Is var within our args? - Map index() back into the original argument array.
-            if (offset <= var->index() && var->index() < offset + shift()) {
-                // remember that the lowest index corresponds to the last element in args due to De Bruijn's
-                // way of counting
-                size_t arg_index = shift() - (var->index() - offset) - 1;
-                assertf(new_type->assignable(args_[arg_index]), "cannot assign {} to {}", args_[arg_index], new_type);
-                return shift_free_vars(args_[arg_index], offset);
+            if (var->index() == offset) {
+                assertf(new_type->assignable(arg_), "cannot assign {} to {}", arg_, new_type);
+                return shift_free_vars(arg_, offset);
             }
         }
 
@@ -71,8 +68,9 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
             return world().var(new_type, var->index(), var->debug());
 
         // this var is free - shift by shift but inline a sole tuple arg if applicable
-        auto total_shift = shift() == 1 && !is_shift_only()
-                && args_[0]->isa<Tuple>() ? -args_[0]->num_ops()+1 : shift();
+        auto total_shift = shift() == 1 && !is_shift_only() && arg_->isa<Tuple>() ? -arg_->num_ops()+1 : shift();
+        if (total_shift != 1)
+            outf("xxx: {}\n", total_shift);
         return world().var(var->type(), var->index() - total_shift, var->debug());
     }
 
@@ -99,11 +97,11 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
 
 //------------------------------------------------------------------------------
 
-const Def* reduce(const Def* def, Defs args, size_t index) {
+const Def* reduce(const Def* def, const Def* arg, size_t index) {
     if (def->free_vars().none_begin(index))
         return def;
 
-    Reducer reducer(def->world(), args);
+    Reducer reducer(def->world(), arg);
     return reducer.reduce(def, index);
 }
 
