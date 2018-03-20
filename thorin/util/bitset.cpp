@@ -15,35 +15,27 @@ size_t BitSet::count() const {
     return result;
 }
 
-bool BitSet::any() const {
+inline static uint64_t begin_mask(size_t i) { return -1_u64 << (        i  % 64_s); }
+inline static uint64_t   end_mask(size_t i) { return -1_u64 >> ((64_s - i) % 64_s); }
+
+bool BitSet::any_range(const size_t begin, size_t end) const {
+    end = std::min(end, num_bits());
+    size_t i = begin / 64_s;
+    if (end - begin < 64_s)
+        return words()[i] & (begin_mask(begin) & end_mask(end));
+
     bool result = false;
-    auto w = words();
-    for (size_t i = 0, e = num_words(); !result && i != e; ++i)
-        result |= w[i] & -1_u64;
-    return result;
-}
+    if (auto mask = begin_mask(begin); mask != -1_u64) {
+        result |= words()[i] & mask;
+        ++i;
+    }
 
-bool BitSet::any_range(const size_t begin, const size_t end) const {
-    // TODO optimize
-    bool result = false;
-    for (size_t i = begin; !result && i != end; ++i)
-        result |= test(i);
-    return result;
-}
+    for (size_t e = end / 64_s; !result && i != e; ++i)
+        result |= words()[i];
 
-bool BitSet::none() const {
-    bool result = true;
-    auto w = words();
-    for (size_t i = 0, e = num_words(); result && i != e; ++i)
-        result &= w[i] == 0_u64;
-    return result;
-}
+    if (auto mask = end_mask(end); mask != -1_u64)
+        result |= words()[i] & mask;
 
-bool BitSet::none_range(const size_t begin, const size_t end) const {
-    // TODO optimize
-    bool result = true;
-    for (size_t i = begin; result && i != end; ++i)
-        result &= !test(i);
     return result;
 }
 
@@ -52,9 +44,8 @@ BitSet& BitSet::operator>>=(uint64_t shift) {
     uint64_t rem = shift%64_u64;
     auto w = words();
 
-    // TODO clean up
     if (div >= num_words())
-        std::fill_n(w, num_words(), 0);
+        clear();
     else {
         for (size_t i = 0, e = num_words()-div; i != e; ++i)
             w[i] = w[i+div];
@@ -70,24 +61,6 @@ BitSet& BitSet::operator>>=(uint64_t shift) {
 
     return *this;
 }
-
-// TODO optimize this and remove macro
-
-#define THORIN_BITSET_OPS(f) f(&) f(|) f(^)
-#define CODE(op)                                        \
-BitSet& BitSet::operator op ## =(const BitSet& other) { \
-    if (this->num_words() < other.num_words())          \
-        this->enlarge(other.num_bits()-1);              \
-    else if (other.num_words() < this->num_words())     \
-        other.enlarge(this->num_bits()-1);              \
-    auto  this_words = this->words();                   \
-    auto other_words = other.words();                   \
-    for (size_t i = 0, e = num_words(); i != e; ++i)    \
-        this_words[i] op ## = other_words[i];           \
-    return *this;                                       \
-}
-THORIN_BITSET_OPS(CODE)
-#undef CODE
 
 void BitSet::enlarge(size_t i) const {
     size_t num_new_words = (i+64_s) / 64_s;

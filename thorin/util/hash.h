@@ -623,8 +623,8 @@ T* find(const HashMap<Key, T*, H>& map, const typename HashMap<Key, T*, H>::key_
 }
 
 /// Checks whether emplace worked and asserts if not.
-template<class Key, class T, class H, class V>
-V checked_emplace(HashMap<Key, T, H>& map, Key&& key, V&& val) {
+template<class Key, class T, class H, class K, class V>
+V checked_emplace(HashMap<Key, T, H>& map, K&& key, V&& val) {
     auto succ = map.emplace(key, val).second;
     assert_unused(succ);
     return val;

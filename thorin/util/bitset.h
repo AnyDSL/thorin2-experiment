@@ -37,8 +37,8 @@ public:
     };
 
     BitSet()
-        : num_words_(1)
-        , word_(0)
+        : word_(0)
+        , num_words_(1)
     {}
     BitSet(const BitSet& other)
         : BitSet()
@@ -47,19 +47,12 @@ public:
         std::copy_n(other.words(), other.num_words(), words());
     }
     BitSet(BitSet&& other)
-        : num_words_(std::move(other.num_words_))
-        , words_(std::move(other.words_))
+        : words_(std::move(other.words_))
+        , num_words_(std::move(other.num_words_))
     {
         other.words_ = nullptr;
     }
     ~BitSet() { dealloc(); }
-
-    /// clears all bits
-    void clear() {
-        dealloc();
-        num_words_ = 1;
-        word_ = 0;
-    }
 
     //@{ get, set, clear, toggle, and test bits
     bool test(size_t i) const {
@@ -68,50 +61,38 @@ public:
         return *(words() + i/64_s) & (1_u64 << i%64_u64);
     }
 
-    BitSet& set(size_t i) {
-        enlarge(i);
-        *(words() + i/64_s) |= (1_u64 << i%64_u64);
-        return *this;
-    }
+    BitSet& set   (size_t i) { enlarge(i); *(words() + i/64_s) |=  (1_u64 << i%64_u64); return *this; }
+    BitSet& toggle(size_t i) { enlarge(i); *(words() + i/64_s) ^=  (1_u64 << i%64_u64); return *this; }
+    BitSet& clear (size_t i) { enlarge(i); *(words() + i/64_s) &= ~(1_u64 << i%64_u64); return *this; }
+    /// clears all bits
+    void clear() { dealloc(); num_words_ = 1; word_ = 0; }
 
-    BitSet& clear(size_t i) {
-        enlarge(i);
-        *(words() + i/64_s) &= ~(1_u64 << i%64_u64);
-        return *this;
-    }
-
-    BitSet& toggle(size_t i) {
-        enlarge(i);
-        *(words() + i/64_s) ^= 1_u64 << i%64_u64;
-        return *this;
-    }
-
-    reference operator[](size_t i) {
-        enlarge(i);
-        return reference(words() + i/64_s, i%64_u64);
-    }
-
+    reference operator[](size_t i) { enlarge(i); return reference(words() + i/64_s, i%64_u64); }
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
     //@}
 
-    //@{ Is any bit range set?
-    bool any() const;
+    /// @name any
+    /// Is any bit range set?
+    //@{
     /// Is any bit in @c [begin,end[ set?
     bool any_range(const size_t begin, const size_t end) const;
     /// Is any bit in @c [0,end[ set?
     bool any_end(const size_t end) const { return any_range(0, end); }
     /// Is any bit in @c [begin,infinity[ set?
     bool any_begin(const size_t begin) const { return any_range(begin, num_bits()); }
+    bool any() const { return any_range(0, num_bits()); }
     //@}
 
-    //@{ Is no bit in range set?
-    bool none() const;
+    /// @name none
+    /// Is no bit in range set?
+    //@{
     /// Is no bit in @c [begin,end[ set?
-    bool none_range(const size_t begin, const size_t end) const;
+    bool none_range(const size_t begin, const size_t end) const { return !any_range(begin, end); }
     /// Is no bit in @c [0,end[ set?
     bool none_end(const size_t end) const { return none_range(0, end); }
     /// Is no bit in @c [begin,infinity[ set?
     bool none_begin(const size_t begin) const { return none_range(begin, num_bits()); }
+    bool none() const { return none_range(0, num_bits()); }
     //@}
 
     //@{ shift
@@ -121,9 +102,9 @@ public:
     //@}
 
     //@{ boolean operators
-    BitSet& operator&=(const BitSet& other);
-    BitSet& operator|=(const BitSet& other);
-    BitSet& operator^=(const BitSet& other);
+    BitSet& operator&=(const BitSet& other) { return op_assign<std::bit_and<uint64_t>>(other); }
+    BitSet& operator|=(const BitSet& other) { return op_assign<std::bit_or <uint64_t>>(other); }
+    BitSet& operator^=(const BitSet& other) { return op_assign<std::bit_xor<uint64_t>>(other); }
     BitSet operator&(BitSet b) const { BitSet res(*this); res &= b; return res; }
     BitSet operator|(BitSet b) const { BitSet res(*this); res |= b; return res; }
     BitSet operator^(BitSet b) const { BitSet res(*this); res ^= b; return res; }
@@ -141,6 +122,17 @@ public:
     BitSet& operator=(BitSet other) { swap(*this, other); return *this; }
 
 private:
+    template<class F>
+    BitSet& op_assign(const BitSet& other) {
+        if (this->num_words() < other.num_words())
+            this->enlarge(other.num_bits()-1);
+        auto  this_words = this->words();
+        auto other_words = other.words();
+        for (size_t i = 0, e = other.num_words(); i != e; ++i)
+            this_words[i] = F()(this_words[i], other_words[i]);
+        return *this;
+    }
+
     void dealloc() const;
     void enlarge(size_t i) const;
     const uint64_t* words() const { return num_words_ == 1 ? &word_ : words_; }
@@ -148,12 +140,17 @@ private:
     size_t num_words() const { return num_words_; }
     size_t num_bits() const { return num_words_*64_s; }
 
-    mutable size_t num_words_;
     union {
         mutable uint64_t* words_;
         uint64_t word_;
     };
+    mutable uint32_t num_words_;
+
+public:
+    uint32_t padding = 0;
 };
+
+static_assert(sizeof(BitSet) == 16);
 
 }
 

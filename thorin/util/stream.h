@@ -140,7 +140,7 @@ StreamList<Emit, List> stream_list(const List& list, Emit emit, const char* sep 
 }
 
 #ifdef NDEBUG
-#   define assertf(condition, ...) do { (void)sizeof(condition); } while (false)
+#   define assertf(condition, ...) //do { (void)sizeof(condition); } while (false)
 #else
 #   define assertf(condition, ...) do { \
         if (!(condition)) { \

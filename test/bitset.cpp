@@ -41,12 +41,33 @@ TEST(Bitset, SetClear) {
     EXPECT_FALSE(b.none_range(66,301));
 }
 
-TEST(Bitset, Range) {
+auto test_range(int l_offset, int r_offset) {
     BitSet b;
     EXPECT_TRUE(b.none());
     EXPECT_FALSE(b.any());
-    b.set(7);
-    EXPECT_TRUE(b.any_range(3, 10));
+    b.set(7 + l_offset);
+    EXPECT_TRUE(b.any_range(3 + l_offset, 10 + r_offset));
+    b.clear(7 + l_offset);
+
+    b.set(2 + l_offset);
+    EXPECT_FALSE(b.any_range(3 + l_offset, 10 + r_offset));
+    b.set(10 + r_offset);
+    EXPECT_FALSE(b.any_range(3 + l_offset, 10 + r_offset));
+
+    b.set(3 + l_offset);
+    EXPECT_TRUE(b.any_range(3 + l_offset, 10 + r_offset));
+    b.clear(3 + l_offset);
+
+    b.set(9 + r_offset);
+    EXPECT_TRUE(b.any_range(3 + l_offset, 10 + r_offset));
+}
+
+TEST(Bitset, Range) {
+    test_range(  0,   0);
+    test_range( 64,  64);
+    test_range(128, 128);
+    test_range( 0,  128);
+    test_range(64,  128);
 }
 
 TEST(Bitset, Or) {

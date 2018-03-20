@@ -1,5 +1,4 @@
 #ifndef THORIN_WORLD_H
-
 #define THORIN_WORLD_H
 
 #include <memory>
@@ -7,16 +6,17 @@
 #include <string>
 
 #include "thorin/def.h"
+#include "thorin/tables.h"
 #include "thorin/util/iterator.h"
 #include "thorin/util/symbol.h"
 
 namespace thorin {
 
-struct TypeError {
-    TypeError(std::string&& msg)
-        : msg(std::move(msg))
+class TypeError : public std::logic_error {
+public:
+    TypeError(std::string&& what)
+        : std::logic_error(std::move(what))
     {}
-    std::string msg;
 };
 
 template<typename... Args>
@@ -25,6 +25,10 @@ template<typename... Args>
     streamf(oss, fmt, std::forward<Args>(args)...);
     throw TypeError(std::move(oss.str()));
 }
+
+class World;
+const Def* infer_shape(World&, const Def* def);
+std::array<const Def*, 2> infer_width_and_shape(World&, const Def*);
 
 //------------------------------------------------------------------------------
 
@@ -95,6 +99,8 @@ public:
         return pi(domain, codomain, unlimited(), dbg);
     }
     const Pi* pi(const Def* domain, const Def* codomain, const Def* qualifier, Debug dbg = {});
+    const Pi* cn_type(const Def* domain, Debug dbg = {}) { return pi(domain, bottom(star()), dbg); }
+    const Pi* cn_type(Defs domain, Debug dbg = {}) { return cn_type(sigma(domain), dbg); }
     //@}
 
     //@{ create Lambda
@@ -108,6 +114,8 @@ public:
                 "function type {} of a nominal lambda may not contain free variables", type);
         return insert<Lambda>(1, type, dbg);
     }
+    Cn* cn(const Def* domain, Debug dbg = {});
+    const Param* param(const Cn* cn, Debug dbg = {}) { return unify<Param>(1, cn->type()->op(0), cn, dbg); }
     //@}
 
     //@{ create App
@@ -258,7 +266,7 @@ public:
     //@}
 
     //@{ bool and nat types
-    const Arity* type_bool() { return type_bool_; }
+    const Axiom* type_bool() { return type_bool_; }
     const Axiom* type_nat() { return type_nat_; }
     //@}
 
@@ -278,17 +286,37 @@ public:
     const Lit* lit_true()  { return lit_bool_[1]; }
     //@}
 
-    //@{ continuations
-    const CnType* cn_type(const Def* domain, Debug dbg = {});
-    const CnType* cn_type(Defs domain, Debug dbg = {}) { return cn_type(sigma(domain), dbg); }
-    Cn* cn(const Def* domain, Debug dbg = {});
-    const Param* param(const Cn* cn, Debug dbg = {}) { return unify<Param>(1, cn->type()->op(0), cn, dbg); }
-    //@}
-
     //@{ intrinsics (AKA built-in Cont%inuations)
     const Axiom* cn_br()    const { return cn_br_; }
     const Axiom* cn_match() const { return cn_match_; }
     Cn* cn_end()   const { return cn_end_; }
+    //@}
+
+    //@{ boolean operations
+    template<BOp o> const Axiom* op() { return BOp_[size_t(o)]; }
+    template<BOp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
+        auto shape = infer_shape(*this, a);
+        return op<o>(shape, a, b, dbg);
+    }
+    template<BOp o> const Def* op(const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(op<o>(), shape), {a, b}, dbg);
+    }
+    const Def* op_bnot(const Def* a, Debug dbg = {}) {
+        return op_bnot(infer_shape(*this, a), a, dbg);
+    }
+    const Def* op_bnot(const Def* shape, const Def* a, Debug dbg = {}) {
+        return app(app(op<BOp::bxor>(), shape), {variadic(shape, lit_true()), a}, dbg);
+    }
+    //@}
+
+    //@{ nat operations
+    template<NOp o> const Axiom* op() { return NOp_[size_t(o)]; }
+    template<NOp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) {
+        return op<o>(infer_shape(*this, a), a, b, dbg);
+    }
+    template<NOp o> const Def* op(const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+        return app(app(op<o>(), shape), {a, b}, dbg);
+    }
     //@}
 
     //@{ externals
@@ -393,7 +421,7 @@ protected:
             return def;
         }
 
-        dealloc(def);
+        dealloc<T>(def);
         return static_cast<const T*>(*i);
     }
 
@@ -422,11 +450,17 @@ protected:
 #else
     struct Lock { ~Lock() {} };
 #endif
-
+    template<class T> static size_t num_bytes_of(size_t num_ops) {
+        size_t result = std::is_empty<typename T::Extra>() ? 0 : sizeof(typename T::Extra);
+        result += sizeof(Def) + sizeof(const Def*)*num_ops;
+        return (result + (sizeof(void*)-1)) & ~(sizeof(void*)-1); // align properly
+    }
     template<class T, class... Args>
     T* alloc(size_t num_ops, Args&&... args) {
+        static_assert(sizeof(Def) == sizeof(T), "you are not allowed to introduce any additional data in subclasses of Def - use 'Extra' struct");
         Lock lock;
-        size_t num_bytes = sizeof(T) + sizeof(const Def*) * num_ops;
+        size_t num_bytes = num_bytes_of<T>(num_ops);
+        num_bytes = (num_bytes + (sizeof(void*) - 1)) & ~(sizeof(void*)-1);
         assert(num_bytes < Zone::Size);
 
         if (buffer_index_ + num_bytes >= Zone::Size) {
@@ -445,7 +479,8 @@ protected:
 
     template<class T>
     void dealloc(const T* def) {
-        size_t num_bytes = sizeof(T) + def->num_ops() * sizeof(const Def*);
+        size_t num_bytes = num_bytes_of<T>(def->num_ops());
+        num_bytes = (num_bytes + (sizeof(void*) - 1)) & ~(sizeof(void*)-1);
         def->~T();
         if (ptrdiff_t(buffer_index_ - num_bytes) > 0) // don't care otherwise
             buffer_index_-= num_bytes;
@@ -476,7 +511,9 @@ protected:
     std::array<const Def*, 4> unit_kind_val_;
     std::array<const ArityKind*, 4> arity_kind_;
     std::array<const MultiArityKind*, 4> multi_arity_kind_;
-    const Arity* type_bool_;
+    std::array<const Axiom*, Num<BOp>> BOp_;
+    std::array<const Axiom*, Num<NOp>> NOp_;
+    const Axiom* type_bool_;
     const Axiom* type_nat_;
     const Lit* lit_nat_0_;
     std::array<const Lit*, 2> lit_bool_;

@@ -29,7 +29,7 @@ inline __declspec(noreturn) void thorin_dummy_function() { abort(); }
 #if (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(__i386__))
 #define THORIN_BREAK { asm("int3"); }
 #else
-#define THORIN_BREAK { volatile int* p = nullptr; *p = 42; }
+#define THORIN_BREAK { static_cast<volatile int*>(nullptr) = 42; }
 #endif
 
 #define THORIN_IMPLIES(a, b) (!(a) || ((a) && (b)))

@@ -2,7 +2,8 @@
 #include <functional>
 
 #include "thorin/world.h"
-#include "thorin/frontend/parser.h"
+#include "thorin/normalize.h"
+#include "thorin/fe/parser.h"
 #include "thorin/transform/reduce.h"
 
 namespace thorin {
@@ -17,6 +18,19 @@ namespace thorin {
     if (is_typechecking_enabled() && !(cond)) {  \
         errorf_(__VA_ARGS__);                   \
     }
+
+const Def* infer_shape(World& world, const Def* def) {
+    if (auto variadic = def->type()->isa<Variadic>()) {
+        if (!variadic->body()->isa<Variadic>())
+            return variadic->arity();
+        std::vector<const Def*> arities;
+        const Def* cur = variadic;
+        for (; cur->isa<Variadic>(); cur = cur->as<Variadic>()->body())
+            arities.emplace_back(cur->as<Variadic>()->arity());
+        return world.sigma(arities);
+    }
+    return world.arity(1);
+}
 
 //------------------------------------------------------------------------------
 
@@ -171,15 +185,24 @@ World::World(Debug dbg)
         unit_val_[i] = index_zero(unit_[i]);
     }
 
-    type_bool_ = arity(2);
+    type_bool_ = axiom(star(), {"bool"});
     type_nat_  = axiom(star(), {"nat"});
 
-    lit_bool_[0] = index(2, 0);
-    lit_bool_[1] = index(2, 1);
+    lit_bool_[0] = lit(type_bool(), {false});
+    lit_bool_[1] = lit(type_bool(), {true});
 
     lit_nat_0_   = lit_nat(0);
     for (size_t j = 0; j != lit_nat_.size(); ++j)
         lit_nat_[j] = lit_nat(1 << int64_t(j));
+
+    auto type_BOp  = fe::parse(*this, "Πs: 𝕄. Π[[s; bool], [s; bool]]. [s; bool]");
+    auto type_NOp  = fe::parse(*this, "Πs: 𝕄. Π[[s;  nat], [s;  nat]]. [s;  nat]");
+
+#define CODE(T, o) \
+    T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});
+    THORIN_B_OP(CODE)
+    THORIN_N_OP(CODE)
+#undef CODE
 
     arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: 𝔸q].𝔸q");         // {"Sₐ"}
     index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸q].ASucc p");       // {"0ⁱ"}
@@ -189,7 +212,7 @@ World::World(Debug dbg)
     arity_eliminator_arity_ = axiom("R𝔸ₐ", "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q");
     arity_eliminator_multi_ = axiom("R𝕄ₐ", "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q");
     arity_eliminator_star_  = axiom("R*ₐ",  "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q");
-    // index_eliminator_ = axiom(parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
+    // index_eliminator_ = axiom(fe::parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_match_   = axiom("match",   "cn[T: *, a: 𝔸, [a; [T, cn[]]]]");
@@ -255,8 +278,8 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
 
         // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body?
         if (!lambda->maybe_affine() && !lambda->codomain()->maybe_affine()) {
-            assert(app->state_ == App::State::Has_None);
-            return app->cache_ = reduce(lambda->body(), app->arg());
+            assert(app->state() == App::State::Has_None);
+            return app->extra().cache_ = reduce(lambda->body(), app->arg());
         }
     }
 
@@ -274,7 +297,7 @@ Axiom* World::axiom(const Def* type, Normalizer normalizer, Debug dbg) {
 }
 
 Axiom* World::axiom(Symbol name, const char* s, Normalizer normalizer) {
-    return axiom(parse(*this, s), normalizer, name);
+    return axiom(fe::parse(*this, s), normalizer, name);
 }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
@@ -678,7 +701,7 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
         assert(!def->type()->isa<Variant>());
         return app(handlers.front(), def, dbg);
     }
-    auto matched_type = def->type()->as<Variant>();
+    auto matched_type [[maybe_unused]] = def->type()->as<Variant>();
     assert(def->type()->num_ops() == handlers.size() && "number of handlers does not match number of cases");
 
     DefArray sorted_handlers(handlers);
@@ -708,13 +731,6 @@ const Lit* World::lit_nat(int64_t val, Location location) {
     if (result->gid() >= cur)
         result->debug().set(std::to_string(val));
     return result;
-}
-
-const CnType* World::cn_type(const Def* domain, Debug dbg) {
-    // TODO
-    //auto type = type_bound(LUB, domain, false);
-    auto type = star();
-    return unify<CnType>(1, type, domain, dbg);
 }
 
 Cn* World::cn(const Def* domain, Debug dbg) {

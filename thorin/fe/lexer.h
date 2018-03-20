@@ -1,10 +1,10 @@
-#ifndef THORIN_LEXER_H
-#define THORIN_LEXER_H
+#ifndef THORIN_FE_LEXER_H
+#define THORIN_FE_LEXER_H
 
 #include "thorin/util/location.h"
-#include "thorin/frontend/token.h"
+#include "thorin/fe/token.h"
 
-namespace thorin {
+namespace thorin::fe {
 
 class Lexer {
 public:

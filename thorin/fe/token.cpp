@@ -1,6 +1,6 @@
-#include "thorin/frontend/token.h"
+#include "thorin/fe/token.h"
 
-namespace thorin {
+namespace thorin::fe {
 
 std::ostream& operator<<(std::ostream& os, const Token& t) {
     os << t.location() << ": ";
