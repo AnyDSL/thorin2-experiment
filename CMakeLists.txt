@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.9)
+project(thorin VERSION 2.0 DESCRIPTION "the higher-order intermediate representation")
 
 # download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
@@ -26,26 +27,9 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 # This defines the gtest and gtest_main targets.
 add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
 
-include_directories(.)
+# build thorin lib
 
-add_executable(coc-gtest
-    test/arity.cpp
-    test/bitset.cpp
-    test/cn.cpp
-    test/lambda.cpp
-    test/main.cpp
-    test/nominal.cpp
-    test/normalize.cpp
-    test/pack.cpp
-    test/sigma.cpp
-    test/singleton.cpp
-    test/ssa.cpp
-    test/substructural.cpp
-    test/variadic.cpp
-    test/variants.cpp
-    test/fe/lexer.cpp
-    test/fe/parser.cpp
-    test/me/primop.cpp
+add_library(thorin SHARED
     thorin/def.cpp
     thorin/def.h
     thorin/normalize.cpp
@@ -109,11 +93,36 @@ add_executable(coc-gtest
     thorin/util/utility.h
 )
 
-set_target_properties(coc-gtest PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
+set_target_properties(thorin PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+set_target_properties(thorin PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(thorin PROPERTIES SOVERSION 2)
+target_include_directories(thorin PRIVATE .)
+
+# build thorin-gtest
+
+add_executable(thorin-gtest
+    test/arity.cpp
+    test/bitset.cpp
+    test/cn.cpp
+    test/lambda.cpp
+    test/main.cpp
+    test/nominal.cpp
+    test/normalize.cpp
+    test/pack.cpp
+    test/sigma.cpp
+    test/singleton.cpp
+    test/ssa.cpp
+    test/substructural.cpp
+    test/variadic.cpp
+    test/variants.cpp
+    test/fe/lexer.cpp
+    test/fe/parser.cpp
+    test/me/primop.cpp
 )
 
-target_link_libraries(coc-gtest gtest_main)
-add_test(NAME coc_test COMMAND coc)
+set_target_properties(thorin-gtest PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+target_include_directories(thorin-gtest PRIVATE .)
+
+target_link_libraries(thorin-gtest thorin gtest_main)
+
+add_test(NAME thorin-gtest COMMAND thorin-gtest)
