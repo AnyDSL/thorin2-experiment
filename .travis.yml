@@ -21,9 +21,8 @@ matrix:
                     - llvm-toolchain-trusty-5.0
                     - george-edison55-precise-backports
                 packages:
-                    - cmake-data
-                    - cmake
                     - g++-7
+                    - valgrind
 
 before_install:
     # Combine global build options with OS/compiler-dependent options
@@ -31,6 +30,13 @@ before_install:
     - export CXX_FLAGS=${CXX_FLAGS}" "${ENV_CXX_FLAGS}
 
 install:
+    # get cmake-3.10
+    - mkdir -p ~/cmake
+    - curl -ks https://cmake.org/files/v3.10/cmake-3.10.3-Linux-x86_64.sh -o cmake.sh
+    - bash cmake.sh --skip-license --prefix="${HOME}/cmake"
+    - export PATH=~/cmake/bin:$PATH
+
+    # some debug output
     - if [ "$CXX" = "g++" ]     && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-7"; fi
     - echo ${PATH}
     - echo ${CXX}
