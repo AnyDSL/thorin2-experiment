@@ -94,6 +94,8 @@ target_include_directories(thorin PRIVATE . ${CMAKE_BINARY_DIR}/half-src/include
 
 if(BUILD_TESTS)
     include(CTest)
+    include(GoogleTest)
+
     # download and unpack gtest at configure time
     configure_file(CMakeLists.txt.gtest.in googletest-download/CMakeLists.txt)
 
@@ -120,7 +122,7 @@ if(BUILD_TESTS)
     # This defines the gtest and gtest_main targets.
     add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
 
-    add_executable(thorin-gtest
+    set(THORIN_GTEST_SOURCES
         test/arity.cpp
         test/bitset.cpp
         test/cn.cpp
@@ -140,9 +142,9 @@ if(BUILD_TESTS)
         test/me/primop.cpp
     )
 
+    add_executable(thorin-gtest ${THORIN_GTEST_SOURCES})
     set_target_properties(thorin-gtest PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
     target_include_directories(thorin-gtest PRIVATE . ${CMAKE_BINARY_DIR}/half-src/include)
     target_link_libraries(thorin-gtest thorin gtest_main)
-
-    add_test(NAME test COMMAND thorin-gtest)
+    gtest_discover_tests(thorin-gtest)
 endif(BUILD_TESTS)
