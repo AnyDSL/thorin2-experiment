@@ -12,8 +12,8 @@ matrix:
     include:
         os: linux
         compiler:
-            - gcc
             - clang
+            - gcc
         addons:
             apt:
                 sources:
@@ -23,7 +23,6 @@ matrix:
                 packages:
                     - cmake-data
                     - cmake
-                    - clang-5.0
                     - g++-7
 
 before_install:
@@ -32,7 +31,6 @@ before_install:
     - export CXX_FLAGS=${CXX_FLAGS}" "${ENV_CXX_FLAGS}
 
 install:
-    - if [ "$CXX" = "clang++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="clang++-5.0"; fi
     - if [ "$CXX" = "g++" ]     && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-7"; fi
     - echo ${PATH}
     - echo ${CXX}
