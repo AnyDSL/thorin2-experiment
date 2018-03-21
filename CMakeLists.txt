@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10)
 project(thorin VERSION 2.0 DESCRIPTION "the higher-order intermediate representation")
 
 option(BUILD_SHARED_LIBS "Build libthorin as shared library (so/dll)" ON)
