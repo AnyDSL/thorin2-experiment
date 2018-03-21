@@ -42,6 +42,7 @@ install:
     - echo ${CXX}
     - ${CXX} --version
     - ${CXX} -v
+    - cmake --version
 
 script:
     - mkdir -p build
