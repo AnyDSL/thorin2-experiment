@@ -6,26 +6,26 @@ env:
         - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
         - CXX_FLAGS="-Wall -Wextra"
 
-#matrix:
-#    include:
-#        - os: linux
-#        dist: trusty
-#        sudo: true
-#        compiler:
-#            - gcc
-#            - clang
-#        addons:
-#            apt:
-#                sources:
-#                    - ubuntu-toolchain-r-test
-#                    - llvm-toolchain-trusty-5.0
-#                    - george-edison55-precise-backports
-#                packages:
-#                    - cmake-data
-#                    - cmake
-#                    - clang-5.0
-#                    - g++-7
-#
+matrix:
+    include:
+        - os: linux
+            dist: trusty
+            sudo: true
+            compiler:
+                - gcc
+                - clang
+            addons:
+                apt:
+                    sources:
+                        - ubuntu-toolchain-r-test
+                        - llvm-toolchain-trusty-5.0
+                        - george-edison55-precise-backports
+                    packages:
+                        - cmake-data
+                        - cmake
+                        - clang-5.0
+                        - g++-7
+
 #before_install:
 #    # Combine global build options with OS/compiler-dependent options
 #    - export CMAKE_OPTIONS=${CMAKE_OPTIONS}" "${ENV_CMAKE_OPTIONS}
