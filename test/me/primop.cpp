@@ -38,6 +38,7 @@ void test_fold(World& w, const Def* type) {
 
 TEST(Primop, ConstFolding) {
     World w;
+    new int;
 
 #define CODE(T) test_fold<T, WOp, WOp::add>(w, w.type_i());
     THORIN_U_TYPES(CODE)
