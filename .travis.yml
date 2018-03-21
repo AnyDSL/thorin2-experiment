@@ -26,22 +26,22 @@ matrix:
                     - clang-5.0
                     - g++-7
 
-#before_install:
-#    # Combine global build options with OS/compiler-dependent options
-#    - export CMAKE_OPTIONS=${CMAKE_OPTIONS}" "${ENV_CMAKE_OPTIONS}
-#    - export CXX_FLAGS=${CXX_FLAGS}" "${ENV_CXX_FLAGS}
-#
-#install:
-#    - if [ "$CXX" = "clang++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="clang++-5.0"; fi
-#    - if [ "$CXX" = "g++" ]     && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-5.0"; fi
-#    - echo ${PATH}
-#    - echo ${CXX}
-#    - ${CXX} --version
-#    - ${CXX} -v
-#
-#script:
-#     - mkdir -p build
-#     - cd build
-#     - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug
-#     - make
-#     - ctest
+before_install:
+    # Combine global build options with OS/compiler-dependent options
+    - export CMAKE_OPTIONS=${CMAKE_OPTIONS}" "${ENV_CMAKE_OPTIONS}
+    - export CXX_FLAGS=${CXX_FLAGS}" "${ENV_CXX_FLAGS}
+
+install:
+    - if [ "$CXX" = "clang++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="clang++-5.0"; fi
+    - if [ "$CXX" = "g++" ]     && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-5.0"; fi
+    - echo ${PATH}
+    - echo ${CXX}
+    - ${CXX} --version
+    - ${CXX} -v
+
+script:
+    - mkdir -p build
+    - cd build
+    - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug
+    - make
+    - ctest
