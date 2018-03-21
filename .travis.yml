@@ -49,4 +49,4 @@ script:
     - cd build
     - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug ..
     - make
-    - ctest
+    - ctest -T memcheck -j 2
