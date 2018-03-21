@@ -1,4 +1,6 @@
 language: cpp
+dist: trusty
+sudo: true
 
 env:
     global:
@@ -8,23 +10,21 @@ env:
 
 matrix:
     include:
-        - os: linux
-            dist: trusty
-            sudo: true
-            compiler:
-                - gcc
-                - clang
-            addons:
-                apt:
-                    sources:
-                        - ubuntu-toolchain-r-test
-                        - llvm-toolchain-trusty-5.0
-                        - george-edison55-precise-backports
-                    packages:
-                        - cmake-data
-                        - cmake
-                        - clang-5.0
-                        - g++-7
+        os: linux
+        compiler:
+            - gcc
+            - clang
+        addons:
+            apt:
+                sources:
+                    - ubuntu-toolchain-r-test
+                    - llvm-toolchain-trusty-5.0
+                    - george-edison55-precise-backports
+                packages:
+                    - cmake-data
+                    - cmake
+                    - clang-5.0
+                    - g++-7
 
 #before_install:
 #    # Combine global build options with OS/compiler-dependent options
