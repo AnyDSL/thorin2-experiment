@@ -14,8 +14,13 @@ matrix:
       compiler: clang
       addons:
         apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
           packages:
+            - clang-5.0
             - valgrind
+      env:
+        MATRIX_EVAL="CXX=clang++-5.0"
 
     - os: linux
       compiler: gcc
@@ -26,6 +31,8 @@ matrix:
           packages:
             - g++-7
             - valgrind
+      env:
+        MATRIX_EVAL="CXX=g++-7.0"
 
 before_install:
     # Combine global build options with OS/compiler-dependent options
@@ -40,7 +47,8 @@ install:
     - export PATH=~/cmake/bin:$PATH
     - cmake --version
 
-    - if [ "$CXX" = "g++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-7"; fi
+    - if [ "$CXX" = "clang++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="clang++-5.0"; fi
+    - if [ "$CXX" = "g++" ]     && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-7"; fi
     - echo ${CXX}
     - ${CXX} --version
 
