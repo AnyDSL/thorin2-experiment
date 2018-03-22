@@ -121,7 +121,6 @@ TEST(Nominal, PolymorphicListVariantNominal) {
 }
 
 TEST(Nominal, Module) {
-#if 0
     World w;
 
     auto S = w.star();
@@ -158,5 +157,4 @@ TEST(Nominal, Module) {
     EXPECT_EQ(w.extract(w.axiom(LNB), 0_u64)->type(), w.sigma({N, B}));
     EXPECT_EQ(w.extract(w.axiom(LBN), 0_u64)->type(), w.sigma({B, N}));
     EXPECT_EQ(w.extract(w.axiom(LBB), 0_u64)->type(), w.sigma({B, B}));
-#endif
 }
