@@ -1,7 +1,11 @@
-# coc
+[![Build Status](https://travis-ci.org/AnyDSL/thorin2.svg?branch=master)](https://travis-ci.org/AnyDSL/thorin2)
+
+# Thorin 2
+
+Rewrite of Thorin featuring PTS and dependent types.
+
 ## building
 
-Then, just do this:
 ```bash
 git clone git@github.com:AnyDSL/thorin2.git
 cd coc
