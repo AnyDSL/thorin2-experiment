@@ -38,8 +38,6 @@ add_library(thorin
     thorin/me/tables.h
     thorin/me/world.cpp
     thorin/me/world.h
-    thorin/me/transform/ssa_builder.cpp
-    thorin/me/transform/ssa_builder.h
     thorin/analyses/cfg.cpp
     thorin/analyses/cfg.h
     thorin/analyses/domfrontier.cpp
@@ -133,7 +131,6 @@ if(BUILD_TESTS)
         test/pack.cpp
         test/sigma.cpp
         test/singleton.cpp
-        test/ssa.cpp
         test/substructural.cpp
         test/variadic.cpp
         test/variants.cpp
