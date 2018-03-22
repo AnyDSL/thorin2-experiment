@@ -63,7 +63,7 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Location>>& de
         def = parse_extract_or_insert(tracker, def);
     // TODO insert <-
 
-    defs.emplace_back(def, tracker);
+    defs.emplace_back(def, tracker.location());
 
     // an expression follows that can be an argument for an app
     if (ahead().is_app_arg())
