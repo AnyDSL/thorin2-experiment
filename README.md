@@ -4,7 +4,7 @@
 
 Rewrite of Thorin featuring PTS and dependent types.
 
-## building
+## Building
 
 ```bash
 git clone git@github.com:AnyDSL/thorin2.git
