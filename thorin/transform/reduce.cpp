@@ -113,15 +113,6 @@ const Def* reduce(const Def* def, Defs args, size_t index) {
     return reducer.reduce(def, index);
 }
 
-const Def* unflatten(const Def* body, const Def* arg) {
-    auto& w = body->world();
-    auto arity = arg->arity()->as<Arity>();
-    assert(arity != nullptr);
-    auto length = arity->value();
-    auto extracts = DefArray(length, [&](auto i) { return w.extract(arg, i); });
-    return reduce(body, extracts);
-}
-
 const Def* flatten(const Def* body, Defs args) {
     auto& w = body->world();
     auto t = w.tuple(DefArray(args.size(), [&](auto i) { return w.var(args[i], args.size()-1-i); }));

@@ -1,0 +1,53 @@
+language: cpp
+dist: trusty
+sudo: true
+
+env:
+    global:
+        - LINUX_DIST=trusty
+        - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
+        - CXX_FLAGS="-Wall -Wextra -Werror"
+
+matrix:
+    include:
+        os: linux
+        compiler:
+            - clang
+            - gcc
+        addons:
+            apt:
+                sources:
+                    - ubuntu-toolchain-r-test
+                    - llvm-toolchain-trusty-5.0
+                    - george-edison55-precise-backports
+                packages:
+                    - g++-7
+                    - valgrind
+
+before_install:
+    # Combine global build options with OS/compiler-dependent options
+    - export CMAKE_OPTIONS=${CMAKE_OPTIONS}" "${ENV_CMAKE_OPTIONS}
+    - export CXX_FLAGS=${CXX_FLAGS}" "${ENV_CXX_FLAGS}
+
+install:
+    # get cmake-3.10
+    - mkdir -p ~/cmake
+    - curl -ks https://cmake.org/files/v3.10/cmake-3.10.3-Linux-x86_64.sh -o cmake.sh
+    - bash cmake.sh --skip-license --prefix="${HOME}/cmake"
+    - export PATH=~/cmake/bin:$PATH
+
+    # some debug output
+    - if [ "$CXX" = "g++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-7"; fi
+    - echo ${PATH}
+    - echo ${CXX}
+    - ${CXX} --version
+    - ${CXX} -v
+    - cmake --version
+
+script:
+    - mkdir -p build
+    - cd build
+    - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug ..
+    - make
+    - ctest -T memcheck -j 2
+    - cat /home/travis/build/AnyDSL/thorin2/build/Testing/Temporary/MemoryChecker.*.log

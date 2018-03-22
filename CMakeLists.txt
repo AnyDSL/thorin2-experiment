@@ -1,51 +1,29 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.10)
+project(thorin VERSION 2.0 DESCRIPTION "the higher-order intermediate representation")
 
-# download and unpack googletest at configure time
-configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
+option(BUILD_SHARED_LIBS "Build libthorin as shared library (so/dll)" ON)
+option(BUILD_TESTS "Build gtest-based test program" ON)
+
+# download and unpack half at configure time
+configure_file(CMakeLists.txt.half.in half-download/CMakeLists.txt)
 
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/half-download)
 
 if(result)
-    message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+    message(FATAL_ERROR "CMake step for half failed: ${result}")
 endif()
 
 execute_process(COMMAND ${CMAKE_COMMAND} --build .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/half-download)
 
 if(result)
-    message(FATAL_ERROR "Build step for googletest failed: ${result}")
+    message(FATAL_ERROR "Build step for half failed: ${result}")
 endif()
 
-# prevent overriding the parent project's compiler/linker settings on Windows
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-# Add googletest directly to our build.
-# This defines the gtest and gtest_main targets.
-add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
-
-include_directories(.)
-
-add_executable(coc-gtest
-    test/arity.cpp
-    test/bitset.cpp
-    test/cn.cpp
-    test/lambda.cpp
-    test/main.cpp
-    test/nominal.cpp
-    test/normalize.cpp
-    test/pack.cpp
-    test/sigma.cpp
-    test/singleton.cpp
-    test/ssa.cpp
-    test/substructural.cpp
-    test/variadic.cpp
-    test/variants.cpp
-    test/fe/lexer.cpp
-    test/fe/parser.cpp
-    test/me/primop.cpp
+add_library(thorin
     thorin/def.cpp
     thorin/def.h
     thorin/normalize.cpp
@@ -60,8 +38,6 @@ add_executable(coc-gtest
     thorin/me/tables.h
     thorin/me/world.cpp
     thorin/me/world.h
-    thorin/me/transform/ssa_builder.cpp
-    thorin/me/transform/ssa_builder.h
     thorin/analyses/cfg.cpp
     thorin/analyses/cfg.h
     thorin/analyses/domfrontier.cpp
@@ -109,11 +85,63 @@ add_executable(coc-gtest
     thorin/util/utility.h
 )
 
-set_target_properties(coc-gtest PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-)
+set_target_properties(thorin PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+set_target_properties(thorin PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(thorin PROPERTIES SOVERSION 2)
+target_include_directories(thorin PRIVATE . ${CMAKE_BINARY_DIR}/half-src/include)
 
-target_link_libraries(coc-gtest gtest_main)
-add_test(NAME coc_test COMMAND coc)
+if(BUILD_TESTS)
+    include(CTest)
+    include(GoogleTest)
+
+    # download and unpack gtest at configure time
+    configure_file(CMakeLists.txt.gtest.in googletest-download/CMakeLists.txt)
+
+    execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
+
+    if(result)
+        message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+    endif()
+
+    execute_process(COMMAND ${CMAKE_COMMAND} --build .
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
+
+    if(result)
+        message(FATAL_ERROR "Build step for googletest failed: ${result}")
+    endif()
+
+    # prevent overriding the parent project's compiler/linker settings on Windows
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+    # Add googletest directly to our build.
+    # This defines the gtest and gtest_main targets.
+    add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
+
+    set(THORIN_GTEST_SOURCES
+        test/arity.cpp
+        test/bitset.cpp
+        test/cn.cpp
+        test/lambda.cpp
+        test/main.cpp
+        test/nominal.cpp
+        test/normalize.cpp
+        test/pack.cpp
+        test/sigma.cpp
+        test/singleton.cpp
+        test/substructural.cpp
+        test/variadic.cpp
+        test/variants.cpp
+        test/fe/lexer.cpp
+        test/fe/parser.cpp
+        test/me/primop.cpp
+    )
+
+    add_executable(thorin-gtest ${THORIN_GTEST_SOURCES})
+    set_target_properties(thorin-gtest PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+    target_include_directories(thorin-gtest PRIVATE . ${CMAKE_BINARY_DIR}/half-src/include)
+    target_link_libraries(thorin-gtest thorin gtest_main)
+    gtest_discover_tests(thorin-gtest)
+endif(BUILD_TESTS)
