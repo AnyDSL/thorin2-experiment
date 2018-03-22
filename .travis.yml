@@ -50,4 +50,5 @@ script:
     - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug ..
     - make
     - ctest -T memcheck -j 2
-    - cat /home/travis/build/AnyDSL/thorin2/build/Testing/Temporary/MemoryChecker.*.log
+    - cat /home/travis/build/AnyDSL/thorin2/build/Testing/Temporary/MemoryChecker.*.log > out && cat out
+    - test ! -s out
