@@ -47,7 +47,7 @@ install:
 script:
     - mkdir -p build
     - cd build
-    - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug -DMEMORYCHECK_COMMAND_OPTIONS="--gen-suppressions=all --leak-check=full" ..
+    - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug -DMEMORYCHECK_COMMAND_OPTIONS="--gen-suppressions=all --leak-check=full --show-leak-kinds=all" ..
     - make -j3
     - echo 'MemoryCheckCommandOptions: --gen-suppressions=all --leak-check=full' >>> /home/travis/build/AnyDSL/thorin2/build/DartConfiguration.tcl 
     - ctest -T memcheck -j3
