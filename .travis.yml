@@ -3,26 +3,29 @@ dist: trusty
 sudo: true
 
 env:
-    global:
-        - LINUX_DIST=trusty
-        - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
-        - CXX_FLAGS="-Wall -Wextra -Werror"
+  global:
+    - LINUX_DIST=trusty
+    - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
+    - CXX_FLAGS="-Wall -Wextra -Werror"
 
 matrix:
-    include:
-        os: linux
-        compiler:
-            - clang
-            - gcc
-        addons:
-            apt:
-                sources:
-                    - ubuntu-toolchain-r-test
-                    - llvm-toolchain-trusty-5.0
-                    - george-edison55-precise-backports
-                packages:
-                    - g++-7
-                    - valgrind
+  include:
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          packages:
+            - valgrind
+
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+            - valgrind
 
 before_install:
     # Combine global build options with OS/compiler-dependent options
