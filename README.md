@@ -8,7 +8,7 @@ Rewrite of Thorin featuring PTS and dependent types.
 
 ```bash
 git clone git@github.com:AnyDSL/thorin2.git
-cd coc
+cd thorin2
 mkdir build
 cd build
 cmake ..
