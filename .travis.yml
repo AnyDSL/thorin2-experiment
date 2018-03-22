@@ -6,7 +6,7 @@ env:
     global:
         - LINUX_DIST=trusty
         - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
-        - CXX_FLAGS="-Wall -Wextra"
+        - CXX_FLAGS="-Wall -Wextra -Werror"
 
 matrix:
     include:
@@ -37,7 +37,7 @@ install:
     - export PATH=~/cmake/bin:$PATH
 
     # some debug output
-    - if [ "$CXX" = "g++" ]     && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-7"; fi
+    - if [ "$CXX" = "g++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-7"; fi
     - echo ${PATH}
     - echo ${CXX}
     - ${CXX} --version
