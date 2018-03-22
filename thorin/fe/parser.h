@@ -32,10 +32,10 @@ private:
             , col(parser->ahead_[0].location().front_col())
         {}
 
-        operator Location() const {
+        Location location() const {
             auto back_line = parser.ahead_[0].location().back_line();
             auto back_col  = parser.ahead_[0].location().back_col();
-            return Location(parser.lexer_.filename(), line, col, back_line, back_col);
+            return {parser.lexer_.filename(), line, col, back_line, back_col};
         }
 
         const Parser& parser;
