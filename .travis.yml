@@ -38,20 +38,17 @@ install:
     - curl -ks https://cmake.org/files/v3.10/cmake-3.10.3-Linux-x86_64.sh -o cmake.sh
     - bash cmake.sh --skip-license --prefix="${HOME}/cmake"
     - export PATH=~/cmake/bin:$PATH
+    - cmake --version
 
-    # some debug output
     - if [ "$CXX" = "g++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-7"; fi
-    - echo ${PATH}
     - echo ${CXX}
     - ${CXX} --version
-    - ${CXX} -v
-    - cmake --version
 
 script:
     - mkdir -p build
     - cd build
     - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug -DMEMORYCHECK_SUPPRESSIONS_FILE="/home/travis/build/AnyDSL/thorin2/resources/valgrind.supp" ..
-    - make -j3
+    - make -j3 VERBOSE=1
     - ctest -T memcheck -j3
     - cat /home/travis/build/AnyDSL/thorin2/build/Testing/Temporary/MemoryChecker.*.log > out && cat out
     - test ! -s out
