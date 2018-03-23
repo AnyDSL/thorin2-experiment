@@ -47,7 +47,7 @@ uint32_t Lexer::next() {
         uint32_t b = stream_.get();
         peek_bytes_[n_bytes++] = b;
         if (is_bit_clear(b, 7) || is_bit_set(b, 6))
-            ELOG_LOC(location(), "invalid utf-8 character");
+            error("invalid utf-8 character");
         return b & 0b00111111_u32;
     };
 
@@ -91,7 +91,7 @@ uint32_t Lexer::next() {
             }
         }
     }
-    ELOG_LOC(location(), "invalid utf-8 character");
+    error("invalid utf-8 character");
     return 0;
 }
 
@@ -180,7 +180,7 @@ Token Lexer::lex() {
             return {location(), str()};
         }
 
-        ELOG_LOC(location(), "invalid character '{}'", peek_bytes_);
+        error("invalid character '{}'", peek_bytes_);
         next();
     }
 }
@@ -264,7 +264,7 @@ Literal Lexer::parse_literal() {
         return Literal(Literal::Tag::Lit_untyped, u64(strtoull(str().c_str(), nullptr, 10)));
     }
 
-    ELOG_LOC(location(), "invalid literal");
+    error("invalid literal");
 }
 
 }

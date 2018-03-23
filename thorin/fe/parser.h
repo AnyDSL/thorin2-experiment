@@ -134,6 +134,15 @@ private:
     void insert_identifier(Symbol, const Def* = nullptr);
     void push_decl_scope();
     void pop_decl_scope();
+    template<typename... Args>
+    [[noreturn]] void error(Location location, const char* fmt, Args... args) {
+        std::ostringstream oss;
+        streamf(oss, "{}: parse error: ", location);
+        streamf(oss, fmt, std::forward<Args>(args)...);
+        throw std::logic_error(oss.str());
+    }
+    template<typename... Args>
+    [[noreturn]] void error(const char* fmt, Args... args) { error(ahead().location(), fmt, std::forward<Args>(args)...); }
 
     World& world_;
     Lexer& lexer_;

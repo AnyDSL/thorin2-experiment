@@ -77,16 +77,10 @@ std::ostream& errf(const char* fmt, Args... args) { return streamf(std::cerr, fm
 #define MAYBE_LOG(level, ...) do {} while (false)
 #endif
 
-#define ELOG(def, ...) thorin::Log::error((def)->location(), __VA_ARGS__)
-#define ELOG_LOC(loc, ...) thorin::Log::error(loc, __VA_ARGS__)
-#define WLOG(def, ...) ALWAYS_LOG(thorin::Log::Warn, (def)->location(), __VA_ARGS__)
-#define ILOG(def, ...) ALWAYS_LOG(thorin::Log::Info, (def)->location(), __VA_ARGS__)
+#define ELOG(...) ALWAYS_LOG(thorin::Log::Error,   Location(__FILE__, __LINE__, -1), __VA_ARGS__)
+#define WLOG(...) ALWAYS_LOG(thorin::Log::Warn,    Location(__FILE__, __LINE__, -1), __VA_ARGS__)
+#define ILOG(...) ALWAYS_LOG(thorin::Log::Info,    Location(__FILE__, __LINE__, -1), __VA_ARGS__)
 #define VLOG(...) ALWAYS_LOG(thorin::Log::Verbose, Location(__FILE__, __LINE__, -1), __VA_ARGS__)
-#define DLOG(...) MAYBE_LOG(thorin::Log::Debug,   Location(__FILE__, __LINE__, -1), __VA_ARGS__)
-#define VLOG_SCOPE(s) { \
-    VLOG("*** BEGIN: " #s " {{"); \
-    (s); \
-    VLOG("}}"); \
-}
+#define DLOG(...) MAYBE_LOG (thorin::Log::Debug,   Location(__FILE__, __LINE__, -1), __VA_ARGS__)
 
 #endif
