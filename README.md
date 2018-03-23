@@ -1,7 +1,7 @@
 |                   | Debug             | Release           |
 |-------------------|-------------------|-------------------|
-| **gcc**           | [![Build2][1]][5] | [![Build3][2]][5] |
-| **clang**         | [![Build2][3]][5] | [![Build3][4]][5] |
+| **gcc**           | [![Build1][1]][5] | [![Build2][2]][5] |
+| **clang**         | [![Build3][3]][5] | [![Build4][4]][5] |
 
 [1]: https://travis-matrix-badges.herokuapp.com/repos/AnyDSL/thorin2/branches/master/1
 [2]: https://travis-matrix-badges.herokuapp.com/repos/AnyDSL/thorin2/branches/master/2
