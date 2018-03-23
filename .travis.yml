@@ -1,63 +1,37 @@
 language: cpp
 dist: trusty
 sudo: true
+addons:
+  apt:
+    sources:
+      - llvm-toolchain-trusty-5.0
+      - ubuntu-toolchain-r-test
+    packages:
+      - clang-5.0
+      - g++-7
+      - valgrind
 
 env:
+  - CXX=clang++-5.0 BUILD_TYPE=Debug
+  - CXX=clang++-5.0 BUILD_TYPE=Release
+  - CXX=g++-7       BUILD_TYPE=Debug
+  - CXX=g++-7       BUILD_TYPE=Release
   global:
-    - LINUX_DIST=trusty
-    - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
     - CXX_FLAGS="-Wall -Wextra -Werror"
 
-matrix:
-  include:
-    - os: linux
-      compiler: clang
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-5.0
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-5.0
-            - g++-7
-            - valgrind
-      env:
-        MATRIX_EVAL="CXX=clang++-5.0"
-
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-            - valgrind
-      env:
-        MATRIX_EVAL="CXX=g++-7.0"
-
-before_install:
-    # Combine global build options with OS/compiler-dependent options
-    - export CMAKE_OPTIONS=${CMAKE_OPTIONS}" "${ENV_CMAKE_OPTIONS}
-    - export CXX_FLAGS=${CXX_FLAGS}" "${ENV_CXX_FLAGS}
-
 install:
-    # get cmake-3.10
+    # get cmake-3.10 and dump some debug info
     - mkdir -p ~/cmake
     - curl -ks https://cmake.org/files/v3.10/cmake-3.10.3-Linux-x86_64.sh -o cmake.sh
     - bash cmake.sh --skip-license --prefix="${HOME}/cmake"
     - export PATH=~/cmake/bin:$PATH
     - cmake --version
-
-    - if [ "$CXX" = "clang++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="clang++-5.0"; fi
-    - if [ "$CXX" = "g++" ]     && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="g++-7"; fi
-    - echo ${CXX}
     - ${CXX} --version
 
 script:
     - mkdir -p build
     - cd build
-    - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug -DMEMORYCHECK_SUPPRESSIONS_FILE="/home/travis/build/AnyDSL/thorin2/resources/valgrind.supp" ..
+    - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DMEMORYCHECK_SUPPRESSIONS_FILE="/home/travis/build/AnyDSL/thorin2/resources/valgrind.supp" ..
     - make -j3 VERBOSE=1
     - ctest -T memcheck -j3
     - cat /home/travis/build/AnyDSL/thorin2/build/Testing/Temporary/MemoryChecker.*.log > out && cat out
