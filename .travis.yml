@@ -11,14 +11,15 @@ addons:
       - g++-7
       - valgrind
 
+compiler:
+    - gcc
+    - clang
 env:
   global:
     - CXX_FLAGS="-Wall -Wextra -Werror"
   matrix:
-    - CXX=clang++-5.0 BUILD_TYPE=Debug
-    - CXX=clang++-5.0 BUILD_TYPE=Release
-    - CXX=g++-7       BUILD_TYPE=Debug
-    - CXX=g++-7       BUILD_TYPE=Release
+    - BUILD_TYPE=Debug
+    - BUILD_TYPE=Release
 
 install:
   # get cmake-3.10 and dump some debug info
