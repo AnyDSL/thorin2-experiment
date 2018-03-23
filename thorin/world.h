@@ -23,7 +23,7 @@ template<typename... Args>
 [[noreturn]] void errorf_(const char* fmt, Args... args) {
     std::ostringstream oss;
     streamf(oss, fmt, std::forward<Args>(args)...);
-    throw TypeError(std::move(oss.str()));
+    throw TypeError(oss.str());
 }
 
 class World;
