@@ -63,7 +63,7 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Location>>& de
         def = parse_extract_or_insert(tracker, def);
     // TODO insert <-
 
-    defs.emplace_back(def, tracker);
+    defs.emplace_back(def, tracker.location());
 
     // an expression follows that can be an argument for an app
     if (ahead().is_app_arg())
@@ -98,9 +98,9 @@ const Def* Parser::parse_debruijn() {
                         [[fallthrough]];
                     default: assertf(false, "expected type for De Bruijn variable after '::'");
                 }
-                return world_.var(type, index, {tracker});
+                return world_.var(type, index, tracker.location());
             }
-            return world_.var(debruijn_types_[debruijn_types_.size() - index - 1], index, {tracker});
+            return world_.var(debruijn_types_[debruijn_types_.size() - index - 1], index, tracker.location());
         } else {
             assertf(false, "untyped literal expected after '\'");
             THORIN_UNREACHABLE;
@@ -115,7 +115,7 @@ const Def* Parser::parse_cn() {
     Tracker tracker(this);
     eat(Token::Tag::Cn);
     auto domain = parse_def();
-    return world_.cn(domain, {tracker});
+    return world_.cn(domain, tracker.location());
 }
 
 const Def* Parser::parse_pi() {
@@ -126,7 +126,7 @@ const Def* Parser::parse_pi() {
     expect(Token::Tag::Dot, "Π type");
     auto body = parse_def();
     pop_debruijn_binders();
-    return world_.pi(domain, body, {tracker});
+    return world_.pi(domain, body, tracker.location());
 }
 
 std::vector<const Def*> Parser::parse_sigma_ops() {
@@ -143,7 +143,7 @@ std::vector<const Def*> Parser::parse_sigma_ops() {
         auto body = parse_def();
         expect(Token::Tag::R_Bracket, "variadic");
         pop_debruijn_binders();
-        return {world_.variadic(first, body, {tracker})};
+        return {world_.variadic(first, body, tracker.location())};
     }
 
     auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] {
@@ -159,7 +159,7 @@ std::vector<const Def*> Parser::parse_sigma_ops() {
 
 const Def* Parser::parse_sigma_or_variadic() {
     Tracker tracker(this);
-    return world_.sigma(parse_sigma_ops(), {tracker});
+    return world_.sigma(parse_sigma_ops(), tracker.location());
 }
 
 const Def* Parser::parse_lambda() {
@@ -170,7 +170,7 @@ const Def* Parser::parse_lambda() {
     expect(Token::Tag::Dot, "λ abstraction");
     auto body = parse_def();
     pop_debruijn_binders();
-    return world_.lambda(domain, body, {tracker});
+    return world_.lambda(domain, body, tracker.location());
 }
 
 const Def* Parser::parse_optional_qualifier() {
@@ -217,11 +217,11 @@ const Def* Parser::parse_tuple_or_pack() {
         auto body = parse_def();
         expect(Token::Tag::R_Paren, "pack");
         pop_debruijn_binders();
-        return world_.pack(first, body, {tracker});
+        return world_.pack(first, body, tracker.location());
     }
 
     auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); }, "elements of tuple", first);
-    return world_.tuple(defs, {tracker});
+    return world_.tuple(defs, tracker.location());
 }
 
 const Def* Parser::parse_lit() {
@@ -238,17 +238,17 @@ const Def* Parser::parse_lit() {
     auto type = parse_def();
     expect(Token::Tag::R_Brace, "literal");
 
-    return world_.lit(type, box, {tracker});
+    return world_.lit(type, box, tracker.location());
 }
 
 const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {
     auto b = parse_def();
     if (accept(Token::Tag::Arrow)) {
         auto c = parse_def();
-        return world_.insert(a, b, c, {tracker});
+        return world_.insert(a, b, c, tracker.location());
     }
 
-    return world_.extract(a, b, {tracker});
+    return world_.extract(a, b, tracker.location());
 }
 
 const Def* Parser::parse_literal() {
@@ -260,10 +260,10 @@ const Def* Parser::parse_literal() {
         auto index_arity = next().literal();
         assert(index_arity.tag == Literal::Tag::Lit_index_arity);
         const Def* qualifier = parse_optional_qualifier();
-        return world_.index(world_.arity(index_arity.box.get_u64(), qualifier), literal.box.get_u64(), {tracker});
+        return world_.index(world_.arity(index_arity.box.get_u64(), qualifier), literal.box.get_u64(), tracker.location());
     } else if (literal.tag == Literal::Tag::Lit_arity) {
         const Def* qualifier = parse_optional_qualifier();
-        return world_.arity(literal.box.get_u64(), qualifier, {tracker});
+        return world_.arity(literal.box.get_u64(), qualifier, tracker.location());
     }
 
     assertf(false, "unhandled literal {}", literal.box.get_u64());
@@ -324,12 +324,12 @@ const Def* Parser::parse_identifier() {
         expect(Token::Tag::ColonEqual, "a nominal definition");
 
         if (accept(Token::Tag::Lambda)) {
-            auto lambda = world_.lambda(type->as<Pi>(), {tracker}); // TODO properly set back location
+            auto lambda = world_.lambda(type->as<Pi>(), tracker.location()); // TODO properly set back location
             insert_identifier(symbol, lambda);
             Tracker tracker(this);
             push_decl_scope();
             auto symbol = expect(Token::Tag::Identifier, "parameter name for nomimal λ").symbol();
-            insert_identifier(symbol, lambda->param({tracker, symbol}));
+            insert_identifier(symbol, lambda->param({tracker.location(), symbol}));
             expect(Token::Tag::Dot, "λ abstraction");
             auto body = parse_def();
             pop_decl_scope();
@@ -345,17 +345,17 @@ const Def* Parser::parse_identifier() {
     } else {
         // use
         auto decl = lookup(tracker, symbol);
-        if (std::holds_alternative<size_t>(decl)) {
-            auto binder_idx = std::get<size_t>(decl);
+        if (decl.is_binder()) {
+            auto binder_idx = decl.binder();
             const Binder& it = binders_[binder_idx];
             auto index = depth_ - it.depth;
             auto type = shift_free_vars(debruijn_types_[it.depth], index);
-            const Def* var = world_.var(type, index - 1, {tracker});
+            const Def* var = world_.var(type, index - 1, tracker.location());
             for (auto i : reverse_range(it.indices))
-                var = world_.extract(var, i, {tracker});
+                var = world_.extract(var, i, tracker.location());
             def = var;
         } else { // nominal, let, or axiom
-            return std::get<const Def*>(decl);
+            return decl.def();
         }
     }
     return def;
@@ -371,7 +371,7 @@ void Parser::pop_debruijn_binders() {
     while (!binders_.empty()) {
         auto binder = binders_.back();
         if (binder.depth < depth_) break;
-        if (std::holds_alternative<const Def*>(binder.shadow) && std::get<const Def*>(binder.shadow) == nullptr)
+        if (binder.shadow.is_def() && binder.shadow.def() == nullptr)
             id2defbinder_.erase(binder.name);
         else
             id2defbinder_[binder.name] = binder.shadow;
@@ -402,7 +402,7 @@ Parser::DefOrBinder Parser::lookup(const Tracker& tracker, Symbol identifier) {
         else if (auto e = world_.lookup_external(identifier))
             return e;
         else {
-            assertf(false, "'{}' at {} not found in current scope", identifier.str(), tracker);
+            assertf(false, "'{}' at {} not found in current scope", identifier.str(), tracker.location());
         }
     }
     return decl->second;
@@ -438,20 +438,20 @@ void Parser::pop_decl_scope() {
 
         auto current = id2defbinder_.find(decl.name);
         if (current != id2defbinder_.end()) {
-            if (std::holds_alternative<size_t>(current->second)) {
+            if (current->second.is_binder()) {
                 // if a binder has been declared in this scope and it is still around,
                 // it overrides this id and also whatever we shadowed, but instead of
                 // shadowing this id it instead shadows the previous shadow
-                auto binder = binders_[std::get<size_t>(current->second)];
-                assert(std::get<const Def*>(binder.shadow) == decl.def);
+                auto binder = binders_[current->second.binder()];
+                assert(binder.shadow.def() == decl.def);
                 binder.shadow = decl.shadow;
                 continue; // nothing else to unbind/rebind
             } else {
-                assert(std::get<const Def*>(current->second) == decl.def);
+                assert(current->second.def() == decl.def);
             }
         }
 
-        if (std::holds_alternative<const Def*>(decl.shadow) && std::get<const Def*>(decl.shadow) == nullptr)
+        if (decl.shadow.is_def() && decl.shadow.def() == nullptr)
             id2defbinder_.erase(decl.name);
         else
             id2defbinder_[decl.name] = decl.shadow;

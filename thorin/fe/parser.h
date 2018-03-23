@@ -2,13 +2,13 @@
 #define THORIN_FE_PARSER_H
 
 #include <algorithm>
-#include <variant>
 
 #include "thorin/def.h"
 #include "thorin/world.h"
 #include "thorin/fe/token.h"
 #include "thorin/fe/lexer.h"
 #include "thorin/util/iterator.h"
+#include "thorin/util/utility.h"
 
 namespace thorin::fe {
 
@@ -32,10 +32,10 @@ private:
             , col(parser->ahead_[0].location().front_col())
         {}
 
-        operator Location() const {
+        Location location() const {
             auto back_line = parser.ahead_[0].location().back_line();
             auto back_col  = parser.ahead_[0].location().back_col();
-            return Location(parser.lexer_.filename(), line, col, back_line, back_col);
+            return {parser.lexer_.filename(), line, col, back_line, back_col};
         }
 
         const Parser& parser;
@@ -88,8 +88,25 @@ private:
     Token expect(Token::Tag, const char* context);
     bool accept(Token::Tag);
 
+    class DefOrBinder {
+    public:
+        DefOrBinder() {}
+        DefOrBinder(const Def* def)
+            : data_(def, 0)
+        {}
+        DefOrBinder(size_t binder)
+            : data_((const Def*)-1, binder)
+        {}
 
-    typedef std::variant<const Def*, size_t> DefOrBinder;
+        bool is_def() const { return data_.ptr() != (const Def*)-1; }
+        bool is_binder() const { return !is_def(); }
+        const Def* def() const { assert(is_def()); return data_.ptr(); }
+        size_t binder() const { assert(is_binder()); return data_.index(); }
+
+    private:
+        TaggedPtr<const Def, size_t> data_;
+    };
+
     struct Binder {
         Symbol name;
         size_t depth;               // binding depth
