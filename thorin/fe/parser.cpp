@@ -347,8 +347,8 @@ const Def* Parser::parse_identifier() {
     } else {
         // use
         auto decl = lookup(tracker, id);
-        if (std::holds_alternative<size_t>(decl)) {
-            auto binder_idx = std::get<size_t>(decl);
+        if (decl.is_binder()) {
+            auto binder_idx = decl.binder();
             const Binder& it = binders_[binder_idx];
             auto index = depth_ - it.depth;
             auto type = shift_free_vars(debruijn_types_[it.depth], index);
@@ -357,7 +357,7 @@ const Def* Parser::parse_identifier() {
                 var = world_.extract(var, i, tracker.location());
             def = var;
         } else { // nominal, let, or axiom
-            return std::get<const Def*>(decl);
+            return decl.def();
         }
     }
     return def;
@@ -373,7 +373,7 @@ void Parser::pop_debruijn_binders() {
     while (!binders_.empty()) {
         auto binder = binders_.back();
         if (binder.depth < depth_) break;
-        if (std::holds_alternative<const Def*>(binder.shadow) && std::get<const Def*>(binder.shadow) == nullptr)
+        if (binder.shadow.is_def() && binder.shadow.def() == nullptr)
             id2defbinder_.erase(binder.name);
         else
             id2defbinder_[binder.name] = binder.shadow;
@@ -440,20 +440,20 @@ void Parser::pop_decl_scope() {
 
         auto current = id2defbinder_.find(decl.name);
         if (current != id2defbinder_.end()) {
-            if (std::holds_alternative<size_t>(current->second)) {
+            if (current->second.is_binder()) {
                 // if a binder has been declared in this scope and it is still around,
                 // it overrides this id and also whatever we shadowed, but instead of
                 // shadowing this id it instead shadows the previous shadow
-                auto binder = binders_[std::get<size_t>(current->second)];
-                assert(std::get<const Def*>(binder.shadow) == decl.def);
+                auto binder = binders_[current->second.binder()];
+                assert(binder.shadow.def() == decl.def);
                 binder.shadow = decl.shadow;
                 continue; // nothing else to unbind/rebind
             } else {
-                assert(std::get<const Def*>(current->second) == decl.def);
+                assert(current->second.def() == decl.def);
             }
         }
 
-        if (std::holds_alternative<const Def*>(decl.shadow) && std::get<const Def*>(decl.shadow) == nullptr)
+        if (decl.shadow.is_def() && decl.shadow.def() == nullptr)
             id2defbinder_.erase(decl.name);
         else
             id2defbinder_[decl.name] = decl.shadow;
