@@ -58,7 +58,7 @@ script:
     - mkdir -p build
     - cd build
     - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug -DMEMORYCHECK_SUPPRESSIONS_FILE="/home/travis/build/AnyDSL/thorin2/resources/valgrind.supp" ..
-    - make -j3 VERBOSE=1
+    - make -j3
     - ctest -T memcheck -j3
     - cat /home/travis/build/AnyDSL/thorin2/build/Testing/Temporary/MemoryChecker.*.log > out && cat out
     - test ! -s out
