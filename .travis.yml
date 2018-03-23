@@ -12,27 +12,28 @@ addons:
       - valgrind
 
 env:
-  - CXX=clang++-5.0 BUILD_TYPE=Debug
-  - CXX=clang++-5.0 BUILD_TYPE=Release
-  - CXX=g++-7       BUILD_TYPE=Debug
-  - CXX=g++-7       BUILD_TYPE=Release
   global:
     - CXX_FLAGS="-Wall -Wextra -Werror"
+  matrix:
+    - CXX=clang++-5.0 BUILD_TYPE=Debug
+    - CXX=clang++-5.0 BUILD_TYPE=Release
+    - CXX=g++-7       BUILD_TYPE=Debug
+    - CXX=g++-7       BUILD_TYPE=Release
 
 install:
-    # get cmake-3.10 and dump some debug info
-    - mkdir -p ~/cmake
-    - curl -ks https://cmake.org/files/v3.10/cmake-3.10.3-Linux-x86_64.sh -o cmake.sh
-    - bash cmake.sh --skip-license --prefix="${HOME}/cmake"
-    - export PATH=~/cmake/bin:$PATH
-    - cmake --version
-    - ${CXX} --version
+  # get cmake-3.10 and dump some debug info
+  - mkdir -p ~/cmake
+  - curl -ks https://cmake.org/files/v3.10/cmake-3.10.3-Linux-x86_64.sh -o cmake.sh
+  - bash cmake.sh --skip-license --prefix="${HOME}/cmake"
+  - export PATH=~/cmake/bin:$PATH
+  - cmake --version
+  - ${CXX} --version
 
 script:
-    - mkdir -p build
-    - cd build
-    - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DMEMORYCHECK_SUPPRESSIONS_FILE="/home/travis/build/AnyDSL/thorin2/resources/valgrind.supp" ..
-    - make -j3 VERBOSE=1
-    - ctest -T memcheck -j3
-    - cat /home/travis/build/AnyDSL/thorin2/build/Testing/Temporary/MemoryChecker.*.log > out && cat out
-    - test ! -s out
+  - mkdir -p build
+  - cd build
+  - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DMEMORYCHECK_SUPPRESSIONS_FILE="/home/travis/build/AnyDSL/thorin2/resources/valgrind.supp" ..
+  - make -j3 VERBOSE=1
+  - ctest -T memcheck -j3
+  - cat /home/travis/build/AnyDSL/thorin2/build/Testing/Temporary/MemoryChecker.*.log > out && cat out
+  - test ! -s out
