@@ -5,7 +5,6 @@ project(half-download NONE)
 include(ExternalProject)
 ExternalProject_Add(half
     SVN_REPOSITORY    https://svn.code.sf.net/p/half/code/trunk
-    SVN_REVISION      -r300
     SOURCE_DIR        "${CMAKE_BINARY_DIR}/half-src"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND     ""
