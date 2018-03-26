@@ -188,8 +188,6 @@ public:
     /// @attention { You *must* set the last operand last. This will invoke @p finalize. }
     Def* set(size_t i, const Def* def);
     Def* set(Defs);
-    /// Returns @c true if all operands are set.
-    bool is_closed() const { return num_ops() == 0 || ops().back() != nullptr; }
     //@}
 
     //@{ get Uses%s
@@ -326,7 +324,7 @@ private:
     static uint32_t gid_counter_;
 
 protected:
-    BitSet free_vars_;
+    mutable BitSet free_vars_;
 
 private:
     struct Extra {};
