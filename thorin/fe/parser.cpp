@@ -57,7 +57,7 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Location>>& de
     else if (accept(Token::Tag::Multi_Arity_Kind))  def = world_.multi_arity_kind();
 
     if (def == nullptr)
-        ELOG_LOC(ahead().location(), "expected some expression");
+        error("expected some expression");
 
     if (accept(Token::Tag::Sharp))
         def = parse_extract_or_insert(tracker, def);
@@ -229,7 +229,7 @@ const Def* Parser::parse_lit() {
 
     eat(Token::Tag::L_Brace);
     if (!ahead().isa(Token::Tag::Literal))
-        ELOG_LOC(ahead().location(), "literal expected");
+        error("literal expected");
 
     auto box = ahead().literal().box;
     eat(Token::Tag::Literal);
@@ -287,8 +287,7 @@ Token Parser::eat(Token::Tag tag) {
 Token Parser::expect(Token::Tag tag, const char* context) {
     auto result = ahead();
     if (!ahead().isa(tag)) {
-        ELOG_LOC(ahead().location(), "expected '{}', got '{}' while parsing {}",
-                Token::tag_to_string(tag), Token::tag_to_string(ahead().tag()), context);
+        error("expected '{}', got '{}' while parsing {}", Token::tag_to_string(tag), Token::tag_to_string(ahead().tag()), context);
     }
     next();
     return result;
@@ -402,7 +401,7 @@ Parser::DefOrBinder Parser::lookup(const Tracker& tracker, Symbol identifier) {
         else if (auto e = world_.lookup_external(identifier))
             return e;
         else {
-            assertf(false, "'{}' at {} not found in current scope", identifier.str(), tracker.location());
+            error(tracker.location(), "'{}' not found in current scope", identifier.str());
         }
     }
     return decl->second;

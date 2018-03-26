@@ -151,7 +151,7 @@ const CFNode* Scheduler::schedule_smart(const Def* def) {
 
         // HACK this should actually never occur
         if (i == nullptr) {
-            WLOG(def, "don't know where to put {}", def);
+            WLOG("don't know where to put {}", def);
             result = late;
             break;
         }

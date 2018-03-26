@@ -7,8 +7,8 @@ namespace thorin {
 static void verify_top_level(World& world) {
     Scope::for_each(world, [&] (const Scope& scope) {
         for (auto def : scope.free()) {
-            assertf(def->isa_lambda(), "top-level continuation '{}' got free def '{}' at location '{}'",
-                    scope.entry(), def, def->location());
+            if (!def->isa_lambda())
+                ELOG("top-level continuation '{}' got free def '{}' at location '{}'", scope.entry(), def, def->location());
         }
     });
 }

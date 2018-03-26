@@ -1,8 +1,9 @@
 #ifndef THORIN_FE_LEXER_H
 #define THORIN_FE_LEXER_H
 
-#include "thorin/util/location.h"
 #include "thorin/fe/token.h"
+#include "thorin/util/location.h"
+#include "thorin/util/stream.h"
 
 namespace thorin::fe {
 
@@ -42,6 +43,13 @@ private:
             if (!accept(*p++, append)) return false;
         }
         return true;
+    }
+    template<typename... Args>
+    [[noreturn]] void error(const char* fmt, Args... args) {
+        std::ostringstream oss;
+        streamf(oss, "{}: lex error: ", location());
+        streamf(oss, fmt, std::forward<Args>(args)...);
+        throw std::logic_error(oss.str());
     }
 
     uint32_t next();
