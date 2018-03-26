@@ -52,7 +52,7 @@ const Axiom* get_axiom(const Def* def) {
 
 static inline void check_same_sorted_ops(Def::Sort sort, Defs ops) {
     auto& world = ops.front()->world();
-    world.errorf(!std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); }),
+    world.errorf(std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); }),
             "operands must be of the same sort");
 }
 
