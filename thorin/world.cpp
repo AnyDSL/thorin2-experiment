@@ -362,6 +362,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
         }
     }
     errorf("can't extract at {} from {} : {}, index type {} not compatible", index, index->type(), def, type);
+    return bottom(def->type());
 }
 
 const Def* World::extract(const Def* def, size_t i, Debug dbg) {
@@ -371,7 +372,7 @@ const Def* World::extract(const Def* def, size_t i, Debug dbg) {
 
 const Lit* World::index(const Arity* a, u64 i, Location location) {
     auto arity_val = a->value();
-    errorf(i < arity_val, "Index literal {} does not fit within arity {}", i, a);
+    errorf(i < arity_val, "index literal {} does not fit within arity {}", i, a);
     auto cur = Def::gid_counter();
     auto result = lit(a, i, location);
 
