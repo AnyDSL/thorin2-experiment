@@ -187,6 +187,7 @@ public:
     bool empty() const { return num_ops() == 0; }
     Def* set(size_t i, const Def*);
     Def* set(Defs);
+    bool is_finalized() const { return empty() || ops().back() != nullptr; }
     //@}
 
     //@{ get Uses%s
@@ -323,7 +324,7 @@ private:
     static uint32_t gid_counter_;
 
 protected:
-    BitSet free_vars_;
+    mutable BitSet free_vars_;
 
 private:
     struct Extra {};

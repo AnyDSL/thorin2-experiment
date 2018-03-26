@@ -142,6 +142,11 @@ void Def::finalize() {
 
     if (world().is_typechecking_enabled() && free_vars().none())
         typecheck();
+
+    if (is_nominal() && !empty()) {
+        for (auto use : uses())
+            use->free_vars_ |= free_vars();
+    }
 }
 
 void Def::unset(size_t i) {
