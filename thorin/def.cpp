@@ -12,11 +12,6 @@ namespace thorin {
  * helpers
  */
 
-#define errorf(cond, ...)                               \
-    if (world().is_typechecking_enabled() && !(cond)) {  \
-        errorf_(__VA_ARGS__);                           \
-    }
-
 DefArray qualifiers(Defs defs) {
     DefArray result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)
@@ -56,9 +51,9 @@ const Axiom* get_axiom(const Def* def) {
 }
 
 static inline void check_same_sorted_ops(Def::Sort sort, Defs ops) {
-    if (ops.front()->world().is_typechecking_enabled() &&
-            !std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); }))
-        errorf_("operands must be of the same sort");
+    auto& world = ops.front()->world();
+    world.errorf(!std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); }),
+            "operands must be of the same sort");
 }
 
 //------------------------------------------------------------------------------
@@ -670,7 +665,7 @@ void Var::typecheck_vars(Environment& types, EnvDefSet&) const {
     auto reverse_index = types.size() - 1 - index();
     auto shifted_type = shift_free_vars(type(), -index() - 1);
     auto env_type = types[reverse_index];
-    errorf(env_type == shifted_type,
+    world().errorf(env_type == shifted_type,
             "The shifted type {} of variable {} does not match the type {} declared by the binder.", shifted_type,
             index(), types[reverse_index]);
 }

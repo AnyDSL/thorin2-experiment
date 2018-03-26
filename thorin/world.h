@@ -19,13 +19,6 @@ public:
     {}
 };
 
-template<typename... Args>
-[[noreturn]] void errorf_(const char* fmt, Args... args) {
-    std::ostringstream oss;
-    streamf(oss, fmt, std::forward<Args>(args)...);
-    throw TypeError(oss.str());
-}
-
 class World;
 const Def* infer_shape(World&, const Def* def);
 std::array<const Def*, 2> infer_width_and_shape(World&, const Def*);
@@ -346,6 +339,16 @@ public:
 #endif
     bool is_typechecking_enabled() const { return typechecking_enabled_; }
     void enable_typechecking(bool on = true) { typechecking_enabled_ = on; }
+    template<typename... Args>
+    void errorf(bool cond, const char* fmt, Args... args) {
+        if (is_typechecking_enabled() && !cond) {
+            std::ostringstream oss;
+            streamf(oss, fmt, std::forward<Args>(args)...);
+            throw TypeError(oss.str());
+        }
+    }
+    template<typename... Args>
+    void errorf(const char* fmt, Args... args) { return errorf(false, fmt, std::forward<Args>(args)...); }
     //@}
 
     //@{ misc
@@ -369,6 +372,7 @@ public:
     }
 
 private:
+
     struct Lattice {
         QualifierTag min, max;
         bool (*q_less)(QualifierTag, QualifierTag);

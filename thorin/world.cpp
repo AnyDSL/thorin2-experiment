@@ -14,11 +14,6 @@ namespace thorin {
  * helpers
  */
 
-#define errorf(cond, ...)                       \
-    if (is_typechecking_enabled() && !(cond)) {  \
-        errorf_(__VA_ARGS__);                   \
-    }
-
 const Def* infer_shape(World& world, const Def* def) {
     if (auto variadic = def->type()->isa<Variadic>()) {
         if (!variadic->body()->isa<Variadic>())
@@ -366,7 +361,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             return extracted;
         }
     }
-    errorf_("can't extract at {} from {} : {}, index type {} not compatible", index, index->type(), def, type);
+    errorf("can't extract at {} from {} : {}, index type {} not compatible", index, index->type(), def, type);
 }
 
 const Def* World::extract(const Def* def, size_t i, Debug dbg) {
