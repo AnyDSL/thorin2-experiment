@@ -85,19 +85,22 @@ TEST(Nominal, SigmaFreeVars) {
 
 TEST(Nominal, PolymorphicListVariantNominal) {
     World w;
-    auto nat = w.type_nat();
-    auto star = w.star();
+    auto N = w.type_nat();
+    auto S = w.star();
 
-    auto cons_or_nil = w.variant(star, 2, {"cons_or_nil"});
-    auto list = w.lambda(w.pi(star, star), {"list"});
+    auto cons_or_nil = w.variant(S, 2, {"cons_or_nil"});
+    auto list = w.lambda(w.pi(S, S), {"list"});
     auto x = list->param({"x"});
     list->set(cons_or_nil);
     auto nil = w.unit();
     auto cons = w.sigma({x, w.app(list, x)});
     cons_or_nil->set(0, nil);
     cons_or_nil->set(1, cons);
-    auto apped = w.app(list, nat);
-    apped->dump();
+    auto apped = w.app(list, N);
+    auto v = w.axiom(apped, {"v"});
+    auto cons_nat = w.sigma({N, w.app(list, N)});
+    auto match = w.match(v, {w.lambda(nil, w.lit_nat_16()), w.lambda(cons_nat, w.extract(w.var(cons_nat, 0), 0_s))});
+    EXPECT_EQ(match->type(), N);
 }
 
 TEST(Nominal, Module) {
