@@ -48,7 +48,6 @@ TEST(Nominal, PolymorphicList) {
     app_var->dump();
     EXPECT_TRUE(app_var->isa<App>());
     auto cons = w.sigma({list->param(), app_var});
-    EXPECT_TRUE(cons->free_vars().any_end(1));
     list->set(w.variant({nil, cons}));
     auto apped = w.app(list, nat);
     EXPECT_TRUE(apped->isa<App>());
@@ -84,41 +83,21 @@ TEST(Nominal, SigmaFreeVars) {
     EXPECT_FALSE(sig->op(2)->free_vars().test(2));
 }
 
-TEST(Nominal, ReduceWithNominals) {
-    World w;
-    auto nat = w.type_nat();
-    auto star = w.star();
-
-    auto sig = w.sigma_type(1, {"sig"});
-    auto v0 = w.var(star, 0);
-    sig->set(0, v0);
-    EXPECT_TRUE(sig->free_vars().test(0));
-
-    auto lam = w.lambda(star, w.tuple({sig, sig}));
-    auto red = w.app(lam, nat);
-    EXPECT_FALSE(red->isa<App>());
-    EXPECT_EQ(w.extract(red, 0_s), w.extract(red, 1_s));
-
-    auto lam2 = w.lambda(star, w.sigma({sig, sig}));
-    auto red2 = w.app(lam2, nat);
-    EXPECT_FALSE(red2->isa<App>());
-    EXPECT_NE(red2->op(0), red2->op(1));
-}
-
 TEST(Nominal, PolymorphicListVariantNominal) {
     World w;
     auto nat = w.type_nat();
     auto star = w.star();
 
     auto cons_or_nil = w.variant(star, 2, {"cons_or_nil"});
-    auto list = w.lambda(star, cons_or_nil);
+    auto list = w.lambda(w.pi(star, star), {"list"});
+    auto x = list->param({"x"});
+    list->set(cons_or_nil);
     auto nil = w.unit();
-    auto cons = w.sigma({w.var(star, 0), w.app(list, w.var(star, 1))});
-    EXPECT_TRUE(cons->free_vars().any_end(1));
+    auto cons = w.sigma({x, w.app(list, x)});
     cons_or_nil->set(0, nil);
     cons_or_nil->set(1, cons);
     auto apped = w.app(list, nat);
-    EXPECT_EQ(apped->op(1)->op(0), nat);
+    apped->dump();
 }
 
 TEST(Nominal, Module) {

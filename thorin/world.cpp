@@ -695,12 +695,13 @@ static const Def* build_match_type(Defs handlers) {
 }
 
 const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
+    auto t = def->destructing_type();
     if (handlers.size() == 1) {
-        assert(!def->type()->isa<Variant>());
+        assert(!t->isa<Variant>());
         return app(handlers.front(), def, dbg);
     }
-    auto matched_type [[maybe_unused]] = def->type()->as<Variant>();
-    assert(def->type()->num_ops() == handlers.size() && "number of handlers does not match number of cases");
+    auto matched_type [[maybe_unused]] = t->as<Variant>();
+    assert(t->num_ops() == handlers.size() && "number of handlers does not match number of cases");
 
     DefArray sorted_handlers(handlers);
     std::sort(sorted_handlers.begin(), sorted_handlers.end(),
@@ -730,7 +731,6 @@ const Lit* World::lit_nat(int64_t val, Location location) {
         result->debug().set(std::to_string(val));
     return result;
 }
-
 
 #ifndef NDEBUG
 

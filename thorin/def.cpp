@@ -147,7 +147,7 @@ void Def::finalize() {
     if (type() != nullptr)
         free_vars_ |= type()->free_vars_;
 
-    assert(!is_nominal() || free_vars().none() && "nominals must not have free vars");
+    assert((!is_nominal() || free_vars().none()) && "nominals must not have free vars");
 
     if (world().is_typechecking_enabled() && free_vars().none())
         typecheck();
