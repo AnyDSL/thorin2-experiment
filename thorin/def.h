@@ -391,19 +391,6 @@ uint64_t EnvDefHash::hash(const EnvDef& p) {
     return hash;
 }
 
-template<class T>
-const SortedDefSet set_flatten(Defs defs) {
-    SortedDefSet flat_defs;
-    for (auto def : defs) {
-        if (def->isa<T>())
-            for (auto inner : def->ops())
-                flat_defs.insert(inner);
-        else
-            flat_defs.insert(def);
-    }
-    return flat_defs;
-}
-
 //------------------------------------------------------------------------------
 
 class ArityKind : public Def {

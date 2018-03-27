@@ -14,6 +14,21 @@ namespace thorin {
  * helpers
  */
 
+template<class T>
+static const SortedDefSet set_flatten(Defs defs) {
+    SortedDefSet flat_defs;
+    for (auto def : defs) {
+        if (def->template isa<Bottom>())
+            continue;
+        if (def->isa<T>())
+            for (auto inner : def->ops())
+                flat_defs.insert(inner);
+        else
+            flat_defs.insert(def);
+    }
+    return flat_defs;
+}
+
 const Def* infer_shape(World& world, const Def* def) {
     if (auto variadic = def->type()->isa<Variadic>()) {
         if (!variadic->body()->isa<Variadic>())
@@ -26,8 +41,6 @@ const Def* infer_shape(World& world, const Def* def) {
     }
     return world.arity(1);
 }
-
-//------------------------------------------------------------------------------
 
 static bool all_of(Defs defs) {
     return std::all_of(defs.begin() + 1, defs.end(), [&](auto def) { return def == defs.front(); });
@@ -416,13 +429,12 @@ const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) 
 }
 
 const Def* World::intersection(Defs defs, Debug dbg) {
-    assert(defs.size() > 0);
     return intersection(type_bound(nullptr, GLB, defs), defs, dbg);
 }
 
 const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
-    assert(ops.size() > 0); // TODO empty intersection -> empty type/kind
     auto defs = set_flatten<Intersection>(ops);
+    if (defs.empty()) return bottom(type);
     auto first = *defs.begin();
     if (defs.size() == 1) {
         assert(first->type() == type);
@@ -665,8 +677,8 @@ const Def* World::variant(Defs defs, Debug dbg) {
 }
 
 const Def* World::variant(const Def* type, Defs ops, Debug dbg) {
-    assert(ops.size() > 0);
     auto defs = set_flatten<Variant>(ops);
+    if (defs.empty()) return bottom(type);
     auto first = *defs.begin();
     if (defs.size() == 1) {
         assert(first->type() == type);

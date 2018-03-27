@@ -39,3 +39,16 @@ TEST(Variants, positive_tests) {
     // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
     w.intersection(w.star(), {w.pi(N, N), w.pi(B, B)})->dump();
 }
+
+TEST(Variants, identities) {
+    World w;
+    auto B = w.type_bool();
+    auto N = w.type_nat();
+    auto F = w.bottom(w.star());
+    EXPECT_EQ(w.variant(w.star(), {N}), N);
+    EXPECT_EQ(w.variant(w.star(), {N, F}), N);
+    EXPECT_EQ(w.variant(w.star(), {N, F, F}), N);
+    EXPECT_EQ(w.variant(w.star(), {F}), F);
+    EXPECT_EQ(w.variant(w.star(), {F, F}), F);
+    EXPECT_EQ(w.variant(w.star(), {N, B, F}), w.variant(w.star(), {B, N}));
+}
