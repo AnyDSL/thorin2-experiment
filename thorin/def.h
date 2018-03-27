@@ -758,31 +758,6 @@ private:
     friend class World;
 };
 
-/// Cast a Def to a Variant type.
-class Any : public Def {
-private:
-    Any(const Variant* type, const Def* def, Debug dbg)
-        : Def(Tag::Any, type, {def}, dbg)
-    {}
-
-public:
-    const Def* def() const { return op(0); }
-    size_t index() const {
-        auto def_type = def()->type();
-        auto variant = type()->as<Variant>();
-        for (size_t i = 0; i < variant->num_ops(); ++i)
-            if (def_type == variant->op(i))
-                return i;
-        THORIN_UNREACHABLE;
-    }
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
-private:
-    std::ostream& vstream(std::ostream&) const override;
-
-    friend class World;
-};
-
 class Match : public Def {
 private:
     Match(const Def* type, const Def* def, const Defs handlers, Debug dbg)

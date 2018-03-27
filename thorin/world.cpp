@@ -210,24 +210,12 @@ World::World(Debug dbg)
     // index_eliminator_ = axiom(fe::parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
-    cn_match_   = axiom("match",   "cn[T: *, a: 𝔸, [a; [T, cn[]]]]");
     cn_end_     = lambda(cn(unit()), {"end"});
 }
 
 World::~World() {
     for (auto def : defs_)
         def->~Def();
-}
-
-const Def* World::any(const Def* type, const Def* def, Debug dbg) {
-    if (!type->isa<Variant>()) {
-        assert(type == def->type());
-        return def;
-    }
-
-    assert(any_of(def->type(), type->ops()) && "type must be a part of the variant type");
-
-    return unify<Any>(1, type->as<Variant>(), def, dbg);
 }
 
 const Arity* World::arity(size_t a, const Def* q, Location location) {
@@ -716,12 +704,8 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
                 matched_type->op(i));
     }
 #endif
-    if (auto any = def->isa<Any>()) {
-        auto any_def = any->def();
-        return app(sorted_handlers[any->index()], any_def, dbg);
-    }
     auto type = build_match_type(sorted_handlers);
-    return unify<Match>(1, type, def, sorted_handlers, dbg);
+    return unify<Match>(1+sorted_handlers.size(), type, def, sorted_handlers, dbg);
 }
 
 const Lit* World::lit_nat(int64_t val, Location location) {

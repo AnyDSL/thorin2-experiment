@@ -353,8 +353,6 @@ const Def* Variant::kind_qualifier() const {
 const Def* Def           ::arity() const { return is_value() ? destructing_type()->arity() : nullptr; }
 const Def* Arity         ::arity() const { return world().arity(1); }
 const Def* ArityKind     ::arity() const { return world().arity(1); }
-// const Def* All::arity() const { return TODO; }
-// const Def* Any::arity() const { return TODO; }
 const Def* App           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Axiom         ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Bottom        ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
@@ -435,7 +433,6 @@ bool Var  ::equal(const Def* other) const { return Def::equal(other) && this->in
  * rebuild
  */
 
-const Def* Any           ::rebuild(World& to, const Def* t, Defs ops) const { return to.any(t, ops[0], debug()); }
 const Def* App           ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops[1], debug()); }
 const Def* Arity         ::rebuild(World& to, const Def* t, Defs    ) const { return to.arity(value(), t->op(0), debug()); }
 const Def* ArityKind     ::rebuild(World& to, const Def*  , Defs ops) const { return to.arity_kind(ops[0]); }
@@ -698,13 +695,6 @@ std::ostream& Def::qualifier_stream(std::ostream& os) const {
             os << q;
     }
     return os;
-}
-
-std::ostream& Any::vstream(std::ostream& os) const {
-    os << "∨:";
-    type()->name_stream(os);
-    def()->name_stream(os << "(");
-    return os << ")";
 }
 
 std::ostream& App::vstream(std::ostream& os) const {

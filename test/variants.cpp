@@ -10,10 +10,10 @@ TEST(Variants, negative_test) {
     auto boolean = w.type_bool();
     auto nat = w.type_nat();
     auto variant = w.variant(w.star(), {nat, boolean});
-    auto any_nat23 = w.any(variant, w.lit_nat(23));
+    auto x = w.axiom(variant, {"x"});
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
     auto handle_bool_bool = w.lambda(w.sigma({boolean, boolean}), w.lit_nat(0));
-    EXPECT_THROW(w.match(any_nat23, {handle_bool_bool, handle_nat}), TypeError);
+    EXPECT_THROW(w.match(x, {handle_bool_bool, handle_nat}), TypeError);
 }
 
 TEST(Variants, positive_tests) {
@@ -22,17 +22,16 @@ TEST(Variants, positive_tests) {
     auto nat = w.type_nat();
     // Test variant types and matches
     auto variant = w.variant(w.star(), {nat, boolean});
-    auto any_nat23 = w.any(variant, w.lit_nat(23));
-    auto any_bool = w.any(variant, w.axiom(boolean,{"false"}));
+    auto x = w.axiom(variant, {"x"});
     auto assumed_var = w.axiom(variant, {"someval"});
     auto handle_nat = w.lambda(nat, w.var(nat, 0));
     auto handle_bool = w.lambda(boolean, w.axiom(nat,{"0"}));
     Array<const Def*> handlers{handle_nat, handle_bool};
-    auto match_nat = w.match(any_nat23, handlers);
+    auto match_nat = w.match(x, handlers);
     match_nat->dump(); // 23
-    auto o_match_nat = w.match(any_nat23, {handle_bool, handle_nat});
-    assert_unused(match_nat == o_match_nat);
-    auto match_bool = w.match(any_bool, handlers);
+    auto o_match_nat = w.match(x, {handle_bool, handle_nat});
+    EXPECT_EQ(match_nat, o_match_nat);
+    auto match_bool = w.match(x, handlers);
     match_bool->dump(); // 0
     auto match = w.match(assumed_var, handlers);
     match->dump(); // match someval with ...

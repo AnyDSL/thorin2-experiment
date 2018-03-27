@@ -245,7 +245,6 @@ public:
     //@}
 
     //@{ misc factory methods
-    const Def* any(const Def* type, const Def* def, Debug dbg = {});
     const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
     const Def* singleton(const Def* def, Debug dbg = {});
     const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
@@ -280,7 +279,6 @@ public:
 
     //@{ intrinsics (AKA built-in Cont%inuations)
     const Axiom* cn_br()    const { return cn_br_; }
-    const Axiom* cn_match() const { return cn_match_; }
     Lambda* cn_end()   const { return cn_end_; }
     //@}
 
@@ -525,7 +523,6 @@ protected:
     std::array<const Lit*, 2> lit_bool_;
     std::array<const Lit*, 7> lit_nat_;
     const Axiom* cn_br_;
-    const Axiom* cn_match_;
     Lambda* cn_end_;
 #ifndef NDEBUG
     Breakpoints breakpoints_;
