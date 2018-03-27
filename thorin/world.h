@@ -337,15 +337,13 @@ public:
     bool is_typechecking_enabled() const { return typechecking_enabled_; }
     void enable_typechecking(bool on = true) { typechecking_enabled_ = on; }
     template<typename... Args>
-    void errorf(bool cond, const char* fmt, Args... args) {
-        if (is_typechecking_enabled() && !cond) {
+    void errorf(const char* fmt, Args... args) {
+        if (is_typechecking_enabled()) {
             std::ostringstream oss;
             streamf(oss, fmt, std::forward<Args>(args)...);
             throw TypeError(oss.str());
         }
     }
-    template<typename... Args>
-    void errorf(const char* fmt, Args... args) { return errorf(false, fmt, std::forward<Args>(args)...); }
     //@}
 
     //@{ misc

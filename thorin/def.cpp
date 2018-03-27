@@ -51,9 +51,8 @@ const Axiom* get_axiom(const Def* def) {
 }
 
 static inline void check_same_sorted_ops(Def::Sort sort, Defs ops) {
-    auto& world = ops.front()->world();
-    world.errorf(std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); }),
-            "operands must be of the same sort");
+    if (!std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); }))
+        ops.front()->world().errorf("operands must be of the same sort");
 }
 
 //------------------------------------------------------------------------------
@@ -668,9 +667,9 @@ void Var::typecheck_vars(Environment& types, EnvDefSet&) const {
     auto reverse_index = types.size() - 1 - index();
     auto shifted_type = shift_free_vars(type(), -index() - 1);
     auto env_type = types[reverse_index];
-    world().errorf(env_type == shifted_type,
-            "The shifted type {} of variable {} does not match the type {} declared by the binder.", shifted_type,
-            index(), types[reverse_index]);
+    if (env_type != shifted_type)
+        world().errorf("the shifted type {} of variable {} does not match the type {} declared by the binder.",
+                shifted_type, index(), types[reverse_index]);
 }
 
 void Variadic::typecheck_vars(Environment& types, EnvDefSet& checked) const {
