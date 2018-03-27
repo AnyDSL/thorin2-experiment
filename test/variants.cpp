@@ -7,35 +7,35 @@ using namespace thorin;
 TEST(Variants, negative_test) {
     World w;
     w.enable_typechecking();
-    auto boolean = w.type_bool();
-    auto nat = w.type_nat();
-    auto variant = w.variant(w.star(), {nat, boolean});
+    auto B = w.type_bool();
+    auto N = w.type_nat();
+    auto variant = w.variant(w.star(), {N, B});
     auto x = w.axiom(variant, {"x"});
-    auto handle_nat = w.lambda(nat, w.var(nat, 0));
-    auto handle_bool_bool = w.lambda(w.sigma({boolean, boolean}), w.lit_nat(0));
-    EXPECT_THROW(w.match(x, {handle_bool_bool, handle_nat}), TypeError);
+    auto handle_N = w.lambda(N, w.var(N, 0));
+    auto handle_B_B = w.lambda(w.sigma({B, B}), w.lit_nat(0));
+    EXPECT_THROW(w.match(x, {handle_B_B, handle_N}), TypeError);
 }
 
 TEST(Variants, positive_tests) {
     World w;
-    auto boolean = w.type_bool();
-    auto nat = w.type_nat();
+    auto B = w.type_bool();
+    auto N = w.type_nat();
     // Test variant types and matches
-    auto variant = w.variant(w.star(), {nat, boolean});
+    auto variant = w.variant(w.star(), {N, B});
     auto x = w.axiom(variant, {"x"});
     auto assumed_var = w.axiom(variant, {"someval"});
-    auto handle_nat = w.lambda(nat, w.var(nat, 0));
-    auto handle_bool = w.lambda(boolean, w.axiom(nat,{"0"}));
-    Array<const Def*> handlers{handle_nat, handle_bool};
-    auto match_nat = w.match(x, handlers);
-    match_nat->dump(); // 23
-    auto o_match_nat = w.match(x, {handle_bool, handle_nat});
-    EXPECT_EQ(match_nat, o_match_nat);
-    auto match_bool = w.match(x, handlers);
-    match_bool->dump(); // 0
+    auto handle_N = w.lambda(N, w.var(N, 0));
+    auto handle_B = w.lambda(B, w.axiom(N,{"0"}));
+    Array<const Def*> handlers{handle_N, handle_B};
+    auto match_N = w.match(x, handlers);
+    match_N->dump(); // 23
+    auto o_match_N = w.match(x, {handle_B, handle_N});
+    EXPECT_EQ(match_N, o_match_N);
+    auto match_B = w.match(x, handlers);
+    match_B->dump(); // 0
     auto match = w.match(assumed_var, handlers);
     match->dump(); // match someval with ...
     match->type()->dump();
     // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
-    w.intersection(w.star(), {w.pi(nat, nat), w.pi(boolean, boolean)})->dump();
+    w.intersection(w.star(), {w.pi(N, N), w.pi(B, B)})->dump();
 }

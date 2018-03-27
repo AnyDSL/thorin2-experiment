@@ -692,18 +692,15 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
     assert(t->num_ops() == handlers.size() && "number of handlers does not match number of cases");
 
     DefArray sorted_handlers(handlers);
-    std::sort(sorted_handlers.begin(), sorted_handlers.end(),
-              [](const Def* a, const Def* b) {
-                  auto a_dom = a->type()->as<Pi>()->domain();
-                  auto b_dom = b->type()->as<Pi>()->domain();
-                  return a_dom->gid() < b_dom->gid(); });
-#ifndef NDEBUG
-    for (size_t i = 0; i < sorted_handlers.size(); ++i) {
-        auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
-        errorf(domain == matched_type->op(i), "handler {} with domain {} does not match type {}", i, domain,
-                matched_type->op(i));
+    std::sort(sorted_handlers.begin(), sorted_handlers.end(), DefLt());
+
+    if (is_typechecking_enabled()) {
+        for (size_t i = 0; i < sorted_handlers.size(); ++i) {
+            auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
+            errorf(domain == matched_type->op(i), "handler {} with domain {} does not match type {}", i, domain,
+                    matched_type->op(i));
+        }
     }
-#endif
     auto type = build_match_type(sorted_handlers);
     return unify<Match>(1+sorted_handlers.size(), type, def, sorted_handlers, dbg);
 }
