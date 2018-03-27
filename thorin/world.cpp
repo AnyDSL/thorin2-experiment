@@ -273,8 +273,10 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
 
         // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body?
         if (!lambda->maybe_affine() && !lambda->codomain()->maybe_affine()) {
-            assert(app->state() == App::State::Has_None);
-            return app->extra().cache_ = reduce(lambda->body(), app->arg());
+            assert(app->cache() == nullptr);
+            auto res = reduce(lambda->body(), app->arg());
+            app->extra().cache_.set_ptr(res);
+            return res;
         }
     }
 

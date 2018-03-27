@@ -43,10 +43,9 @@ DefArray unique_gid_sorted(Defs defs) {
 }
 
 const Axiom* get_axiom(const Def* def) {
-    if (auto app = def->isa<App>()) {
-        assert(app->callee()->isa<Axiom>() || !app->callee()->is_nominal());
+    if (auto app = def->isa<App>(); app != nullptr && app->has_axiom())
         return app->axiom();
-    } else if (auto axiom = def->isa<Axiom>())
+    else if (auto axiom = def->isa<Axiom>())
         return axiom;
     return nullptr;
 }
@@ -74,21 +73,27 @@ Debug Def::debug_history() const {
     return debug();
 }
 
-const Def* Def::destructing_type() const {
-    if (auto app = type()->isa<App>()) {
-        if (auto cache = app->cache()) {
-            assert(app->callee()->is_nominal());
-            return cache;
-        }
-        if (auto lambda = app->callee()->isa_lambda(); lambda != nullptr && lambda->is_nominal()) {
-            //auto res = thorin::reduce(lambda->body(), app->arg());
-            auto res = drop(lambda, {app->arg()})->body();
-            assert(app->state() == App::State::Has_None);
-            app->extra().cache_ = res;
-            return res;
-        }
+const Def* unfold(const App* app) {
+    if (auto cache = app->cache())
+        return cache;
+
+    const Def* app_callee = app->callee();
+    if (auto a = app_callee->isa<App>())
+        app_callee = unfold(a);
+
+    if (auto lambda = app_callee->isa_lambda(); lambda != nullptr && lambda->is_nominal()) {
+        auto res = drop(lambda, {app->arg()})->body();
+        assert(app->cache() == nullptr);
+        app->extra().cache_.set_ptr(res);
+        return res;
     }
 
+    return app;
+}
+
+const Def* Def::destructing_type() const {
+    if (auto app = type()->isa<App>())
+        return unfold(app);
     return type();
 }
 
@@ -142,13 +147,10 @@ void Def::finalize() {
     if (type() != nullptr)
         free_vars_ |= type()->free_vars_;
 
+    assert(!is_nominal() || free_vars().none() && "nominals must not have free vars");
+
     if (world().is_typechecking_enabled() && free_vars().none())
         typecheck();
-
-    if (is_nominal() && !empty()) {
-        for (auto use : uses())
-            use->free_vars_ |= free_vars();
-    }
 }
 
 void Def::unset(size_t i) {
@@ -450,7 +452,7 @@ const Def* Lit           ::rebuild(World& to, const Def* t, Defs    ) const { re
 const Def* Match         ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* MultiArityKind::rebuild(World& to, const Def*  , Defs ops) const { return to.multi_arity_kind(ops[0]); }
 const Def* Pack          ::rebuild(World& to, const Def* t, Defs ops) const { return to.pack(t->arity(), ops[0], debug()); }
-const Def* Param         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
+const Def* Param         ::rebuild(World& to, const Def*  , Defs ops) const { return to.param(ops[0]->as<Lambda>(), debug()); }
 const Def* Pi            ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi(ops[0], ops[1], debug()); }
 const Def* Pick          ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);

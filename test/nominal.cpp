@@ -24,7 +24,8 @@ TEST(Nominal, Option) {
     auto none = w.sigma_type(0, {"None"});
     // auto some = w.lambda(w.pi(w.star(), w.star()), {"Some"});
     // some->set(w.sigma({w.var(0, w.star())}));
-    auto option_nominal = w.lambda(w.pi(w.star(), w.star()), {"Option"})->set(w.variant({none, w.var(w.star(), 0)}));
+    auto o = w.lambda(w.pi(w.star(), w.star()), {"Option"});
+    auto option_nominal = o->set(w.variant({none, o->param()}));
     // option_nominal->set(w.variant({none, w.app(some, w.var(0, w.star()))}));
     auto app = w.app(option_nominal, nat);
     EXPECT_TRUE(app->isa<App>());
@@ -43,10 +44,10 @@ TEST(Nominal, PolymorphicList) {
     auto list = w.lambda(w.pi(star, star), {"List"});
     EXPECT_TRUE(list->is_nominal());
     list->dump();
-    auto app_var = w.app(list, w.var(star, 1));
+    auto app_var = w.app(list, list->param());
     app_var->dump();
     EXPECT_TRUE(app_var->isa<App>());
-    auto cons = w.sigma({w.var(star, 0), app_var});
+    auto cons = w.sigma({list->param(), app_var});
     EXPECT_TRUE(cons->free_vars().any_end(1));
     list->set(w.variant({nil, cons}));
     auto apped = w.app(list, nat);
@@ -68,19 +69,19 @@ TEST(Nominal, Nat) {
 
 TEST(Nominal, SigmaFreeVars) {
     World w;
-    auto star = w.star();
+    auto S = w.star();
+    auto N = w.type_nat();
 
     auto sig = w.sigma_type(3);
-    auto v0 = w.var(star, 0);
-    auto v1 = w.var(star, 1);
-    auto v3 = w.var(star, 3);
-    sig->set(0, v0)->set(1, v3)->set(2, v1);
-    EXPECT_TRUE(sig->free_vars().test(0));
-    EXPECT_FALSE(sig->free_vars().test(1));
-    EXPECT_TRUE(sig->free_vars().test(2));
-    EXPECT_TRUE(sig->free_vars().any());
-    EXPECT_TRUE(sig->free_vars().any_begin(1));
-    EXPECT_TRUE(sig->free_vars().none_begin(3));
+    auto v0 = w.var(S, 0);
+    auto v1 = w.var(S, 1);
+    sig->set(0, N)->set(1, v0)->set(2, v1);
+    EXPECT_TRUE (sig->op(1)->free_vars().test(0));
+    EXPECT_FALSE(sig->op(1)->free_vars().test(1));
+    EXPECT_FALSE(sig->op(1)->free_vars().test(2));
+    EXPECT_FALSE(sig->op(2)->free_vars().test(0));
+    EXPECT_TRUE (sig->op(2)->free_vars().test(1));
+    EXPECT_FALSE(sig->op(2)->free_vars().test(2));
 }
 
 TEST(Nominal, ReduceWithNominals) {
@@ -128,15 +129,14 @@ TEST(Nominal, Module) {
     auto N = w.type_nat();
 
     // M := λU:*. L := λT:*. [[T, U], {nil := [] | cons := [L T]}
-    // M := λU:*. L := λT:*. [[T, 1], {nil := [] | cons := [L T]}
-
+    auto M = w.lambda(w.pi(S, w.pi(S, S)), {"M"});
+    auto U = M->param({"U"});
     auto L = w.lambda(w.pi(S, S), {"L"});
     auto T = L->param({"T"});
-    auto l = w.sigma({w.sigma({T, w.var(S, 1)}),
+    auto l = w.sigma({w.sigma({T, U}),
                       w.variant({w.sigma_type(0_s, {"nil"}), w.sigma_type(1, {"cons"})->set(0, w.app(L, T))})});
-    L->set(l);
+    M->set(L->set(l));
 
-    auto M = w.lambda(S, L);
     auto LNN = w.app(w.app(M, N), N);
     auto LBN = w.app(w.app(M, N), B);
     auto LNB = w.app(w.app(M, B), N);

@@ -84,29 +84,60 @@ template<class T, class I = size_t>
 class TaggedPtr {
 public:
     TaggedPtr() {}
+    TaggedPtr(T* ptr, I index)
 #if defined(__x86_64__) || (_M_X64)
-    TaggedPtr(T* ptr, I index)
         : ptr_(reinterpret_cast<int64_t>(ptr))
-        , index_(index)
-    {}
 #else
-    TaggedPtr(T* ptr, I index)
         : ptr_(ptr)
+#endif
         , index_(index)
     {}
-#endif
+    TaggedPtr(const TaggedPtr& other)
+        : ptr_(other.ptr_)
+        , index_(other.index_)
+    {}
+    TaggedPtr(TaggedPtr&& other)
+        : TaggedPtr()
+    {
+        swap(*this, other);
+    }
 
+    //@{ getters
     T* ptr() const { return reinterpret_cast<T*>(ptr_); }
     T* operator->() const { return ptr(); }
     operator T*() const { return ptr(); }
-    void index(I index) { index_ = index; }
     I index() const { return index_; }
+    //@}
+
+    //@{ setters
+    void set_index(I index) { index_ = index; }
+    void set_ptr(T* ptr) { ptr_ = reinterpret_cast<int64_t>(ptr); }
+    //@}
+
     bool operator==(TaggedPtr other) const { return this->ptr() == other.ptr() && this->index() == other.index(); }
+
+    //@{ swap and assign
+    TaggedPtr& operator=(TaggedPtr other) { swap(*this, other); return *this; }
+    friend void swap(TaggedPtr& a, TaggedPtr& b) {
+        using std::swap;
+#if defined(__x86_64__) || (_M_X64)
+        swap(a.u64_, b.u64_);
+#else
+        swap(a.ptr_,   b.ptr_);
+        swap(a.index_, b.index_);
+#endif
+    }
+    //@}
 
 private:
 #if defined(__x86_64__) || (_M_X64)
-    int64_t ptr_   : 48; // sign extend to make pointer canonical
-    int64_t index_ : 16;
+    union {
+        struct {
+            int64_t ptr_   : 48; // sign extend to make pointer canonical
+            int64_t index_ : 16;
+        };
+        uint64_t u64_;
+    };
 #else
     T* ptr_;
     I index_;

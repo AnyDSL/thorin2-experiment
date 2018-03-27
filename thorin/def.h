@@ -186,7 +186,7 @@ public:
     bool empty() const { return num_ops() == 0; }
     /// Sets the @c i'th @p op to @p def.
     /// @attention { You *must* set the last operand last. This will invoke @p finalize. }
-    Def* set(size_t i, const Def* def);
+    Def* set(size_t i, const Def* def); // TODO only have one setter
     Def* set(Defs);
     //@}
 
@@ -324,7 +324,7 @@ private:
     static uint32_t gid_counter_;
 
 protected:
-    mutable BitSet free_vars_;
+    BitSet free_vars_;
 
 private:
     struct Extra {};
@@ -1066,27 +1066,17 @@ private:
 
 class App : public Def {
 private:
-#ifndef NDEBUG
-    enum class State { Has_Cache, Has_Axiom, Has_None };
-#endif
-
     struct Extra {
-        union {
-            mutable const Def* cache_;
-            mutable const Axiom* axiom_;
-        };
-#ifndef NDEBUG
-        State state_;
-#endif
+        mutable TaggedPtr<const Def, bool> cache_; // true if Axiom
     };
 
     App(const Def* type, const Def* callee, const Def* arg, Debug dbg)
         : Def(Tag::App, type, {callee, arg}, dbg)
     {
-        extra().axiom_ = get_axiom(callee);
-#ifndef NDEBUG
-        extra().state_ = extra().axiom_ == nullptr ? State::Has_None : State::Has_Axiom;
-#endif
+        if (auto axiom = get_axiom(callee))
+            extra().cache_ = TaggedPtr<const Def, bool>(axiom, true);
+        else
+            extra().cache_ = TaggedPtr<const Def, bool>(nullptr, false);
     }
 
 public:
@@ -1099,14 +1089,12 @@ public:
 private:
     Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
     const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
-    const Axiom* axiom() const { assert(state() == State::Has_Axiom); return extra().axiom_; }
-    const Def* cache() const { assert(state() == State::Has_Cache || state() == State::Has_None); return extra().cache_; }
-#ifndef NDEBUG
-    State state() const { return extra().state_; }
-#endif
+    bool has_axiom() const { return extra().cache_.index(); }
+    const Axiom* axiom() const { assert(has_axiom()); return extra().cache_->as<Axiom>(); }
+    const Def* cache() const { assert(!has_axiom()); return extra().cache_; }
     std::ostream& vstream(std::ostream&) const override;
 
-    friend const Def* Def::destructing_type() const;
+    friend const Def* unfold(const App*); // TODO make this a member
     friend const Axiom* get_axiom(const Def*);
     friend class World;
 };
