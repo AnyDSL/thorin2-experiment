@@ -58,21 +58,21 @@ TEST(Parser, Arities) {
     EXPECT_EQ(parse(w, "0ₐ"), w.arity(0));
     EXPECT_EQ(parse(w, "42ₐ"), w.arity(42));
     EXPECT_EQ(parse(w, "0ₐᵁ"), w.arity(0));
-    EXPECT_EQ(parse(w, "1ₐᴿ"), w.arity(1, w.relevant()));
-    EXPECT_EQ(parse(w, "2ₐᴬ"), w.arity(2, w.affine()));
-    EXPECT_EQ(parse(w, "3ₐᴸ"), w.arity(3, w.linear()));
-    EXPECT_EQ(parse(w, "Πq:ℚ.42ₐq"), w.pi(w.qualifier_type(), w.arity(42, w.var(w.qualifier_type(), 0))));
+    EXPECT_EQ(parse(w, "1ₐᴿ"), w.arity(w.relevant(), 1));
+    EXPECT_EQ(parse(w, "2ₐᴬ"), w.arity(w.affine(),   2));
+    EXPECT_EQ(parse(w, "3ₐᴸ"), w.arity(w.linear(),   3));
+    EXPECT_EQ(parse(w, "Πq:ℚ.42ₐq"), w.pi(w.qualifier_type(), w.arity(w.var(w.qualifier_type(), 0), 42)));
 }
 
 TEST(Parser, Indices) {
     World w;
     EXPECT_EQ(parse(w, "0₁"), w.index(1, 0));
     EXPECT_EQ(parse(w, "42₁₉₀"), w.index(190, 42));
-    EXPECT_EQ(parse(w, "4₅ᵁ"), w.index(w.arity(5, w.unlimited()), 4));
-    EXPECT_EQ(parse(w, "4₅ᴿ"), w.index(w.arity(5, w.relevant()), 4));
-    EXPECT_EQ(parse(w, "4₅ᴬ"), w.index(w.arity(5, w.affine()), 4));
-    EXPECT_EQ(parse(w, "4₅ᴸ"), w.index(w.arity(5, w.linear()), 4));
-    EXPECT_EQ(parse(w, "λq:ℚ.4₅q"), w.lambda(w.qualifier_type(), w.index(w.arity(5, w.var(w.qualifier_type(), 0)), 4)));
+    EXPECT_EQ(parse(w, "4₅ᵁ"), w.index(w.arity(w.unlimited(), 5), 4));
+    EXPECT_EQ(parse(w, "4₅ᴿ"), w.index(w.arity(w.relevant(),  5), 4));
+    EXPECT_EQ(parse(w, "4₅ᴬ"), w.index(w.arity(w.affine(),    5), 4));
+    EXPECT_EQ(parse(w, "4₅ᴸ"), w.index(w.arity(w.linear(),    5), 4));
+    EXPECT_EQ(parse(w, "λq:ℚ.4₅q"), w.lambda(w.qualifier_type(), w.index(w.arity(w.var(w.qualifier_type(), 0), 5), 4)));
 }
 
 TEST(Parser, Kinds) {
@@ -164,7 +164,7 @@ TEST(Parser, IntArithOp) {
 
 TEST(Parser, Apps) {
     World w;
-    auto a5 = w.arity(5, QualifierTag::Affine);
+    auto a5 = w.arity(QualifierTag::Affine, 5);
     auto i0_5 = w.index(a5, 0);
     auto ma = w.multi_arity_kind(QualifierTag::Affine);
     EXPECT_EQ(parse(w, "(λs: 𝕄ᴬ. λq: ℚ. λi: s. (s, q, i)) 5ₐᴬ ᴿ 0₅ᴬ"), w.tuple({a5, w.relevant(), i0_5}));

@@ -72,27 +72,28 @@ Debug Def::debug_history() const {
     return debug();
 }
 
-const Def* unfold(const App* app) {
-    if (auto cache = app->cache())
-        return cache;
+const Def* App::unfold() const {
+    if (has_axiom()) return this;
+    if (cache()) return cache();
 
-    const Def* app_callee = app->callee();
-    if (auto a = app_callee->isa<App>())
-        app_callee = unfold(a);
+    const Def* callee = this->callee();
+    if (auto app = callee->isa<App>())
+        callee = app->unfold();
 
-    if (auto lambda = app_callee->isa_lambda(); lambda != nullptr && lambda->is_nominal()) {
-        auto res = drop(lambda, {app->arg()})->body();
-        assert(app->cache() == nullptr);
-        app->extra().cache_.set_ptr(res);
+    if (auto lambda = callee->isa_lambda()) {
+        assert(lambda->is_nominal());
+        auto res = drop(lambda, {arg()})->body();
+        assert(cache() == nullptr);
+        extra().cache_.set_ptr(res);
         return res;
     }
 
-    return app;
+    return this;
 }
 
 const Def* Def::destructing_type() const {
     if (auto app = type()->isa<App>())
-        return unfold(app);
+        return app->unfold();
     return type();
 }
 
@@ -432,8 +433,9 @@ bool Var  ::equal(const Def* other) const { return Def::equal(other) && this->in
  * rebuild
  */
 
+// TODO rebuild ts
 const Def* App           ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops[1], debug()); }
-const Def* Arity         ::rebuild(World& to, const Def* t, Defs    ) const { return to.arity(value(), t->op(0), debug()); }
+const Def* Arity         ::rebuild(World& to, const Def* t, Defs    ) const { return to.arity(t->op(0), value(), debug()); }
 const Def* ArityKind     ::rebuild(World& to, const Def*  , Defs ops) const { return to.arity_kind(ops[0]); }
 const Def* Axiom         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Bottom        ::rebuild(World& to, const Def* t, Defs    ) const { return to.bottom(t); }
@@ -442,14 +444,14 @@ const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { re
 const Def* Intersection  ::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
 const Def* Lambda        ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
-    return to.lambda(t->as<Pi>()->domain(), ops[0], ops[1], t->qualifier(), debug());
+    return to.lambda(t->qualifier(), t->as<Pi>()->domain(), ops[0], ops[1], debug());
 }
 const Def* Lit           ::rebuild(World& to, const Def* t, Defs    ) const { return to.lit(t, box(), debug()); }
 const Def* Match         ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
 const Def* MultiArityKind::rebuild(World& to, const Def*  , Defs ops) const { return to.multi_arity_kind(ops[0]); }
 const Def* Pack          ::rebuild(World& to, const Def* t, Defs ops) const { return to.pack(t->arity(), ops[0], debug()); }
 const Def* Param         ::rebuild(World& to, const Def*  , Defs ops) const { return to.param(ops[0]->as<Lambda>(), debug()); }
-const Def* Pi            ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi(ops[0], ops[1], debug()); }
+const Def* Pi            ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi(ops[0], ops[1], debug()); } // TODO deal with qualifier
 const Def* Pick          ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());

@@ -89,18 +89,18 @@ public:
 
     //@{ create Pi
     const Pi* pi(const Def* domain, const Def* codomain, Debug dbg = {}) {
-        return pi(domain, codomain, unlimited(), dbg);
+        return pi(unlimited(), domain, codomain, dbg);
     }
-    const Pi* pi(const Def* domain, const Def* codomain, const Def* qualifier, Debug dbg = {});
+    const Pi* pi(const Def* qualifier, const Def* domain, const Def* codomain, Debug dbg = {});
     const Pi* cn(const Def* domain, Debug dbg = {}) { return pi(domain, bottom(star()), dbg); }
     const Pi* cn(Defs domain, Debug dbg = {}) { return cn(sigma(domain), dbg); }
     //@}
 
     //@{ create Lambda
     const Def* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
-        return lambda(domain, lit_true(), body, unlimited(), dbg);
+        return lambda(unlimited(), domain, lit_true(), body, dbg);
     }
-    const Def* lambda(const Def* domain, const Def* filter, const Def* body, const Def* type_qualifier, Debug dbg = {});
+    const Def* lambda(const Def* type_qualifier, const Def* domain, const Def* filter, const Def* body, Debug dbg = {});
     /// @em nominal lambda --- may be recursive
     Lambda* lambda(const Pi* type, Debug dbg = {}) {
         assertf(type->free_vars().none_begin(1),
@@ -127,7 +127,7 @@ public:
     const Def* unit(const Def* q) {
         if (auto cq = q->isa<Qualifier>())
             return unit(cq->qualifier_tag());
-        return arity(1, q);
+        return arity(q, 1);
     }
     const Def* unit_kind(QualifierTag q = QualifierTag::Unlimited) { return variadic(arity(0), star(q)); }
     const Def* unit_kind(const Def* q) { return variadic(arity(0), star(q)); }
@@ -159,11 +159,10 @@ public:
     const Def* variadic(const Def* arities, const Def* body, Debug dbg = {});
     const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
     const Def* variadic(u64 a, const Def* body, Debug dbg = {}) {
-        return variadic(arity(a, QualifierTag::Unlimited, dbg), body, dbg);
+        return variadic(arity(QualifierTag::Unlimited, a, dbg), body, dbg);
     }
     const Def* variadic(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
-        return variadic(DefArray(a.size(),
-                [&](auto i) { return this->arity(a[i], QualifierTag::Unlimited, dbg); }), body, dbg);
+        return variadic(DefArray(a.size(), [&](auto i) { return arity(QualifierTag::u, a[i], dbg); }), body, dbg);
     }
     //@}
 
@@ -176,7 +175,7 @@ public:
     const Def* val_unit(const Def* q) {
         if (auto cq = q->isa<Qualifier>())
             return val_unit(cq->qualifier_tag());
-        return index_zero(arity(1, q));
+        return index_zero(arity(q, 1));
     }
     const Def* val_unit_kind(QualifierTag q = QualifierTag::Unlimited) { return pack(arity(0), unit(q)); }
     const Def* val_unit_kind(const Def* q) { return pack(arity(0), unit(q)); }
@@ -185,13 +184,9 @@ public:
     //@{ create Pack
     const Def* pack(const Def* arities, const Def* body, Debug dbg = {});
     const Def* pack(Defs arities, const Def* body, Debug dbg = {});
-    const Def* pack(u64 a, const Def* body, Debug dbg = {}) {
-        return pack(arity(a, QualifierTag::Unlimited, dbg), body, dbg);
-    }
+    const Def* pack(u64 a, const Def* body, Debug dbg = {}) { return pack(arity(QualifierTag::u, a, dbg), body, dbg); }
     const Def* pack(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
-        return pack(DefArray(a.size(), [&](auto i) {
-                    return this->arity(a[i], QualifierTag::Unlimited, dbg);
-                }), body, dbg);
+        return pack(DefArray(a.size(), [&](auto i) { return arity(QualifierTag::u, a[i], dbg); }), body, dbg);
     }
     //@}
 
@@ -215,10 +210,9 @@ public:
     //@}
 
     //@{ create Arity
-    const Arity* arity(u64 a, QualifierTag q = QualifierTag::Unlimited, Location location = {}) {
-        return arity(a, qualifier(q), location);
-    }
-    const Arity* arity(u64 a, const Def* q, Location location = {});
+    const Arity* arity(const Def* q, u64 a, Location location = {});
+    const Arity* arity(QualifierTag q, u64 a, Location location = {}) { return arity(qualifier(q), a, location); }
+    const Arity* arity(u64 a, Location location = {}) { return arity(QualifierTag::u, a, location); }
     const Def* arity_succ() { return arity_succ_; }
     const Def* arity_succ(const Def* arity, Debug dbg = {});
     const Def* arity_eliminator() const { return arity_eliminator_; }
@@ -385,19 +379,19 @@ private:
                                  "greater", "greatest lower bound"};
 
     template<class I>
-    const Def* bound(Lattice, Range<I> ops, const Def* q, bool require_qualifier = true);
-    const Def* bound(Lattice l, Defs ops, const Def* q, bool require_qualifier = true) {
-        return bound(l, range(ops), q, require_qualifier);
+    const Def* bound(const Def* q, Lattice, Range<I> ops, bool require_qualifier = true);
+    const Def* bound(const Def* q, Lattice l, Defs ops, bool require_qualifier = true) {
+        return bound(q, l, range(ops), require_qualifier);
     }
     template<class I>
-    const Def* type_bound(Lattice l, Range<I> ops, const Def* q, bool require_qualifier = true) {
-        return bound(l, map_range(ops, [&] (auto def) {
+    const Def* type_bound(const Def* q, Lattice l, Range<I> ops, bool require_qualifier = true) {
+        return bound(q, l, map_range(ops, [&] (auto def) {
                     assertf(!def->is_universe(), "{} has no type, can't be used as subexpression in types", def);
                     return def->type();
-                }), q, require_qualifier);
+                }), require_qualifier);
     }
-    const Def* type_bound(Lattice l, Defs ops, const Def* q, bool require_qualifier = true) {
-        return type_bound(l, range(ops), q, require_qualifier);
+    const Def* type_bound(const Def* q, Lattice l, Defs ops, bool require_qualifier = true) {
+        return type_bound(q, l, range(ops), require_qualifier);
     }
     template<class I, class F>
     const Def* qualifier_bound(Lattice l, Range<I> defs, F f);

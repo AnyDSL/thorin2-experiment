@@ -40,7 +40,7 @@ static bool any_of(const Def* def, Defs defs) {
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
 template<class I>
-const Def* World::bound(Lattice l, Range<I> defs, const Def* q, bool require_qualifier) {
+const Def* World::bound(const Def* q, Lattice l, Range<I> defs, bool require_qualifier) {
     if (defs.distance() == 0)
         return star(q ? q : qualifier(l.min));
 
@@ -177,7 +177,7 @@ World::World(Debug dbg)
         star_[i] = insert<Star>(1, *this, qualifier_[i]);
         arity_kind_[i] = insert<ArityKind>(1, *this, qualifier_[i]);
         multi_arity_kind_[i] = insert<MultiArityKind>(1, *this, qualifier_[i]);
-        unit_[i] = arity(1, qualifier_[i]);
+        unit_[i] = arity(qualifier_[i], 1);
         unit_val_[i] = index_zero(unit_[i]);
     }
 
@@ -219,7 +219,7 @@ World::~World() {
         def->~Def();
 }
 
-const Arity* World::arity(size_t a, const Def* q, Location location) {
+const Arity* World::arity(const Def* q, size_t a, Location location) {
     assert(q->type() == qualifier_type());
     auto cur = Def::gid_counter();
     auto result = unify<Arity>(3, arity_kind(q), a, location);
@@ -232,7 +232,7 @@ const Arity* World::arity(size_t a, const Def* q, Location location) {
 
 const Def* World::arity_succ(const Def* a, Debug dbg) {
     if (auto a_lit = a->isa<Arity>()) {
-        return arity(a_lit->value() + 1, a->qualifier(), dbg);
+        return arity(a->qualifier(), a_lit->value() + 1, dbg);
     }
     return app(arity_succ_, tuple({a->qualifier(), a}), dbg);
 }
@@ -329,7 +329,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
                 errorf("can't extract at {} from {} : {}, type is dependent", index, def, sigma);
             if (sigma->type() == universe()) {
                 // can only type those, that we can bound usefully
-                auto bnd = bound(LUB, sigma->ops(), nullptr, true);
+                auto bnd = bound(nullptr, LUB, sigma->ops(), true);
                 // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *] : □, but * and t:*->t-> not subtypes, thus can't derive a bound for this
                 // TODO maybe infer variant? { t:*->t->t, * }?
                 if (bnd == universe())
@@ -417,7 +417,7 @@ const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) 
 
 const Def* World::intersection(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return intersection(type_bound(GLB,defs, nullptr), defs, dbg);
+    return intersection(type_bound(nullptr, GLB, defs), defs, dbg);
 }
 
 const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
@@ -441,10 +441,10 @@ const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
     return unify<Intersection>(defs.size(), type, defs, dbg);
 }
 
-const Pi* World::pi(const Def* domain, const Def* codomain, const Def* q, Debug dbg) {
+const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg) {
     if (codomain->is_value())
         errorf("codomain {} : {} of function type cannot be a value", codomain, codomain->type());
-    auto type = type_bound(LUB, {domain, codomain}, q, false);
+    auto type = type_bound(q, LUB, {domain, codomain}, false);
     return unify<Pi>(2, type, domain, codomain, dbg);
 }
 
@@ -458,8 +458,8 @@ const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
-const Def* World::lambda(const Def* domain, const Def* filter, const Def* body, const Def* type_qualifier, Debug dbg) {
-    auto p = pi(domain, body->type(), type_qualifier, dbg);
+const Def* World::lambda(const Def* type_qualifier, const Def* domain, const Def* filter, const Def* body, Debug dbg) {
+    auto p = pi(type_qualifier, domain, body->type(), dbg);
 
     if (auto app = body->isa<App>()) {
         bool eta_property = app->arg()->isa<Var>() && app->arg()->as<Var>()->index() == 0;
@@ -516,7 +516,7 @@ const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
 }
 
 const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
-    auto type = type_bound(LUB, defs, q);
+    auto type = type_bound(q, LUB, defs);
     if (defs.size() == 0)
         return unit(type->qualifier());
 
@@ -533,7 +533,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && all_of(defs)) {
         assert(q == nullptr || defs.front()->qualifier() == q);
-        return variadic(arity(defs.size(), QualifierTag::Unlimited, dbg), shift_free_vars(defs.front(), -1), dbg);
+        return variadic(arity(QualifierTag::u, defs.size(), dbg), shift_free_vars(defs.front(), -1), dbg);
     }
 
     return unify<Sigma>(defs.size(), type, defs, dbg);
@@ -567,7 +567,7 @@ const Def* World::singleton(const Def* def, Debug dbg) {
         // See Harper PFPL 43.13c
         auto domain = pi_type->domain();
         auto applied = app(def, var(domain, 0));
-        return pi(domain, singleton(applied), pi_type->qualifier(), dbg);
+        return pi(pi_type->qualifier(), domain, singleton(applied), dbg);
     }
 
     return unify<Singleton>(1, def, dbg);
@@ -651,7 +651,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
 
     if (size != 0) {
         if (all_of(defs))
-            return pack(arity(size, QualifierTag::Unlimited, dbg), shift_free_vars(defs.front(), 1), dbg);
+            return pack(arity(QualifierTag::u, size, dbg), shift_free_vars(defs.front(), 1), dbg);
         else if (auto same = eta_property())
             return same;
     }
@@ -661,7 +661,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
 
 const Def* World::variant(Defs defs, Debug dbg) {
     assert(defs.size() > 0);
-    return variant(type_bound(LUB, defs, nullptr), defs, dbg);
+    return variant(type_bound(nullptr, LUB, defs), defs, dbg);
 }
 
 const Def* World::variant(const Def* type, Defs ops, Debug dbg) {

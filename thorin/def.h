@@ -1058,6 +1058,12 @@ public:
     const Def* callee() const { return op(0); }
     const Def* arg() const { return op(1); }
 
+    /**
+     * Forces an unfold of this App if possible - may diverge.
+     * Also unfolds recursively @p App%s that occur in callee position.
+     */
+    const Def* unfold() const;
+
     const Def* arity() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
@@ -1069,7 +1075,6 @@ private:
     const Def* cache() const { assert(!has_axiom()); return extra().cache_; }
     std::ostream& vstream(std::ostream&) const override;
 
-    friend const Def* unfold(const App*); // TODO make this a member
     friend const Axiom* get_axiom(const Def*);
     friend class World;
 };

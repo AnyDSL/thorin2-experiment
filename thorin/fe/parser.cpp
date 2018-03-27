@@ -26,7 +26,7 @@ const Def* Parser::parse_def() {
     parse_curried_defs(defs);
     assert(!defs.empty());
     const Def* def = defs.front().first;
-    for (auto [ arg, loc ] : range(defs.begin()+1, defs.end()))
+    for (auto [arg, loc] : range(defs.begin()+1, defs.end()))
         def = world_.app(def, arg, loc);
     return def;
 }
@@ -260,10 +260,10 @@ const Def* Parser::parse_literal() {
         auto index_arity = next().literal();
         assert(index_arity.tag == Literal::Tag::Lit_index_arity);
         const Def* qualifier = parse_optional_qualifier();
-        return world_.index(world_.arity(index_arity.box.get_u64(), qualifier), literal.box.get_u64(), tracker.location());
+        return world_.index(world_.arity(qualifier, index_arity.box.get_u64()), literal.box.get_u64(), tracker.location());
     } else if (literal.tag == Literal::Tag::Lit_arity) {
         const Def* qualifier = parse_optional_qualifier();
-        return world_.arity(literal.box.get_u64(), qualifier, tracker.location());
+        return world_.arity(qualifier, literal.box.get_u64(), tracker.location());
     }
 
     assertf(false, "unhandled literal {}", literal.box.get_u64());
