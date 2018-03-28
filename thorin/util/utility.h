@@ -19,23 +19,18 @@ inline __declspec(noreturn) void thorin_dummy_function() { abort(); }
 #endif
 
 #ifndef NDEBUG
-#define THORIN_CALL_ONCE do { static bool once = true; assert(once); once=false; } while(0)
 #define assert_unused(x) assert(x)
 #else
-#define THORIN_CALL_ONCE
-#define assert_unused(x) ((void) (0 && (x)))
+#define assert_unused(x) ((void) (false && (x)))
 #endif
 
 #if (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(__i386__))
 #define THORIN_BREAK { asm("int3"); }
+#elif defined(_MSC_VER)
+#define THORIN_BREAK { DebugBreak(); }
 #else
 #define THORIN_BREAK { static_cast<volatile int*>(nullptr) = 42; }
 #endif
-
-#define THORIN_IMPLIES(a, b) (!(a) || ((a) && (b)))
-
-// http://stackoverflow.com/questions/1489932/how-to-concatenate-twice-with-the-c-preprocessor-and-expand-a-macro-as-in-arg
-#define THORIN_PASTER(x,y) x ## y
 
 namespace thorin {
 
