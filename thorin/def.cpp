@@ -1,5 +1,3 @@
-#include <stack>
-
 #include "thorin/world.h"
 #include "thorin/transform/reduce.h"
 #include "thorin/transform/mangle.h"
@@ -585,9 +583,10 @@ bool Variadic::assignable(const Def* def) const {
  * check
  */
 
-struct Sema {
+class Sema {
+public:
     void check(const Def* def) {
-        if (def->free_vars().any() && done.emplace(DefArray(types), def).second)
+        if (def->free_vars().any() && done_.emplace(DefArray(types), def).second)
             def->check(*this);
     }
 
@@ -604,6 +603,9 @@ struct Sema {
         types.erase(types.begin() + old_size, types.end());
     }
 
+    DefVector types;
+
+private:
     typedef std::pair<DefArray, const Def*> EnvDef;
 
     struct EnvDefHash {
@@ -617,8 +619,7 @@ struct Sema {
         static EnvDef sentinel() { return EnvDef(DefArray(), nullptr); }
     };
 
-    HashSet<std::pair<DefArray, const Def*>, EnvDefHash> done;
-    DefVector types;
+    HashSet<EnvDef, EnvDefHash> done_;
 };
 
 void Def::check() const {
