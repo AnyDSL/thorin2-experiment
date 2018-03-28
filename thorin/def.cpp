@@ -628,9 +628,9 @@ void Def::check() const {
 }
 
 void Def::check(Sema& sema) const {
-    if (type()) {
+    if (type())
         sema.check(type());
-    } else
+    else
         assert(is_universe());
     for (auto op : ops())
         sema.check(op);
@@ -662,7 +662,7 @@ void Var::check(Sema& sema) const {
     auto shifted_type = shift_free_vars(type(), -index() - 1);
     auto env_type = sema.types[reverse_index];
     if (env_type != shifted_type)
-        world().errorf("the shifted type {} of variable {} does not match the type {} declared by the binder.",
+        world().errorf("the shifted type {} of variable {} does not match the type {} declared by the binder",
                 shifted_type, index(), sema.types[reverse_index]);
 }
 
