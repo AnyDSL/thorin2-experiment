@@ -586,28 +586,22 @@ bool Variadic::assignable(const Def* def) const {
  */
 
 struct Sema {
-    const Def* check(const Def* def) {
-        // defs without free vars are already checked
-        if (def->free_vars().any()) // && (def->is_nominal() && !checked.emplace(DefArray(types), def).second)
+    void check(const Def* def) {
+        if (def->free_vars().any() && done.emplace(DefArray(types), def).second)
             def->check(*this);
-        return def;
     }
 
     void dependent_check(Defs defs, Defs bodies) {
         auto old_size = types.size();
-        for (auto def : defs)
-            types.push_back(check(def));
+        for (auto def : defs) {
+            check(def);
+            types.emplace_back(def);
+        }
 
         for (auto def : bodies)
             check(def);
 
         types.erase(types.begin() + old_size, types.end());
-    }
-
-    bool is_nominal_typechecked(const Def* def) {
-        if (def->is_nominal())
-            return checked.emplace(DefArray(types), def).second;
-        return false;
     }
 
     typedef std::pair<DefArray, const Def*> EnvDef;
@@ -623,14 +617,14 @@ struct Sema {
         static EnvDef sentinel() { return EnvDef(DefArray(), nullptr); }
     };
 
-    thorin::HashSet<std::pair<DefArray, const Def*>, EnvDefHash> checked;
+    thorin::HashSet<std::pair<DefArray, const Def*>, EnvDefHash> done;
     DefVector types;
 };
 
 void Def::check() const {
     assert(free_vars().none());
     Sema sema;
-    check(sema);
+    sema.check(this);
 }
 
 void Def::check(Sema& sema) const {
@@ -643,8 +637,6 @@ void Def::check(Sema& sema) const {
 }
 
 void Lambda::check(Sema& sema) const {
-    if (sema.is_nominal_typechecked(this))
-        return;
     // do Pi type check inline to reuse built up environment
     sema.check(type()->type());
     sema.dependent_check({domain()}, {type()->codomain(), body()});
@@ -661,8 +653,6 @@ void Pi::check(Sema& sema) const {
 }
 
 void Sigma::check(Sema& sema) const {
-    if (sema.is_nominal_typechecked(this))
-        return;
     sema.check(type());
     sema.dependent_check(ops(), Defs());
 }
@@ -677,8 +667,6 @@ void Var::check(Sema& sema) const {
 }
 
 void Variadic::check(Sema& sema) const {
-    if (sema.is_nominal_typechecked(this))
-        return;
     sema.check(type());
     sema.dependent_check({arity()}, {body()});
 }
@@ -878,7 +866,7 @@ Lambdas Lambda::preds() const {
     while (!queue.empty()) {
         auto use = pop(queue);
         if (auto lambda = use->isa_lambda()) {
-            preds.push_back(lambda);
+            preds.emplace_back(lambda);
             continue;
         }
 
@@ -907,7 +895,7 @@ Lambdas Lambda::succs() const {
     while (!queue.empty()) {
         auto def = pop(queue);
         if (auto lambda = def->isa_lambda()) {
-            succs.push_back(lambda);
+            succs.emplace_back(lambda);
             continue;
         }
 
