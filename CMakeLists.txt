@@ -7,7 +7,7 @@ option(BUILD_TESTS "Build gtest-based test program" ON)
 # download and unpack half at configure time
 configure_file(CMakeLists.txt.half.in half-download/CMakeLists.txt)
 
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+execute_process(COMMAND ${CMAKE_COMMAND} -DCMAKE_CXX_FLAGS="" -G "${CMAKE_GENERATOR}" .
     RESULT_VARIABLE result
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/half-download)
 
