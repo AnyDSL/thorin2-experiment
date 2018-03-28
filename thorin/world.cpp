@@ -50,6 +50,11 @@ static bool any_of(const Def* def, Defs defs) {
     return std::any_of(defs.begin(), defs.end(), [&](auto d){ return d == def; });
 }
 
+static inline bool same_sort(Defs ops) {
+    auto sort = ops.front()->sort();
+    return std::all_of(ops.begin()+1, ops.end(), [&](auto op) { return sort == op->sort(); });
+}
+
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
 template<class I>
@@ -440,22 +445,26 @@ const Def* World::intersection(Defs defs, Debug dbg) {
 const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
     auto defs = set_flatten<Intersection>(ops);
     if (defs.empty()) return bottom(type);
-    auto first = *defs.begin();
-    if (defs.size() == 1) {
-        assert(first->type() == type);
-        return first;
-    }
-    // implements a least upper bound on qualifiers,
-    // could possibly be replaced by something subtyping-generic
-    if (is_qualifier(first)) {
-        assert(type == qualifier_type());
-        return qualifier_bound(GLB, range(defs), [&] (const SortedDefSet& defs) {
-                return unify<Intersection>(defs.size(), qualifier_type(), defs, dbg);
-        });
-    }
+    if (same_sort(ops)) {
+        auto first = *defs.begin();
+        if (defs.size() == 1) {
+            assert(first->type() == type);
+            return first;
+        }
+        // implements a least upper bound on qualifiers,
+        // could possibly be replaced by something subtyping-generic
+        if (is_qualifier(first)) {
+            assert(type == qualifier_type());
+            return qualifier_bound(GLB, range(defs), [&] (const SortedDefSet& defs) {
+                    return unify<Intersection>(defs.size(), qualifier_type(), defs, dbg);
+            });
+        }
 
-    // TODO recognize some empty intersections? i.e. same sorted ops, intersection of types non-empty?
-    return unify<Intersection>(defs.size(), type, defs, dbg);
+        // TODO recognize some empty intersections? i.e. same sorted ops, intersection of types non-empty?
+        return unify<Intersection>(defs.size(), type, defs, dbg);
+    } else {
+        errorf("all operands of an intersection must be of the same sort");
+    }
 }
 
 const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg) {
@@ -688,21 +697,25 @@ const Def* World::variant(Defs defs, Debug dbg) {
 const Def* World::variant(const Def* type, Defs ops, Debug dbg) {
     auto defs = set_flatten<Variant>(ops);
     if (defs.empty()) return bottom(type);
-    auto first = *defs.begin();
-    if (defs.size() == 1) {
-        assert(first->type() == type);
-        return first;
-    }
-    // implements a least upper bound on qualifiers,
-    // could possibly be replaced by something subtyping-generic
-    if (is_qualifier(first)) {
-        assert(type == qualifier_type());
-        return qualifier_bound(LUB, range(defs), [&] (const SortedDefSet& defs) {
-            return unify<Variant>(defs.size(), qualifier_type(), defs, dbg);
-        });
-    }
+    if (same_sort(ops)) {
+        auto first = *defs.begin();
+        if (defs.size() == 1) {
+            assert(first->type() == type);
+            return first;
+        }
+        // implements a least upper bound on qualifiers,
+        // could possibly be replaced by something subtyping-generic
+        if (is_qualifier(first)) {
+            assert(type == qualifier_type());
+            return qualifier_bound(LUB, range(defs), [&] (const SortedDefSet& defs) {
+                return unify<Variant>(defs.size(), qualifier_type(), defs, dbg);
+            });
+        }
 
-    return unify<Variant>(defs.size(), type, defs, dbg);
+        return unify<Variant>(defs.size(), type, defs, dbg);
+    } else {
+        errorf("all operands of a variant must be of the same sort");
+    }
 }
 
 const Def* World::match(const Def* def, Defs handlers, Debug dbg) {

@@ -693,7 +693,9 @@ private:
 
 class Intersection : public Def {
 private:
-    Intersection(const Def* type, const SortedDefSet& ops, Debug dbg);
+    Intersection(const Def* type, const SortedDefSet& ops, Debug dbg)
+        : Def(Tag::Intersection, type, range(ops), dbg)
+    {}
 
 public:
     const Def* kind_qualifier() const override;
@@ -725,7 +727,9 @@ private:
 class Variant : public Def {
 private:
     /// @em structural Variant
-    Variant(const Def* type, const SortedDefSet& ops, Debug dbg);
+    Variant(const Def* type, const SortedDefSet& ops, Debug dbg)
+        : Def(Tag::Variant, type, range(ops), dbg)
+    {}
     /// @em nominal Variant
     Variant(const Def* type, size_t num_ops, Debug dbg)
         : Def(Tag::Variant, type, num_ops, dbg)

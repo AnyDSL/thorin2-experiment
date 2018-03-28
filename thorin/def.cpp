@@ -50,11 +50,6 @@ const Axiom* get_axiom(const Def* def) {
     return nullptr;
 }
 
-static inline void check_same_sorted_ops(Def::Sort sort, Defs ops) {
-    if (!std::all_of(ops.begin(), ops.end(), [&](auto op) { return sort == op->sort(); }))
-        ops.front()->world().errorf("operands must be of the same sort");
-}
-
 //------------------------------------------------------------------------------
 
 /*
@@ -214,12 +209,6 @@ ArityKind::ArityKind(World& world, const Def* qualifier)
     : Def(Tag::ArityKind, world.universe(), {qualifier}, {"𝔸"})
 {}
 
-Intersection::Intersection(const Def* type, const SortedDefSet& ops, Debug dbg)
-    : Def(Tag::Intersection, type, range(ops), dbg)
-{
-    check_same_sorted_ops(sort(), this->ops());
-}
-
 MultiArityKind::MultiArityKind(World& world, const Def* qualifier)
     : Def(Tag::MultiArityKind, world.universe(), {qualifier}, {"𝕄"})
 {}
@@ -241,13 +230,6 @@ Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
 Star::Star(World& world, const Def* qualifier)
     : Def(Tag::Star, world.universe(), {qualifier}, {"*"})
 {}
-
-Variant::Variant(const Def* type, const SortedDefSet& ops, Debug dbg)
-    : Def(Tag::Variant, type, range(ops), dbg)
-{
-    // TODO does same sorted ops really hold? ex: matches that return different sorted stuff? allowed?
-    check_same_sorted_ops(sort(), this->ops());
-}
 
 //------------------------------------------------------------------------------
 
