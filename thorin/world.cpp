@@ -76,7 +76,7 @@ const Def* World::bound(const Def* q, Lattice l, Range<I> defs, bool require_qua
         if (def->qualifier()->free_vars().any_range(0, i)) {
             // qualifier is dependent within this type/kind, go to top directly
             // TODO might want to assert that this will always be a kind?
-            inferred_q = qualifier(l.min);
+            inferred_q = qualifier(l.max);
         } else {
             auto qualifier = shift_free_vars(def->qualifier(), -i);
             inferred_q = (this->*(l.join))(qualifier_type(), {inferred_q, qualifier}, {});
