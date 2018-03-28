@@ -376,15 +376,15 @@ uint64_t Def::vhash() const {
     if (is_nominal())
         return murmur3(gid());
 
-    uint64_t seed = thorin::hash_combine(thorin::hash_begin(fields()), type()->gid());
+    uint64_t seed = hash_combine(hash_begin(fields()), type()->gid());
     for (auto op : ops())
-        seed = thorin::hash_combine(seed, op->gid());
+        seed = hash_combine(seed, op->gid());
     return seed;
 }
 
-uint64_t Arity::vhash() const { return thorin::hash_combine(Def::vhash(), value()); }
-uint64_t Lit  ::vhash() const { return thorin::hash_combine(Def::vhash(), box().get_u64()); }
-uint64_t Var  ::vhash() const { return thorin::hash_combine(Def::vhash(), index()); }
+uint64_t Arity::vhash() const { return hash_combine(Def::vhash(), value()); }
+uint64_t Lit  ::vhash() const { return hash_combine(Def::vhash(), box().get_u64()); }
+uint64_t Var  ::vhash() const { return hash_combine(Def::vhash(), index()); }
 
 //------------------------------------------------------------------------------
 
@@ -617,7 +617,7 @@ struct Sema {
         static EnvDef sentinel() { return EnvDef(DefArray(), nullptr); }
     };
 
-    thorin::HashSet<std::pair<DefArray, const Def*>, EnvDefHash> done;
+    HashSet<std::pair<DefArray, const Def*>, EnvDefHash> done;
     DefVector types;
 };
 
