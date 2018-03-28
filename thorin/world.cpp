@@ -158,24 +158,6 @@ const Def* World::qualifier_bound(Lattice l, Range<I> defs, F unify_fn) {
     return unify_fn(set);
 }
 
-const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug dbg) {
-    auto& w = callee->world();
-    const Def* pred = nullptr;
-    if (auto arity = arg->isa<Arity>()) {
-        auto arity_val = arity->value();
-        if (arity_val == 0) {
-            // callee = E P base f
-            return callee->op(0)->op(1);
-        }
-        pred = w.arity(arity_val - 1);
-    } else if (auto arity_app = arg->isa<App>(); arity_app->callee() == w.arity_succ()) {
-        pred = arity_app->arg();
-    }
-    if (pred != nullptr)
-        return w.app(w.app(callee->op(1), pred), w.app(callee, pred), dbg);
-    return nullptr;
-}
-
 //------------------------------------------------------------------------------
 
 #ifndef NDEBUG

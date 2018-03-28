@@ -18,7 +18,7 @@ const Lit* foldable_to_left(const Def*& a, const Def*& b);
 const Def* commute(const Def* callee, const Def* a, const Def* b, Debug dbg);
 const Def* reassociate(const Def* callee, const Def* a, const Def* b, Debug dbg);
 const Def* normalize_tuple(const Def* callee, Defs, Debug dbg);
-
+const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug dbg);
 template<BOp> const Def* normalize_BOp(const Def*, const Def*, Debug);
 template<NOp> const Def* normalize_NOp(const Def*, const Def*, Debug);
 
