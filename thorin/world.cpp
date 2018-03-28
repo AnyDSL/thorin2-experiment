@@ -253,37 +253,37 @@ const Def* World::arity_succ(const Def* a, Debug dbg) {
 const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     auto callee_type = callee->type()->as<Pi>();
 
-    if (expensive_checks_enabled() && !callee_type->domain()->assignable(arg))
-        errorf("callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
-
-    if (auto axiom = get_axiom(callee); axiom && !callee_type->codomain()->isa<Pi>()) {
-        if (auto normalizer = axiom->normalizer()) {
-            if (auto result = normalizer(callee, arg, dbg))
-                return result;
+    if (!expensive_checks_enabled() || callee_type->domain()->assignable(arg)) {
+        if (auto axiom = get_axiom(callee); axiom && !callee_type->codomain()->isa<Pi>()) {
+            if (auto normalizer = axiom->normalizer()) {
+                if (auto result = normalizer(callee, arg, dbg))
+                    return result;
+            }
         }
-    }
 
-    auto type = callee_type->apply(arg);
-    auto app = unify<App>(2, type, callee, arg, dbg);
-    assert(app->callee() == callee);
+        auto type = callee_type->apply(arg);
+        auto app = unify<App>(2, type, callee, arg, dbg);
+        assert(app->callee() == callee);
 
-    if (callee->is_nominal())
+        if (callee->is_nominal())
+            return app;
+
+        if (auto lambda = app->callee()->isa<Lambda>()) {
+            if (auto cache = app->cache())
+                return cache;
+
+            // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body?
+            if (!lambda->maybe_affine() && !lambda->codomain()->maybe_affine()) {
+                assert(app->cache() == nullptr);
+                auto res = reduce(lambda->body(), app->arg());
+                app->extra().cache_.set_ptr(res);
+                return res;
+            }
+        }
         return app;
-
-    if (auto lambda = app->callee()->isa<Lambda>()) {
-        if (auto cache = app->cache())
-            return cache;
-
-        // TODO could reduce those with only affine return type, but requires always rebuilding the reduced body?
-        if (!lambda->maybe_affine() && !lambda->codomain()->maybe_affine()) {
-            assert(app->cache() == nullptr);
-            auto res = reduce(lambda->body(), app->arg());
-            app->extra().cache_.set_ptr(res);
-            return res;
-        }
+    } else {
+        errorf("callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
     }
-
-    return app;
 }
 
 Axiom* World::axiom(const Def* type, Normalizer normalizer, Debug dbg) {
@@ -302,73 +302,76 @@ Axiom* World::axiom(Symbol name, const char* s, Normalizer normalizer) {
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     if (index->type() == arity(1)) return def;
-    //errorf(def->is_value(), "can only build extracts of values, {} is not a value", def);
-    auto type = def->destructing_type();
-    auto arity = type->arity();
-    if (arity == nullptr)
-        errorf("arity unknown for {} of type {}, can only extract when arity is known", def, type);
-    if (arity->assignable(index)) {
-        if (auto idx = index->isa<Lit>()) {
-            auto i = get_index(idx);
-            if (def->isa<Tuple>()) {
-                return def->op(i);
-            }
-
-            if (auto sigma = type->isa<Sigma>()) {
-                auto type = sigma->op(i);
-                if (!sigma->is_dependent())
-                    type = shift_free_vars(type, -i);
-                else {
-                    for (ptrdiff_t def_idx = i - 1; def_idx >= 0; --def_idx) {
-                        // this also shifts any Var with i > skipped_shifts by -1
-                        auto prev_def = shift_free_vars(extract(def, def_idx), def_idx);
-                        type = reduce(type, prev_def);
-                    }
+    if (def->is_value()) {
+        auto type = def->destructing_type();
+        auto arity = type->arity();
+        if (arity == nullptr)
+            errorf("arity unknown for {} of type {}, can only extract when arity is known", def, type);
+        if (arity->assignable(index)) {
+            if (auto idx = index->isa<Lit>()) {
+                auto i = get_index(idx);
+                if (def->isa<Tuple>()) {
+                    return def->op(i);
                 }
-                return unify<Extract>(2, type, def, index, dbg);
+
+                if (auto sigma = type->isa<Sigma>()) {
+                    auto type = sigma->op(i);
+                    if (!sigma->is_dependent())
+                        type = shift_free_vars(type, -i);
+                    else {
+                        for (ptrdiff_t def_idx = i - 1; def_idx >= 0; --def_idx) {
+                            // this also shifts any Var with i > skipped_shifts by -1
+                            auto prev_def = shift_free_vars(extract(def, def_idx), def_idx);
+                            type = reduce(type, prev_def);
+                        }
+                    }
+                    return unify<Extract>(2, type, def, index, dbg);
+                }
             }
-        }
-        // homogeneous tuples <v,...,v> are normalized to packs, so this also optimizes to v
-        if (auto pack = def->isa<Pack>()) {
-            return reduce(pack->body(), index);
-        }
-        // here: index is const => type is variadic, index is var => type may be variadic/sigma, must not be dependent sigma
-        assert(!index->isa<Lit>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
-        const Def* result_type = nullptr;
-        if (auto sigma = type->isa<Sigma>()) {
-            if (sigma->is_dependent())
-                errorf("can't extract at {} from {} : {}, type is dependent", index, def, sigma);
-            if (sigma->type() == universe()) {
-                // can only type those, that we can bound usefully
-                auto bnd = bound(nullptr, LUB, sigma->ops(), true);
-                // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *] : □, but * and t:*->t-> not subtypes, thus can't derive a bound for this
-                // TODO maybe infer variant? { t:*->t->t, * }?
-                if (bnd == universe())
-                    errorf("can't extract at {} from {} : {}, type may be □ (not reflectable)", index, def, sigma);
-                result_type = bnd;
+            // homogeneous tuples <v,...,v> are normalized to packs, so this also optimizes to v
+            if (auto pack = def->isa<Pack>()) {
+                return reduce(pack->body(), index);
+            }
+            // here: index is const => type is variadic, index is var => type may be variadic/sigma, must not be dependent sigma
+            assert(!index->isa<Lit>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
+            const Def* result_type = nullptr;
+            if (auto sigma = type->isa<Sigma>()) {
+                if (sigma->is_dependent())
+                    errorf("can't extract at {} from {} : {}, type is dependent", index, def, sigma);
+                if (sigma->type() == universe()) {
+                    // can only type those, that we can bound usefully
+                    auto bnd = bound(nullptr, LUB, sigma->ops(), true);
+                    // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *] : □, but * and t:*->t-> not subtypes, thus can't derive a bound for this
+                    // TODO maybe infer variant? { t:*->t->t, * }?
+                    if (bnd == universe())
+                        errorf("can't extract at {} from {} : {}, type may be □ (not reflectable)", index, def, sigma);
+                    result_type = bnd;
+                } else
+                    result_type = extract(tuple(sigma->ops(), dbg), index);
             } else
-                result_type = extract(tuple(sigma->ops(), dbg), index);
-        } else
-            result_type = reduce(type->as<Variadic>()->body(), index);
+                result_type = reduce(type->as<Variadic>()->body(), index);
 
-        return unify<Extract>(2, result_type, def, index, dbg);
-    }
-    // not the same exact arity, but as long as it types, we can use indices from constant arity tuples, even of non-index type
-    // can only extract if we can iteratively extract with each index in the multi-index
-    // can only do that if we know how many elements there are
-    if (auto i_arity = index->arity()->isa<Arity>()) {
-        auto a = i_arity->value();
-        if (a > 1) {
-            auto extracted = def;
-            for (size_t i = 0; i < a; ++i) {
-                auto idx = extract(index, i, dbg);
-                extracted = extract(extracted, idx, dbg);
-            }
-            return extracted;
+            return unify<Extract>(2, result_type, def, index, dbg);
         }
-    }
+        // not the same exact arity, but as long as it types, we can use indices from constant arity tuples, even of non-index type
+        // can only extract if we can iteratively extract with each index in the multi-index
+        // can only do that if we know how many elements there are
+        if (auto i_arity = index->arity()->isa<Arity>()) {
+            auto a = i_arity->value();
+            if (a > 1) {
+                auto extracted = def;
+                for (size_t i = 0; i < a; ++i) {
+                    auto idx = extract(index, i, dbg);
+                    extracted = extract(extracted, idx, dbg);
+                }
+                return extracted;
+            }
+        }
 
-    errorf("can't extract at {} from {} : {}, index type {} not compatible", index, index->type(), def, type);
+        errorf("can't extract at {} from {} : {}, index type {} not compatible", index, index->type(), def, type);
+    } else {
+        errorf("can only build extracts of values, {} is not a value", def);
+    }
 }
 
 const Def* World::extract(const Def* def, size_t i, Debug dbg) {
@@ -488,43 +491,42 @@ const Def* World::lambda(const Def* type_qualifier, const Def* domain, const Def
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
-    if (expensive_checks_enabled() && !multi_arity_kind()->assignable(arity))
-        errorf("({} : {}) provided to variadic constructor is not a (multi-) arity", arity, arity-> type());
-    if (auto sigma = arity->isa<Sigma>()) {
-        if (!sigma->is_nominal()) {
-            return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
-        } else {
-            errorf("can't have nominal sigma arities");
-        }
-    }
-
-    if (auto v = arity->isa<Variadic>()) {
-        if (auto a_literal = v->arity()->isa<Arity>()) {
-            assert(!v->body()->free_vars().test(0));
+    if (!expensive_checks_enabled() || multi_arity_kind()->assignable(arity)) {
+        if (auto s = arity->isa<Sigma>()) {
+            if (!s->is_nominal())
+                return variadic(s->ops(), flatten(body, s->ops()), dbg);
+            else
+                errorf("can't have nominal sigma arities");
+        } else if (auto v = arity->isa<Variadic>()) {
+            if (auto a_literal = v->arity()->isa<Arity>()) {
+                assert(!v->body()->free_vars().test(0));
+                auto a = a_literal->value();
+                assert(a != 1);
+                auto result = flatten(body, DefArray(a, shift_free_vars(v->body(), a-1)));
+                for (size_t i = a; i-- != 0;)
+                    result = variadic(shift_free_vars(v->body(), i-1), result, dbg);
+                return result;
+            }
+        } else if (auto a_literal = arity->isa<Arity>()) {
             auto a = a_literal->value();
-            assert(a != 1);
-            auto result = flatten(body, DefArray(a, shift_free_vars(v->body(), a-1)));
-            for (size_t i = a; i-- != 0;)
-                result = variadic(shift_free_vars(v->body(), i-1), result, dbg);
-            return result;
+            switch (a) {
+                case 0:
+                    if (body->is_kind())
+                        return unify<Variadic>(2, universe(), this->arity(0), star(body->qualifier()), dbg);
+                    return unit(body->type()->qualifier());
+                case 1:
+                    return reduce(body, index(1, 0));
+                default:
+                    if (body->free_vars().test(0))
+                        return sigma(DefArray(a, [&](auto i) { return shift_free_vars(reduce(body, index(a, i)), i); }), dbg);
+            }
         }
-    }
 
-    if (auto a_literal = arity->isa<Arity>()) {
-        auto a = a_literal->value();
-        if (a == 0) {
-            if (body->is_kind())
-                return unify<Variadic>(2, universe(), this->arity(0), star(body->qualifier()), dbg);
-            return unit(body->type()->qualifier());
-        }
-        if (a == 1) return reduce(body, index(1, 0));
-        if (body->free_vars().test(0))
-            return sigma(DefArray(a, [&](auto i) {
-                        return shift_free_vars(reduce(body, this->index(a, i)), i); }), dbg);
+        assert(body->type()->is_kind() || body->type()->is_universe());
+        return unify<Variadic>(2, shift_free_vars(body->type(), -1), arity, body, dbg);
+    } else {
+        errorf("({} : {}) provided to variadic constructor is not a (multi-) arity", arity, arity->type());
     }
-
-    assert(body->type()->is_kind() || body->type()->is_universe());
-    return unify<Variadic>(2, shift_free_vars(body->type(), -1), arity, body, dbg);
 }
 
 const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
@@ -704,17 +706,17 @@ const Def* World::variant(const Def* type, Defs ops, Debug dbg) {
 }
 
 const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
-    auto t = def->destructing_type();
+    auto type = def->destructing_type();
 
     if (handlers.size() == 1) {
-        if (!t->isa<Variant>())
+        if (!type->isa<Variant>())
             return app(handlers.front(), def, dbg);
         else
             errorf("matching with one handler implies matching a non-variant-typed value");
     }
 
-    if (auto matched_type = t->as<Variant>()) {
-        if (t->num_ops() == handlers.size()) {
+    if (auto matched_type = type->as<Variant>()) {
+        if (type->num_ops() == handlers.size()) {
             DefArray sorted_handlers(handlers);
             std::sort(sorted_handlers.begin(), sorted_handlers.end(), [](const Def* a, const Def* b) {
                     auto a_dom = a->type()->as<Pi>()->domain();
