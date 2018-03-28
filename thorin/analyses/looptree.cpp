@@ -31,7 +31,7 @@ public:
     typedef typename LoopTree<forward>::Leaf Leaf;
     typedef typename LoopTree<forward>::Head Head;
 
-    LoopTreeBuilder(LoopTree<forward>& looptree)
+    explicit LoopTreeBuilder(LoopTree<forward>& looptree)
         : looptree_(looptree)
         , numbers_(cfg())
         , states_(cfg())
@@ -48,7 +48,7 @@ private:
             : dfs(-1)
             , low(-1)
         {}
-        Number(size_t i)
+        explicit Number(size_t i)
             : dfs(i)
             , low(i)
         {}

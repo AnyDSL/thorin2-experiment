@@ -19,7 +19,7 @@ public:
         Gray, Black
     };
 
-    Cycles(World& world)
+    explicit Cycles(World& world)
         : world_(world)
     {
         def2color_.rehash(round_to_power_of_2(world.defs().size()));
