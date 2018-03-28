@@ -393,10 +393,6 @@ private:
     }
     template<class I, class F>
     const Def* qualifier_bound(Lattice l, Range<I> defs, F f);
-    template<class F>
-    const Def* qualifier_bound(Lattice l, Defs defs, F f) {
-        return qualifier_bound(l, range(defs), f);
-    }
 
 protected:
     template<class T, class... Args>
