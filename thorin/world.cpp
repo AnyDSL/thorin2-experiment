@@ -127,7 +127,7 @@ template<class I, class F>
 const Def* World::qualifier_bound(Lattice l, Range<I> defs, F unify_fn) {
     size_t num_defs = defs.distance();
     DefArray reduced(num_defs);
-    QualifierTag accu = QualifierTag::Unlimited;
+    QualifierTag accu = l.min;
     size_t num_const = 0;
     I iter = defs.begin();
     for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
