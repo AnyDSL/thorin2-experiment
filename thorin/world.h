@@ -328,15 +328,13 @@ public:
     bool track_history() const;
     void enable_history(bool flag = true);
 #endif
-    bool is_typechecking_enabled() const { return typechecking_enabled_; }
-    void enable_typechecking(bool on = true) { typechecking_enabled_ = on; }
+    bool expensive_checks_enabled() const { return expensive_checks_; }
+    void enable_expensive_checks(bool on = true) { expensive_checks_ = on; }
     template<typename... Args>
-    void errorf(const char* fmt, Args... args) {
-        if (is_typechecking_enabled()) {
-            std::ostringstream oss;
-            streamf(oss, fmt, std::forward<Args>(args)...);
-            throw TypeError(oss.str());
-        }
+    [[noreturn]] void errorf(const char* fmt, Args... args) {
+        std::ostringstream oss;
+        streamf(oss, fmt, std::forward<Args>(args)...);
+        throw TypeError(oss.str());
     }
     //@}
 
@@ -519,9 +517,9 @@ protected:
 #ifndef NDEBUG
     Breakpoints breakpoints_;
     bool track_history_ = false;
-    bool typechecking_enabled_ = true;
+    bool expensive_checks_  = true;
 #else
-    bool typechecking_enabled_ = false;
+    bool expensive_checks_ = false;
 #endif
 };
 

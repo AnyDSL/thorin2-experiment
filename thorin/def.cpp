@@ -149,7 +149,7 @@ void Def::finalize() {
 
     assert((!is_nominal() || free_vars().none()) && "nominals must not have free vars");
 
-    if (world().is_typechecking_enabled() && free_vars().none())
+    if (world().expensive_checks_enabled() && free_vars().none())
         typecheck();
 }
 

@@ -6,7 +6,7 @@ using namespace thorin;
 
 TEST(Variants, negative_test) {
     World w;
-    w.enable_typechecking();
+    w.enable_expensive_checks();
     auto B = w.type_bool();
     auto N = w.type_nat();
     auto variant = w.variant(w.star(), {N, B});

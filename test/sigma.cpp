@@ -41,7 +41,6 @@ TEST(Sigma, ExtractAndSingleton) {
 
 TEST(Tuple, TypeExtract) {
     World w;
-    w.enable_typechecking();
     auto arity2 = w.arity(2);
     auto nat = w.axiom(w.star(), {"Nat"});
 

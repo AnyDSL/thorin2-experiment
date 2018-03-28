@@ -102,7 +102,7 @@ const Def* World::bound(const Def* q, Lattice l, Range<I> defs, bool require_qua
             assert(!max || max->op(0) == inferred_q);
             return max;
         } else {
-            if (is_typechecking_enabled()) {
+            if (expensive_checks_enabled()) {
                 if (auto i_qual = inferred_q->template isa<Qualifier>()) {
                     auto iq = i_qual->qualifier_tag();
                     if (auto q_qual = q->template isa<Qualifier>()) {
@@ -253,7 +253,7 @@ const Def* World::arity_succ(const Def* a, Debug dbg) {
 const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     auto callee_type = callee->type()->as<Pi>();
 
-    if (!callee_type->domain()->assignable(arg))
+    if (expensive_checks_enabled() && !callee_type->domain()->assignable(arg))
         errorf("callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
 
     if (auto axiom = get_axiom(callee); axiom && !callee_type->codomain()->isa<Pi>()) {
@@ -369,8 +369,8 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             return extracted;
         }
     }
+
     errorf("can't extract at {} from {} : {}, index type {} not compatible", index, index->type(), def, type);
-    return bottom(def->type());
 }
 
 const Def* World::extract(const Def* def, size_t i, Debug dbg) {
@@ -484,7 +484,7 @@ const Def* World::lambda(const Def* type_qualifier, const Def* domain, const Def
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
-    if (!multi_arity_kind()->assignable(arity))
+    if (expensive_checks_enabled() && !multi_arity_kind()->assignable(arity))
         errorf("({} : {}) provided to variadic constructor is not a (multi-) arity", arity, arity-> type());
     if (auto sigma = arity->isa<Sigma>()) {
         if (sigma->is_nominal())
@@ -719,7 +719,7 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
             auto b_dom = b->type()->as<Pi>()->domain();
             return a_dom->gid() < b_dom->gid(); });
 
-    if (is_typechecking_enabled()) {
+    if (expensive_checks_enabled()) {
         for (size_t i = 0; i < sorted_handlers.size(); ++i) {
             auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
             if (domain != matched_type->op(i))
