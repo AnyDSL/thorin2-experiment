@@ -13,7 +13,7 @@ addons:
 
 compiler:
     - gcc
-    - clang
+    #- clang <-- currently broken because gtest doesn't currently compile with -Werror
 env:
   global:
     - CXX_FLAGS="-Wall -Wextra -Werror"

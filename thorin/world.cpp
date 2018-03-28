@@ -301,9 +301,7 @@ Axiom* World::axiom(Symbol name, const char* s, Normalizer normalizer) {
 }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
-    if (index->type() == arity(1))
-        return def;
-    // need to allow the above, as types are also a 1-tuple of a type
+    if (index->type() == arity(1)) return def;
     //errorf(def->is_value(), "can only build extracts of values, {} is not a value", def);
     auto type = def->destructing_type();
     auto arity = type->arity();
@@ -374,40 +372,44 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
 }
 
 const Def* World::extract(const Def* def, size_t i, Debug dbg) {
-    if (!def->arity()->isa<Arity>())
-        errorf("can only extract by size_t on constant arities");
-    return extract(def, index(def->arity()->as<Arity>(), i, dbg), dbg);
+    if (auto arity = def->arity()->isa<Arity>())
+        return extract(def, index(arity, i, dbg), dbg);
+    else
+        errorf("can only extract with constant on constant arities");
 }
 
 const Lit* World::index(const Arity* a, u64 i, Location location) {
     auto arity_val = a->value();
-    if (i >= arity_val)
+    if (i < arity_val) {
+        auto cur = Def::gid_counter();
+        auto result = lit(a, i, location);
+
+        if (result->gid() >= cur) { // new literal -> build name
+            std::string s = std::to_string(i);
+            auto b = s.size();
+
+            // append utf-8 subscripts in reverse order
+            for (size_t aa = arity_val; aa > 0; aa /= 10)
+                ((s += char(char(0x80) + char(aa % 10))) += char(0x82)) += char(0xe2);
+
+            std::reverse(s.begin() + b, s.end());
+            result->debug().set(s);
+        }
+
+        return result;
+    } else {
         errorf("index literal {} does not fit within arity {}", i, a);
-    auto cur = Def::gid_counter();
-    auto result = lit(a, i, location);
-
-    if (result->gid() >= cur) { // new literal -> build name
-        std::string s = std::to_string(i);
-        auto b = s.size();
-
-        // append utf-8 subscripts in reverse order
-        for (size_t aa = arity_val; aa > 0; aa /= 10)
-            ((s += char(char(0x80) + char(aa % 10))) += char(0x82)) += char(0xe2);
-
-        std::reverse(s.begin() + b, s.end());
-        result->debug().set(s);
     }
-
-    return result;
 }
 
 const Def* World::index_zero(const Def* arity, Location location) {
-    if (!arity->type()->isa<ArityKind>())
+    if (arity->type()->isa<ArityKind>()) {
+        if (auto a = arity->isa<Arity>())
+            return index(a->value() + 1, 0, location);
+        return app(index_zero_, arity, {location});
+    } else {
         errorf("expected {} to have an 𝔸 type", arity);
-    if (auto a = arity->isa<Arity>())
-        return index(a->value() + 1, 0, location);
-
-    return app(index_zero_, arity, {location});
+    }
 }
 
 const Def* World::index_succ(const Def* index, Debug dbg) {
@@ -454,10 +456,12 @@ const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
 }
 
 const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg) {
-    if (codomain->is_value())
+    if (!codomain->is_value()) {
+        auto type = type_bound(q, LUB, {domain, codomain}, false);
+        return unify<Pi>(2, type, domain, codomain, dbg);
+    } else {
         errorf("codomain {} : {} of function type cannot be a value", codomain, codomain->type());
-    auto type = type_bound(q, LUB, {domain, codomain}, false);
-    return unify<Pi>(2, type, domain, codomain, dbg);
+    }
 }
 
 const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
@@ -487,9 +491,11 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
     if (expensive_checks_enabled() && !multi_arity_kind()->assignable(arity))
         errorf("({} : {}) provided to variadic constructor is not a (multi-) arity", arity, arity-> type());
     if (auto sigma = arity->isa<Sigma>()) {
-        if (sigma->is_nominal())
+        if (!sigma->is_nominal()) {
+            return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
+        } else {
             errorf("can't have nominal sigma arities");
-        return variadic(sigma->ops(), flatten(body, sigma->ops()), dbg);
+        }
     }
 
     if (auto v = arity->isa<Variadic>()) {
@@ -538,9 +544,10 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
     }
 
     if (defs.size() == 1) {
-        if (defs.front()->type() != type)
+        if (defs.front()->type() == type)
+            return defs.front();
+        else
             errorf("type {} and inferred type {} don't match", defs.front()->type(), type);
-        return defs.front();
     }
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && all_of(defs)) {
@@ -696,38 +703,40 @@ const Def* World::variant(const Def* type, Defs ops, Debug dbg) {
     return unify<Variant>(defs.size(), type, defs, dbg);
 }
 
-static const Def* build_match_type(Defs handlers) {
-    auto types = DefArray(handlers.size(),
-            [&](auto i) { return handlers[i]->type()->template as<Pi>()->codomain(); });
-    // We're not actually building a sum type here, we need uniqueness
-    unique_gid_sort(&types);
-    return handlers.front()->world().variant(types);
-}
-
 const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
     auto t = def->destructing_type();
+
     if (handlers.size() == 1) {
-        assert(!t->isa<Variant>());
-        return app(handlers.front(), def, dbg);
+        if (!t->isa<Variant>())
+            return app(handlers.front(), def, dbg);
+        else
+            errorf("matching with one handler implies matching a non-variant-typed value");
     }
-    auto matched_type [[maybe_unused]] = t->as<Variant>();
-    assert(t->num_ops() == handlers.size() && "number of handlers does not match number of cases");
 
-    DefArray sorted_handlers(handlers);
-    std::sort(sorted_handlers.begin(), sorted_handlers.end(), [](const Def* a, const Def* b) {
-            auto a_dom = a->type()->as<Pi>()->domain();
-            auto b_dom = b->type()->as<Pi>()->domain();
-            return a_dom->gid() < b_dom->gid(); });
+    if (auto matched_type = t->as<Variant>()) {
+        if (t->num_ops() == handlers.size()) {
+            DefArray sorted_handlers(handlers);
+            std::sort(sorted_handlers.begin(), sorted_handlers.end(), [](const Def* a, const Def* b) {
+                    auto a_dom = a->type()->as<Pi>()->domain();
+                    auto b_dom = b->type()->as<Pi>()->domain();
+                    return a_dom->gid() < b_dom->gid(); });
 
-    if (expensive_checks_enabled()) {
-        for (size_t i = 0; i < sorted_handlers.size(); ++i) {
-            auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
-            if (domain != matched_type->op(i))
-                errorf("handler {} with domain {} does not match type {}", i, domain, matched_type->op(i));
+            if (expensive_checks_enabled()) {
+                for (size_t i = 0; i < sorted_handlers.size(); ++i) {
+                    auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
+                    if (domain != matched_type->op(i))
+                        errorf("handler {} with domain {} does not match type {}", i, domain, matched_type->op(i));
+                }
+            }
+            auto types = DefArray(sorted_handlers.size(), [&](size_t i) { return handlers[i]->type()->as<Pi>()->codomain(); });
+            unique_gid_sort(&types); // we're not actually building a sum type here, we need uniqueness
+            return unify<Match>(1+sorted_handlers.size(), variant(types), def, sorted_handlers, dbg);
+        } else {
+            errorf("number of handlers does not match number of cases");
         }
+    } else {
+        errorf("matched type must be a variant");
     }
-    auto type = build_match_type(sorted_handlers);
-    return unify<Match>(1+sorted_handlers.size(), type, def, sorted_handlers, dbg);
 }
 
 const Lit* World::lit_nat(int64_t val, Location location) {
