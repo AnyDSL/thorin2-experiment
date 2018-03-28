@@ -520,12 +520,12 @@ bool Pi            ::assignable(const Def* def) const { return def->destructing_
 
 bool Sigma::assignable(const Def* def) const {
     auto& w = world();
-    auto t = def->destructing_type();
-    if (t == this)
+    auto type = def->destructing_type();
+    if (type == this)
         return true;
-    if (is_nominal() && num_ops() == 1 && t == op(0))
+    if (is_nominal() && num_ops() == 1 && type == op(0))
         return true;
-    if (!t->type()->subtype_of(type()))
+    if (!type->type()->subtype_of(this->type()))
         return false;
     Defs defs = def->ops(); // only correct when def is a tuple
     if (auto pack = def->isa<Pack>()) {
@@ -553,8 +553,8 @@ bool Star::assignable(const Def* def) const {
 }
 
 bool Variadic::assignable(const Def* def) const {
-    auto t = def->destructing_type();
-    if (t == this)
+    auto type = def->destructing_type();
+    if (type == this)
         return true;
     if (auto pack = def->isa<Pack>()) {
         if (arity() != pack->arity())
