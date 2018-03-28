@@ -19,6 +19,7 @@ class App;
 class Axiom;
 class Def;
 class Lambda;
+class Sema;
 class Tracker;
 class Param;
 class World;
@@ -86,16 +87,6 @@ using SortedDefSet = std::set<const Def*, DefLt>;
 typedef Array<const Def*> DefArray;
 typedef ArrayRef<const Def*> Defs;
 typedef std::vector<const Def*> DefVector;
-
-typedef std::pair<DefArray, const Def*> EnvDef;
-
-struct EnvDefHash {
-    inline static uint64_t hash(const EnvDef&);
-    static bool eq(const EnvDef& a, const EnvDef& b) { return a == b; };
-    static EnvDef sentinel() { return EnvDef(DefArray(), nullptr); }
-};
-
-typedef thorin::HashSet<std::pair<DefArray, const Def*>, EnvDefHash> EnvDefSet;
 
 DefArray qualifiers(Defs defs);
 void gid_sort(DefArray* defs);
@@ -242,13 +233,8 @@ public:
     //@}
 
     //@{ type checking
-    void typecheck() const {
-        assert(free_vars().none());
-        DefVector types;
-        EnvDefSet checked;
-        typecheck_vars(types, checked);
-    }
-    virtual void typecheck_vars(DefVector& types, EnvDefSet& checked) const;
+    void check() const;
+    virtual void check(Sema&) const;
     virtual bool assignable(const Def* def) const { return this == def->type(); }
     bool subtype_of(const Def* def) const {
         auto s = sort();
@@ -384,13 +370,6 @@ uint64_t UseHash::hash(Use use) {
     return murmur3(uint64_t(use.index()) << 48_u64 | uint64_t(use->gid()));
 }
 
-uint64_t EnvDefHash::hash(const EnvDef& p) {
-    uint64_t hash = hash_begin(p.second->gid());
-    for (auto def : p.first)
-        hash = hash_combine(hash, def->gid());
-    return hash;
-}
-
 //------------------------------------------------------------------------------
 
 class ArityKind : public Def {
@@ -471,7 +450,7 @@ public:
     const Def* arity() const override;
     bool assignable(const Def* def) const override;
     bool has_values() const override;
-    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
+    void check(Sema&) const override;
     const Def* kind_qualifier() const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -531,7 +510,7 @@ public:
     Lambdas succs() const;
     //@}
 
-    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
+    void check(Sema&) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     Lambda* vstub(World&, const Def*, Debug) const override;
@@ -584,7 +563,7 @@ public:
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     Sigma* vstub(World&, const Def*, Debug) const override;
-    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
+    void check(Sema&) const override;
 
 private:
     static const Def* max_type(Defs ops, const Def* qualifier);
@@ -606,7 +585,7 @@ public:
     bool is_homogeneous() const { return !body()->free_vars().test(0); };
     bool has_values() const override;
     bool assignable(const Def* def) const override;
-    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
+    void check(Sema&) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
@@ -646,7 +625,7 @@ private:
 
 public:
     const Def* body() const { return op(0); }
-    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
+    void check(Sema&) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
@@ -873,7 +852,7 @@ public:
     u64 index() const { return extra().index_; }
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
     std::ostream& name_stream(std::ostream& os) const override { return vstream(os); }
-    void typecheck_vars(DefVector&, EnvDefSet& checked) const override;
+    void check(Sema&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:

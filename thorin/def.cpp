@@ -145,7 +145,7 @@ void Def::finalize() {
     assert((!is_nominal() || free_vars().none()) && "nominals must not have free vars");
 
     if (world().expensive_checks_enabled() && free_vars().none())
-        typecheck();
+        check();
 }
 
 void Def::unset(size_t i) {
@@ -585,82 +585,102 @@ bool Variadic::assignable(const Def* def) const {
  * check
  */
 
-typedef std::vector<const Def*> Environment;
-
-void check(const Def* def, Environment& types, EnvDefSet& checked) {
-    // we assume any type/operand Def without free variables to be checked already
-    if (def->free_vars().any())
-        def->typecheck_vars(types, checked);
-}
-
-void dependent_check(Defs defs, Environment& types, EnvDefSet& checked, Defs bodies) {
-    auto old_size = types.size();
-    for (auto def : defs) {
-        check(def, types, checked);
-        types.push_back(def);
+struct Sema {
+    const Def* check(const Def* def) {
+        // defs without free vars are already checked
+        if (def->free_vars().any()) // && (def->is_nominal() && !checked.emplace(DefArray(types), def).second)
+            def->check(*this);
+        return def;
     }
-    for (auto def : bodies) {
-        check(def, types, checked);
+
+    void dependent_check(Defs defs, Defs bodies) {
+        auto old_size = types.size();
+        for (auto def : defs)
+            types.push_back(check(def));
+
+        for (auto def : bodies)
+            check(def);
+
+        types.erase(types.begin() + old_size, types.end());
     }
-    types.erase(types.begin() + old_size, types.end());
+
+    bool is_nominal_typechecked(const Def* def) {
+        if (def->is_nominal())
+            return checked.emplace(DefArray(types), def).second;
+        return false;
+    }
+
+    typedef std::pair<DefArray, const Def*> EnvDef;
+
+    struct EnvDefHash {
+        static inline uint64_t hash(const EnvDef& p) {
+            uint64_t hash = hash_begin(p.second->gid());
+            for (auto def : p.first)
+                hash = hash_combine(hash, def->gid());
+            return hash;
+        }
+        static bool eq(const EnvDef& a, const EnvDef& b) { return a == b; };
+        static EnvDef sentinel() { return EnvDef(DefArray(), nullptr); }
+    };
+
+    thorin::HashSet<std::pair<DefArray, const Def*>, EnvDefHash> checked;
+    DefVector types;
+};
+
+void Def::check() const {
+    assert(free_vars().none());
+    Sema sema;
+    check(sema);
 }
 
-bool is_nominal_typechecked(const Def* def, Environment& types, EnvDefSet& checked) {
-    if (def->is_nominal())
-        return checked.emplace(DefArray(types), def).second;
-    return false;
-}
-
-void Def::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    if (is_nominal_typechecked(this, types, checked))
-        return;
+void Def::check(Sema& sema) const {
     if (type()) {
-        check(type(), types, checked);
+        sema.check(type());
     } else
         assert(is_universe());
     for (auto op : ops())
-        check(op, types, checked);
+        sema.check(op);
 }
 
-void Lambda::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    if (is_nominal_typechecked(this, types, checked))
+void Lambda::check(Sema& sema) const {
+    if (sema.is_nominal_typechecked(this))
         return;
     // do Pi type check inline to reuse built up environment
-    check(type()->type(), types, checked);
-    dependent_check({domain()}, types, checked, {type()->codomain(), body()});
+    sema.check(type()->type());
+    sema.dependent_check({domain()}, {type()->codomain(), body()});
 }
 
-void Pack::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    check(type(), types, checked);
-    dependent_check({arity()}, types, checked, {body()});
+void Pack::check(Sema& sema) const {
+    sema.check(type());
+    sema.dependent_check({arity()}, {body()});
 }
 
-void Pi::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    check(type(), types, checked);
-    dependent_check({domain()}, types, checked, {codomain()});
+void Pi::check(Sema& sema) const {
+    sema.check(type());
+    sema.dependent_check({domain()}, {codomain()});
 }
 
-void Sigma::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    if (is_nominal_typechecked(this, types, checked))
+void Sigma::check(Sema& sema) const {
+    if (sema.is_nominal_typechecked(this))
         return;
-    check(type(), types, checked);
-    dependent_check(ops(), types, checked, Defs());
+    sema.check(type());
+    sema.dependent_check(ops(), Defs());
 }
 
-void Var::typecheck_vars(Environment& types, EnvDefSet&) const {
-    auto reverse_index = types.size() - 1 - index();
+void Var::check(Sema& sema) const {
+    auto reverse_index = sema.types.size() - 1 - index();
     auto shifted_type = shift_free_vars(type(), -index() - 1);
-    auto env_type = types[reverse_index];
+    auto env_type = sema.types[reverse_index];
     if (env_type != shifted_type)
         world().errorf("the shifted type {} of variable {} does not match the type {} declared by the binder.",
-                shifted_type, index(), types[reverse_index]);
+                shifted_type, index(), sema.types[reverse_index]);
 }
 
-void Variadic::typecheck_vars(Environment& types, EnvDefSet& checked) const {
-    if (is_nominal_typechecked(this, types, checked))
+void Variadic::check(Sema& sema) const {
+    if (sema.is_nominal_typechecked(this))
         return;
-    check(type(), types, checked);
-    dependent_check({arity()}, types, checked, {body()});
+    sema.check(type());
+    sema.dependent_check({arity()}, {body()});
 }
 
 //------------------------------------------------------------------------------
