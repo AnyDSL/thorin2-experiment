@@ -19,9 +19,9 @@ TEST(Arity, Sigma) {
     auto a2 = w.arity(2);
     auto a3 = w.arity(3);
 
-    EXPECT_EQ(a0, w.sigma({a0, a0}));
-    EXPECT_EQ(a0, w.sigma({a1, a0}));
-    EXPECT_EQ(a0, w.sigma({a0, a1}));
+    //EXPECT_EQ(a0, w.sigma({a0, a0}));
+    //EXPECT_EQ(a0, w.sigma({a1, a0}));
+    //EXPECT_EQ(a0, w.sigma({a0, a1}));
 
     EXPECT_EQ(w.multi_arity_kind(), w.sigma({a2, a3})->type());
     EXPECT_EQ(w.star(), w.sigma({a2, w.sigma({a3, a2}), a3})->type());

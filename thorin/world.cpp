@@ -37,72 +37,70 @@ static bool any_of(const Def* def, Defs defs) {
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
-template<class T, class I>
-const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
-    if (defs.distance() == 0)
-        return star(q ? q : qualifier(T::Qualifier::min));
-
-    auto first = *defs.begin();
-    auto inferred_q = first->qualifier();
-    auto max = first;
-
-    auto iter = defs.begin();
-    iter++;
-    for (size_t i = 1, e = defs.distance(); i != e; ++i, ++iter) {
-        auto def = *iter;
-        if (def->is_value())
-            errorf("can't have value '{}' as operand of bound operator", def);
-
-        if (def->qualifier()->free_vars().any_range(0, i)) {
-            // qualifier is dependent within this type/kind, go to top directly
-            // TODO might want to assert that this will always be a kind?
-            inferred_q = qualifier(T::Qualifier::max);
-        } else {
-            auto qualifier = shift_free_vars(def->qualifier(), -i);
-            inferred_q = join<T>(qualifier_type(), {inferred_q, qualifier}, {});
-        }
-
-        // TODO somehow build into a def->is_subtype_of(other)/similar
-        bool is_arity = def->template isa<ArityKind>();
-        bool is_star = def->template isa<Star>();
-        bool is_marity = is_arity || def->template isa<MultiArityKind>();
-        bool max_is_marity = max->template isa<ArityKind>() || max->template isa<MultiArityKind>();
-        bool max_is_star = max->template isa<Star>();
-        if (is_arity && max_is_marity)
-            // found at least two arities, must be a multi-arity
-            max = multi_arity_kind(inferred_q);
-        else if ((is_star || is_marity) && (max_is_star || max_is_marity))
-            max = star(inferred_q);
-        else {
-            max = universe();
-            break;
-        }
-    }
-
-    if (max->template isa<Star>()) {
-        if (!require_qualifier)
-            return star(q ? q : qualifier(T::Qualifier::min));
-        if (q == nullptr) {
-            // no provided qualifier, so we use the inferred one
-            assert(!max || max->op(0) == inferred_q);
-            return max;
-        } else {
-#if 0
-            if (expensive_checks_enabled()) {
-                if (auto i_qual = inferred_q->template isa<Qualifier>()) {
-                    auto iq = i_qual->qualifier_tag();
-                    if (auto q_qual = q->template isa<Qualifier>()) {
-                        auto qual = q_qual->qualifier_tag();
-                        if (l.q_less(iq, qual))
-                            errorf("qualifier must be '{}' than the '{}' of the operands' qualifiers", l.short_name, l.full_name);
-                    }
-                }
+static Def::Tag join(Def::Tag t, Def::Tag u) {
+    if (int(t) == -1) return u;
+    switch (t) {
+        case Def::Tag::ArityKind:
+            switch (u) {
+                case Def::Tag::ArityKind:       return Def::Tag(-2);
+                case Def::Tag::MultiArityKind:  return Def::Tag::Star;
+                case Def::Tag::Star:            return Def::Tag::Star;
+                default:                        return Def::Tag::Universe;
             }
-#endif
-            return star(q);
-        }
+        case Def::Tag(-2):
+            switch (u) {
+                case Def::Tag::ArityKind:       return Def::Tag(-2);
+                case Def::Tag::MultiArityKind:  return Def::Tag::Star;
+                case Def::Tag::Star:            return Def::Tag::Star;
+                default:                        return Def::Tag::Universe;
+            }
+        case Def::Tag::MultiArityKind:
+            switch (u) {
+                case Def::Tag::ArityKind:       return Def::Tag::Star;
+                case Def::Tag::MultiArityKind:  return Def::Tag::Star;
+                case Def::Tag::Star:            return Def::Tag::Star;
+                default:                        return Def::Tag::Universe;
+            }
+        case Def::Tag::Star:
+            switch (u) {
+                case Def::Tag::ArityKind:       return Def::Tag::Star;
+                case Def::Tag::MultiArityKind:  return Def::Tag::Star;
+                case Def::Tag::Star:            return Def::Tag::Star;
+                default:                        return Def::Tag::Universe;
+            }
+        default: return Def::Tag::Universe;
     }
-    return max;
+}
+
+template<class I>
+const Def* World::bound(const Def* q, Range<I> defs) {
+    q = q ? q : unlimited();
+    auto tag = Def::Tag(-1);
+
+    size_t i = 0;
+    for (auto def : defs) {
+        if (!def->is_value()) {
+            if (def->qualifier()->free_vars().any_range(0, i)) {
+                q = linear();
+            } else {
+                auto qualifier = shift_free_vars(def->qualifier(), -i);
+                q = variant(qualifier_type(), {q, qualifier});
+            }
+        } else {
+            errorf("can't have value '{}' as operand of bound operator", def);
+        }
+
+        tag = thorin::join(tag, def->tag());
+        ++i;
+    }
+
+    switch (tag) {
+        case Def::Tag::ArityKind:      return arity_kind(q);
+        case Def::Tag(-2):
+        case Def::Tag::MultiArityKind: return multi_arity_kind(q);
+        case Def::Tag::Star:           return star(q);
+        default:                       return universe();
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -271,7 +269,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
                         errorf("can't extract at {} from '{}' of type '{}', type is dependent", index, def, sigma);
                     if (sigma->type() == universe()) {
                         // can only type those, that we can bound usefully
-                        auto bnd = bound<Variant>(nullptr, sigma->ops(), true);
+                        auto bnd = bound(nullptr, sigma->ops());
                         // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *] : □, but * and t:*->t-> not subtypes, thus can't derive a bound for this
                         // TODO maybe infer variant? { t:*->t->t, * }?
                         if (bnd == universe())
@@ -427,7 +425,7 @@ template const Def* World::join<Variant     >(const Def*, Defs, Debug);
 
 const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg) {
     if (!codomain->is_value()) {
-        auto type = type_bound<Variant>(q, {domain, codomain}, false);
+        auto type = type_bound(q, {domain, codomain});
         return unify<Pi>(2, type, domain, codomain, dbg);
     } else {
         errorf("codomain '{}' of type '{}' of function type cannot be a value", codomain, codomain->type());
@@ -503,7 +501,7 @@ const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
 }
 
 const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
-    auto type = type_bound<Variant>(q, defs);
+    auto type = type_bound(q, defs);
     if (defs.size() == 0)
         return unit(type->qualifier());
 

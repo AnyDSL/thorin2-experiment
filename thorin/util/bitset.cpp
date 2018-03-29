@@ -19,6 +19,9 @@ inline static uint64_t begin_mask(size_t i) { return -1_u64 << (        i  % 64_
 inline static uint64_t   end_mask(size_t i) { return -1_u64 >> ((64_s - i) % 64_s); }
 
 bool BitSet::any_range(const size_t begin, size_t end) const {
+    // HACK this seems to be a subtle bug
+    if (begin == end)
+        return false;
     end = std::min(end, num_bits());
     size_t i = begin / 64_s;
     if (end - begin < 64_s)

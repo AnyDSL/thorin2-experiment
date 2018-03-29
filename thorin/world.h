@@ -226,7 +226,7 @@ public:
 
     //@{ pick, intersection and match, variant
     template<class T> const Def* join(const Def* type, Defs ops, Debug dbg = {});
-    template<class T> const Def* join(Defs defs, Debug dbg = {}) { return join<T>(type_bound<T>(nullptr, defs), defs, dbg); }
+    template<class T> const Def* join(Defs defs, Debug dbg = {}) { return join<T>(type_bound(nullptr, defs), defs, dbg); }
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {}) { return join<Intersection>(type, defs, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {}) { return join<Intersection>(defs, dbg); }
     Intersection* intersection(const Def* type, size_t num_ops, Debug dbg = {}) {
@@ -363,23 +363,17 @@ public:
     }
 
 private:
-    template<class T, class I>
-    const Def* bound(const Def* q, Range<I> ops, bool require_qualifier = true);
-    template<class T>
-    const Def* bound(const Def* q, Defs ops, bool require_qualifier = true) {
-        return bound<T>(q, range(ops), require_qualifier);
-    }
-    template<class T, class I>
-    const Def* type_bound(const Def* q, Range<I> ops, bool require_qualifier = true) {
-        return bound<T>(q, map_range(ops, [&] (auto def) {
+    template<class I>
+    const Def* bound(const Def* q, Range<I> ops);
+    const Def* bound(const Def* q, Defs ops) { return bound(q, range(ops)); }
+    template<class I>
+    const Def* type_bound(const Def* q, Range<I> ops) {
+        return bound(q, map_range(ops, [&] (auto def) {
                     assertf(!def->is_universe(), "{} has no type, can't be used as subexpression in types", def);
                     return def->type();
-                }), require_qualifier);
+                }));
     }
-    template<class T>
-    const Def* type_bound(const Def* q, Defs ops, bool require_qualifier = true) {
-        return type_bound<T>(q, range(ops), require_qualifier);
-    }
+    const Def* type_bound(const Def* q, Defs ops) { return type_bound(q, range(ops)); }
 
 protected:
     template<class T, class... Args>

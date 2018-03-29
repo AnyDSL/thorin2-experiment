@@ -109,14 +109,13 @@ DefArray unique_gid_sorted(Defs defs);
 class Def : public RuntimeCast<Def>, public Streamable {
 public:
     enum class Tag {
+        ArityKind, MultiArityKind, Star, Universe, // please keep these ones in this order
         Any, Match, Variant,
         App, Lambda, Param, Pi,
-        Arity, ArityKind, MultiArityKind,
-        Extract, Insert, Tuple, Pack, Sigma, Variadic,
+        Arity, Extract, Insert, Tuple, Pack, Sigma, Variadic,
         Lit, Axiom,
         Pick, Intersection,
         Qualifier, QualifierType,
-        Star, Universe,
         Bottom, Top,
         Singleton,
         Var,

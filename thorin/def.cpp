@@ -682,8 +682,7 @@ std::ostream& Def::qualifier_stream(std::ostream& os) const {
     if (!has_values() || tag() == Tag::QualifierType)
         return os;
     if (type()->is_kind()) {
-        auto q = type()->op(0)->as<Qualifier>();
-        if (q->qualifier_tag() != QualifierTag::u)
+        if (auto q = type()->op(0)->isa<Qualifier>(); q != nullptr && q->qualifier_tag() != QualifierTag::u)
             os << q;
     }
     return os;
