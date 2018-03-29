@@ -407,38 +407,21 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
         // could possibly be replaced by something subtyping-generic
         if (is_qualifier(first)) {
             assert(type == qualifier_type());
-
-            size_t num_defs = std::distance(defs.begin(), defs.end());
-            DefArray reduced(num_defs);
             auto accu = T::Qualifier::min;
-            size_t num_const = 0;
-            auto iter = defs.begin();
-            for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
-                if (auto q = (*iter)->template isa<Qualifier>()) {
-                    auto qual = q->qualifier_tag();
-                    accu = T::Qualifier::join(accu, qual);
-                    num_const++;
+            DefVector qualifiers;
+            for (auto def : defs) {
+                if (auto q = def->template isa<Qualifier>()) {
+                    accu = T::Qualifier::join(accu,  q->qualifier_tag());
                 } else {
-                    assert(is_qualifier(*iter));
-                    reduced[i - num_const] = *iter;
+                    assert(is_qualifier(def));
+                    assert(def);
+                    qualifiers.emplace_back(def);
                 }
             }
-            if (num_const == num_defs)
-                return qualifier(accu);
-            if (accu == T::Qualifier::max) {
-                // glb(U, x) = U/lub(L, x) = L
-                return qualifier(T::Qualifier::max);
-            } else if (accu != T::Qualifier::min) {
-                // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
-                assert(num_const != 0);
-                reduced[num_defs - num_const] = qualifier(accu);
-                num_const--;
-            }
-            reduced.shrink(num_defs - num_const);
-            if (reduced.size() == 1)
-                return reduced[0];
-
-            SortedDefSet set(reduced.begin(), reduced.end());
+            if (accu == T::Qualifier::max) return qualifier(T::Qualifier::max);
+            if (accu != T::Qualifier::min) qualifiers.emplace_back(qualifier(accu));
+            if (qualifiers.size() == 1) return qualifiers.front();
+            SortedDefSet set(qualifiers.begin(), qualifiers.end());
             return unify<T>(set.size(), qualifier_type(), set, dbg);
         }
 
