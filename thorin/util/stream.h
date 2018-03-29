@@ -139,6 +139,11 @@ StreamList<Emit, List> stream_list(const List& list, Emit emit, const char* sep 
     return StreamList<Emit, List>(list, emit, sep);
 }
 
+template<typename... Args> std::ostream& outf (const char* fmt, Args... args) { return streamf(std::cout, fmt, std::forward<Args>(args)...); }
+template<typename... Args> std::ostream& outln(const char* fmt, Args... args) { return streamf(std::cout, fmt, std::forward<Args>(args)...) << endl; }
+template<typename... Args> std::ostream& errf (const char* fmt, Args... args) { return streamf(std::cerr, fmt, std::forward<Args>(args)...); }
+template<typename... Args> std::ostream& errln(const char* fmt, Args... args) { return streamf(std::cerr, fmt, std::forward<Args>(args)...) << endl; }
+
 #ifdef NDEBUG
 #   define assertf(condition, ...) //do { (void)sizeof(condition); } while (false)
 #else

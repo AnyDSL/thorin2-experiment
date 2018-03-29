@@ -63,11 +63,6 @@ private:
     static bool print_loc_;
 };
 
-template<typename... Args>
-std::ostream& outf(const char* fmt, Args... args) { return streamf(std::cout, fmt, std::forward<Args>(args)...); }
-template<typename... Args>
-std::ostream& errf(const char* fmt, Args... args) { return streamf(std::cerr, fmt, std::forward<Args>(args)...); }
-
 }
 
 #define ELOG(...) thorin::Log::log(thorin::Log::Error,   Location(__FILE__, __LINE__, -1), __VA_ARGS__)
