@@ -70,9 +70,9 @@ private:
 #define ILOG(...) thorin::Log::log(thorin::Log::Info,    Location(__FILE__, __LINE__, -1), __VA_ARGS__)
 #define VLOG(...) thorin::Log::log(thorin::Log::Verbose, Location(__FILE__, __LINE__, -1), __VA_ARGS__)
 #ifndef NDEBUG
-#define DLOG(...) do {} while (false)
-#else
 #define DLOG(...) thorin::Log::log(thorin::Log::Debug,   Location(__FILE__, __LINE__, -1), __VA_ARGS__)
+#else
+#define DLOG(...) do {} while (false)
 #endif
 
 #endif
