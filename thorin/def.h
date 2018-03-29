@@ -672,8 +672,13 @@ private:
 
 class Intersection : public Def {
 private:
+    /// @em structural Intersection
     Intersection(const Def* type, const SortedDefSet& ops, Debug dbg)
         : Def(Tag::Intersection, type, range(ops), dbg)
+    {}
+    /// @em nominal Intersection
+    Intersection(const Def* type, size_t num_ops, Debug dbg)
+        : Def(Tag::Intersection, type, num_ops, dbg)
     {}
 
 public:
@@ -681,9 +686,11 @@ public:
     bool has_values() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
-    static constexpr auto q_min = QualifierTag::l;
-    static constexpr auto q_max = QualifierTag::u;
-    static constexpr auto q_join = thorin::glb;
+    struct Qualifier {
+        static constexpr auto min = QualifierTag::l;
+        static constexpr auto max = QualifierTag::u;
+        static constexpr auto join = glb;
+    };
 private:
     std::ostream& vstream(std::ostream&) const override;
 
@@ -709,9 +716,11 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
     Variant* vstub(World&, const Def*, Debug) const override;
 
-    static constexpr auto q_min = QualifierTag::u;
-    static constexpr auto q_max = QualifierTag::l;
-    static constexpr auto q_join = thorin::lub;
+    struct Qualifier {
+        static constexpr auto min = QualifierTag::u;
+        static constexpr auto max = QualifierTag::l;
+        static constexpr auto join = lub;
+    };
 private:
     std::ostream& vstream(std::ostream&) const override;
 

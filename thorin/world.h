@@ -230,10 +230,12 @@ public:
     template<class T> const Def* join(Defs defs, Debug dbg = {}) { return join<T>(type_bound<T>(nullptr, defs), defs, dbg); }
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {}) { return join<Intersection>(type, defs, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {}) { return join<Intersection>(defs, dbg); }
+    Intersection* intersection(const Def* type, size_t num_ops, Debug dbg = {}) {
+        return insert<Intersection>(num_ops, type, num_ops, dbg);
+    }
     const Def* variant(const Def* type, Defs defs, Debug dbg = {}) { return join<Variant>(type, defs, dbg); }
     const Def* variant(Defs defs, Debug dbg = {}) { return join<Variant>(defs, dbg); }
     Variant* variant(const Def* type, size_t num_ops, Debug dbg = {}) {
-        assert(num_ops > 1 && "it should not be necessary to build empty/unary variants");
         return insert<Variant>(num_ops, type, num_ops, dbg);
     }
     const Def* pick(const Def* type, const Def* def, Debug dbg = {});

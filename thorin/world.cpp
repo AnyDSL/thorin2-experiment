@@ -60,7 +60,7 @@ static bool is_qualifier(const Def* def) { return def->type() == def->world().qu
 template<class T, class I>
 const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
     if (defs.distance() == 0)
-        return star(q ? q : qualifier(T::q_min));
+        return star(q ? q : qualifier(T::Qualifier::min));
 
     auto first = *defs.begin();
     auto inferred_q = first->qualifier();
@@ -76,7 +76,7 @@ const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
         if (def->qualifier()->free_vars().any_range(0, i)) {
             // qualifier is dependent within this type/kind, go to top directly
             // TODO might want to assert that this will always be a kind?
-            inferred_q = qualifier(T::q_max);
+            inferred_q = qualifier(T::Qualifier::max);
         } else {
             auto qualifier = shift_free_vars(def->qualifier(), -i);
             inferred_q = join<T>(qualifier_type(), {inferred_q, qualifier}, {});
@@ -101,7 +101,7 @@ const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
 
     if (max->template isa<Star>()) {
         if (!require_qualifier)
-            return star(q ? q : qualifier(T::q_min));
+            return star(q ? q : qualifier(T::Qualifier::min));
         if (q == nullptr) {
             // no provided qualifier, so we use the inferred one
             assert(!max || max->op(0) == inferred_q);
@@ -129,13 +129,13 @@ template<class T, class I>
 const Def* World::qualifier_bound(Range<I> defs, Debug dbg) {
     size_t num_defs = defs.distance();
     DefArray reduced(num_defs);
-    auto accu = T::q_min;
+    auto accu = T::Qualifier::min;
     size_t num_const = 0;
     I iter = defs.begin();
     for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
         if (auto q = (*iter)->template isa<Qualifier>()) {
             auto qual = q->qualifier_tag();
-            accu = T::q_join(accu, qual);
+            accu = T::Qualifier::join(accu, qual);
             num_const++;
         } else {
             assert(is_qualifier(*iter));
@@ -144,10 +144,10 @@ const Def* World::qualifier_bound(Range<I> defs, Debug dbg) {
     }
     if (num_const == num_defs)
         return qualifier(accu);
-    if (accu == T::q_max) {
+    if (accu == T::Qualifier::max) {
         // glb(U, x) = U/lub(L, x) = L
-        return qualifier(T::q_max);
-    } else if (accu != T::q_min) {
+        return qualifier(T::Qualifier::max);
+    } else if (accu != T::Qualifier::min) {
         // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
         assert(num_const != 0);
         reduced[num_defs - num_const] = qualifier(accu);
