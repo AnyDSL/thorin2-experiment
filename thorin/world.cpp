@@ -71,7 +71,7 @@ const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
     for (size_t i = 1, e = defs.distance(); i != e; ++i, ++iter) {
         auto def = *iter;
         if (def->is_value())
-            errorf("can't have value {} as operand of bound operator", def);
+            errorf("can't have value '{}' as operand of bound operator", def);
 
         if (def->qualifier()->free_vars().any_range(0, i)) {
             // qualifier is dependent within this type/kind, go to top directly
@@ -114,7 +114,7 @@ const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
                     if (auto q_qual = q->template isa<Qualifier>()) {
                         auto qual = q_qual->qualifier_tag();
                         if (l.q_less(iq, qual))
-                            errorf("qualifier must be {} than the {} of the operands' qualifiers", l.short_name, l.full_name);
+                            errorf("qualifier must be '{}' than the '{}' of the operands' qualifiers", l.short_name, l.full_name);
                     }
                 }
             }
@@ -236,7 +236,7 @@ const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
         }
         return app;
     } else {
-        errorf("callee {} with domain {} cannot be called with argument {} : {}", callee, callee_type->domain(), arg, arg->type());
+        errorf("callee '{}' with domain '{}' cannot be called with argument '{}' of type '{}'", callee, callee_type->domain(), arg, arg->type());
     }
 }
 
@@ -260,7 +260,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
         auto type = def->destructing_type();
         auto arity = type->arity();
         if (arity == nullptr)
-            errorf("arity unknown for {} of type {}, can only extract when arity is known", def, type);
+            errorf("arity unknown for '{}' of type '{}', can only extract when arity is known", def, type);
         if (arity->assignable(index)) {
             if (auto idx = index->isa<Lit>()) {
                 auto i = get_index(idx);
@@ -291,14 +291,14 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             const Def* result_type = nullptr;
             if (auto sigma = type->isa<Sigma>()) {
                 if (sigma->is_dependent())
-                    errorf("can't extract at {} from {} : {}, type is dependent", index, def, sigma);
+                    errorf("can't extract at {} from '{}' of type '{}', type is dependent", index, def, sigma);
                 if (sigma->type() == universe()) {
                     // can only type those, that we can bound usefully
                     auto bnd = bound<Variant>(nullptr, sigma->ops(), true);
                     // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *] : □, but * and t:*->t-> not subtypes, thus can't derive a bound for this
                     // TODO maybe infer variant? { t:*->t->t, * }?
                     if (bnd == universe())
-                        errorf("can't extract at {} from {} : {}, type may be □ (not reflectable)", index, def, sigma);
+                        errorf("can't extract at '{}' from '{}' of type '{}'  type may be □ (not reflectable)", index, def, sigma);
                     result_type = bnd;
                 } else
                     result_type = extract(tuple(sigma->ops(), dbg), index);
@@ -322,9 +322,10 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             }
         }
 
-        errorf("can't extract at {} from {} : {}, index type {} not compatible", index, index->type(), def, type);
+        errorf("can't extract at '{}' from '{}' of type '{}' because index type '{}' is not compatible",
+                index, index->type(), def, type);
     } else {
-        errorf("can only build extracts of values, {} is not a value", def);
+        errorf("can only extract from values, but '{}' is not a value", def);
     }
 }
 
@@ -355,7 +356,7 @@ const Lit* World::index(const Arity* a, u64 i, Location location) {
 
         return result;
     } else {
-        errorf("index literal {} does not fit within arity {}", i, a);
+        errorf("index literal '{}' does not fit within arity '{}'", i, a);
     }
 }
 
@@ -365,7 +366,7 @@ const Def* World::index_zero(const Def* arity, Location location) {
             return index(a->value() + 1, 0, location);
         return app(index_zero_, arity, {location});
     } else {
-        errorf("expected {} to have an 𝔸 type", arity);
+        errorf("expected '{}' to have an 𝔸 type", arity);
     }
 }
 
@@ -397,7 +398,7 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
             if (first->type() == type) {
                 return first;
             } else {
-                errorf("provided type {} for {} must match the type {} of the sole operand {}",
+                errorf("provided type '{}' for '{}' must match the type '{}' of the sole operand '{}'",
                         type, T::op_name, first->type(), type);
             }
         }
@@ -455,7 +456,7 @@ const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug 
         auto type = type_bound<Variant>(q, {domain, codomain}, false);
         return unify<Pi>(2, type, domain, codomain, dbg);
     } else {
-        errorf("codomain {} : {} of function type cannot be a value", codomain, codomain->type());
+        errorf("codomain '{}' of type '{}' of function type cannot be a value", codomain, codomain->type());
     }
 }
 
@@ -517,7 +518,7 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
         assert(body->type()->is_kind() || body->type()->is_universe());
         return unify<Variadic>(2, shift_free_vars(body->type(), -1), arity, body, dbg);
     } else {
-        errorf("({} : {}) provided to variadic constructor is not a (multi-) arity", arity, arity->type());
+        errorf("'{}' of type '{}' provided to variadic constructor is not a (multi-) arity", arity, arity->type());
     }
 }
 
@@ -541,7 +542,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
         if (defs.front()->type() == type)
             return defs.front();
         else
-            errorf("type {} and inferred type {} don't match", defs.front()->type(), type);
+            errorf("type '{}' and inferred type '{}' don't match", defs.front()->type(), type);
     }
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && all_of(defs)) {
@@ -694,7 +695,7 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
                 for (size_t i = 0; i < sorted_handlers.size(); ++i) {
                     auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
                     if (domain != matched_type->op(i))
-                        errorf("handler {} with domain {} does not match type {}", i, domain, matched_type->op(i));
+                        errorf("handler '{}' with domain '{}' does not match type '{}'", i, domain, matched_type->op(i));
                 }
             }
             auto types = DefArray(sorted_handlers.size(), [&](size_t i) { return handlers[i]->type()->as<Pi>()->codomain(); });
