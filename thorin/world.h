@@ -79,7 +79,7 @@ public:
 
     //@{ create qualifier
     const QualifierType* qualifier_type() const { return qualifier_type_; }
-    const Qualifier* qualifier(QualifierTag q = QualifierTag::Unlimited) const { return qualifier_[size_t(q)]; }
+    const Qualifier* qualifier(QualifierTag q) const { return qualifier_[size_t(q)]; }
     const Qualifier* unlimited() const { return qualifier(QualifierTag::Unlimited); }
     const Qualifier* affine() const { return qualifier(QualifierTag::Affine); }
     const Qualifier* linear() const { return qualifier(QualifierTag::Linear); }
