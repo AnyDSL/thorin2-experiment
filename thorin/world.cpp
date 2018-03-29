@@ -394,9 +394,14 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
     if (same_sort(ops)) {
         auto first = *defs.begin();
         if (defs.size() == 1) {
-            assert(first->type() == type);
-            return first;
+            if (first->type() == type) {
+                return first;
+            } else {
+                errorf("provided type {} for {} must match the type {} of the sole operand {}",
+                        type, T::op_name, first->type(), type);
+            }
         }
+
         // implements a least upper bound on qualifiers,
         // could possibly be replaced by something subtyping-generic
         if (is_qualifier(first)) {
@@ -436,7 +441,6 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
             return unify<T>(set.size(), qualifier_type(), set, dbg);
         }
 
-        // TODO recognize some empty intersections? i.e. same sorted ops, intersection of types non-empty?
         return unify<T>(defs.size(), type, defs, dbg);
     } else {
         errorf("all operands must be of the same sort");

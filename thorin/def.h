@@ -691,6 +691,7 @@ public:
         static constexpr auto max = QualifierTag::u;
         static constexpr auto join = glb;
     };
+    static constexpr auto op_name = "intersection";
 private:
     std::ostream& vstream(std::ostream&) const override;
 
@@ -721,6 +722,7 @@ public:
         static constexpr auto max = QualifierTag::l;
         static constexpr auto join = lub;
     };
+    static constexpr auto op_name = "variant";
 private:
     std::ostream& vstream(std::ostream&) const override;
 
