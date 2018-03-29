@@ -125,42 +125,6 @@ const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
     return max;
 }
 
-template<class T, class I>
-const Def* World::qualifier_bound(Range<I> defs, Debug dbg) {
-    size_t num_defs = defs.distance();
-    DefArray reduced(num_defs);
-    auto accu = T::Qualifier::min;
-    size_t num_const = 0;
-    I iter = defs.begin();
-    for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
-        if (auto q = (*iter)->template isa<Qualifier>()) {
-            auto qual = q->qualifier_tag();
-            accu = T::Qualifier::join(accu, qual);
-            num_const++;
-        } else {
-            assert(is_qualifier(*iter));
-            reduced[i - num_const] = *iter;
-        }
-    }
-    if (num_const == num_defs)
-        return qualifier(accu);
-    if (accu == T::Qualifier::max) {
-        // glb(U, x) = U/lub(L, x) = L
-        return qualifier(T::Qualifier::max);
-    } else if (accu != T::Qualifier::min) {
-        // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
-        assert(num_const != 0);
-        reduced[num_defs - num_const] = qualifier(accu);
-        num_const--;
-    }
-    reduced.shrink(num_defs - num_const);
-    if (reduced.size() == 1)
-        return reduced[0];
-
-    SortedDefSet set(reduced.begin(), reduced.end());
-    return unify<T>(set.size(), qualifier_type(), set, dbg);
-}
-
 //------------------------------------------------------------------------------
 
 #ifndef NDEBUG
@@ -437,7 +401,39 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
         // could possibly be replaced by something subtyping-generic
         if (is_qualifier(first)) {
             assert(type == qualifier_type());
-            return qualifier_bound<T>(range(defs), dbg);
+
+            size_t num_defs = std::distance(defs.begin(), defs.end());
+            DefArray reduced(num_defs);
+            auto accu = T::Qualifier::min;
+            size_t num_const = 0;
+            auto iter = defs.begin();
+            for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
+                if (auto q = (*iter)->template isa<Qualifier>()) {
+                    auto qual = q->qualifier_tag();
+                    accu = T::Qualifier::join(accu, qual);
+                    num_const++;
+                } else {
+                    assert(is_qualifier(*iter));
+                    reduced[i - num_const] = *iter;
+                }
+            }
+            if (num_const == num_defs)
+                return qualifier(accu);
+            if (accu == T::Qualifier::max) {
+                // glb(U, x) = U/lub(L, x) = L
+                return qualifier(T::Qualifier::max);
+            } else if (accu != T::Qualifier::min) {
+                // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
+                assert(num_const != 0);
+                reduced[num_defs - num_const] = qualifier(accu);
+                num_const--;
+            }
+            reduced.shrink(num_defs - num_const);
+            if (reduced.size() == 1)
+                return reduced[0];
+
+            SortedDefSet set(reduced.begin(), reduced.end());
+            return unify<T>(set.size(), qualifier_type(), set, dbg);
         }
 
         // TODO recognize some empty intersections? i.e. same sorted ops, intersection of types non-empty?

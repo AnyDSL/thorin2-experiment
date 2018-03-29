@@ -380,8 +380,6 @@ private:
     const Def* type_bound(const Def* q, Defs ops, bool require_qualifier = true) {
         return type_bound<T>(q, range(ops), require_qualifier);
     }
-    template<class T, class I>
-    const Def* qualifier_bound(Range<I> defs, Debug dbg);
 
 protected:
     template<class T, class... Args>
