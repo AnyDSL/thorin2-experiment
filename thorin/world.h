@@ -333,7 +333,6 @@ public:
 #endif
     bool expensive_checks_enabled() const { return expensive_checks_; }
     void enable_expensive_checks(bool on = true) { expensive_checks_ = on; }
-    bool assignable(const Def* a, const Def* b) { return !expensive_checks_enabled() || a->assignable(b); }
     template<typename... Args>
     [[noreturn]] void errorf(const char* fmt, Args... args) {
         std::ostringstream oss;
