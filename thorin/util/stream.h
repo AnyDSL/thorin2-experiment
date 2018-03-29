@@ -1,7 +1,7 @@
 #ifndef THORIN_UTIL_STREAM_H
 #define THORIN_UTIL_STREAM_H
 
-#include <ostream>
+#include <iostream>
 #include <stdexcept>
 #include <type_traits>
 
