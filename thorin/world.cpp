@@ -207,7 +207,7 @@ const Def* World::arity_succ(const Def* a, Debug dbg) {
 const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     auto callee_type = callee->type()->as<Pi>();
 
-    if (!expensive_checks_enabled() || callee_type->domain()->assignable(arg)) {
+    if (assignable(callee_type, arg)) {
         if (auto axiom = get_axiom(callee); axiom && !callee_type->codomain()->isa<Pi>()) {
             if (auto normalizer = axiom->normalizer()) {
                 if (auto result = normalizer(callee, arg, dbg))
@@ -255,75 +255,77 @@ Axiom* World::axiom(Symbol name, const char* s, Normalizer normalizer) {
 }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
-    if (index->type() == arity(1)) return def;
+    if (index->type() == arity(1))
+        return def;
+
     if (def->is_value()) {
         auto type = def->destructing_type();
-        auto arity = type->arity();
-        if (arity == nullptr)
-            errorf("arity unknown for '{}' of type '{}', can only extract when arity is known", def, type);
-        if (arity->assignable(index)) {
-            if (auto idx = index->isa<Lit>()) {
-                auto i = get_index(idx);
-                if (def->isa<Tuple>()) {
-                    return def->op(i);
-                }
+        if (auto arity = type->arity()) {
+            if (assignable(arity, index)) {
+                if (auto idx = index->isa<Lit>()) {
+                    auto i = get_index(idx);
+                    if (def->isa<Tuple>())
+                        return def->op(i);
 
-                if (auto sigma = type->isa<Sigma>()) {
-                    auto type = sigma->op(i);
-                    if (!sigma->is_dependent())
-                        type = shift_free_vars(type, -i);
-                    else {
-                        for (ptrdiff_t def_idx = i - 1; def_idx >= 0; --def_idx) {
-                            // this also shifts any Var with i > skipped_shifts by -1
-                            auto prev_def = shift_free_vars(extract(def, def_idx), def_idx);
-                            type = reduce(type, prev_def);
+                    if (auto sigma = type->isa<Sigma>()) {
+                        auto type = sigma->op(i);
+                        if (!sigma->is_dependent())
+                            type = shift_free_vars(type, -i);
+                        else {
+                            for (ptrdiff_t def_idx = i - 1; def_idx >= 0; --def_idx) {
+                                // this also shifts any Var with i > skipped_shifts by -1
+                                auto prev_def = shift_free_vars(extract(def, def_idx), def_idx);
+                                type = reduce(type, prev_def);
+                            }
                         }
+                        return unify<Extract>(2, type, def, index, dbg);
                     }
-                    return unify<Extract>(2, type, def, index, dbg);
                 }
-            }
-            // homogeneous tuples <v,...,v> are normalized to packs, so this also optimizes to v
-            if (auto pack = def->isa<Pack>()) {
-                return reduce(pack->body(), index);
-            }
-            // here: index is const => type is variadic, index is var => type may be variadic/sigma, must not be dependent sigma
-            assert(!index->isa<Lit>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
-            const Def* result_type = nullptr;
-            if (auto sigma = type->isa<Sigma>()) {
-                if (sigma->is_dependent())
-                    errorf("can't extract at {} from '{}' of type '{}', type is dependent", index, def, sigma);
-                if (sigma->type() == universe()) {
-                    // can only type those, that we can bound usefully
-                    auto bnd = bound<Variant>(nullptr, sigma->ops(), true);
-                    // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *] : □, but * and t:*->t-> not subtypes, thus can't derive a bound for this
-                    // TODO maybe infer variant? { t:*->t->t, * }?
-                    if (bnd == universe())
-                        errorf("can't extract at '{}' from '{}' of type '{}'  type may be □ (not reflectable)", index, def, sigma);
-                    result_type = bnd;
+                // homogeneous tuples <v,...,v> are normalized to packs, so this also optimizes to v
+                if (auto pack = def->isa<Pack>())
+                    return reduce(pack->body(), index);
+
+                // here: index is const => type is variadic, index is var => type may be variadic/sigma, must not be dependent sigma
+                assert(!index->isa<Lit>() || type->isa<Variadic>()); // just a sanity check for implementation errors above
+                const Def* result_type = nullptr;
+                if (auto sigma = type->isa<Sigma>()) {
+                    if (sigma->is_dependent())
+                        errorf("can't extract at {} from '{}' of type '{}', type is dependent", index, def, sigma);
+                    if (sigma->type() == universe()) {
+                        // can only type those, that we can bound usefully
+                        auto bnd = bound<Variant>(nullptr, sigma->ops(), true);
+                        // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *] : □, but * and t:*->t-> not subtypes, thus can't derive a bound for this
+                        // TODO maybe infer variant? { t:*->t->t, * }?
+                        if (bnd == universe())
+                            errorf("can't extract at '{}' from '{}' of type '{}', type may be □ (not reflectable)", index, def, sigma);
+                        result_type = bnd;
+                    } else
+                        result_type = extract(tuple(sigma->ops(), dbg), index);
                 } else
-                    result_type = extract(tuple(sigma->ops(), dbg), index);
-            } else
-                result_type = reduce(type->as<Variadic>()->body(), index);
+                    result_type = reduce(type->as<Variadic>()->body(), index);
 
-            return unify<Extract>(2, result_type, def, index, dbg);
-        }
-        // not the same exact arity, but as long as it types, we can use indices from constant arity tuples, even of non-index type
-        // can only extract if we can iteratively extract with each index in the multi-index
-        // can only do that if we know how many elements there are
-        if (auto i_arity = index->arity()->isa<Arity>()) {
-            auto a = i_arity->value();
-            if (a > 1) {
-                auto extracted = def;
-                for (size_t i = 0; i < a; ++i) {
-                    auto idx = extract(index, i, dbg);
-                    extracted = extract(extracted, idx, dbg);
-                }
-                return extracted;
+                return unify<Extract>(2, result_type, def, index, dbg);
             }
-        }
+            // not the same exact arity, but as long as it types, we can use indices from constant arity tuples, even of non-index type
+            // can only extract if we can iteratively extract with each index in the multi-index
+            // can only do that if we know how many elements there are
+            if (auto i_arity = index->arity()->isa<Arity>()) {
+                auto a = i_arity->value();
+                if (a > 1) {
+                    auto extracted = def;
+                    for (size_t i = 0; i < a; ++i) {
+                        auto idx = extract(index, i, dbg);
+                        extracted = extract(extracted, idx, dbg);
+                    }
+                    return extracted;
+                }
+            }
 
-        errorf("can't extract at '{}' from '{}' of type '{}' because index type '{}' is not compatible",
-                index, index->type(), def, type);
+            errorf("can't extract at '{}' from '{}' of type '{}' because index type '{}' is not compatible",
+                    index, index->type(), def, type);
+        } else {
+            errorf("arity unknown for '{}' of type '{}', can only extract when arity is known", def, type);
+        }
     } else {
         errorf("can only extract from values, but '{}' is not a value", def);
     }
@@ -484,7 +486,7 @@ const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, con
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
-    if (!expensive_checks_enabled() || multi_arity_kind()->assignable(arity)) {
+    if (assignable(multi_arity_kind(), arity)) {
         if (auto s = arity->isa<Sigma>()) {
             if (!s->is_nominal())
                 return variadic(s->ops(), flatten(body, s->ops()), dbg);
