@@ -262,9 +262,8 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             if (assignable(arity, index)) {
                 if (auto idx = index->isa<Lit>()) {
                     auto i = get_index(idx);
-                    if (def->isa<Tuple>()) {
+                    if (def->isa<Tuple>())
                         return def->op(i);
-                    }
 
                     if (auto sigma = type->isa<Sigma>()) {
                         auto type = sigma->op(i);
