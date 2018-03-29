@@ -222,6 +222,7 @@ public:
 
     //@{ misc getters
     virtual const Def* arity() const;
+    std::optional<u64> has_constant_arity() const;
     const BitSet& free_vars() const { return free_vars_; }
     uint32_t fields() const { return uint32_t(num_ops_) << 8_u32 | uint32_t(tag()); }
     uint32_t gid() const { return gid_; }

@@ -307,11 +307,10 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             // not the same exact arity, but as long as it types, we can use indices from constant arity tuples, even of non-index type
             // can only extract if we can iteratively extract with each index in the multi-index
             // can only do that if we know how many elements there are
-            if (auto i_arity = index->arity()->isa<Arity>()) {
-                auto a = i_arity->value();
-                if (a > 1) {
+            if (auto i_arity = index->has_constant_arity()) {
+                if (i_arity > 1) {
                     auto extracted = def;
-                    for (size_t i = 0; i < a; ++i) {
+                    for (size_t i = 0; i < i_arity; ++i) {
                         auto idx = extract(index, i, dbg);
                         extracted = extract(extracted, idx, dbg);
                     }
@@ -330,8 +329,8 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
 }
 
 const Def* World::extract(const Def* def, size_t i, Debug dbg) {
-    if (auto arity = def->arity()->isa<Arity>())
-        return extract(def, index(arity, i, dbg), dbg);
+    if (auto arity = def->has_constant_arity())
+        return extract(def, index(*arity, i, dbg), dbg);
     else
         errorf("can only extract with constant on constant arities");
 }
@@ -491,12 +490,11 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
             else
                 errorf("can't have nominal sigma arities");
         } else if (auto v = arity->isa<Variadic>()) {
-            if (auto a_literal = v->arity()->isa<Arity>()) {
+            if (auto a = v->has_constant_arity()) {
                 assert(!v->body()->free_vars().test(0));
-                auto a = a_literal->value();
                 assert(a != 1);
-                auto result = flatten(body, DefArray(a, shift_free_vars(v->body(), a-1)));
-                for (size_t i = a; i-- != 0;)
+                auto result = flatten(body, DefArray(*a, shift_free_vars(v->body(), *a-1)));
+                for (size_t i = *a; i-- != 0;)
                     result = variadic(shift_free_vars(v->body(), i-1), result, dbg);
                 return result;
             }
@@ -592,12 +590,11 @@ const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
         return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
 
     if (auto v = arity->isa<Variadic>()) {
-        if (auto a_literal = v->arity()->isa<Arity>()) {
+        if (auto a = v->has_constant_arity()) {
             assert(!v->body()->free_vars().test(0));
-            auto a = a_literal->value();
             assert(a != 1);
-            auto result = flatten(body, DefArray(a, shift_free_vars(v->body(), a-1)));
-            for (size_t i = a; i-- != 0;)
+            auto result = flatten(body, DefArray(*a, shift_free_vars(v->body(), *a-1)));
+            for (size_t i = *a; i-- != 0;)
                 result = pack(shift_free_vars(v->body(), i-1), result, dbg);
             return result;
         }

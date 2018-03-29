@@ -326,7 +326,7 @@ const Def* Variant::kind_qualifier() const {
 /*
  * arity
  */
-//
+
 // TODO assumption: every axiom that is not a value has arity 1
 // TODO assumption: all callees of non-folded apps that yield a type are (originally) axioms
 
@@ -351,6 +351,11 @@ const Def* Universe      ::arity() const { THORIN_UNREACHABLE; }
 const Def* Var           ::arity() const { return is_value() ? destructing_type()->arity() : nullptr; }
 const Def* Variant       ::arity() const { return world().variant(DefArray(num_ops(), [&](auto i) { return op(i)->arity(); })); }
 
+std::optional<size_t> Def::has_constant_arity() const {
+    if (auto a = arity()->isa<Arity>())
+        return a->value();
+    else return {};
+}
 //------------------------------------------------------------------------------
 
 /*
@@ -527,8 +532,8 @@ bool Sigma::assignable(const Def* def) const {
         return false;
     Defs defs = def->ops(); // only correct when def is a tuple
     if (auto pack = def->isa<Pack>()) {
-        if (auto arity = pack->arity()->isa<Arity>()) {
-            if (num_ops() != arity->value())
+        if (auto arity = pack->has_constant_arity()) {
+            if (num_ops() != arity)
                 return false;
             defs = DefArray(num_ops(), [&](auto i) { return w.extract(def, i); });
         } else
@@ -561,13 +566,12 @@ bool Variadic::assignable(const Def* def) const {
     }
     // only need this because we don't normalize every variadic of constant arity to a sigma
     if (def->isa<Tuple>()) {
-        if (auto a_lit = arity()->isa<Arity>()) {
-            auto size = a_lit->value();
+        if (auto size = has_constant_arity()) {
             if (size != def->num_ops())
                 return false;
             for (size_t i = 0; i != size; ++i) {
                 // body should actually not depend on index, but implemented for completeness
-                auto reduced_type = reduce(body(), world().index(size, i));
+                auto reduced_type = reduce(body(), world().index(*size, i));
                 if (!reduced_type->assignable(def->op(i)))
                     return false;
             }
