@@ -373,7 +373,7 @@ private:
                                  &thorin::operator<, thorin::lub, &thorin::World::variant,
                                  "less",    "least upper bound"};
     static constexpr Lattice GLB{QualifierTag::l, QualifierTag::u,
-                                 &thorin::operator<, thorin::lub, &thorin::World::intersection,
+                                 &thorin::operator>, thorin::glb, &thorin::World::intersection,
                                  "greater", "greatest lower bound"};
 
     template<class I>
