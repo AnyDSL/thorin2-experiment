@@ -681,22 +681,9 @@ public:
     bool has_values() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
-private:
-    std::ostream& vstream(std::ostream&) const override;
-
-    friend class World;
-};
-
-class Pick : public Def {
-private:
-    Pick(const Def* type, const Def* def, Debug dbg)
-        : Def(Tag::Pick, type, {def}, dbg)
-    {}
-
-public:
-    const Def* destructee() const { return op(0); }
-    const Def* rebuild(World&, const Def*, Defs) const override;
-
+    static constexpr auto q_min = QualifierTag::l;
+    static constexpr auto q_max = QualifierTag::u;
+    static constexpr auto q_join = thorin::glb;
 private:
     std::ostream& vstream(std::ostream&) const override;
 
@@ -721,6 +708,25 @@ public:
     bool has_values() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     Variant* vstub(World&, const Def*, Debug) const override;
+
+    static constexpr auto q_min = QualifierTag::u;
+    static constexpr auto q_max = QualifierTag::l;
+    static constexpr auto q_join = thorin::lub;
+private:
+    std::ostream& vstream(std::ostream&) const override;
+
+    friend class World;
+};
+
+class Pick : public Def {
+private:
+    Pick(const Def* type, const Def* def, Debug dbg)
+        : Def(Tag::Pick, type, {def}, dbg)
+    {}
+
+public:
+    const Def* destructee() const { return op(0); }
+    const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
     std::ostream& vstream(std::ostream&) const override;

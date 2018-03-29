@@ -57,10 +57,10 @@ static inline bool same_sort(Defs ops) {
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
-template<class I>
-const Def* World::bound(const Def* q, Lattice l, Range<I> defs, bool require_qualifier) {
+template<class T, class I>
+const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
     if (defs.distance() == 0)
-        return star(q ? q : qualifier(l.min));
+        return star(q ? q : qualifier(T::q_min));
 
     auto first = *defs.begin();
     auto inferred_q = first->qualifier();
@@ -76,10 +76,10 @@ const Def* World::bound(const Def* q, Lattice l, Range<I> defs, bool require_qua
         if (def->qualifier()->free_vars().any_range(0, i)) {
             // qualifier is dependent within this type/kind, go to top directly
             // TODO might want to assert that this will always be a kind?
-            inferred_q = qualifier(l.max);
+            inferred_q = qualifier(T::q_max);
         } else {
             auto qualifier = shift_free_vars(def->qualifier(), -i);
-            inferred_q = (this->*(l.join))(qualifier_type(), {inferred_q, qualifier}, {});
+            inferred_q = join<T>(qualifier_type(), {inferred_q, qualifier}, {});
         }
 
         // TODO somehow build into a def->is_subtype_of(other)/similar
@@ -101,12 +101,13 @@ const Def* World::bound(const Def* q, Lattice l, Range<I> defs, bool require_qua
 
     if (max->template isa<Star>()) {
         if (!require_qualifier)
-            return star(q ? q : qualifier(l.min));
+            return star(q ? q : qualifier(T::q_min));
         if (q == nullptr) {
             // no provided qualifier, so we use the inferred one
             assert(!max || max->op(0) == inferred_q);
             return max;
         } else {
+#if 0
             if (expensive_checks_enabled()) {
                 if (auto i_qual = inferred_q->template isa<Qualifier>()) {
                     auto iq = i_qual->qualifier_tag();
@@ -117,23 +118,24 @@ const Def* World::bound(const Def* q, Lattice l, Range<I> defs, bool require_qua
                     }
                 }
             }
+#endif
             return star(q);
         }
     }
     return max;
 }
 
-template<class I, class F>
-const Def* World::qualifier_bound(Lattice l, Range<I> defs, F unify_fn) {
+template<class T, class I>
+const Def* World::qualifier_bound(Range<I> defs, Debug dbg) {
     size_t num_defs = defs.distance();
     DefArray reduced(num_defs);
-    QualifierTag accu = l.min;
+    auto accu = T::q_min;
     size_t num_const = 0;
     I iter = defs.begin();
     for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
         if (auto q = (*iter)->template isa<Qualifier>()) {
             auto qual = q->qualifier_tag();
-            accu = l.q_join(accu, qual);
+            accu = T::q_join(accu, qual);
             num_const++;
         } else {
             assert(is_qualifier(*iter));
@@ -142,10 +144,10 @@ const Def* World::qualifier_bound(Lattice l, Range<I> defs, F unify_fn) {
     }
     if (num_const == num_defs)
         return qualifier(accu);
-    if (accu == l.max) {
+    if (accu == T::q_max) {
         // glb(U, x) = U/lub(L, x) = L
-        return qualifier(l.max);
-    } else if (accu != l.min) {
+        return qualifier(T::q_max);
+    } else if (accu != T::q_min) {
         // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
         assert(num_const != 0);
         reduced[num_defs - num_const] = qualifier(accu);
@@ -154,8 +156,9 @@ const Def* World::qualifier_bound(Lattice l, Range<I> defs, F unify_fn) {
     reduced.shrink(num_defs - num_const);
     if (reduced.size() == 1)
         return reduced[0];
+
     SortedDefSet set(reduced.begin(), reduced.end());
-    return unify_fn(set);
+    return unify<T>(set.size(), qualifier_type(), set, dbg);
 }
 
 //------------------------------------------------------------------------------
@@ -327,7 +330,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
                     errorf("can't extract at {} from {} : {}, type is dependent", index, def, sigma);
                 if (sigma->type() == universe()) {
                     // can only type those, that we can bound usefully
-                    auto bnd = bound(nullptr, LUB, sigma->ops(), true);
+                    auto bnd = bound<Variant>(nullptr, sigma->ops(), true);
                     // universe may be a wrong bound, e.g. for (poly_identity, Nat) : [t:*->t->t, *] : □, but * and t:*->t-> not subtypes, thus can't derive a bound for this
                     // TODO maybe infer variant? { t:*->t->t, * }?
                     if (bnd == universe())
@@ -420,12 +423,9 @@ const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) 
     return insert(def, idx, value, dbg);
 }
 
-const Def* World::intersection(Defs defs, Debug dbg) {
-    return intersection(type_bound(nullptr, GLB, defs), defs, dbg);
-}
-
-const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
-    auto defs = set_flatten<Intersection>(ops);
+template<class T>
+const Def* World::join(const Def* type, Defs ops, Debug dbg) {
+    auto defs = set_flatten<T>(ops);
     if (defs.empty()) return bottom(type);
     if (same_sort(ops)) {
         auto first = *defs.begin();
@@ -437,21 +437,22 @@ const Def* World::intersection(const Def* type, Defs ops, Debug dbg) {
         // could possibly be replaced by something subtyping-generic
         if (is_qualifier(first)) {
             assert(type == qualifier_type());
-            return qualifier_bound(GLB, range(defs), [&] (const SortedDefSet& defs) {
-                    return unify<Intersection>(defs.size(), qualifier_type(), defs, dbg);
-            });
+            return qualifier_bound<T>(range(defs), dbg);
         }
 
         // TODO recognize some empty intersections? i.e. same sorted ops, intersection of types non-empty?
-        return unify<Intersection>(defs.size(), type, defs, dbg);
+        return unify<T>(defs.size(), type, defs, dbg);
     } else {
-        errorf("all operands of an intersection must be of the same sort");
+        errorf("all operands must be of the same sort");
     }
 }
 
+template const Def* World::join<Intersection>(const Def*, Defs, Debug);
+template const Def* World::join<Variant     >(const Def*, Defs, Debug);
+
 const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg) {
     if (!codomain->is_value()) {
-        auto type = type_bound(q, LUB, {domain, codomain}, false);
+        auto type = type_bound<Variant>(q, {domain, codomain}, false);
         return unify<Pi>(2, type, domain, codomain, dbg);
     } else {
         errorf("codomain {} : {} of function type cannot be a value", codomain, codomain->type());
@@ -527,7 +528,7 @@ const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
 }
 
 const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
-    auto type = type_bound(q, LUB, defs);
+    auto type = type_bound<Variant>(q, defs);
     if (defs.size() == 0)
         return unit(type->qualifier());
 
@@ -669,35 +670,6 @@ const Def* World::tuple(Defs defs, Debug dbg) {
     }
 
     return unify<Tuple>(size, type->as<SigmaBase>(), defs, dbg);
-}
-
-const Def* World::variant(Defs defs, Debug dbg) {
-    assert(defs.size() > 0);
-    return variant(type_bound(nullptr, LUB, defs), defs, dbg);
-}
-
-const Def* World::variant(const Def* type, Defs ops, Debug dbg) {
-    auto defs = set_flatten<Variant>(ops);
-    if (defs.empty()) return bottom(type);
-    if (same_sort(ops)) {
-        auto first = *defs.begin();
-        if (defs.size() == 1) {
-            assert(first->type() == type);
-            return first;
-        }
-        // implements a least upper bound on qualifiers,
-        // could possibly be replaced by something subtyping-generic
-        if (is_qualifier(first)) {
-            assert(type == qualifier_type());
-            return qualifier_bound(LUB, range(defs), [&] (const SortedDefSet& defs) {
-                return unify<Variant>(defs.size(), qualifier_type(), defs, dbg);
-            });
-        }
-
-        return unify<Variant>(defs.size(), type, defs, dbg);
-    } else {
-        errorf("all operands of a variant must be of the same sort");
-    }
 }
 
 const Def* World::match(const Def* def, Defs handlers, Debug dbg) {

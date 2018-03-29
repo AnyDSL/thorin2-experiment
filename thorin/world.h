@@ -226,16 +226,18 @@ public:
     //@}
 
     //@{ pick, intersection and match, variant
-    const Def* pick(const Def* type, const Def* def, Debug dbg = {});
-    const Def* intersection(Defs defs, Debug dbg = {});
-    const Def* intersection(const Def* type, Defs defs, Debug dbg = {});
-    const Def* match(const Def* def, Defs handlers, Debug dbg = {});
-    const Def* variant(Defs defs, Debug dbg = {});
-    const Def* variant(const Def* type, Defs defs, Debug dbg = {});
+    template<class T> const Def* join(const Def* type, Defs ops, Debug dbg = {});
+    template<class T> const Def* join(Defs defs, Debug dbg = {}) { return join<T>(type_bound<T>(nullptr, defs), defs, dbg); }
+    const Def* intersection(const Def* type, Defs defs, Debug dbg = {}) { return join<Intersection>(type, defs, dbg); }
+    const Def* intersection(Defs defs, Debug dbg = {}) { return join<Intersection>(defs, dbg); }
+    const Def* variant(const Def* type, Defs defs, Debug dbg = {}) { return join<Variant>(type, defs, dbg); }
+    const Def* variant(Defs defs, Debug dbg = {}) { return join<Variant>(defs, dbg); }
     Variant* variant(const Def* type, size_t num_ops, Debug dbg = {}) {
         assert(num_ops > 1 && "it should not be necessary to build empty/unary variants");
         return insert<Variant>(num_ops, type, num_ops, dbg);
     }
+    const Def* pick(const Def* type, const Def* def, Debug dbg = {});
+    const Def* match(const Def* def, Defs handlers, Debug dbg = {});
     //@}
 
     //@{ misc factory methods
@@ -359,40 +361,25 @@ public:
     }
 
 private:
-
-    struct Lattice {
-        QualifierTag min, max;
-        bool (*q_less)(QualifierTag, QualifierTag);
-        QualifierTag (*q_join)(QualifierTag, QualifierTag);
-        const Def* (World::*join)(const Def*, Defs, Debug);
-        const char* short_name;
-        const char* full_name;
-    };
-
-    static constexpr Lattice LUB{QualifierTag::u, QualifierTag::l,
-                                 &thorin::operator<, thorin::lub, &thorin::World::variant,
-                                 "less",    "least upper bound"};
-    static constexpr Lattice GLB{QualifierTag::l, QualifierTag::u,
-                                 &thorin::operator>, thorin::glb, &thorin::World::intersection,
-                                 "greater", "greatest lower bound"};
-
-    template<class I>
-    const Def* bound(const Def* q, Lattice, Range<I> ops, bool require_qualifier = true);
-    const Def* bound(const Def* q, Lattice l, Defs ops, bool require_qualifier = true) {
-        return bound(q, l, range(ops), require_qualifier);
+    template<class T, class I>
+    const Def* bound(const Def* q, Range<I> ops, bool require_qualifier = true);
+    template<class T>
+    const Def* bound(const Def* q, Defs ops, bool require_qualifier = true) {
+        return bound<T>(q, range(ops), require_qualifier);
     }
-    template<class I>
-    const Def* type_bound(const Def* q, Lattice l, Range<I> ops, bool require_qualifier = true) {
-        return bound(q, l, map_range(ops, [&] (auto def) {
+    template<class T, class I>
+    const Def* type_bound(const Def* q, Range<I> ops, bool require_qualifier = true) {
+        return bound<T>(q, map_range(ops, [&] (auto def) {
                     assertf(!def->is_universe(), "{} has no type, can't be used as subexpression in types", def);
                     return def->type();
                 }), require_qualifier);
     }
-    const Def* type_bound(const Def* q, Lattice l, Defs ops, bool require_qualifier = true) {
-        return type_bound(q, l, range(ops), require_qualifier);
+    template<class T>
+    const Def* type_bound(const Def* q, Defs ops, bool require_qualifier = true) {
+        return type_bound<T>(q, range(ops), require_qualifier);
     }
-    template<class I, class F>
-    const Def* qualifier_bound(Lattice l, Range<I> defs, F f);
+    template<class T, class I>
+    const Def* qualifier_bound(Range<I> defs, Debug dbg);
 
 protected:
     template<class T, class... Args>
