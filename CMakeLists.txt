@@ -132,6 +132,7 @@ if(BUILD_TESTS)
         test/sigma.cpp
         test/singleton.cpp
         test/substructural.cpp
+        test/subtypes.cpp
         test/variadic.cpp
         test/variants.cpp
         test/fe/lexer.cpp

@@ -508,12 +508,29 @@ bool Pi::vsubtype_of(const Def* def) const {
     return false;
 }
 
-// TODO is there subtyping on sigmas?
-// bool Sigma::vsubtype_of(const Def* def) const {
-//     if (type()->subtype_of(def->type())) {
-//     }
-//     return false;
-// }
+bool Sigma::vsubtype_of(const Def* def) const {
+    if (type()->subtype_of(def->type())) {
+        if (auto other = def->isa<Sigma>()) {
+            if (num_ops() == other->num_ops()) {
+                for (size_t i = 0, e = num_ops(); i != e; ++i) {
+                    if (!op(i)->subtype_of(other->op(i))) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        } else if (auto other = def->isa<Variadic>()) {
+            if (auto size = other->has_constant_arity(); num_ops() == size) {
+                for (u64 i = 0; i != size; ++i) {
+                    // variadic body must not depend on index
+                    auto body = shift_free_vars(other->body(), -1);
+                    return std::all_of(ops().begin(), ops().end(), [&] (auto op) { return op->subtype_of(body); });
+                }
+            }
+        }
+    }
+    return false;
+}
 
 // bool Variadic::vsubtype_of(const Def* def) const {
 // }
@@ -530,6 +547,8 @@ bool Sigma::assignable(const Def* def) const {
         return true;
     if (!type->type()->subtype_of(this->type()))
         return false;
+    if (type->subtype_of(this))
+        return true;
     Defs defs = def->ops(); // only correct when def is a tuple
     if (auto pack = def->isa<Pack>()) {
         if (auto arity = pack->has_constant_arity()) {

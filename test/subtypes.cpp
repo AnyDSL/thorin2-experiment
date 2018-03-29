@@ -37,3 +37,18 @@ TEST(Subtypes, Pi) {
         EXPECT_TRUE(pi_s->subtype_of(pi_s));
     }
 }
+
+TEST(Subtypes, Sigma) {
+    World w;
+    for (auto q : QualifierTags) {
+        auto am = w.sigma({w.arity_kind(q), w.multi_arity_kind(q)});
+        auto ms = w.sigma({w.multi_arity_kind(q), w.star(q)});
+        auto ss = w.variadic(2, w.star(q));
+        EXPECT_TRUE(am->subtype_of(ms));
+        EXPECT_FALSE(ms->subtype_of(am));
+        EXPECT_TRUE(am->subtype_of(ss));
+        EXPECT_FALSE(ss->subtype_of(am));
+        EXPECT_TRUE(ms->subtype_of(ss));
+        EXPECT_FALSE(ss->subtype_of(ms));
+    }
+}

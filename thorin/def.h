@@ -238,8 +238,12 @@ public:
     virtual void check(Sema&) const;
     virtual bool assignable(const Def* def) const { return this == def->type(); }
     bool subtype_of(const Def* def) const {
+        if (this == def)
+            return true;
         auto s = sort();
-        return (!def->is_value() && s >= Sort::Type && (this == def || (s == def->sort() && vsubtype_of(def))));
+        if (s == Sort::Term || is_value() || def->is_value() || s != def->sort())
+            return false;
+        return vsubtype_of(def);
     }
     //@}
 
@@ -568,6 +572,7 @@ public:
 
 private:
     static const Def* max_type(Defs ops, const Def* qualifier);
+    bool vsubtype_of(const Def* def) const override;
     std::ostream& vstream(std::ostream&) const override;
 
     friend class World;
