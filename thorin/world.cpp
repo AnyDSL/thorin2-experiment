@@ -207,7 +207,7 @@ const Def* World::arity_succ(const Def* a, Debug dbg) {
 const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
     auto callee_type = callee->type()->as<Pi>();
 
-    if (!expensive_checks_enabled() || callee_type->domain()->assignable(arg)) {
+    if (assignable(callee_type->domain(), arg)) {
         if (auto axiom = get_axiom(callee); axiom && !callee_type->codomain()->isa<Pi>()) {
             if (auto normalizer = axiom->normalizer()) {
                 if (auto result = normalizer(callee, arg, dbg))
@@ -261,7 +261,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
         auto arity = type->arity();
         if (arity == nullptr)
             errorf("arity unknown for '{}' of type '{}', can only extract when arity is known", def, type);
-        if (arity->assignable(index)) {
+        if (assignable(arity, index)) {
             if (auto idx = index->isa<Lit>()) {
                 auto i = get_index(idx);
                 if (def->isa<Tuple>()) {
@@ -484,7 +484,7 @@ const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, con
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
-    if (!expensive_checks_enabled() || multi_arity_kind()->assignable(arity)) {
+    if (assignable(multi_arity_kind(), arity)) {
         if (auto s = arity->isa<Sigma>()) {
             if (!s->is_nominal())
                 return variadic(s->ops(), flatten(body, s->ops()), dbg);
