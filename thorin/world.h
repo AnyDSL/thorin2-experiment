@@ -84,7 +84,6 @@ public:
     const Qualifier* affine() const { return qualifier(QualifierTag::Affine); }
     const Qualifier* linear() const { return qualifier(QualifierTag::Linear); }
     const Qualifier* relevant() const { return qualifier(QualifierTag::Relevant); }
-    const std::array<const Qualifier*, 4>& qualifiers() const { return qualifier_; }
     //@}
 
     //@{ create Pi
