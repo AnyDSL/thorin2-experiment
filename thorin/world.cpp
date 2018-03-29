@@ -470,8 +470,8 @@ const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
-const Def* World::lambda(const Def* type_qualifier, const Def* domain, const Def* filter, const Def* body, Debug dbg) {
-    auto p = pi(type_qualifier, domain, body->type(), dbg);
+const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, const Def* body, Debug dbg) {
+    auto type = pi(q, domain, body->type(), dbg);
 
     if (auto app = body->isa<App>()) {
         bool eta_property = app->arg()->isa<Var>() && app->arg()->as<Var>()->index() == 0;
@@ -480,7 +480,7 @@ const Def* World::lambda(const Def* type_qualifier, const Def* domain, const Def
             return shift_free_vars(app->callee(), -1);
     }
 
-    return unify<Lambda>(2, p, filter, body, dbg);
+    return unify<Lambda>(2, type, filter, body, dbg);
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {

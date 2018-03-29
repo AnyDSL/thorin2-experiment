@@ -90,7 +90,7 @@ public:
     const Pi* pi(const Def* domain, const Def* codomain, Debug dbg = {}) {
         return pi(unlimited(), domain, codomain, dbg);
     }
-    const Pi* pi(const Def* qualifier, const Def* domain, const Def* codomain, Debug dbg = {});
+    const Pi* pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg = {});
     const Pi* cn(const Def* domain, Debug dbg = {}) { return pi(domain, bottom(star()), dbg); }
     const Pi* cn(Defs domain, Debug dbg = {}) { return cn(sigma(domain), dbg); }
     //@}
@@ -99,7 +99,7 @@ public:
     const Def* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
         return lambda(unlimited(), domain, lit_true(), body, dbg);
     }
-    const Def* lambda(const Def* type_qualifier, const Def* domain, const Def* filter, const Def* body, Debug dbg = {});
+    const Def* lambda(const Def* q, const Def* domain, const Def* filter, const Def* body, Debug dbg = {});
     /// @em nominal lambda --- may be recursive
     Lambda* lambda(const Pi* type, Debug dbg = {}) {
         assertf(type->free_vars().none_begin(1),
@@ -135,7 +135,7 @@ public:
     //@{ create Sigma
     /// @em structural Sigma types or kinds
     const Def* sigma(Defs defs, Debug dbg = {}) { return sigma(nullptr, defs, dbg); }
-    const Def* sigma(const Def* qualifier, Defs, Debug dbg = {});
+    const Def* sigma(const Def* q, Defs, Debug dbg = {});
     /// Nominal sigma types or kinds
     Sigma* sigma(const Def* type, size_t num_ops, Debug dbg = {}) {
         return insert<Sigma>(num_ops, type, num_ops, dbg);
@@ -145,8 +145,8 @@ public:
         return sigma_type(unlimited(), num_ops, dbg);
     }
     /// @em nominal Sigma of type Star
-    Sigma* sigma_type(const Def* qualifier, size_t num_ops, Debug dbg = {}) {
-        return sigma(star(qualifier), num_ops, dbg);
+    Sigma* sigma_type(const Def* q, size_t num_ops, Debug dbg = {}) {
+        return sigma(star(q), num_ops, dbg);
     }
     /// @em nominal Sigma of type Universe
     Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) {
