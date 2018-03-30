@@ -14,21 +14,6 @@ namespace thorin {
  * helpers
  */
 
-template<class T>
-static const SortedDefSet set_flatten(Defs defs) {
-    SortedDefSet flat_defs;
-    for (auto def : defs) {
-        if (def->template isa<Bottom>())
-            continue;
-        if (def->isa<T>())
-            for (auto inner : def->ops())
-                flat_defs.insert(inner);
-        else
-            flat_defs.insert(def);
-    }
-    return flat_defs;
-}
-
 const Def* infer_shape(World& world, const Def* def) {
     if (auto variadic = def->type()->isa<Variadic>()) {
         if (!variadic->body()->isa<Variadic>())
@@ -48,11 +33,6 @@ static bool all_of(Defs defs) {
 
 static bool any_of(const Def* def, Defs defs) {
     return std::any_of(defs.begin(), defs.end(), [&](auto d){ return d == def; });
-}
-
-static inline bool same_sort(Defs ops) {
-    auto sort = ops.front()->sort();
-    return std::all_of(ops.begin()+1, ops.end(), [&](auto op) { return sort == op->sort(); });
 }
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
@@ -388,63 +368,57 @@ const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) 
 }
 
 template<class T>
+static const SortedDefSet set_flatten(Defs defs) {
+    SortedDefSet flat_defs;
+    for (auto def : defs) {
+        if (def->template isa<Bottom>())
+            continue;
+        if (def->isa<T>())
+            for (auto inner : def->ops())
+                flat_defs.insert(inner);
+        else
+            flat_defs.insert(def);
+    }
+    return flat_defs;
+}
+
+template<class T>
 const Def* World::join(const Def* type, Defs ops, Debug dbg) {
     auto defs = set_flatten<T>(ops);
     if (defs.empty()) return bottom(type);
-    if (same_sort(ops)) {
-        auto first = *defs.begin();
-        if (defs.size() == 1) {
-            if (first->type() == type) {
-                return first;
-            } else {
-                errorf("provided type '{}' for '{}' must match the type '{}' of the sole operand '{}'",
-                        type, T::op_name, first->type(), type);
-            }
+    auto first = *defs.begin();
+    if (defs.size() == 1) {
+        if (first->type() == type) {
+            return first;
+        } else {
+            errorf("provided type '{}' for '{}' must match the type '{}' of the sole operand '{}'",
+                    type, T::op_name, first->type(), type);
         }
-
-        // implements a least upper bound on qualifiers,
-        // could possibly be replaced by something subtyping-generic
-        if (is_qualifier(first)) {
-            assert(type == qualifier_type());
-
-            size_t num_defs = std::distance(defs.begin(), defs.end());
-            DefArray reduced(num_defs);
-            auto accu = T::Qualifier::min;
-            size_t num_const = 0;
-            auto iter = defs.begin();
-            for (size_t i = 0, e = num_defs; i != e; ++i, ++iter) {
-                if (auto q = (*iter)->template isa<Qualifier>()) {
-                    auto qual = q->qualifier_tag();
-                    accu = T::Qualifier::join(accu, qual);
-                    num_const++;
-                } else {
-                    assert(is_qualifier(*iter));
-                    reduced[i - num_const] = *iter;
-                }
-            }
-            if (num_const == num_defs)
-                return qualifier(accu);
-            if (accu == T::Qualifier::max) {
-                // glb(U, x) = U/lub(L, x) = L
-                return qualifier(T::Qualifier::max);
-            } else if (accu != T::Qualifier::min) {
-                // glb(L, x) = x/lub(U, x) = x, so otherwise we need to add accu
-                assert(num_const != 0);
-                reduced[num_defs - num_const] = qualifier(accu);
-                num_const--;
-            }
-            reduced.shrink(num_defs - num_const);
-            if (reduced.size() == 1)
-                return reduced[0];
-
-            SortedDefSet set(reduced.begin(), reduced.end());
-            return unify<T>(set.size(), qualifier_type(), set, dbg);
-        }
-
-        return unify<T>(defs.size(), type, defs, dbg);
-    } else {
-        errorf("all operands must be of the same sort");
     }
+
+    // implements a least upper bound on qualifiers,
+    // could possibly be replaced by something subtyping-generic
+    if (is_qualifier(first)) {
+        assert(type == qualifier_type());
+        auto accu = T::Qualifier::min;
+        DefVector qualifiers;
+        for (auto def : defs) {
+            if (auto q = def->template isa<Qualifier>()) {
+                accu = T::Qualifier::join(accu,  q->qualifier_tag());
+            } else {
+                assert(is_qualifier(def));
+                assert(def);
+                qualifiers.emplace_back(def);
+            }
+        }
+        if (accu == T::Qualifier::max) return qualifier(T::Qualifier::max);
+        if (accu != T::Qualifier::min) qualifiers.emplace_back(qualifier(accu));
+        if (qualifiers.size() == 1) return qualifiers.front();
+        SortedDefSet set(qualifiers.begin(), qualifiers.end());
+        return unify<T>(set.size(), qualifier_type(), set, dbg);
+    }
+
+    return unify<T>(defs.size(), type, defs, dbg);
 }
 
 template const Def* World::join<Intersection>(const Def*, Defs, Debug);
