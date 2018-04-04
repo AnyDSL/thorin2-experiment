@@ -120,7 +120,7 @@ if(BUILD_TESTS)
     # This defines the gtest and gtest_main targets.
     add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
 
-    set(THORIN_GTEST_SOURCES
+    add_executable(thorin-gtest
         test/arity.cpp
         test/bitset.cpp
         test/cn.cpp
@@ -140,7 +140,6 @@ if(BUILD_TESTS)
         test/me/primop.cpp
     )
 
-    add_executable(thorin-gtest ${THORIN_GTEST_SOURCES})
     set_target_properties(thorin-gtest PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
     target_include_directories(thorin-gtest PRIVATE . ${CMAKE_BINARY_DIR}/half-src/include)
     target_link_libraries(thorin-gtest thorin gtest_main)
