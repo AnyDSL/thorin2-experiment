@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(thorin VERSION 2.0 DESCRIPTION "the higher-order intermediate representation")
 
-option(BUILD_SHARED_LIBS "Build libthorin as shared library (so/dll)" ON)
+option(BUILD_SHARED_LIBS "Build shared library (so/dll)" ON)
 option(BUILD_TESTS "Build gtest-based test program" ON)
+
+# target: library thorin
 
 add_library(thorin
     thorin/def.cpp
@@ -69,6 +71,8 @@ set_target_properties(thorin PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
 set_target_properties(thorin PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(thorin PROPERTIES SOVERSION 2)
 target_include_directories(thorin PRIVATE . half/include)
+
+# target: executable thorin-gtest
 
 if(BUILD_TESTS)
     include(CTest)
