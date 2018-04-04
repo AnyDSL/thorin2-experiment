@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(thorin VERSION 2.0 DESCRIPTION "the higher-order intermediate representation")
 
-option(BUILD_SHARED_LIBS "Build shared library (so/dll)" ON)
+option(BUILD_SHARED_LIBS "Build shared libraries (so/dll)" ON)
 option(BUILD_TESTS "Build gtest-based test program" ON)
 
 # target: library thorin
