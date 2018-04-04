@@ -4,24 +4,24 @@ project(thorin VERSION 2.0 DESCRIPTION "the higher-order intermediate representa
 option(BUILD_SHARED_LIBS "Build libthorin as shared library (so/dll)" ON)
 option(BUILD_TESTS "Build gtest-based test program" ON)
 
-# download and unpack half at configure time
-configure_file(CMakeLists.txt.half.in half-download/CMakeLists.txt)
+## download and unpack half at configure time
+#configure_file(CMakeLists.txt.half.in half-download/CMakeLists.txt)
 
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/half-download)
+#execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    #RESULT_VARIABLE result
+    #WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/half-download)
 
-if(result)
-    message(FATAL_ERROR "CMake step for half failed: ${result}")
-endif()
+#if(result)
+    #message(FATAL_ERROR "CMake step for half failed: ${result}")
+#endif()
 
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/half-download)
+#execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    #RESULT_VARIABLE result
+    #WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/half-download)
 
-if(result)
-    message(FATAL_ERROR "Build step for half failed: ${result}")
-endif()
+#if(result)
+    #message(FATAL_ERROR "Build step for half failed: ${result}")
+#endif()
 
 add_library(thorin
     thorin/def.cpp
@@ -88,37 +88,15 @@ add_library(thorin
 set_target_properties(thorin PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 set_target_properties(thorin PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(thorin PROPERTIES SOVERSION 2)
-target_include_directories(thorin PRIVATE . ${CMAKE_BINARY_DIR}/half-src/include)
+target_include_directories(thorin PRIVATE . half/include)
 
 if(BUILD_TESTS)
     include(CTest)
     include(GoogleTest)
-
-    # download and unpack gtest at configure time
-    configure_file(CMakeLists.txt.gtest.in googletest-download/CMakeLists.txt)
-
-    execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
-
-    if(result)
-        message(FATAL_ERROR "CMake step for googletest failed: ${result}")
-    endif()
-
-    execute_process(COMMAND ${CMAKE_COMMAND} --build .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
-
-    if(result)
-        message(FATAL_ERROR "Build step for googletest failed: ${result}")
-    endif()
+    add_subdirectory(googletest/googletest/ EXCLUDE_FROM_ALL)
 
     # prevent overriding the parent project's compiler/linker settings on Windows
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-    # Add googletest directly to our build.
-    # This defines the gtest and gtest_main targets.
-    add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
 
     add_executable(thorin-gtest
         test/arity.cpp
@@ -139,9 +117,8 @@ if(BUILD_TESTS)
         test/fe/parser.cpp
         test/me/primop.cpp
     )
-
     set_target_properties(thorin-gtest PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
-    target_include_directories(thorin-gtest PRIVATE . ${CMAKE_BINARY_DIR}/half-src/include)
+    target_include_directories(thorin-gtest PRIVATE . half/include)
     target_link_libraries(thorin-gtest thorin gtest_main)
     gtest_discover_tests(thorin-gtest)
 endif()
