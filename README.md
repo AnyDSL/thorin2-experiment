@@ -16,7 +16,7 @@ Rewrite of Thorin featuring PTS and dependent types.
 ## Building
 
 ```bash
-git clone git@github.com:AnyDSL/thorin2.git
+git clone --recurse-submodules git@github.com:AnyDSL/thorin2.git
 cd thorin2
 mkdir build
 cd build
