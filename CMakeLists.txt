@@ -4,25 +4,6 @@ project(thorin VERSION 2.0 DESCRIPTION "the higher-order intermediate representa
 option(BUILD_SHARED_LIBS "Build libthorin as shared library (so/dll)" ON)
 option(BUILD_TESTS "Build gtest-based test program" ON)
 
-## download and unpack half at configure time
-#configure_file(CMakeLists.txt.half.in half-download/CMakeLists.txt)
-
-#execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-    #RESULT_VARIABLE result
-    #WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/half-download)
-
-#if(result)
-    #message(FATAL_ERROR "CMake step for half failed: ${result}")
-#endif()
-
-#execute_process(COMMAND ${CMAKE_COMMAND} --build .
-    #RESULT_VARIABLE result
-    #WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/half-download)
-
-#if(result)
-    #message(FATAL_ERROR "Build step for half failed: ${result}")
-#endif()
-
 add_library(thorin
     thorin/def.cpp
     thorin/def.h
@@ -84,7 +65,6 @@ add_library(thorin
     thorin/util/types.h
     thorin/util/utility.h
 )
-
 set_target_properties(thorin PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 set_target_properties(thorin PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(thorin PROPERTIES SOVERSION 2)
