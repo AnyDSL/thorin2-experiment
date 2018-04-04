@@ -35,8 +35,8 @@ script:
   - if [ "$CXX" = "g++" ]    ; then export CXX="g++-7";       fi
   - mkdir -p build
   - cd build
-  - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DMEMORYCHECK_SUPPRESSIONS_FILE="/home/travis/build/AnyDSL/thorin2/resources/valgrind.supp" ..
+  - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DMEMORYCHECK_SUPPRESSIONS_FILE="${TRAVIS_BUILD_DIR}/resources/valgrind.supp" ..
   - make -j3 VERBOSE=1
   - ctest -T memcheck -j3
-  - cat /home/travis/build/AnyDSL/thorin2/build/Testing/Temporary/MemoryChecker.*.log > out && cat out
+  - cat ${TRAVIS_BUILD_DIR}/build/Testing/Temporary/MemoryChecker.*.log > out && cat out
   - test ! -s out
