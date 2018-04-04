@@ -45,6 +45,8 @@ template<> struct w2r<16> { typedef r16 type; };
 template<> struct w2r<32> { typedef r32 type; };
 template<> struct w2r<64> { typedef r64 type; };
 
+namespace literals {
+
 /// A @c size_t literal. Use @c 0_s to disambiguate @c 0 from @c nullptr.
 constexpr size_t operator""_s(unsigned long long int i) { return size_t(i); }
 
@@ -59,6 +61,10 @@ constexpr u64 operator""_u64(unsigned long long int i) { return u64(i); }
 inline /*constexpr*/ r16 operator""_r16(long double d) { return r16(d); } // wait till fixed upstream
 constexpr r32 operator""_r32(long double d) { return r32(d); }
 constexpr r64 operator""_r64(long double d) { return r64(d); }
+
+}
+
+using namespace literals;
 
 inline half        rem(half a, half b)               { return      fmod(a, b); }
 inline float       rem(float a, float b)             { return std::fmod(a, b); }
