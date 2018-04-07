@@ -31,10 +31,10 @@ enum class FFlags : int64_t {
 #define THORIN_M_OP(m) m(MOp, sdiv) m(MOp, udiv) m(MOp, smod) m(MOp, umod)
 /// Integer operations that neither take wflags nor do they produce a side effect.
 #define THORIN_I_OP(m) m(IOp, ashr) m(IOp, lshr) m(IOp, iand) m(IOp, ior) m(IOp, ixor)
-/// Floating point (real) operations that take @p FFlags.
-#define THORIN_R_OP(m) m(FOp, fadd) m(FOp, fsub) m(FOp, fmul) m(FOp, fdiv) m(FOp, fmod)
-/// All cast operations that cast from/to real/signed/unsigned.
-#define THORIN_CAST(m) m(Cast, scast) m(Cast, ucast) m(Cast, rcast) m(Cast, s2r) m(Cast, u2r) m(Cast, r2s) m(Cast, r2u)
+/// Floating point (float) operations that take @p FFlags.
+#define THORIN_F_OP(m) m(FOp, fadd) m(FOp, fsub) m(FOp, fmul) m(FOp, fdiv) m(FOp, fmod)
+/// All cast operations that cast from/to float/signed/unsigned.
+#define THORIN_CAST(m) m(Cast, scast) m(Cast, ucast) m(Cast, fcast) m(Cast, s2f) m(Cast, u2f) m(Cast, f2s) m(Cast, f2u)
 
 #define THORIN_I_CMP(m)              /* PM MP G L E                                                   */ \
                      m(ICmp,    f)   /*  o  o o o o - always false                                    */ \
@@ -70,7 +70,7 @@ enum class FFlags : int64_t {
                      m(ICmp,   ne)   /*  x  x x x o - not equal                                       */ \
                      m(ICmp,    t)   /*  x  x x x x - always true                                     */
 
-#define THORIN_R_CMP(m)           /* U G L E                                 */ \
+#define THORIN_F_CMP(m)           /* U G L E                                 */ \
                      m(FCmp,   f) /* o o o o - always false                  */ \
                      m(FCmp,   e) /* o o o x - ordered and equal             */ \
                      m(FCmp,   l) /* o o x o - ordered and less              */ \
@@ -108,7 +108,7 @@ enum class IOp : size_t {
 
 enum class FOp : size_t {
 #define CODE(T, o) o,
-    THORIN_R_OP(CODE)
+    THORIN_F_OP(CODE)
 #undef CODE
 };
 
@@ -123,7 +123,7 @@ enum class ICmp : size_t {
 
 enum class FCmp : size_t {
 #define CODE(T, o) o,
-    THORIN_R_CMP(CODE)
+    THORIN_F_CMP(CODE)
 #undef CODE
 };
 
@@ -178,7 +178,7 @@ constexpr const char* op2str(IOp o) {
 constexpr const char* op2str(FOp o) {
     switch (o) {
 #define CODE(T, o) case T::o: return #o;
-    THORIN_R_OP(CODE)
+    THORIN_F_OP(CODE)
 #undef CODE
         default: THORIN_UNREACHABLE;
     }
@@ -196,7 +196,7 @@ constexpr const char* op2str(ICmp o) {
 constexpr const char* op2str(FCmp o) {
     switch (o) {
 #define CODE(T, o) case T::o: return "rcmp_" #o;
-    THORIN_R_CMP(CODE)
+    THORIN_F_CMP(CODE)
 #undef CODE
         default: THORIN_UNREACHABLE;
     }
@@ -219,9 +219,9 @@ namespace thorin {
 template<> constexpr auto Num<me::WOp>  = 0_s THORIN_W_OP (CODE);
 template<> constexpr auto Num<me::MOp>  = 0_s THORIN_M_OP (CODE);
 template<> constexpr auto Num<me::IOp>  = 0_s THORIN_I_OP (CODE);
-template<> constexpr auto Num<me::FOp>  = 0_s THORIN_R_OP (CODE);
+template<> constexpr auto Num<me::FOp>  = 0_s THORIN_F_OP (CODE);
 template<> constexpr auto Num<me::ICmp> = 0_s THORIN_I_CMP(CODE);
-template<> constexpr auto Num<me::FCmp> = 0_s THORIN_R_CMP(CODE);
+template<> constexpr auto Num<me::FCmp> = 0_s THORIN_F_CMP(CODE);
 template<> constexpr auto Num<me::Cast> = 0_s THORIN_CAST (CODE);
 #undef CODE
 

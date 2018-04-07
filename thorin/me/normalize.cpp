@@ -312,9 +312,9 @@ const Def* normalize_Cast(const Def* callee, const Def* arg, Debug dbg) {
     THORIN_W_OP (CODE)
     THORIN_M_OP (CODE)
     THORIN_I_OP (CODE)
-    THORIN_R_OP (CODE)
+    THORIN_F_OP (CODE)
     THORIN_I_CMP(CODE)
-    THORIN_R_CMP(CODE)
+    THORIN_F_CMP(CODE)
     THORIN_CAST(CODE)
 #undef CODE
 
