@@ -20,13 +20,13 @@ using half_float::half;
 
 typedef uint8_t u8; typedef uint16_t u16; typedef uint32_t u32; typedef uint64_t u64;
 typedef  int8_t s8; typedef  int16_t s16; typedef  int32_t s32; typedef  int64_t s64;
-/*       */ typedef half_float::half r16; typedef    float r32; typedef   double r64;
+/*       */ typedef half_float::half f16; typedef    float f32; typedef   double f64;
 
 #define THORIN_S_TYPES(m) m(s8)  m(s16) m(s32) m(s64)
 #define THORIN_U_TYPES(m) m(u8)  m(u16) m(u32) m(u64)
-#define THORIN_R_TYPES(m)        m(r16) m(r32) m(r64)
+#define THORIN_F_TYPES(m)        m(f16) m(f32) m(f64)
 
-#define THORIN_TYPES(m) THORIN_S_TYPES(m) THORIN_U_TYPES(m) THORIN_R_TYPES(m)
+#define THORIN_TYPES(m) THORIN_S_TYPES(m) THORIN_U_TYPES(m) THORIN_F_TYPES(m)
 
 template<int> struct w2u {};
 template<> struct w2u< 8> { typedef  u8 type; };
@@ -41,9 +41,9 @@ template<> struct w2s<32> { typedef s32 type; };
 template<> struct w2s<64> { typedef s64 type; };
 
 template<int> struct w2r {};
-template<> struct w2r<16> { typedef r16 type; };
-template<> struct w2r<32> { typedef r32 type; };
-template<> struct w2r<64> { typedef r64 type; };
+template<> struct w2r<16> { typedef f16 type; };
+template<> struct w2r<32> { typedef f32 type; };
+template<> struct w2r<64> { typedef f64 type; };
 
 namespace literals {
 
@@ -58,9 +58,9 @@ constexpr  u8 operator"" _u8(unsigned long long int i) { return  u8(i); }
 constexpr u16 operator""_u16(unsigned long long int i) { return u16(i); }
 constexpr u32 operator""_u32(unsigned long long int i) { return u32(i); }
 constexpr u64 operator""_u64(unsigned long long int i) { return u64(i); }
-inline /*constexpr*/ r16 operator""_r16(long double d) { return r16(d); } // wait till fixed upstream
-constexpr r32 operator""_r32(long double d) { return r32(d); }
-constexpr r64 operator""_r64(long double d) { return r64(d); }
+inline /*constexpr*/ f16 operator""_f16(long double d) { return f16(d); } // wait till fixed upstream
+constexpr f32 operator""_f32(long double d) { return f32(d); }
+constexpr f64 operator""_f64(long double d) { return f64(d); }
 
 }
 

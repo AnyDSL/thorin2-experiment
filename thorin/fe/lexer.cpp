@@ -253,10 +253,10 @@ Literal Lexer::parse_literal() {
         }
     }
 
-    if (base == 10 && accept('r', false)) {
-        if (accept("16", false)) return {Literal::Tag::Lit_r16, r16(strtof(str().c_str(), nullptr))};
-        if (accept("32", false)) return {Literal::Tag::Lit_r32, r32(strtof(str().c_str(), nullptr))};
-        if (accept("64", false)) return {Literal::Tag::Lit_r64, r64(strtod(str().c_str(), nullptr))};
+    if (base == 10 && accept('f', false)) {
+        if (accept("16", false)) return {Literal::Tag::Lit_f16, f16(strtof(str().c_str(), nullptr))};
+        if (accept("32", false)) return {Literal::Tag::Lit_f32, f32(strtof(str().c_str(), nullptr))};
+        if (accept("64", false)) return {Literal::Tag::Lit_f64, f64(strtod(str().c_str(), nullptr))};
     }
 
     // untyped literals

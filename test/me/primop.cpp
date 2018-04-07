@@ -10,8 +10,8 @@ TEST(Primop, Types) {
     EXPECT_EQ(w.type_i(16), w.app(w.type_i(), w.lit_nat_16()));
     EXPECT_EQ(w.type_i(64), w.app(w.type_i(), w.lit_nat_64()));
 
-    EXPECT_EQ(w.type_r(64), w.app(w.type_r(), w.lit_nat_64()));
-    EXPECT_EQ(w.type_r(16), w.app(w.type_r(), w.lit_nat_16()));
+    EXPECT_EQ(w.type_f(64), w.app(w.type_f(), w.lit_nat_64()));
+    EXPECT_EQ(w.type_f(16), w.app(w.type_f(), w.lit_nat_16()));
 }
 
 template<class T, class O, O o>
@@ -42,8 +42,8 @@ TEST(Primop, ConstFolding) {
 #define CODE(T) test_fold<T, WOp, WOp::add>(w, w.type_i());
     THORIN_U_TYPES(CODE)
 #undef CODE
-#define CODE(T) test_fold<T, ROp, ROp::radd>(w, w.type_r());
-    THORIN_R_TYPES(CODE)
+#define CODE(T) test_fold<T, FOp, FOp::fadd>(w, w.type_f());
+    THORIN_F_TYPES(CODE)
 #undef CODE
 
     EXPECT_EQ(w.op<IOp::ashr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(u8(-1)));
@@ -95,33 +95,33 @@ void test_icmp(World& w) {
 }
 
 template<class T>
-void test_rcmp(World& w) {
-    auto t = w.type_r(sizeof(T)*8);
+void test_fcmp(World& w) {
+    auto t = w.type_f(sizeof(T)*8);
     auto l23 = w.lit(t, T(-23));
     auto l42 = w.lit(t, T(42));
     auto lt = w.lit_true();
     auto lf = w.lit_false();
 
-    EXPECT_EQ(w.op<RCmp:: e>(l23, l23), lt);
-    EXPECT_EQ(w.op<RCmp::ne>(l23, l23), lf);
-    EXPECT_EQ(w.op<RCmp::ge>(l23, l23), lt);
-    EXPECT_EQ(w.op<RCmp:: g>(l23, l23), lf);
-    EXPECT_EQ(w.op<RCmp::le>(l23, l23), lt);
-    EXPECT_EQ(w.op<RCmp:: l>(l23, l23), lf);
+    EXPECT_EQ(w.op<FCmp:: e>(l23, l23), lt);
+    EXPECT_EQ(w.op<FCmp::ne>(l23, l23), lf);
+    EXPECT_EQ(w.op<FCmp::ge>(l23, l23), lt);
+    EXPECT_EQ(w.op<FCmp:: g>(l23, l23), lf);
+    EXPECT_EQ(w.op<FCmp::le>(l23, l23), lt);
+    EXPECT_EQ(w.op<FCmp:: l>(l23, l23), lf);
 
-    EXPECT_EQ(w.op<RCmp:: o>(l23, l42), lt);
-    EXPECT_EQ(w.op<RCmp::ne>(l23, l42), lt);
-    EXPECT_EQ(w.op<RCmp:: g>(l23, l42), lf);
-    EXPECT_EQ(w.op<RCmp::ge>(l23, l42), lf);
-    EXPECT_EQ(w.op<RCmp:: l>(l23, l42), lt);
-    EXPECT_EQ(w.op<RCmp::le>(l23, l42), lt);
+    EXPECT_EQ(w.op<FCmp:: o>(l23, l42), lt);
+    EXPECT_EQ(w.op<FCmp::ne>(l23, l42), lt);
+    EXPECT_EQ(w.op<FCmp:: g>(l23, l42), lf);
+    EXPECT_EQ(w.op<FCmp::ge>(l23, l42), lf);
+    EXPECT_EQ(w.op<FCmp:: l>(l23, l42), lt);
+    EXPECT_EQ(w.op<FCmp::le>(l23, l42), lt);
 
-    EXPECT_EQ(w.op<RCmp:: e>(l42, l23), lf);
-    EXPECT_EQ(w.op<RCmp::ne>(l42, l23), lt);
-    EXPECT_EQ(w.op<RCmp:: g>(l42, l23), lt);
-    EXPECT_EQ(w.op<RCmp::ge>(l42, l23), lt);
-    EXPECT_EQ(w.op<RCmp:: l>(l42, l23), lf);
-    EXPECT_EQ(w.op<RCmp::le>(l42, l23), lf);
+    EXPECT_EQ(w.op<FCmp:: e>(l42, l23), lf);
+    EXPECT_EQ(w.op<FCmp::ne>(l42, l23), lt);
+    EXPECT_EQ(w.op<FCmp:: g>(l42, l23), lt);
+    EXPECT_EQ(w.op<FCmp::ge>(l42, l23), lt);
+    EXPECT_EQ(w.op<FCmp:: l>(l42, l23), lf);
+    EXPECT_EQ(w.op<FCmp::le>(l42, l23), lf);
 }
 
 TEST(Primop, Cmp) {
@@ -129,15 +129,15 @@ TEST(Primop, Cmp) {
 #define CODE(T) test_icmp<T>(w);
     THORIN_U_TYPES(CODE)
 #undef CODE
-#define CODE(T) test_rcmp<T>(w);
-    THORIN_R_TYPES(CODE)
+#define CODE(T) test_fcmp<T>(w);
+    THORIN_F_TYPES(CODE)
 #undef CODE
 }
 
 TEST(Primop, Cast) {
     World w;
-    auto x = w.op<Cast::rcast>(16, w.lit_r(23.f));
-    auto y = w.op<Cast::r2s>(8, w.lit_r(-1.f));
+    auto x = w.op<Cast::rcast>(16, w.lit_f(23.f));
+    auto y = w.op<Cast::r2s>(8, w.lit_f(-1.f));
     x->dump(); x->type()->dump();
     y->dump(); y->type()->dump();
 }
@@ -163,11 +163,11 @@ TEST(Primop, Normalize) {
     EXPECT_EQ(add(add(b, l2), add(a, l3)), add(b, add(a, l5)));
     EXPECT_EQ(add(add(b, l2), add(a, l3)), add(b, add(a, l5)));
 
-    auto x = w.axiom(w.type_r(16), {"x"});
-    EXPECT_FALSE(w.op<ROp::rmul>(x, w.lit_r(0._r16))->isa<Lit>());
-    EXPECT_FALSE(w.op<ROp::rmul>(RFlags::nnan, x, w.lit_r(0._r16))->isa<Lit>());
-    EXPECT_EQ(w.op<ROp::rmul>(RFlags::fast, w.lit_r(0._r16), x), w.lit_r(0._r16));
-    EXPECT_EQ(w.op<ROp::rmul>(RFlags::fast, w.lit_r(-0._r16), x), w.lit_r(-0._r16));
+    auto x = w.axiom(w.type_f(16), {"x"});
+    EXPECT_FALSE(w.op<FOp::fmul>(x, w.lit_f(0._f16))->isa<Lit>());
+    EXPECT_FALSE(w.op<FOp::fmul>(FFlags::nnan, x, w.lit_f(0._f16))->isa<Lit>());
+    EXPECT_EQ(w.op<FOp::fmul>(FFlags::fast, w.lit_f(0._f16), x), w.lit_f(0._f16));
+    EXPECT_EQ(w.op<FOp::fmul>(FFlags::fast, w.lit_f(-0._f16), x), w.lit_f(-0._f16));
 
     //auto m = w.axiom(w.type_mem(), {"m"});
     // TODO why are those things not equal?
@@ -181,19 +181,19 @@ TEST(Primop, Ptr) {
     auto e = w.op_enter(m);
     auto f = w.extract(e, 1);
     m = w.extract(e, 0_u64);
-    auto p1 = w.op_slot(w.type_r(32), f);
-    auto p2 = w.op_slot(w.type_r(32), f);
+    auto p1 = w.op_slot(w.type_f(32), f);
+    auto p2 = w.op_slot(w.type_f(32), f);
     EXPECT_NE(p1, p2);
-    EXPECT_EQ(p1->type(), w.type_ptr(w.type_r(32)));
-    EXPECT_EQ(p2->type(), w.type_ptr(w.type_r(32)));
-    auto s1 = w.op_store(m, p1, w.lit_r(23.f));
-    //auto s2 = w.op_store(m, p1, w.lit_r(23.f));
+    EXPECT_EQ(p1->type(), w.type_ptr(w.type_f(32)));
+    EXPECT_EQ(p2->type(), w.type_ptr(w.type_f(32)));
+    auto s1 = w.op_store(m, p1, w.lit_f(23.f));
+    //auto s2 = w.op_store(m, p1, w.lit_f(23.f));
     //EXPECT_NE(s1, s2);
     auto l1 = w.op_load(s1, p1);
     //auto l2 = w.op_load(s1, p1);
     //EXPECT_NE(l1, l2);
     EXPECT_EQ(w.extract(l1, 0_u64)->type(), w.type_mem());
-    EXPECT_EQ(w.extract(l1, 1_u64)->type(), w.type_r(32));
+    EXPECT_EQ(w.extract(l1, 1_u64)->type(), w.type_f(32));
 }
 
 }

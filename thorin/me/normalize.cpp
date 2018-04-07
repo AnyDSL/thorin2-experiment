@@ -39,7 +39,7 @@ static const Def* normalize_mtuple(const Def* callee, const Def* m, const Def* a
 
 bool is_commutative(WOp op) { return op == WOp:: add || op == WOp:: mul; }
 bool is_commutative(IOp op) { return op == IOp::iand || op == IOp:: ior || op == IOp::ixor; }
-bool is_commutative(ROp op) { return op == ROp::radd || op == ROp::rmul; }
+bool is_commutative(FOp op) { return op == FOp::fadd || op == FOp::fmul; }
 
 /*
  * WArithop
@@ -244,26 +244,26 @@ static const Def* try_rfold(const Def* callee, const Def* a, const Def* b, Debug
     return normalize_tuple(callee, {a, b}, dbg);
 }
 
-template<ROp op>
-const Def* normalize_ROp(const Def* callee, const Def* arg, Debug dbg) {
+template<FOp op>
+const Def* normalize_FOp(const Def* callee, const Def* arg, Debug dbg) {
     auto& world = static_cast<World&>(callee->world());
     auto [a, b] = split(arg);
-    if (auto result = try_rfold<FoldROp<op>::template Fold>(callee, a, b, dbg)) return result;
+    if (auto result = try_rfold<FoldFOp<op>::template Fold>(callee, a, b, dbg)) return result;
 
-    auto f = RFlags(get_nat(app_arg(app_callee(app_callee(callee)))));
+    auto f = FFlags(get_nat(app_arg(app_callee(app_callee(callee)))));
     auto w = get_nat(app_arg(app_callee(callee)));
 
     if (is_commutative(op)) {
         if (auto la = foldable_to_left(a, b)) {
-            if (is_rzero(w, la)) {
-                if (op == ROp::radd) return b;
-                if (op == ROp::rmul && has_feature(f, RFlags::finite | RFlags::nsz)) return la;
+            if (is_fzero(w, la)) {
+                if (op == FOp::fadd) return b;
+                if (op == FOp::fmul && has_feature(f, FFlags::finite | FFlags::nsz)) return la;
             }
         }
     }
 
     if (is_commutative(op)) {
-        if (has_feature(f, RFlags::reassoc))
+        if (has_feature(f, FFlags::reassoc))
             return reassociate(callee, a, b, dbg);
         return commute(callee, a, b, dbg);
     }
@@ -284,12 +284,12 @@ const Def* normalize_ICmp(const Def* callee, const Def* arg, Debug dbg) {
     return w.raw_app(callee, {a, b}, dbg);
 }
 
-template<RCmp op>
-const Def* normalize_RCmp(const Def* callee, const Def* arg, Debug dbg) {
+template<FCmp op>
+const Def* normalize_FCmp(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = static_cast<World&>(callee->world());
 
     auto [a, b] = split(arg);
-    if (auto result = try_rfold<FoldRCmp<op>::template Fold>(callee, a, b, dbg)) return result;
+    if (auto result = try_rfold<FoldFCmp<op>::template Fold>(callee, a, b, dbg)) return result;
 
     return w.raw_app(callee, {a, b}, dbg);
 }

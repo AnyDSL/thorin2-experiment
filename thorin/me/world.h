@@ -18,11 +18,11 @@ public:
 
     //@{ types and type constructors
     const Axiom* type_i() { return type_i_; }
-    const Axiom* type_r() { return type_r_; }
+    const Axiom* type_f() { return type_f_; }
     const App* type_i(s64 width) { return type_i(lit_nat(width)); }
-    const App* type_r(s64 width) { return type_r(lit_nat(width)); }
+    const App* type_f(s64 width) { return type_f(lit_nat(width)); }
     const App* type_i(const Def* width, Debug dbg = {}) { return app(type_i(), width, dbg)->as<App>(); }
-    const App* type_r(const Def* width, Debug dbg = {}) { return app(type_r(), width, dbg)->as<App>(); }
+    const App* type_f(const Def* width, Debug dbg = {}) { return app(type_f(), width, dbg)->as<App>(); }
     const Axiom* type_mem() { return type_mem_; }
     const Axiom* type_frame() { return type_frame_; }
     const Axiom* type_ptr() { return type_ptr_; }
@@ -37,9 +37,9 @@ public:
         static_assert(std::is_integral<I>());
         return lit(type_i(sizeof(I)*8), {val});
     }
-    template<class R> const Lit* lit_r(R val) {
-        static_assert(std::is_floating_point<R>() || std::is_same<R, r16>());
-        return lit(type_r(sizeof(R)*8), {val});
+    template<class R> const Lit* lit_f(R val) {
+        static_assert(std::is_floating_point<R>() || std::is_same<R, f16>());
+        return lit(type_f(sizeof(R)*8), {val});
     }
     //@}
 
@@ -77,14 +77,14 @@ public:
     }
     //@}
 
-    //@{ arithmetic operations for ROp
-    template<ROp o> const Axiom* op() { return ROp_[size_t(o)]; }
-    template<ROp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<o>(RFlags::none, a, b, dbg); }
-    template<ROp o> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
+    //@{ arithmetic operations for FOp
+    template<FOp o> const Axiom* op() { return FOp_[size_t(o)]; }
+    template<FOp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<o>(FFlags::none, a, b, dbg); }
+    template<FOp o> const Def* op(FFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
         return op<o>(flags, width, shape, a, b, dbg);
     }
-    template<ROp o> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+    template<FOp o> const Def* op(FFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
         return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
     //@}
@@ -101,13 +101,13 @@ public:
     //@}
 
     //@{ rcmp
-    template<RCmp o> const Axiom* op() { return RCmp_[size_t(o)]; }
-    template<RCmp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<o>(RFlags::none, a, b, dbg); }
-    template<RCmp o> const Def* op(RFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
+    template<FCmp o> const Axiom* op() { return FCmp_[size_t(o)]; }
+    template<FCmp o> const Def* op(const Def* a, const Def* b, Debug dbg = {}) { return op<o>(FFlags::none, a, b, dbg); }
+    template<FCmp o> const Def* op(FFlags flags, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
         return op<o>(flags, width, shape, a, b, dbg);
     }
-    template<RCmp o> const Def* op(RFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
+    template<FCmp o> const Def* op(FFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
         return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
     }
 
@@ -160,16 +160,16 @@ public:
 
 private:
     const Axiom* type_i_;
-    const Axiom* type_r_;
+    const Axiom* type_f_;
     const Axiom* type_mem_;
     const Axiom* type_frame_;
     const Axiom* type_ptr_;
     std::array<const Axiom*, Num<WOp >> WOp_;
     std::array<const Axiom*, Num<MOp >> MOp_;
     std::array<const Axiom*, Num<IOp >> IOp_;
-    std::array<const Axiom*, Num<ROp >> ROp_;
+    std::array<const Axiom*, Num<FOp >> FOp_;
     std::array<const Axiom*, Num<ICmp>> ICmp_;
-    std::array<const Axiom*, Num<RCmp>> RCmp_;
+    std::array<const Axiom*, Num<FCmp>> FCmp_;
     std::array<const Axiom*, Num<Cast>> Cast_;
     const Axiom* op_enter_;
     const Axiom* op_lea_;

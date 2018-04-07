@@ -33,7 +33,7 @@ TEST(Lexer, Tokens) {
 }
 
 TEST(Lexer, Literals) {
-    std::string str = "1s8 1s16 1s32 1s64 1u8 1u16 1u32 1u64 1.0r16 1.0r32 1.0r64 +1s32 -1s32 0xFFs32 -0xFFs32 0o10s32 -0o10s32 0b10s32 -0b10s32 0ₐ 0₁";
+    std::string str = "1s8 1s16 1s32 1s64 1u8 1u16 1u32 1u64 1.0f16 1.0f32 1.0f64 +1s32 -1s32 0xFFs32 -0xFFs32 0o10s32 -0o10s32 0b10s32 -0b10s32 0ₐ 0₁";
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
@@ -50,9 +50,9 @@ TEST(Lexer, Literals) {
         Literal::Tag::Lit_u32,
         Literal::Tag::Lit_u64,
 
-        Literal::Tag::Lit_r16,
-        Literal::Tag::Lit_r32,
-        Literal::Tag::Lit_r64,
+        Literal::Tag::Lit_f16,
+        Literal::Tag::Lit_f32,
+        Literal::Tag::Lit_f64,
 
         Literal::Tag::Lit_s32,
         Literal::Tag::Lit_s32,
@@ -77,9 +77,9 @@ TEST(Lexer, Literals) {
         Box(u32(1)),
         Box(u64(1)),
 
-        Box(r16(1.0)),
-        Box(r32(1.0)),
-        Box(r64(1.0)),
+        Box(f16(1.0)),
+        Box(f32(1.0)),
+        Box(f64(1.0)),
 
         Box(s32(1)),
         Box(s32(-1)),

@@ -82,12 +82,12 @@ template<> struct FoldIOp<IOp::iand> { template<int w> struct Fold { static Box 
 template<> struct FoldIOp<IOp::ior > { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() |  b.get<T>()); } }; };
 template<> struct FoldIOp<IOp::ixor> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2u<w>::type T; return T(a.get<T>() ^  b.get<T>()); } }; };
 
-template<ROp> struct FoldROp {};
-template<> struct FoldROp<ROp::radd> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() +  b.get<T>()); } }; };
-template<> struct FoldROp<ROp::rsub> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() -  b.get<T>()); } }; };
-template<> struct FoldROp<ROp::rmul> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() *  b.get<T>()); } }; };
-template<> struct FoldROp<ROp::rdiv> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() /  b.get<T>()); } }; };
-template<> struct FoldROp<ROp::rmod> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(rem(a.get<T>(), b.get<T>())); } }; };
+template<FOp> struct FoldFOp {};
+template<> struct FoldFOp<FOp::fadd> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() +  b.get<T>()); } }; };
+template<> struct FoldFOp<FOp::fsub> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() -  b.get<T>()); } }; };
+template<> struct FoldFOp<FOp::fmul> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() *  b.get<T>()); } }; };
+template<> struct FoldFOp<FOp::fdiv> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(a.get<T>() /  b.get<T>()); } }; };
+template<> struct FoldFOp<FOp::fmod> { template<int w> struct Fold { static Box run(Box a, Box b) { typedef typename w2r<w>::type T; return T(rem(a.get<T>(), b.get<T>())); } }; };
 
 template<ICmp cmp> struct FoldICmp {
     template<int w> struct Fold {
@@ -108,17 +108,17 @@ template<ICmp cmp> struct FoldICmp {
     };
 };
 
-template<RCmp cmp> struct FoldRCmp {
+template<FCmp cmp> struct FoldFCmp {
     template<int w> struct Fold {
         inline static Box run(Box a, Box b) {
             typedef typename w2r<w>::type T;
             auto x = a.get<T>();
             auto y = b.get<T>();
             bool result = false;
-            result |= (cmp & RCmp::u) != RCmp::f && std::isunordered(x, y);
-            result |= (cmp & RCmp::g) != RCmp::f && x > y;
-            result |= (cmp & RCmp::l) != RCmp::f && x < y;
-            result |= (cmp & RCmp::e) != RCmp::f && x == y;
+            result |= (cmp & FCmp::u) != FCmp::f && std::isunordered(x, y);
+            result |= (cmp & FCmp::g) != FCmp::f && x > y;
+            result |= (cmp & FCmp::l) != FCmp::f && x < y;
+            result |= (cmp & FCmp::e) != FCmp::f && x == y;
             return result;
         }
     };

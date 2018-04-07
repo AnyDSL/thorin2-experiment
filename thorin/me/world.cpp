@@ -29,7 +29,7 @@ World::World(Debug dbg)
     : thorin::World(dbg)
 {
     type_i_     = axiom("int", "Πnat. *");
-    type_r_     = axiom("real", "Πnat. *");
+    type_f_     = axiom("float", "Πnat. *");
     type_ptr_   = axiom("ptr", "Π[*, nat]. *");
     type_mem_   = axiom(star(QualifierTag::Linear), {"M"});
     type_frame_ = axiom(star(), {"F"});
@@ -37,9 +37,9 @@ World::World(Debug dbg)
     auto type_WOp  = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
     auto type_MOp  = fe::parse(*this, "         Πw: nat. Πs: 𝕄. Π[M, [s;  int w], [s;  int w]]. [M, [s;  int w]]");
     auto type_IOp  = fe::parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s;  int w] ");
-    auto type_ROp  = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; real w] ");
+    auto type_FOp  = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; float w], [s; float w]].     [s; float w] ");
     auto type_ICmp = fe::parse(*this, "         Πw: nat. Πs: 𝕄. Π[   [s;  int w], [s;  int w]].     [s; bool]");
-    auto type_RCmp = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; real w], [s; real w]].     [s; bool]");
+    auto type_FCmp = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   [s; float w], [s; float w]].     [s; bool]");
 
 #define CODE(T, o) \
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});
@@ -53,11 +53,11 @@ World::World(Debug dbg)
 
     Cast_[size_t(Cast::scast)] = axiom("scast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]", normalize_Cast<Cast::scast>);
     Cast_[size_t(Cast::ucast)] = axiom("ucast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s;  int dw]", normalize_Cast<Cast::ucast>);
-    Cast_[size_t(Cast::rcast)] = axiom("rcast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s; real dw]", normalize_Cast<Cast::rcast>);
-    Cast_[size_t(Cast::s2r  )] = axiom("s2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]", normalize_Cast<Cast::s2r>);
-    Cast_[size_t(Cast::u2r  )] = axiom("u2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; real dw]", normalize_Cast<Cast::u2r>);
-    Cast_[size_t(Cast::r2s  )] = axiom("r2s",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]", normalize_Cast<Cast::r2s>);
-    Cast_[size_t(Cast::r2u  )] = axiom("r2u",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; real sw]. [s;  int dw]", normalize_Cast<Cast::r2u>);
+    Cast_[size_t(Cast::rcast)] = axiom("rcast", "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; float sw]. [s; float dw]", normalize_Cast<Cast::rcast>);
+    Cast_[size_t(Cast::s2r  )] = axiom("s2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; float dw]", normalize_Cast<Cast::s2r>);
+    Cast_[size_t(Cast::u2r  )] = axiom("u2r",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s;  int sw]. [s; float dw]", normalize_Cast<Cast::u2r>);
+    Cast_[size_t(Cast::r2s  )] = axiom("r2s",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; float sw]. [s;  int dw]", normalize_Cast<Cast::r2s>);
+    Cast_[size_t(Cast::r2u  )] = axiom("r2u",   "Π[dw: nat, sw: nat]. Πs: 𝕄. Π[s; float sw]. [s;  int dw]", normalize_Cast<Cast::r2u>);
 
     op_lea_   = axiom("lea",   "Π[s: 𝕄, Ts: [s; *], as: nat]. Π[ptr([j: s; Ts#j], as), i: s]. ptr(Ts#i, as)");
     op_load_  = axiom("load",  "Π[T: *, a: nat]. Π[M, ptr(T, a)]. [M, T]");

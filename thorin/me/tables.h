@@ -11,7 +11,7 @@ enum class WFlags : int64_t {
     nuw  = 1 << 1,
 };
 
-enum class RFlags : int64_t {
+enum class FFlags : int64_t {
     none     = 0,
     nnan     = 1 << 0, ///< No NaNs - Allow optimizations to assume the arguments and result are not NaN. Such optimizations are required to retain defined behavior over NaNs, but the value of the result is undefined.
     ninf     = 1 << 1, ///< No Infs - Allow optimizations to assume the arguments and result are not +/-Inf. Such optimizations are required to retain defined behavior over +/-Inf, but the value of the result is undefined.
@@ -31,8 +31,8 @@ enum class RFlags : int64_t {
 #define THORIN_M_OP(m) m(MOp, sdiv) m(MOp, udiv) m(MOp, smod) m(MOp, umod)
 /// Integer operations that neither take wflags nor do they produce a side effect.
 #define THORIN_I_OP(m) m(IOp, ashr) m(IOp, lshr) m(IOp, iand) m(IOp, ior) m(IOp, ixor)
-/// Floating point (real) operations that take @p RFlags.
-#define THORIN_R_OP(m) m(ROp, radd) m(ROp, rsub) m(ROp, rmul) m(ROp, rdiv) m(ROp, rmod)
+/// Floating point (real) operations that take @p FFlags.
+#define THORIN_R_OP(m) m(FOp, fadd) m(FOp, fsub) m(FOp, fmul) m(FOp, fdiv) m(FOp, fmod)
 /// All cast operations that cast from/to real/signed/unsigned.
 #define THORIN_CAST(m) m(Cast, scast) m(Cast, ucast) m(Cast, rcast) m(Cast, s2r) m(Cast, u2r) m(Cast, r2s) m(Cast, r2u)
 
@@ -71,22 +71,22 @@ enum class RFlags : int64_t {
                      m(ICmp,    t)   /*  x  x x x x - always true                                     */
 
 #define THORIN_R_CMP(m)           /* U G L E                                 */ \
-                     m(RCmp,   f) /* o o o o - always false                  */ \
-                     m(RCmp,   e) /* o o o x - ordered and equal             */ \
-                     m(RCmp,   l) /* o o x o - ordered and less              */ \
-                     m(RCmp,  le) /* o o x x - ordered and less or equal     */ \
-                     m(RCmp,   g) /* o x o o - ordered and greater           */ \
-                     m(RCmp,  ge) /* o x o x - ordered and greater or equal  */ \
-                     m(RCmp,  ne) /* o x x o - ordered and not equal         */ \
-                     m(RCmp,   o) /* o x x x - ordered (no NaNs)             */ \
-                     m(RCmp,   u) /* x o o o - unordered (either NaNs)       */ \
-                     m(RCmp,  ue) /* x o o x - unordered or equal            */ \
-                     m(RCmp,  ul) /* x o x o - unordered or less             */ \
-                     m(RCmp, ule) /* x o x x - unordered or less or equal    */ \
-                     m(RCmp,  ug) /* x x o o - unordered or greater          */ \
-                     m(RCmp, uge) /* x x o x - unordered or greater or equal */ \
-                     m(RCmp, une) /* x x x o - unordered or not equal        */ \
-                     m(RCmp,   t) /* x x x x - always true                   */
+                     m(FCmp,   f) /* o o o o - always false                  */ \
+                     m(FCmp,   e) /* o o o x - ordered and equal             */ \
+                     m(FCmp,   l) /* o o x o - ordered and less              */ \
+                     m(FCmp,  le) /* o o x x - ordered and less or equal     */ \
+                     m(FCmp,   g) /* o x o o - ordered and greater           */ \
+                     m(FCmp,  ge) /* o x o x - ordered and greater or equal  */ \
+                     m(FCmp,  ne) /* o x x o - ordered and not equal         */ \
+                     m(FCmp,   o) /* o x x x - ordered (no NaNs)             */ \
+                     m(FCmp,   u) /* x o o o - unordered (either NaNs)       */ \
+                     m(FCmp,  ue) /* x o o x - unordered or equal            */ \
+                     m(FCmp,  ul) /* x o x o - unordered or less             */ \
+                     m(FCmp, ule) /* x o x x - unordered or less or equal    */ \
+                     m(FCmp,  ug) /* x x o o - unordered or greater          */ \
+                     m(FCmp, uge) /* x x o x - unordered or greater or equal */ \
+                     m(FCmp, une) /* x x x o - unordered or not equal        */ \
+                     m(FCmp,   t) /* x x x x - always true                   */
 
 enum class WOp : size_t {
 #define CODE(T, o) o,
@@ -106,7 +106,7 @@ enum class IOp : size_t {
 #undef CODE
 };
 
-enum class ROp : size_t {
+enum class FOp : size_t {
 #define CODE(T, o) o,
     THORIN_R_OP(CODE)
 #undef CODE
@@ -121,7 +121,7 @@ enum class ICmp : size_t {
     ss = gle,
 };
 
-enum class RCmp : size_t {
+enum class FCmp : size_t {
 #define CODE(T, o) o,
     THORIN_R_CMP(CODE)
 #undef CODE
@@ -136,17 +136,17 @@ enum class Cast : size_t {
 constexpr WFlags operator|(WFlags a, WFlags b) { return WFlags(int64_t(a) | int64_t(b)); }
 constexpr WFlags operator&(WFlags a, WFlags b) { return WFlags(int64_t(a) & int64_t(b)); }
 
-constexpr RFlags operator|(RFlags a, RFlags b) { return RFlags(int64_t(a) | int64_t(b)); }
-constexpr RFlags operator&(RFlags a, RFlags b) { return RFlags(int64_t(a) & int64_t(b)); }
+constexpr FFlags operator|(FFlags a, FFlags b) { return FFlags(int64_t(a) | int64_t(b)); }
+constexpr FFlags operator&(FFlags a, FFlags b) { return FFlags(int64_t(a) & int64_t(b)); }
 
 constexpr ICmp operator|(ICmp a, ICmp b) { return ICmp(int64_t(a) | int64_t(b)); }
 constexpr ICmp operator&(ICmp a, ICmp b) { return ICmp(int64_t(a) & int64_t(b)); }
 
-constexpr RCmp operator|(RCmp a, RCmp b) { return RCmp(int64_t(a) | int64_t(b)); }
-constexpr RCmp operator&(RCmp a, RCmp b) { return RCmp(int64_t(a) & int64_t(b)); }
+constexpr FCmp operator|(FCmp a, FCmp b) { return FCmp(int64_t(a) | int64_t(b)); }
+constexpr FCmp operator&(FCmp a, FCmp b) { return FCmp(int64_t(a) & int64_t(b)); }
 
 constexpr bool has_feature(WFlags flags, WFlags feature) { return (flags & feature) == feature; }
-constexpr bool has_feature(RFlags flags, RFlags feature) { return (flags & feature) == feature; }
+constexpr bool has_feature(FFlags flags, FFlags feature) { return (flags & feature) == feature; }
 
 constexpr const char* op2str(WOp o) {
     switch (o) {
@@ -175,7 +175,7 @@ constexpr const char* op2str(IOp o) {
     }
 }
 
-constexpr const char* op2str(ROp o) {
+constexpr const char* op2str(FOp o) {
     switch (o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_R_OP(CODE)
@@ -193,7 +193,7 @@ constexpr const char* op2str(ICmp o) {
     }
 }
 
-constexpr const char* op2str(RCmp o) {
+constexpr const char* op2str(FCmp o) {
     switch (o) {
 #define CODE(T, o) case T::o: return "rcmp_" #o;
     THORIN_R_CMP(CODE)
@@ -219,9 +219,9 @@ namespace thorin {
 template<> constexpr auto Num<me::WOp>  = 0_s THORIN_W_OP (CODE);
 template<> constexpr auto Num<me::MOp>  = 0_s THORIN_M_OP (CODE);
 template<> constexpr auto Num<me::IOp>  = 0_s THORIN_I_OP (CODE);
-template<> constexpr auto Num<me::ROp>  = 0_s THORIN_R_OP (CODE);
+template<> constexpr auto Num<me::FOp>  = 0_s THORIN_R_OP (CODE);
 template<> constexpr auto Num<me::ICmp> = 0_s THORIN_I_CMP(CODE);
-template<> constexpr auto Num<me::RCmp> = 0_s THORIN_R_CMP(CODE);
+template<> constexpr auto Num<me::FCmp> = 0_s THORIN_R_CMP(CODE);
 template<> constexpr auto Num<me::Cast> = 0_s THORIN_CAST (CODE);
 #undef CODE
 
