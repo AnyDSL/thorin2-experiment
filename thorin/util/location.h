@@ -13,7 +13,6 @@ namespace thorin {
 class Location {
 public:
     Location() = default;
-
     Location(const char* filename, uint32_t front_line, uint32_t front_col, uint32_t back_line, uint32_t back_col)
         : filename_(filename)
         , front_line_(front_line)
@@ -21,11 +20,9 @@ public:
         , back_line_(back_line)
         , back_col_(back_col)
     {}
-
     Location(const char* filename, uint32_t line, uint32_t col)
         : Location(filename, line, col, line, col)
     {}
-
     Location(Location front, Location back)
         : Location(front.filename(), front.front_line(), front.front_col(), back.back_line(), back.back_col())
     {}
@@ -35,6 +32,14 @@ public:
     uint32_t front_col() const { return front_col_; }
     uint32_t back_line() const { return back_line_; }
     uint32_t back_col() const { return back_col_; }
+    bool operator==(Location other) const {
+        return this->filename_   == other.filename_
+            && this->front_line_ == other.front_line_
+            && this->front_col_  == other.front_col_
+            && this->back_line_  == other.back_line_
+            && this->back_col_   == other.back_col_ ;
+    }
+    bool operator!=(Location other) const { return !((*this) == other); }
 
     Location front() const { return {filename_, front_line(), front_col(), front_line(), front_col()}; }
     Location back() const { return {filename_, back_line(), back_col(), back_line(), back_col()}; }
@@ -54,7 +59,6 @@ public:
     Debug(Debug&&) = default;
     Debug(const Debug&) = default;
     Debug& operator=(const Debug&) = default;
-
     Debug(Location location, Symbol name)
         : Location(location)
         , name_(name)
