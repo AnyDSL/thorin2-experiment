@@ -3,7 +3,6 @@
 namespace thorin::fe {
 
 std::ostream& operator<<(std::ostream& os, const Token& t) {
-    os << t.location() << ": ";
     if (t.isa(Token::Tag::Identifier))
         return os << t.symbol();
     if (t.isa(Token::Tag::Literal))

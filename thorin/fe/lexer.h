@@ -62,12 +62,9 @@ private:
     char peek_bytes_[5] = {0, 0, 0, 0, 0};
     const char* filename_;
     std::string str_;
-    uint32_t front_line_ = 1,
-             front_col_  = 1,
-             back_line_  = 1,
-             back_col_   = 1,
-             peek_line_  = 1,
-             peek_col_   = 1;
+    uint32_t front_line_, front_col_;
+    uint32_t  back_line_,  back_col_;
+    uint32_t  peek_line_,  peek_col_;
 };
 
 }

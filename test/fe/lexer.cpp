@@ -32,6 +32,28 @@ TEST(Lexer, Tokens) {
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Eof));
 }
 
+TEST(Lexer, LocationId) {
+    std::istringstream is(" test  abc    def if  \nwhile   foo   ");
+    Lexer lexer(is, "stdin");
+    auto t1 = lexer.lex();
+    auto t2 = lexer.lex();
+    auto t3 = lexer.lex();
+    auto t4 = lexer.lex();
+    auto t5 = lexer.lex();
+    auto t6 = lexer.lex();
+    auto t7 = lexer.lex();
+    std::ostringstream oss;
+    thorin::streamf(oss, "{} {} {} {} {} {} {}", t1, t2, t3, t4, t5, t6, t7);
+    EXPECT_EQ(oss.str(), "test abc def if while foo <eof>");
+    EXPECT_EQ(t1.location(), Location("stdin", 1,  2, 1,  5));
+    EXPECT_EQ(t2.location(), Location("stdin", 1,  8, 1, 10));
+    EXPECT_EQ(t3.location(), Location("stdin", 1, 15, 1, 17));
+    EXPECT_EQ(t4.location(), Location("stdin", 1, 19, 1, 20));
+    EXPECT_EQ(t5.location(), Location("stdin", 2,  1, 2,  5));
+    EXPECT_EQ(t6.location(), Location("stdin", 2,  9, 2, 11));
+    EXPECT_EQ(t7.location(), Location("stdin", 2, 14, 2, 14));
+}
+
 TEST(Lexer, Literals) {
     std::string str = "1s8 1s16 1s32 1s64 1u8 1u16 1u32 1u64 1.0f16 1.0f32 1.0f64 +1s32 -1s32 0xFFs32 -0xFFs32 0o10s32 -0o10s32 0b10s32 -0b10s32 0ₐ 0₁";
     std::istringstream is(str, std::ios::binary);

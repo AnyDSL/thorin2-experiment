@@ -19,12 +19,12 @@ Lexer::Lexer(std::istream& is, const char* filename)
     : stream_(is)
     , filename_(filename)
 {
-    if (!stream_)
-        throw std::runtime_error("stream is bad");
+    if (!stream_) throw std::runtime_error("stream is bad");
     next();
-
-    // eat utf-8 BOM if present
-    accept(0xfeff, false);
+    accept(0xfeff, false); // eat utf-8 BOM if present
+    front_line_ = front_col_  = 1;
+    back_line_  = back_col_   = 1;
+    peek_line_  = peek_col_   = 1;
 }
 
 inline bool is_bit_set(uint32_t val, uint32_t n) { return bool((val >> n) & 1_u32); }
@@ -38,6 +38,8 @@ uint32_t Lexer::next() {
     peek_bytes_[0] = b1;
 
     if (b1 == (uint32_t) std::istream::traits_type::eof()) {
+        back_line_ = peek_line_;
+        back_col_  = peek_col_;
         peek_ = b1;
         return result;
     }
@@ -66,7 +68,7 @@ uint32_t Lexer::next() {
 
         if (b1 == '\n') {
             ++peek_line_;
-            peek_col_ = 1;
+            peek_col_ = 0;
         } else
             ++peek_col_;
         peek_ = b1;

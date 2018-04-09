@@ -47,7 +47,7 @@ namespace thorin::fe {
     f(Sharp,            "#") \
     f(Arrow,            "<-") \
     f(Cn,               "cn") \
-    f(Eof,              "eof")
+    f(Eof,              "<eof>")
 
 struct Literal {
     enum class Tag {
