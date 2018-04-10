@@ -4,8 +4,8 @@
 namespace thorin {
 
 Location& Location::operator+=(Location other) {
-    this->back_line_ = other.back_line;
-    this->back_col_  = other.back_col;
+    this->back_line_ = other.back_line_;
+    this->back_col_  = other.back_col_;
     return *this;
 }
 
