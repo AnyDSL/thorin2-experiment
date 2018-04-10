@@ -40,6 +40,8 @@ public:
             && this->back_col_   == other.back_col_ ;
     }
     bool operator!=(Location other) const { return !((*this) == other); }
+    Location& operator+=(Location);
+    Location operator+(Location other) { Location res(*this); res += other; return res; }
 
     Location front() const { return {filename_, front_line(), front_col(), front_line(), front_col()}; }
     Location back() const { return {filename_, back_line(), back_col(), back_line(), back_col()}; }
@@ -50,7 +52,6 @@ protected:
     uint16_t front_line_ = 1, front_col_ = 1, back_line_ = 1, back_col_ = 1;
 };
 
-Location operator+(Location l1, Location l2);
 std::ostream& operator<<(std::ostream&, Location);
 
 class Debug : public Location {

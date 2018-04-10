@@ -3,8 +3,10 @@
 
 namespace thorin {
 
-Location operator+(Location l1, Location l2) {
-    return {l1.filename(), l1.front_line(), l1.front_col(), l2.back_line(), l2.back_col()};
+Location& Location::operator+=(Location other) {
+    this->back_line_ = other.back_line;
+    this->back_col_  = other.back_col;
+    return *this;
 }
 
 std::ostream& operator<<(std::ostream& os, Location l) {
