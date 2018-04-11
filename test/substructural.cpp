@@ -6,8 +6,9 @@
 using namespace thorin;
 using namespace thorin::fe;
 
-// TODO remove this macro
-#define print_value_type(x) do{ std::cout << "<" << x->gid() << "> " << (x->name() == "" ? #x : x->name()) << " = " << x << ": " << x->type() << endl; }while(0)
+void print_value_type(const Def* def) {
+    outln("<{}> {} = {}: {}", def->gid(), def->name(), def, def->type());
+}
 
 TEST(Qualifiers, Lattice) {
     World w;
@@ -245,20 +246,20 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
     print_value_type(ref42);
     auto ref = w.extract(ref42, 1, {"ref"});
     print_value_type(ref);
-    auto cap = w.extract(ref42, 2);
+    auto cap = w.extract(ref42, 2, {"cap"});
     print_value_type(cap);
-    auto read42 = w.app(w.app(ReadRef, Nat), {phantom, Write, ref, cap});
+    auto read42 = w.app(w.app(ReadRef, Nat), {phantom, Write, ref, cap}, {"read42"});
     print_value_type(read42);
     auto read_cap = w.extract(read42, 1);
-    auto write0 = w.app(w.app(WriteRef, Nat), {phantom, ref, read_cap, n0});
+    auto write0 = w.app(w.app(WriteRef, Nat), {phantom, ref, read_cap, n0}, {"write0"});
     print_value_type(write0);
-    auto split = w.app(SplitFCap, {phantom, Write, write0});
+    auto split = w.app(SplitFCap, {phantom, Write, write0}, {"split"});
     print_value_type(split);
-    auto read0 = w.app(w.app(ReadRef, Nat), {phantom, w.app(Read, Write), ref, w.extract(split, 0_s)});
+    auto read0 = w.app(w.app(ReadRef, Nat), {phantom, w.app(Read, Write), ref, w.extract(split, 0_s)}, {"read0"});
     print_value_type(read0);
-    auto join = w.app(JoinFCap, {phantom, Write, w.extract(split, 1), w.extract(read0, 1)});
+    auto join = w.app(JoinFCap, {phantom, Write, w.extract(split, 1), w.extract(read0, 1)}, {"join"});
     print_value_type(join);
-    auto free = w.app(w.app(FreeRef, Nat), {phantom, ref, join});
+    auto free = w.app(w.app(FreeRef, Nat), {phantom, ref, join}, {"free"});
     print_value_type(free);
     // TODO asserts to typecheck correct and incorrect usage
 }
