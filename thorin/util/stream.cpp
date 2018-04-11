@@ -22,7 +22,7 @@ std::string Streamable::to_string() const {
     return os.str();
 }
 
-void Streamable::dump() const { stream(std::cout) << thorin::endl; }
+void Streamable::dump() const { stream(std::cout) << std::endl; }
 std::ostream& operator<<(std::ostream& ostream, const Streamable* s) { return s->stream(ostream); }
 
 std::ostream& streamf(std::ostream& os, const char* fmt) {

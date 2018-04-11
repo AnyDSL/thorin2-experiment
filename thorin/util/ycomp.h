@@ -42,9 +42,9 @@ public:
     YCompScope(std::ostream& ostream, YCompOrientation orientation)
         : ostream_(ostream)
     {
-        ostream << "graph: {" << up_endl;
-        ostream << "layoutalgorithm: compilergraph" << endl;
-        ostream << "orientation: " << YCompOrientation_Names[orientation] << endl;
+        streamln(ostream, "graph: {");
+        streamln(ostream, "layoutalgorithm: compilergraph");
+        streamln(ostream, "orientation: {}", YCompOrientation_Names[orientation]);
     }
 
     YCompScope(std::ostream& ostream, const Scope& scope, Range<I> range,
@@ -55,7 +55,7 @@ public:
     }
 
     ~YCompScope() {
-        ostream() << down_endl << "}" << endl;
+        ostream() << "\n}\n";
     }
 
     std::ostream& ostream() { return ostream_; }
@@ -63,22 +63,21 @@ public:
 private:
     void addScope(const Scope& scope, Range<I> range, SuccFct succs) {
         auto print_node = [&] (decltype(*range.begin()) node) {
-            streamf(ostream(), "node: {{ title: \"{}\" label: \"{}\" }}", node, node) << endl;
+            streamln(ostream(), "node: {{ title: \"{}\" label: \"{}\" }}", node, node);
 
             for (const auto& succ : succs(node))
-                streamf(ostream(), "edge: {{ sourcename: \"{}\" targetname: \"{}\" class: {} }}",
-                        node, &*succ, 13) << endl; // 16
+                streamln(ostream(), "edge: {{ sourcename: \"{}\" targetname: \"{}\" class: {} }}", node, &*succ, 13);
         };
 
         auto title = scope.entry()->unique_name() + ".scope";
-        ostream() << "graph: {" << up_endl;
-        ostream() << "title: \"" << title << "\"" << endl;
-        ostream() << "label: \"" << title << "\"" << endl;
+        ostream() << "graph: {" << std::endl;
+        ostream() << "title: \"" << title << "\"" << std::endl;
+        ostream() << "label: \"" << title << "\"" << std::endl;
 
         for (auto n : range)
             print_node(n);
 
-        ostream() << down_endl << "}";
+        ostream() << std::endl << "}";
     }
 
     std::ostream& ostream_;
