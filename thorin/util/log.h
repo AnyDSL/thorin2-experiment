@@ -23,9 +23,9 @@ public:
     };
 
     static std::ostream& stream();
-    static void set(Level min_level, std::ostream* stream, bool print_loc = true);
+    static void set(Level min_level, std::ostream& stream, bool print_loc = true);
     static Level min_level();
-    static void set_stream(std::ostream* stream);
+    static void set_stream(std::ostream& stream);
     static void set_min_level(Level min_level);
     static void set_print_loc(bool print_loc);
     static std::string level2string(Level);
@@ -54,7 +54,7 @@ public:
     }
 
 private:
-    static std::ostream* get_stream();
+    static std::ostream& get_stream();
     static Level get_min_level();
     static bool get_print_loc();
 
