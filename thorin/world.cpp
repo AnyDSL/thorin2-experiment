@@ -404,7 +404,7 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
         DefVector qualifiers;
         for (auto def : defs) {
             if (auto q = def->template isa<Qualifier>()) {
-                accu = T::Qualifier::join(accu,  q->qualifier_tag());
+                accu = T::Qualifier::join(accu, q->qualifier_tag());
             } else {
                 assert(is_qualifier(def));
                 assert(def);
