@@ -28,11 +28,11 @@ install:
   - bash cmake.sh --skip-license --prefix="${HOME}/cmake"
   - export PATH=~/cmake/bin:$PATH
   - cmake --version
-  - ${CXX} --version
 
 script:
   - if [ "$CXX" = "clang++" ]; then export CXX="clang++-5.0"; fi
   - if [ "$CXX" = "g++" ]    ; then export CXX="g++-7";       fi
+  - ${CXX} --version
   - mkdir -p build
   - cd build
   - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DMEMORYCHECK_SUPPRESSIONS_FILE="${TRAVIS_BUILD_DIR}/resources/valgrind.supp" ..
