@@ -106,7 +106,6 @@ const Def* normalize_tuple(const Def* callee, Defs args, Debug dbg) {
 
 const Def* normalize_arity_succ(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
-    const Def* pred = nullptr;
     auto [qualifier, arg_arity] = split(arg);
     if (auto arity = arg_arity->isa<Arity>()) {
         auto arity_val = arity->value();
