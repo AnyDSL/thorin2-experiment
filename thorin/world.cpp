@@ -446,6 +446,7 @@ const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
 
 const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, const Def* body, Debug dbg) {
     auto type = pi(q, domain, body->type(), dbg);
+    // TODO check/infer qualifier from free variables/params
 
     if (auto app = body->isa<App>()) {
         bool eta_property = app->arg()->isa<Var>() && app->arg()->as<Var>()->index() == 0;
