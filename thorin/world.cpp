@@ -147,14 +147,15 @@ World::World(Debug dbg)
     THORIN_N_OP(CODE)
 #undef CODE
 
-    arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: 𝔸q].𝔸q");         // {"Sₐ"}
+    arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: 𝔸q].𝔸q", normalize_arity_succ); // {"Sₐ"}
     index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸q].ASucc p");       // {"0ⁱ"}
     index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: 𝔸q].Πa.ASucc p"); // {"Sⁱ"}
 
-    arity_eliminator_       = axiom("Eₐ",  "Πq: ℚ.ΠP: [Π𝔸q.*q].ΠP(0ₐq).Π[Πa:𝔸q.ΠP a.P(ASucc (q,a))].Πa: 𝔸q.P a", normalize_arity_eliminator);
-    arity_eliminator_arity_ = axiom("R𝔸ₐ", "Πq: ℚ.Π𝔸q.Π[Π𝔸q.Π𝔸q.𝔸q].Π𝔸q.𝔸q");
-    arity_eliminator_multi_ = axiom("R𝕄ₐ", "Πq: ℚ.Π𝕄q.Π[Π𝔸q.Π𝕄q.𝕄q].Π𝔸q.𝕄q");
-    arity_eliminator_star_  = axiom("R*ₐ",  "Πq: ℚ.Π*q.Π[Π𝔸q.Π*q.*q].Π𝔸q.*q");
+    arity_eliminator_       = axiom("Elimₐ",  "Πq: ℚ. ΠP: [Π𝔸q.*q]. ΠP(0ₐq). Π[Πa:𝔸q.ΠP a.P(ASucc (q,a))]. Πa: 𝔸q. P a",
+                                    normalize_arity_eliminator);
+    arity_recursor_to_arity_ = axiom("Recₐ𝔸", "Πq: ℚ. Π𝔸q. Π[Π𝔸q. Π𝔸q. 𝔸q]. Π𝔸q. 𝔸q", normalize_arity_eliminator);
+    arity_recursor_to_multi_ = axiom("Recₐ𝕄", "Πq: ℚ. Π𝕄q. Π[Π𝔸q. Π𝕄q. 𝕄q]. Π𝔸q. 𝕄q", normalize_arity_eliminator);
+    arity_recursor_to_star_  = axiom("Recₐ*", "Πq: ℚ. Π*q. Π[Π𝔸q. Π*q. *q]. Π𝔸q. *q", normalize_arity_eliminator);
     // index_eliminator_ = axiom(fe::parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");

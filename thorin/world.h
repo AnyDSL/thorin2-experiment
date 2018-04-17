@@ -215,6 +215,9 @@ public:
     const Def* arity_succ() { return arity_succ_; }
     const Def* arity_succ(const Def* arity, Debug dbg = {});
     const Def* arity_eliminator() const { return arity_eliminator_; }
+    const Def* arity_recursor_to_arity() const { return arity_recursor_to_arity_; }
+    const Def* arity_recursor_to_multi() const { return arity_recursor_to_multi_; }
+    const Def* arity_recursor_to_star() const { return arity_recursor_to_star_; }
     //@}
 
     //@{ axioms
@@ -475,9 +478,9 @@ protected:
     const QualifierType* qualifier_type_;
     const Axiom* arity_succ_;
     const Axiom* arity_eliminator_;
-    const Axiom* arity_eliminator_arity_;
-    const Axiom* arity_eliminator_multi_;
-    const Axiom* arity_eliminator_star_;
+    const Axiom* arity_recursor_to_arity_;
+    const Axiom* arity_recursor_to_multi_;
+    const Axiom* arity_recursor_to_star_;
     const Axiom* index_zero_;
     const Axiom* index_succ_;
     std::array<const Qualifier*, 4> qualifier_;

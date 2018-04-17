@@ -1,8 +1,10 @@
 #include "gtest/gtest.h"
 
 #include "thorin/world.h"
+#include "thorin/fe/parser.h"
 
 using namespace thorin;
+using namespace thorin::fe;
 
 TEST(Arity, Successor) {
     World w;
@@ -103,11 +105,19 @@ TEST(Arity, PrefixExtract) {
     EXPECT_EQ(w.variadic(w.sigma({a3, a2}), unit), w.extract(v_marray, i1_2)->type());
 }
 
-TEST(Arity, Eliminators) {
+TEST(Arity, DependentArityEliminator) {
     World w;
     auto lam_bool = w.lambda(w.arity_kind(), w.type_bool());
     auto step_negate = w.lambda(w.arity_kind(), w.lambda(w.type_bool(), w.op_bnot(w.var(w.type_bool(), 0))));
     auto arity_is_even = w.app(w.app(w.app(w.app(w.arity_eliminator(), w.unlimited()), lam_bool), w.lit_true()), step_negate);
     EXPECT_EQ(w.lit_true(), w.app(arity_is_even, w.arity(0)));
     EXPECT_EQ(w.lit_false(), w.app(arity_is_even, w.arity(3)));
+}
+
+TEST(Arity, ArityRecursors) {
+    World w;
+    auto double_step = fe::parse(w, "λcurr:𝔸. λacc:𝔸. ASucc (ᵁ, ASucc (ᵁ, acc))");
+    auto arity_double = w.app(w.app(w.app(w.arity_recursor_to_arity(), w.unlimited()), w.arity(0)), double_step);
+    EXPECT_EQ(w.arity(0), w.app(arity_double, w.arity(0)));
+    EXPECT_EQ(w.arity(8), w.app(arity_double, w.arity(4)));
 }
