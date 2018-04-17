@@ -120,4 +120,13 @@ TEST(Arity, ArityRecursors) {
     auto arity_double = w.app(w.app(w.app(w.arity_recursor_to_arity(), w.unlimited()), w.arity(0)), double_step);
     EXPECT_EQ(w.arity(0), w.app(arity_double, w.arity(0)));
     EXPECT_EQ(w.arity(8), w.app(arity_double, w.arity(4)));
+    auto quad_step = fe::parse(w, "λcurr:𝔸. λacc:𝕄. [ASucc (ᵁ, curr); ASucc (ᵁ, curr)])");
+    auto arity_quad = w.app(w.app(w.app(w.arity_recursor_to_multi(), w.unlimited()), w.arity(0)), quad_step);
+    EXPECT_EQ(w.arity(0), w.app(arity_quad, w.arity(0)));
+    EXPECT_EQ(w.variadic(w.arity(3), w.arity(3)), w.app(arity_quad, w.arity(3)));
+    auto nest_step = fe::parse(w, "λcurr:𝔸. λacc:*. [ASucc (ᵁ, curr); acc])");
+    auto arity_nest = w.app(w.app(w.app(w.arity_recursor_to_star(), w.unlimited()), w.type_nat()), nest_step);
+    EXPECT_EQ(w.type_nat(), w.app(arity_nest, w.arity(0)));
+    EXPECT_EQ(w.type_nat(), w.app(arity_nest, w.arity(1)));
+    EXPECT_EQ(w.variadic(w.arity(3), w.variadic(w.arity(2), w.type_nat())), w.app(arity_nest, w.arity(3)));
 }
