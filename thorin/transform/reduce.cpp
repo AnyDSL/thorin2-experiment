@@ -70,7 +70,7 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
         // this var is free - shift by shift but inline a sole tuple arg if applicable
         auto total_shift = shift() == 1 && !is_shift_only()
                 && args_[0]->isa<Tuple>() ? -args_[0]->num_ops()+1 : shift();
-        return world().var(var->type(), var->index() - total_shift, var->debug());
+        return world().var(new_type, var->index() - total_shift, var->debug());
     }
 
     if (auto old_lambda = old_def->isa_lambda()) {

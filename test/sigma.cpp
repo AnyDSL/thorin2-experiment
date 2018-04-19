@@ -68,9 +68,7 @@ TEST(Sigma, EtaConversion) {
     auto B = w.type_bool();
 
     EXPECT_EQ(w.extract(w.tuple({v, v, v}), w.var(w.arity(3), 17)), v);
-    auto v43 = w.var(w.arity_kind(), 43);
-    EXPECT_EQ(w.pack(w.var(w.arity_kind(), 42), w.extract(w.var(w.variadic(v43, N), 23), w.var(v43, 0))),
-              w.var(w.variadic(v43, N), 22));
+    EXPECT_EQ(parse(w, "(\\42::𝔸 ; \\23::[\\43::𝔸; nat]#\\0::\\43::𝔸)"), parse(w, "\\22::[\\42::𝔸; nat]"));
 
     auto t = w.axiom(w.sigma({N, B}), {"t"});
     EXPECT_EQ(w.tuple({w.extract(t, 0_s), w.extract(t, 1_s)}), t);
