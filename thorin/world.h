@@ -204,20 +204,23 @@ public:
         return index(this->arity(arity), idx, location);
     }
     const Lit* index(const Arity* arity, u64 index, Location location = {});
+    const Def* index_zero() const { return index_zero_; }
     const Def* index_zero(const Def* arity, Location location = {});
+    const Def* index_succ() const { return index_succ_; }
     const Def* index_succ(const Def* index, Debug dbg = {});
+    const Axiom* index_eliminator() const { return index_eliminator_; };
     //@}
 
     //@{ create Arity
     const Arity* arity(const Def* q, u64 a, Location location = {});
     const Arity* arity(QualifierTag q, u64 a, Location location = {}) { return arity(qualifier(q), a, location); }
     const Arity* arity(u64 a, Location location = {}) { return arity(QualifierTag::u, a, location); }
-    const Def* arity_succ() { return arity_succ_; }
+    const Axiom* arity_succ() { return arity_succ_; }
     const Def* arity_succ(const Def* arity, Debug dbg = {});
-    const Def* arity_eliminator() const { return arity_eliminator_; }
-    const Def* arity_recursor_to_arity() const { return arity_recursor_to_arity_; }
-    const Def* arity_recursor_to_multi() const { return arity_recursor_to_multi_; }
-    const Def* arity_recursor_to_star() const { return arity_recursor_to_star_; }
+    const Axiom* arity_eliminator() const { return arity_eliminator_; }
+    const Axiom* arity_recursor_to_arity() const { return arity_recursor_to_arity_; }
+    const Axiom* arity_recursor_to_multi() const { return arity_recursor_to_multi_; }
+    const Axiom* arity_recursor_to_star() const { return arity_recursor_to_star_; }
     //@}
 
     //@{ axioms
@@ -483,6 +486,7 @@ protected:
     const Axiom* arity_recursor_to_star_;
     const Axiom* index_zero_;
     const Axiom* index_succ_;
+    const Axiom* index_eliminator_;
     std::array<const Qualifier*, 4> qualifier_;
     std::array<const Star*,  4> star_;
     std::array<const Def*, 4> unit_;
