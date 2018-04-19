@@ -88,52 +88,57 @@ private:
     Token expect(Token::Tag, const char* context);
     bool accept(Token::Tag);
 
-    class DefOrBinder {
+
+    class DefOrIndex {
     public:
-        DefOrBinder() {}
-        DefOrBinder(const Def* def)
+        DefOrIndex() {}
+        DefOrIndex(const Def* def)
             : data_(def, 0)
         {}
-        DefOrBinder(size_t binder)
+        DefOrIndex(size_t binder)
             : data_((const Def*)-1, binder)
         {}
 
         bool is_def() const { return data_.ptr() != (const Def*)-1; }
-        bool is_binder() const { return !is_def(); }
+        bool is_index() const { return !is_def(); }
         const Def* def() const { assert(is_def()); return data_.ptr(); }
-        size_t binder() const { assert(is_binder()); return data_.index(); }
+        size_t index() const { assert(is_index()); return data_.index(); }
 
     private:
         TaggedPtr<const Def, size_t> data_;
     };
 
-    struct Binder {
-        Symbol name;
-        size_t depth;               // binding depth
-        std::vector<size_t> indices;    // sequence of extract indices
-        DefOrBinder shadow;
-
-        Binder(Symbol name, size_t depth, DefOrBinder shadow)
-            : name(name), depth(depth), shadow(shadow)
-        {}
-    };
     struct Declaration {
         Symbol name;
-        const Def* def;
-        DefOrBinder shadow;
+        DefOrIndex shadow;
 
-        Declaration(Symbol name, const Def* def, DefOrBinder shadow)
-            : name(name), def(def), shadow(shadow)
+        Declaration(Symbol name, DefOrIndex shadow)
+            : name(name), shadow(shadow)
+        {}
+    };
+    struct Binder : Declaration {
+        size_t depth;                // binding depth
+        std::vector<size_t> indices; // sequence of extract indices
+
+        Binder(Symbol name, size_t depth, DefOrIndex shadow)
+            : Declaration(name, shadow), depth(depth)
+        {}
+    };
+    struct Definition : Declaration {
+        const Def* def;
+
+        Definition(Symbol name, const Def* def, DefOrIndex shadow)
+            : Declaration(name, shadow), def(def)
         {}
     };
 
     void push_debruijn_type(const Def* type);
     void pop_debruijn_binders();
     void shift_binders(size_t count);
-    DefOrBinder lookup(const Tracker&, Symbol);
+    DefOrIndex lookup(const Tracker&, Symbol);
     void insert_identifier(Symbol, const Def* = nullptr);
-    void push_decl_scope();
-    void pop_decl_scope();
+    void push_scope();
+    void pop_scope();
     template<typename... Args>
     [[noreturn]] void error(Location location, const char* fmt, Args... args) {
         std::ostringstream oss;
@@ -150,9 +155,9 @@ private:
     Token ahead_[2];
 
     // manage a stack of scopes for lets, nominals, variables and debruijn
-    thorin::HashMap<Symbol, DefOrBinder, Symbol::Hash> id2defbinder_;
-    std::vector<Declaration> declarations_;
-    std::vector<size_t> scopes_;
+    thorin::HashMap<Symbol, DefOrIndex, Symbol::Hash> id2def_or_index_;
+    std::vector<Definition> definitions_;
+    std::vector<size_t> definition_scopes_;
 
     std::vector<const Def*> debruijn_types_;
     std::vector<Binder> binders_;

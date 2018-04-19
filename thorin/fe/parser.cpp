@@ -311,12 +311,12 @@ const Def* Parser::parse_identifier() {
     } else if (accept(Token::Tag::Equal)) { // id = e; def
         // let
         // TODO parse multiple lets/nominals into one scope for mutual recursion and such
-        push_decl_scope();
+        push_scope();
         auto let = parse_def();
         expect(Token::Tag::Semicolon, "a let definition");
         insert_identifier(symbol, let);
         def = parse_def();
-        pop_decl_scope();
+        pop_scope();
     } else if (accept(Token::Tag::ColonColon)) { // id :: type := e; def
         // TODO parse multiple lets/nominals into one scope for mutual recursion and such
         auto type = parse_def();
@@ -326,35 +326,35 @@ const Def* Parser::parse_identifier() {
             auto lambda = world_.lambda(type->as<Pi>(), tracker.location()); // TODO properly set back location
             insert_identifier(symbol, lambda);
             Tracker tracker(this);
-            push_decl_scope();
+            push_scope();
             auto symbol = expect(Token::Tag::Identifier, "parameter name for nomimal λ").symbol();
             insert_identifier(symbol, lambda->param({tracker.location(), symbol}));
             expect(Token::Tag::Dot, "λ abstraction");
             auto body = parse_def();
-            pop_decl_scope();
+            pop_scope();
             lambda->set(body);
         } else {
             assert(false && "TODO");
         }
 
         eat(Token::Tag::Semicolon);
-        push_decl_scope();
+        push_scope();
         def = parse_def();
-        pop_decl_scope();
+        pop_scope();
     } else {
         // use
-        auto decl = lookup(tracker, symbol);
-        if (decl.is_binder()) {
-            auto binder_idx = decl.binder();
-            const Binder& it = binders_[binder_idx];
+        auto def_or_index = lookup(tracker, symbol);
+        if (def_or_index.is_index()) {
+            const Binder& it = binders_[def_or_index.index()];
             auto index = depth_ - it.depth;
+            assert(index > 0);
             auto type = shift_free_vars(debruijn_types_[it.depth], index);
             const Def* var = world_.var(type, index - 1, tracker.location());
             for (auto i : reverse_range(it.indices))
                 var = world_.extract(var, i, tracker.location());
             def = var;
         } else { // nominal, let, or axiom
-            return decl.def();
+            return def_or_index.def();
         }
     }
     return def;
@@ -371,9 +371,9 @@ void Parser::pop_debruijn_binders() {
         auto binder = binders_.back();
         if (binder.depth < depth_) break;
         if (binder.shadow.is_def() && binder.shadow.def() == nullptr)
-            id2defbinder_.erase(binder.name);
+            id2def_or_index_.erase(binder.name);
         else
-            id2defbinder_[binder.name] = binder.shadow;
+            id2def_or_index_[binder.name] = binder.shadow;
         binders_.pop_back();
     }
     debruijn_types_.pop_back();
@@ -391,11 +391,11 @@ void Parser::shift_binders(size_t count) {
     depth_ = new_depth;
 }
 
-Parser::DefOrBinder Parser::lookup(const Tracker& tracker, Symbol identifier) {
+Parser::DefOrIndex Parser::lookup(const Tracker& tracker, Symbol identifier) {
     assert(!identifier.empty() && "identifier is empty");
 
-    auto decl = id2defbinder_.find(identifier);
-    if (decl == id2defbinder_.end()) {
+    auto def_or_index = id2def_or_index_.find(identifier);
+    if (def_or_index == id2def_or_index_.end()) {
         if (auto a = world_.lookup_axiom(identifier))
             return a;
         else if (auto e = world_.lookup_external(identifier))
@@ -404,44 +404,46 @@ Parser::DefOrBinder Parser::lookup(const Tracker& tracker, Symbol identifier) {
             error(tracker.location(), "'{}' not found in current scope", identifier.str());
         }
     }
-    return decl->second;
+    return def_or_index->second;
 }
 
 void Parser::insert_identifier(Symbol identifier, const Def* def) {
     assert(!identifier.empty() && "identifier is empty");
 
-    DefOrBinder shadow = (const Def*) nullptr;
-    auto decl = id2defbinder_.find(identifier);
-    if (decl != id2defbinder_.end())
-        shadow = decl->second;
+    DefOrIndex shadow = (const Def*) nullptr;
+    auto def_or_index = id2def_or_index_.find(identifier);
+    if (def_or_index != id2def_or_index_.end())
+        shadow = def_or_index->second;
 
-    DefOrBinder mapping = def;
+    DefOrIndex mapping = def;
     if (def)
-        declarations_.emplace_back(identifier, def, shadow);
+        definitions_.emplace_back(identifier, def, shadow);
     else {
         // nullptr means we want a binder
         mapping = binders_.size();
         binders_.emplace_back(identifier, depth_, shadow);
     }
 
-    id2defbinder_[identifier] = mapping;
+    id2def_or_index_[identifier] = mapping;
 }
 
-void Parser::push_decl_scope() { scopes_.push_back(declarations_.size()); }
+void Parser::push_scope() {
+    definition_scopes_.push_back(definitions_.size());
+    // binder_scopes_.push_back(binders_.size());
+}
 
-void Parser::pop_decl_scope() {
-    size_t scope = scopes_.back();
+void Parser::pop_scope() {
+    size_t scope = definition_scopes_.back();
     // iterate from the back, such that earlier shadowing declarations re-set the shadow correctly
-    for (size_t i = declarations_.size() - 1, e = scope - 1; i != e; --i) {
-        auto decl = declarations_[i];
-
-        auto current = id2defbinder_.find(decl.name);
-        if (current != id2defbinder_.end()) {
-            if (current->second.is_binder()) {
+    for (size_t i = definitions_.size() - 1, e = scope - 1; i != e; --i) {
+        auto decl = definitions_[i];
+        auto current = id2def_or_index_.find(decl.name);
+        if (current != id2def_or_index_.end()) {
+            if (current->second.is_index()) {
                 // if a binder has been declared in this scope and it is still around,
                 // it overrides this id and also whatever we shadowed, but instead of
-                // shadowing this id it instead shadows the previous shadow
-                auto binder = binders_[current->second.binder()];
+                // shadowing this id after this scope it instead shadows the previous shadow
+                auto binder = binders_[current->second.index()];
                 assert(binder.shadow.def() == decl.def);
                 binder.shadow = decl.shadow;
                 continue; // nothing else to unbind/rebind
@@ -450,14 +452,16 @@ void Parser::pop_decl_scope() {
             }
         }
 
-        if (decl.shadow.is_def() && decl.shadow.def() == nullptr)
-            id2defbinder_.erase(decl.name);
-        else
-            id2defbinder_[decl.name] = decl.shadow;
+        if (decl.shadow.is_def() && decl.shadow.def() == nullptr) {
+            id2def_or_index_.erase(decl.name);
+        }
+        else {
+            id2def_or_index_[decl.name] = decl.shadow;
+        }
     }
 
-    declarations_.resize(scope, {Symbol("dummy"), nullptr, 1});
-    scopes_.pop_back();
+    definitions_.resize(scope, {Symbol("dummy"), nullptr, 1});
+    definition_scopes_.pop_back();
 }
 
 //------------------------------------------------------------------------------
