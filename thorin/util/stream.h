@@ -2,6 +2,7 @@
 #define THORIN_UTIL_STREAM_H
 
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <type_traits>
 
@@ -20,11 +21,12 @@ public:
 std::ostream& operator<<(std::ostream&, const Streamable*); ///< Use @p Streamable in C++ streams via @c operator<<.
 
 namespace detail {
-    template<typename T> inline std::ostream& stream(std::ostream& os, T val) { return os << val; }
-    template<> inline std::ostream& stream<const Streamable*>(std::ostream& os, const Streamable* s) { return s->stream(os); }
+    template<class T> inline std::ostream& stream(std::ostream& os, const T& val) { return os << val; }
+    template<class T> inline std::ostream& stream(std::ostream& os, const std::unique_ptr<T>& s) { return s->stream(os); }
+    inline std::ostream& stream(std::ostream& os, const Streamable* s) { return s->stream(os); }
 
     template<typename T>
-    const char* handle_fmt_specifier(std::ostream& os, const char* fmt, T val) {
+    const char* handle_fmt_specifier(std::ostream& os, const char* fmt, const T& val) {
         fmt++; // skip opening brace {
         char specifier = *fmt;
         std::string spec_fmt;
@@ -49,7 +51,7 @@ std::ostream& streamf(std::ostream& os, const char* fmt);
  * The type of the corresponding argument must either support @c operator<< for C++ @c std::ostream or inherit from @p Streamable.
  */
 template<typename T, typename... Args>
-std::ostream& streamf(std::ostream& os, const char* fmt, T val, Args... args) {
+std::ostream& streamf(std::ostream& os, const char* fmt, const T& val, const Args&... args) {
     while (*fmt) {
         auto next = fmt + 1;
         if (*fmt == '{') {

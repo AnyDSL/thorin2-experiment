@@ -175,7 +175,7 @@ bool Def::is_value() const {
 }
 
 void Def::replace(Tracker with) const {
-    DLOG("replace: {} -> {}", this, with);
+    DLOG("replace: {} -> {}", this, with.def());
     assert(type() == with->type());
     assert(!is_replaced());
 
