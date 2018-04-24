@@ -27,8 +27,36 @@ public:
 template<class S>
 S& operator<<(S& stream, const Streamable<S>* p) { return p->stream(stream); }
 
+template<class S, class F, class List>
+S& stream_list(S& s, const List& list, F f, const char* sep = ", ") {
+    const char* cur_sep = "";
+    for (const auto& elem : list) {
+        s << cur_sep;
+        f(elem);
+        cur_sep = sep;
+    }
+    return s;
+}
+
+template<class S, class F, class List>
+S& stream_list(S& s, const List& list, const char* delim_l, const char* delim_r, F f, const char* sep = ", ") {
+    return stream_list(s << delim_l, list, f, sep) << delim_r;
+}
+
 namespace detail {
-    template<class S, class T> auto stream(S& s, const T& val) -> decltype(s << val) { return s << val; }
+    //struct No {};
+    //template<class S, class T> No operator<<(S&, const T&);
+
+    template<class S, class T>
+    struct StreamOpExists {
+        static const bool value = !std::is_same<decltype(*(S*)(0) << *(T*)(0)), No>::value;
+    };
+
+    //template<class S, class T> auto stream(S& s, const T& val) -> std::enable_if< StreamOpExists<S, T>::value, decltype(s << val)> { return s << val; }
+    //template<class S, class T> auto stream(S& s, const T& lst) -> std::enable_if<!StreamOpExists<S, T>::value, S&> { return stream_list(s, lst, [&](auto&& elem) { elem->stream(s); }); }
+    template<class S, class T, class R = decltype(std::declval<S&>() << std::declval<const T&>())> R stream(S& s, const T& val) { return s << val; }
+    //template<class S, class T, class R = std::enable_if
+        //> auto stream(S& s, const T& lst) -> std::enable_if<!std::is_same<decltype(s << lst), void>::value, S&> { return stream_list(s, lst, [&](auto&& elem) { elem->stream(s); }); }
     template<class S, class T> S& stream(S& s, const std::unique_ptr<T>& p) { return p->stream(s); }
     template<class S>          S& stream(S& s, const Streamable<S>* p) { return p->stream(s); }
 
@@ -112,22 +140,6 @@ S& streamf(S& s, const char* fmt, const T& val, const Args&... args) {
             s << *fmt++;
     }
     throw std::invalid_argument("invalid format string for 'streamf': runaway arguments; use 'catch throw' in 'gdb'");
-}
-
-template<class S, class F, class List>
-S& stream_list(S& s, const List& list, F f, const char* sep = ", ") {
-    const char* cur_sep = "";
-    for (const auto& elem : list) {
-        s << cur_sep;
-        f(elem);
-        cur_sep = sep;
-    }
-    return s;
-}
-
-template<class S, class F, class List>
-S& stream_list(S& s, const List& list, const char* delim_l, const char* delim_r, F f, const char* sep = ", ") {
-    return stream_list(s << delim_l, list, f, sep) << delim_r;
 }
 
 template<class S, class... Args> S& streamln(S& s, const char* fmt, Args... args) { return streamf(s, fmt, std::forward<Args>(args)...) << std::endl; }
