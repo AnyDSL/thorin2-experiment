@@ -146,15 +146,15 @@ Token Lexer::lex() {
         if (accept('#')) return {location(), Token::Tag::Sharp};
 
         // greek letters
-        if (accept(0x0003bb)) return {location(), Token::Tag::Lambda};
-        if (accept(0x0003a0)) return {location(), Token::Tag::Pi};
-        if (accept(0x01D538)) return {location(), Token::Tag::Arity_Kind};
-        if (accept(0x01D544)) return {location(), Token::Tag::Multi_Arity_Kind};
-        if (accept(0x00211A)) return {location(), Token::Tag::Qualifier_Type};
-        if (accept(0x001D41)) return {location(), Token::Tag::QualifierU};
-        if (accept(0x001D3F)) return {location(), Token::Tag::QualifierR};
-        if (accept(0x001D2C)) return {location(), Token::Tag::QualifierA};
-        if (accept(0x001D38)) return {location(), Token::Tag::QualifierL};
+        if (accept(U'λ')) return {location(), Token::Tag::Lambda};
+        if (accept(U'Π')) return {location(), Token::Tag::Pi};
+        if (accept(U'𝔸')) return {location(), Token::Tag::Arity_Kind};
+        if (accept(U'𝕄')) return {location(), Token::Tag::Multi_Arity_Kind};
+        if (accept(U'ℚ')) return {location(), Token::Tag::Qualifier_Type};
+        if (accept(U'ᵁ')) return {location(), Token::Tag::QualifierU};
+        if (accept(U'ᴿ')) return {location(), Token::Tag::QualifierR};
+        if (accept(U'ᴬ')) return {location(), Token::Tag::QualifierA};
+        if (accept(U'ᴸ')) return {location(), Token::Tag::QualifierL};
 
         if (dec(peek()) || sgn(peek())) {
             auto lit = parse_literal();
