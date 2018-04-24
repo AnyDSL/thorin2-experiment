@@ -1,6 +1,7 @@
 #ifndef THORIN_UTIL_STREAM_H
 #define THORIN_UTIL_STREAM_H
 
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -17,17 +18,10 @@ public:
     virtual ~Streamable() {}
 
     virtual S& stream(S&) const = 0;
-    ///< Uses @p stream and @c std::ostringstream to generate a @c std::string.
-    std::string to_string() const {
-        S s;
-        return stream(s).str();
-    }
-    ///< Uses @p stream in order to dump to @p std::cout.
-    void dump() const { stream(std::cout) << std::endl; }
 };
 
-template<class S>
-S& operator<<(S& stream, const Streamable<S>* p) { return p->stream(stream); }
+//template<class S>
+//S& operator<<(S& stream, const Streamable<S>* p) { return p->stream(stream); }
 
 // TODO remove
 template<class S, class F, class List>
@@ -153,6 +147,33 @@ template<class... Args> std::ostream& errln(const char* fmt, Args... args) { ret
         } \
     } while (false)
 #endif
+
+template<class P>
+class IndentPrinter {
+public:
+    explicit IndentPrinter(std::ostream& ostream, const char* tab = "    ")
+        : ostream_(ostream)
+        , tab_(tab)
+    {}
+
+    std::ostream& ostream() { return ostream_; };
+    const char* tab() const { return tab_; }
+    P& indent() { ++level_; return child(); }
+    P& dedent() { assert(level_ > 0); --level_; return child(); }
+    P& endl() {
+        ostream() << std::endl;
+        for (int i = 0; i != level_; ++i) ostream() << tab();
+        return child();
+    }
+    template<class T> P& operator<<(const T& val) { ostream() << val; return child(); }
+
+private:
+    P& child() { return static_cast<P&>(*this); }
+
+    std::ostream& ostream_;
+    const char* tab_;
+    int level_ = 0;
+};
 
 }
 
