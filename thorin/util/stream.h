@@ -50,7 +50,6 @@ S& stream_list(S& s, const List& list, const char* delim_l, const char* delim_r,
 namespace detail {
     template<class S, class T> void stream(S& s, const std::string&, const std::unique_ptr<T>& p) { p->stream(s); }
     template<class S>          void stream(S& s, const std::string&, const Streamable<S>* p) { p->stream(s); }
-    template<class S>          void stream(S& s, const std::string&, const std::string& str) { s << str; }
     template<class S, class T> typename std::enable_if<!is_ranged<T>::value, void>::type stream(S& s, const std::string&, const T& val) { s << val; }
     template<class S, class T> typename std::enable_if< is_ranged<T>::value, void>::type stream(S& s, const std::string& spec_fmt, const T& lst) {
         const char* cur_sep = "";
