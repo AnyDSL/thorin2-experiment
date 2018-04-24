@@ -48,18 +48,18 @@ S& stream_list(S& s, const List& list, const char* delim_l, const char* delim_r,
 }
 
 namespace detail {
+    template<class S, class T> void stream(S& s, const std::string&, const std::unique_ptr<T>& p) { p->stream(s); }
+    template<class S>          void stream(S& s, const std::string&, const Streamable<S>* p) { p->stream(s); }
+    template<class S>          void stream(S& s, const std::string&, const std::string& str) { s << str; }
     template<class S, class T> typename std::enable_if<!is_ranged<T>::value, void>::type stream(S& s, const std::string&, const T& val) { s << val; }
     template<class S, class T> typename std::enable_if< is_ranged<T>::value, void>::type stream(S& s, const std::string& spec_fmt, const T& lst) {
         const char* cur_sep = "";
         for (auto&& elem : lst) {
             s << cur_sep;
-            elem->stream(s);
+            stream(s, {""}, elem);
             cur_sep = spec_fmt.c_str();
         }
     }
-    template<class S, class T> void stream(S& s, const std::string&, const std::unique_ptr<T>& p) { p->stream(s); }
-    template<class S>          void stream(S& s, const std::string&, const Streamable<S>* p) { p->stream(s); }
-    template<class S>          void stream(S& s, const std::string&, const std::string& str) { s << str; }
 }
 
 /// Base case.
@@ -94,9 +94,14 @@ template<class S> S& streamf(S& s, const char* fmt) {
 }
 
 /**
- * fprintf-like function which works on C++ @c S.
+ * fprintf-like function.
  * Each @c "{}" in @p fmt corresponds to one of the variadic arguments in @p args.
- * The type of the corresponding argument must either support @c operator<< for C++ @c S or inherit from @p Streamable.
+ * The type of the corresponding argument must either support @c operator<< or inherit from @p Streamable.
+ * Furthermore, an argument may also be a range-based container where its elements fulfill the condition above.
+ * You can specify the separator within the braces:
+@code{.cpp}
+    streamf(s, "({, })", list) // yields "(a, b, c)"
+@endcode
  */
 template<class S, class T, class... Args>
 S& streamf(S& s, const char* fmt, const T& val, const Args&... args) {
