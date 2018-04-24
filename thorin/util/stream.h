@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <type_traits>
 
+#include "thorin/util/iterator.h"
+
 namespace thorin {
 
 /// Inherit from this class and implement @p stream in order to use @p streamf.
@@ -27,6 +29,7 @@ public:
 template<class S>
 S& operator<<(S& stream, const Streamable<S>* p) { return p->stream(stream); }
 
+// TODO remove
 template<class S, class F, class List>
 S& stream_list(S& s, const List& list, F f, const char* sep = ", ") {
     const char* cur_sep = "";
@@ -38,43 +41,25 @@ S& stream_list(S& s, const List& list, F f, const char* sep = ", ") {
     return s;
 }
 
+// TODO remove
 template<class S, class F, class List>
 S& stream_list(S& s, const List& list, const char* delim_l, const char* delim_r, F f, const char* sep = ", ") {
     return stream_list(s << delim_l, list, f, sep) << delim_r;
 }
 
 namespace detail {
-    //struct No {};
-    //template<class S, class T> No operator<<(S&, const T&);
-
-    template<class S, class T>
-    struct StreamOpExists {
-        static const bool value = !std::is_same<decltype(*(S*)(0) << *(T*)(0)), No>::value;
-    };
-
-    //template<class S, class T> auto stream(S& s, const T& val) -> std::enable_if< StreamOpExists<S, T>::value, decltype(s << val)> { return s << val; }
-    //template<class S, class T> auto stream(S& s, const T& lst) -> std::enable_if<!StreamOpExists<S, T>::value, S&> { return stream_list(s, lst, [&](auto&& elem) { elem->stream(s); }); }
-    template<class S, class T, class R = decltype(std::declval<S&>() << std::declval<const T&>())> R stream(S& s, const T& val) { return s << val; }
-    //template<class S, class T, class R = std::enable_if
-        //> auto stream(S& s, const T& lst) -> std::enable_if<!std::is_same<decltype(s << lst), void>::value, S&> { return stream_list(s, lst, [&](auto&& elem) { elem->stream(s); }); }
-    template<class S, class T> S& stream(S& s, const std::unique_ptr<T>& p) { return p->stream(s); }
-    template<class S>          S& stream(S& s, const Streamable<S>* p) { return p->stream(s); }
-
-    template<class S, class T>
-    const char* handle_fmt_specifier(S& s, const char* fmt, const T& val) {
-        fmt++; // skip opening brace {
-        char specifier = *fmt;
-        std::string spec_fmt;
-        while (*fmt && *fmt != '}') {
-            spec_fmt.push_back(*fmt++);
+    template<class S, class T> typename std::enable_if<!is_ranged<T>::value, void>::type stream(S& s, const std::string&, const T& val) { s << val; }
+    template<class S, class T> typename std::enable_if< is_ranged<T>::value, void>::type stream(S& s, const std::string& spec_fmt, const T& lst) {
+        const char* cur_sep = "";
+        for (auto&& elem : lst) {
+            s << cur_sep;
+            elem->stream(s);
+            cur_sep = spec_fmt.c_str();
         }
-        if (*fmt != '}')
-            throw std::invalid_argument("unmatched closing brace '}' in format string");
-        if (specifier == '}')
-            detail::stream(s, val);
-        // TODO possibly handle some format specifiers here that don't require major template trickery (e.g. floats)
-        return ++fmt;
     }
+    template<class S, class T> void stream(S& s, const std::string&, const std::unique_ptr<T>& p) { p->stream(s); }
+    template<class S>          void stream(S& s, const std::string&, const Streamable<S>* p) { p->stream(s); }
+    template<class S>          void stream(S& s, const std::string&, const std::string& str) { s << str; }
 }
 
 /// Base case.
@@ -87,9 +72,8 @@ template<class S> S& streamf(S& s, const char* fmt) {
                 fmt += 2;
                 continue;
             }
-            while (*fmt && *fmt != '}') {
-                fmt++;
-            }
+            while (*fmt && *fmt != '}') fmt++;
+
             if (*fmt == '}')
                 throw std::invalid_argument("invalid format string for 'streamf': missing argument(s); use 'catch throw' in 'gdb'");
             else
@@ -109,7 +93,6 @@ template<class S> S& streamf(S& s, const char* fmt) {
     return s;
 }
 
-
 /**
  * fprintf-like function which works on C++ @c S.
  * Each @c "{}" in @p fmt corresponds to one of the variadic arguments in @p args.
@@ -125,9 +108,16 @@ S& streamf(S& s, const char* fmt, const T& val, const Args&... args) {
                 fmt += 2;
                 continue;
             }
-            fmt = detail::handle_fmt_specifier(s, fmt, val);
-            // call even when *fmt == 0 to detect extra arguments
-            return streamf(s, fmt, args...);
+
+            fmt++; // skip opening brace '{'
+            std::string spec_fmt;
+            while (*fmt != '\0' && *fmt != '}')
+                spec_fmt.push_back(*fmt++);
+            if (*fmt != '}')
+                throw std::invalid_argument("unmatched closing brace '}' in format string");
+            detail::stream(s, spec_fmt, val);
+            ++fmt;
+            return streamf(s, fmt, args...); // call even when *fmt == 0 to detect extra arguments
         } else if (*fmt == '}') {
             if (*next == '}') {
                 s << '}';

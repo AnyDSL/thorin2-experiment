@@ -179,11 +179,37 @@ auto map_range(const T& t, F f) -> auto { return map_range(t.begin(), t.end(), f
 
 //------------------------------------------------------------------------------
 
-#define THORIN_ENUM_ITERATOR(T) \
-	inline T operator++(T& x) { return x = (T)(std::underlying_type<T>::type(x) + 1); } \
-	inline T operator*(T x) { return x; } \
-	inline T begin(T) { return T(0); } \
-	inline T end(T) { return T(Num<T>); }
+// see https://stackoverflow.com/a/33385814/7545300
+namespace detail {
+    using std::begin; using std::end;
+
+    template<class T> auto is_range_based_iterable(...) -> std::false_type;
+
+    template<class T, class I = typename std::decay<decltype(std::declval<T>().begin())>::type>
+    auto is_range_based_iterable(int)
+        -> decltype(std::declval<T>().begin()
+                  , std::declval<T>().end()
+                  , ++std::declval<I&>()
+                  , void()
+                  , std::integral_constant<bool, std::is_convertible<decltype(std::declval<I&>() != std::declval<I&>()), bool>::value
+                    && !std::is_void<decltype(*std::declval<I&>())>::value
+                    && std::is_copy_constructible<I>::value
+                  >{});
+
+    template<class T, class I = typename std::decay<decltype(begin(std::declval<T>()))>::type>
+    auto is_range_based_iterable(char)
+        -> decltype(begin(std::declval<T>())
+                  , end(std::declval<T>())
+                  , ++std::declval<I&>()
+                  , void()
+                  , std::integral_constant<bool,
+                       std::is_convertible<decltype(std::declval<I&>() != std::declval<I&>()), bool>::value
+                    && !std::is_void<decltype(*std::declval<I&>())>::value
+                    && std::is_copy_constructible<I>::value
+                  >{});
+}
+
+template<class T> struct is_ranged : decltype(detail::is_range_based_iterable<T>(0)) {};
 
 //------------------------------------------------------------------------------
 
