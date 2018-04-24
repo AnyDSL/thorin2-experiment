@@ -126,7 +126,7 @@ S& stream_list(S& s, const List& list, F f, const char* sep = ", ") {
 }
 
 template<class S, class F, class List>
-S& stream_list(S& s, const List& list, F f, const char* delim_l, const char* delim_r, const char* sep = ", ") {
+S& stream_list(S& s, const List& list, const char* delim_l, const char* delim_r, F f, const char* sep = ", ") {
     return stream_list(s << delim_l, list, f, sep) << delim_r;
 }
 

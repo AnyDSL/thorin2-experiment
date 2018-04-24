@@ -754,8 +754,7 @@ std::ostream& Insert::vstream(std::ostream& os) const {
 }
 
 std::ostream& Intersection::vstream(std::ostream& os) const {
-    return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
-                       " ∩ ");
+    return stream_list(qualifier_stream(os), ops(), "(", ")", [&](const Def* def) { def->name_stream(os); }, " ∩ ");
 }
 
 std::ostream& Lit::vstream(std::ostream& os) const {
@@ -766,7 +765,7 @@ std::ostream& Match::vstream(std::ostream& os) const {
     os << "match ";
     destructee()->name_stream(os);
     os << " with ";
-    return stream_list(os, handlers(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    return stream_list(os, handlers(), "(", ")", [&](const Def* def) { def->name_stream(os); });
 }
 
 std::ostream& MultiArityKind::vstream(std::ostream& os) const {
@@ -818,11 +817,11 @@ std::ostream& QualifierType::vstream(std::ostream& os) const {
 }
 
 std::ostream& Sigma::vstream(std::ostream& os) const {
-    return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "[", "]");
+    return stream_list(qualifier_stream(os), ops(), "[", "]", [&](const Def* def) { def->name_stream(os); });
 }
 
 std::ostream& Singleton::vstream(std::ostream& os) const {
-    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "S(", ")");
+    return stream_list(os, ops(), "S(", ")", [&](const Def* def) { def->name_stream(os); });
 }
 
 std::ostream& Star::vstream(std::ostream& os) const {
@@ -838,7 +837,7 @@ std::ostream& Universe::vstream(std::ostream& os) const {
 }
 
 std::ostream& Tuple::vstream(std::ostream& os) const {
-    return stream_list(os, ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")");
+    return stream_list(os, ops(), "(", ")", [&](const Def* def) { def->name_stream(os); });
 }
 
 std::ostream& Var::vstream(std::ostream& os) const {
@@ -851,8 +850,7 @@ std::ostream& Variadic::vstream(std::ostream& os) const {
 }
 
 std::ostream& Variant::vstream(std::ostream& os) const {
-    return stream_list(qualifier_stream(os), ops(), [&](const Def* def) { def->name_stream(os); }, "(", ")",
-                       " ∪ ");
+    return stream_list(qualifier_stream(os), ops(), "(", ")", [&](const Def* def) { def->name_stream(os); }, " ∪ ");
 }
 
 //------------------------------------------------------------------------------
