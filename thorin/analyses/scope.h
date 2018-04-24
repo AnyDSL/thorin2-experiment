@@ -21,7 +21,7 @@ class CFNode;
  * Transitively, all user's of the @p entry's parameters are pooled into this @p Scope.
  * Each @p Scope contains the dummy @p Lambda @p World::lambda_end to mark the end of a @p Scope.
  */
-class Scope : public Streamable {
+class Scope : public Streamable<std::ostream> {
 public:
     Scope(const Scope&) = delete;
     Scope& operator=(Scope) = delete;

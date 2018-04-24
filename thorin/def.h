@@ -106,7 +106,7 @@ DefArray unique_gid_sorted(Defs defs);
  * However, you can have this Extra field.
  * See App or Lit how this is done.
  */
-class Def : public RuntimeCast<Def>, public Streamable {
+class Def : public RuntimeCast<Def>, public Streamable<std::ostream> {
 public:
     enum class Tag {
         Any, Match, Variant,

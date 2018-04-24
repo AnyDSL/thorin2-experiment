@@ -35,7 +35,7 @@ script:
   - ${CXX} --version
   - mkdir -p build
   - cd build
-  - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DMEMORYCHECK_SUPPRESSIONS_FILE="${TRAVIS_BUILD_DIR}/resources/valgrind.supp" ..
+  - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DMEMORYCHECK_COMMAND_OPTIONS="--gen-suppressions=all --leak-check=full --show-leak-kinds=all" -DMEMORYCHECK_SUPPRESSIONS_FILE="${TRAVIS_BUILD_DIR}/resources/valgrind.supp" ..
   - make -j3 VERBOSE=1
   - ctest -T memcheck -j3
   - cat ${TRAVIS_BUILD_DIR}/build/Testing/Temporary/MemoryChecker.*.log > out && cat out

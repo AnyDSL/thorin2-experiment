@@ -6,7 +6,7 @@
 
 namespace thorin {
 
-class Schedule : public Streamable {
+class Schedule : public Streamable<std::ostream> {
 public:
     enum Tag { Early, Late, Smart };
 

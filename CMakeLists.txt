@@ -60,7 +60,6 @@ add_library(thorin
     thorin/util/location.h
     thorin/util/log.cpp
     thorin/util/log.h
-    thorin/util/stream.cpp
     thorin/util/stream.h
     thorin/util/symbol.cpp
     thorin/util/symbol.h
