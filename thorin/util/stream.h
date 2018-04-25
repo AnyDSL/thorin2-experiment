@@ -20,36 +20,41 @@ public:
     virtual S& stream(S&) const = 0;
 };
 
-//template<class S>
-//S& operator<<(S& stream, const Streamable<S>* p) { return p->stream(stream); }
+template<class L, class F>
+struct stream_list {
+    struct stream_list_tag {};
 
-// TODO remove
-template<class S, class F, class List>
-S& stream_list(S& s, const List& list, F f, const char* sep = ", ") {
-    const char* cur_sep = "";
-    for (const auto& elem : list) {
-        s << cur_sep;
-        f(elem);
-        cur_sep = sep;
-    }
-    return s;
-}
+    stream_list(const L& list, F f)
+        : list(list)
+        , f(f)
+    {}
 
-// TODO remove
-template<class S, class F, class List>
-S& stream_list(S& s, const List& list, const char* delim_l, const char* delim_r, F f, const char* sep = ", ") {
-    return stream_list(s << delim_l, list, f, sep) << delim_r;
-}
+    const L& list;
+    F f;
+};
+
+
+template<class T, class = void> struct is_stream_list : std::false_type {};
+template<class T> struct is_stream_list<T, std::void_t<typename T::stream_list_tag>> : std::true_type {};
 
 namespace detail {
     template<class S, class T> void stream(S& s, const std::string&, const std::unique_ptr<T>& p) { p->stream(s); }
     template<class S>          void stream(S& s, const std::string&, const Streamable<S>* p) { p->stream(s); }
-    template<class S, class T> typename std::enable_if<!is_ranged<T>::value, void>::type stream(S& s, const std::string&, const T& val) { s << val; }
-    template<class S, class T> typename std::enable_if< is_ranged<T>::value, void>::type stream(S& s, const std::string& spec_fmt, const T& lst) {
+    template<class S, class T> typename std::enable_if<!is_stream_list<T>::value && !is_ranged<T>::value, void>::type stream(S& s, const std::string&, const T& val) { s << val; }
+    template<class S, class T> typename std::enable_if<!is_stream_list<T>::value &&  is_ranged<T>::value, void>::type stream(S& s, const std::string& spec_fmt, const T& list) {
         const char* cur_sep = "";
-        for (auto&& elem : lst) {
+        for (const auto& elem : list) {
             s << cur_sep;
             stream(s, {""}, elem);
+            cur_sep = spec_fmt.c_str();
+        }
+    }
+
+    template<class S, class T> typename std::enable_if< is_stream_list<T>::value && !is_ranged<T>::value, void>::type stream(S& s, const std::string& spec_fmt, const T& stream_list) {
+        const char* cur_sep = "";
+        for (const auto& elem : stream_list.list) {
+            s << cur_sep;
+            stream_list.f(elem);
             cur_sep = spec_fmt.c_str();
         }
     }

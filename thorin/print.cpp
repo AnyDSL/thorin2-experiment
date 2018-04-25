@@ -4,6 +4,8 @@
 
 namespace thorin {
 
+//------------------------------------------------------------------------------
+
 void Def::dump() const {
     Printer printer(std::cout);
     stream(printer);
@@ -66,7 +68,7 @@ Printer& Insert::vstream(Printer& p) const {
 }
 
 Printer& Intersection::vstream(Printer& p) const {
-    return stream_list(qualifier_stream(p), ops(), "(", ")", [&](const Def* def) { def->name_stream(p); }, " ∩ ");
+    return streamf(qualifier_stream(p), "({ ∩ })", stream_list(ops(), [&](auto def) { def->name_stream(p); }));
 }
 
 Printer& Lit::vstream(Printer& p) const {
@@ -74,10 +76,11 @@ Printer& Lit::vstream(Printer& p) const {
 }
 
 Printer& Match::vstream(Printer& p) const {
-    p << "match ";
-    destructee()->name_stream(p);
-    p << " with ";
-    return stream_list(p, handlers(), "(", ")", [&](const Def* def) { def->name_stream(p); });
+    return streamf(p,"match {} with ({, })", destructee(), handlers());
+    //p << "match ";
+    //destructee()->name_stream(p);
+    //p << " with ";
+    //return stream_list(p, handlers(), "(", ")", [&](const Def* def) { def->name_stream(p); });
 }
 
 Printer& MultiArityKind::vstream(Printer& p) const {
@@ -129,11 +132,11 @@ Printer& QualifierType::vstream(Printer& p) const {
 }
 
 Printer& Sigma::vstream(Printer& p) const {
-    return stream_list(qualifier_stream(p), ops(), "[", "]", [&](const Def* def) { def->name_stream(p); });
+    return streamf(qualifier_stream(p), "[{, }]", stream_list(ops(), [&](const Def* def) { def->name_stream(p); }));
 }
 
 Printer& Singleton::vstream(Printer& p) const {
-    return stream_list(p, ops(), "S(", ")", [&](const Def* def) { def->name_stream(p); });
+    return streamf(p, "S({, })", stream_list(ops(), [&](const Def* def) { def->name_stream(p); }));
 }
 
 Printer& Star::vstream(Printer& p) const {
@@ -149,7 +152,7 @@ Printer& Universe::vstream(Printer& p) const {
 }
 
 Printer& Tuple::vstream(Printer& p) const {
-    return stream_list(p, ops(), "(", ")", [&](const Def* def) { def->name_stream(p); });
+    return streamf(p, "({, })", stream_list(ops(), [&](const Def* def) { def->name_stream(p); }));
 }
 
 Printer& Var::vstream(Printer& p) const {
@@ -162,7 +165,7 @@ Printer& Variadic::vstream(Printer& p) const {
 }
 
 Printer& Variant::vstream(Printer& p) const {
-    return stream_list(qualifier_stream(p), ops(), "(", ")", [&](const Def* def) { def->name_stream(p); }, " ∪ ");
+    return streamf(qualifier_stream(p), "({ ∪ })", stream_list(ops(), [&](const Def* def) { def->name_stream(p); }));
 }
 
 }
