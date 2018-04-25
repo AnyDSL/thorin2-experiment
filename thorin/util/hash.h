@@ -562,7 +562,7 @@ public:
         : Super(ilist)
     {}
 
-    void dump() const { stream_list(std::cout, *this, [&] (const auto& elem) { std::cout << elem; }, "{", "}\n"); }
+    void dump() const { outln("{{{, }}}", stream_list(*this, [&](const auto& elem) { std::cout << elem; })); }
 
     friend void swap(HashSet& s1, HashSet& s2) { swap(static_cast<Super&>(s1), static_cast<Super&>(s2)); }
 };
