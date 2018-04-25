@@ -562,7 +562,7 @@ public:
         : Super(ilist)
     {}
 
-    void dump() const { outln("{{{, }}}", stream_list(*this, [&](const auto& elem) { std::cout << elem; })); }
+    void dump() const { outln("{{{, }}}", stream_list(*this, [&](const auto& elem) { outf("{}", elem); })); }
 
     friend void swap(HashSet& s1, HashSet& s2) { swap(static_cast<Super&>(s1), static_cast<Super&>(s2)); }
 };
@@ -603,9 +603,7 @@ public:
         return Super::insert(value_type(std::move(key), T())).first->second;
     }
 
-    void dump() const {
-        stream_list(std::cout, *this, [&] (const auto& p) { std::cout << p.first << " : " << p.second; }, "{", "}\n");
-    }
+    void dump() const { outln("{{{, }}}", stream_list(*this, [&](const auto& p) { outf("{} : {}", p.first, p.second); })); }
 
     friend void swap(HashMap& m1, HashMap& m2) { swap(static_cast<Super&>(m1), static_cast<Super&>(m2)); }
 };
