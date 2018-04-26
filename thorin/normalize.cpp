@@ -114,6 +114,27 @@ const Def* normalize_arity_succ(const Def* callee, const Def* arg, Debug dbg) {
     return nullptr;
 }
 
+const Def* normalize_index_zero(const Def* callee, const Def* arg, Debug dbg) {
+    auto& w = callee->world();
+    auto [_, arg_arity] = split(arg);
+    if (arg_arity->isa<Arity>())
+        return w.index_zero(arg_arity, dbg);
+    return nullptr;
+}
+
+// Πp:[q: ℚ, a: 𝔸q].Πa.ASucc p
+const Def* normalize_index_succ(const Def* callee, const Def* arg, Debug dbg) {
+    auto& w = callee->world();
+    if (arg->is_term() && arg->type()->type()->isa<ArityKind>()) {
+        if (auto index = arg->isa<Lit>()) {
+            auto idx = get_index(index);
+            auto arity = index->type()->as<Arity>();
+            return w.index(w.arity(index->qualifier(), arity->value() + 1), idx + 1, dbg);
+        }
+    }
+    return nullptr;
+}
+
 const Def* normalize_index_eliminator(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
     const Def* pred = nullptr;
@@ -132,6 +153,7 @@ const Def* normalize_index_eliminator(const Def* callee, const Def* arg, Debug d
             pred = w.index(index->type()->as<Arity>()->value()-1, index_val - 1);
         } else if (auto app = arg->isa<App>()) {
             if (app->callee() == w.index_zero()) {
+                // callee = (E q P base step a) -> apply base to a
                 return w.app(base, arity);
             } else if (app->callee() == w.index_succ()) {
                 auto [pred_arity, pred_index] = split(arg);
@@ -140,7 +162,9 @@ const Def* normalize_index_eliminator(const Def* callee, const Def* arg, Debug d
         }
         if (pred != nullptr) {
             // E q P base step a (IS b i) := step b i (E q P base step b i)
-            return w.app(w.app(w.app(step, pred->type()), pred), w.app(w.app(elim, pred->type()), pred), dbg);
+            auto ret_pred =  w.app(w.app(elim, pred->type()), pred);
+            auto step_i = w.app(w.app(step, pred->type()), pred);
+            return w.app(step_i, ret_pred, dbg);
         }
     }
     return nullptr;
