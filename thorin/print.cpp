@@ -73,7 +73,10 @@ Printer& Intersection::vstream(Printer& p) const {
 }
 
 Printer& Lit::vstream(Printer& p) const {
-    return qualifier_stream(p) << std::to_string(box().get_u64());
+    qualifier_stream(p);
+    if (!name().empty())
+        return p << name();
+    return p << std::to_string(box().get_u64());
 }
 
 Printer& Match::vstream(Printer& p) const {
