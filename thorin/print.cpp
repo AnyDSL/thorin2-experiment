@@ -15,8 +15,11 @@ Printer& Def::qualifier_stream(Printer& p) const {
     if (!has_values() || tag() == Tag::QualifierType)
         return p;
     if (type()->is_kind()) {
-        auto q = type()->op(0)->as<Qualifier>();
-        if (q->qualifier_tag() != QualifierTag::u)
+        auto q = type()->op(0);
+        if (auto qual = q->isa<Qualifier>()) {
+            if (qual->qualifier_tag() != QualifierTag::u)
+                p << q;
+        } else
             p << q;
     }
     return p;
