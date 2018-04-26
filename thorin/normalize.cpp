@@ -116,7 +116,7 @@ const Def* normalize_arity_succ(const Def* callee, const Def* arg, Debug dbg) {
 
 const Def* normalize_index_zero(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
-    auto [_, arg_arity] = split(arg);
+    auto arg_arity = arg->op(1);
     if (arg_arity->isa<Arity>())
         return w.index_zero(arg_arity, dbg);
     return nullptr;
@@ -156,8 +156,7 @@ const Def* normalize_index_eliminator(const Def* callee, const Def* arg, Debug d
                 // callee = (E q P base step a) -> apply base to a
                 return w.app(base, arity);
             } else if (app->callee() == w.index_succ()) {
-                auto [pred_arity, pred_index] = split(arg);
-                pred = pred_index;
+                pred = arg->op(1);
             }
         }
         if (pred != nullptr) {
