@@ -5,8 +5,7 @@
 namespace thorin {
 
 void Def::dump() const {
-    Printer printer(std::cout);
-    stream(printer);
+    stream_out(std::cout);
 }
 
 //------------------------------------------------------------------------------

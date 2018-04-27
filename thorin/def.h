@@ -286,12 +286,17 @@ public:
         return stream(os);
     }
     Printer& qualifier_stream(Printer& os) const;
-    Printer& stream(Printer& os) const {
+    Printer& stream(Printer& os) const override {
         if (is_nominal()) {
             qualifier_stream(os);
             return os << name();
         }
         return vstream(os);
+    }
+    std::ostream& stream_out(std::ostream& os) const override {
+        Printer printer(os);
+        stream(printer);
+        return printer.ostream();
     }
     void dump() const;
     //@}
