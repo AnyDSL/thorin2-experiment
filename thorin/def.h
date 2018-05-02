@@ -280,7 +280,7 @@ public:
     //@{ stream
     virtual Printer& name_stream(Printer&) const;
     Printer& qualifier_stream(Printer&) const;
-    Printer& stream(Printer&) const;
+    Printer& stream(Printer&) const override;
     std::ostream& stream_out(std::ostream&) const override;
     //@}
 
