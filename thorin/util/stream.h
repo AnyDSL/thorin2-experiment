@@ -18,10 +18,23 @@ public:
     virtual ~Streamable() {}
 
     virtual S& stream(S&) const = 0;
+    virtual std::ostream& stream_out(std::ostream& s) const = 0;
+
 };
 
-//template<class S>
-//S& operator<<(S& stream, const Streamable<S>* p) { return p->stream(stream); }
+template<>
+class Streamable<std::ostream> {
+public:
+    virtual ~Streamable() {}
+
+    virtual std::ostream& stream(std::ostream&) const = 0;
+    virtual std::ostream& stream_out(std::ostream& s) const {
+        return stream(s);
+    }
+};
+
+template<class S>
+std::ostream& operator<<(std::ostream& stream, const Streamable<S>* p) { return p->stream_out(stream); }
 
 // TODO remove
 template<class S, class F, class List>
