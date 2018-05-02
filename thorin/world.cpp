@@ -148,15 +148,19 @@ World::World(Debug dbg)
 #undef CODE
 
     arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: 𝔸q].𝔸q", normalize_arity_succ); // {"Sₐ"}
-    index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸q].ASucc p");       // {"0ⁱ"}
-    index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: 𝔸q].Πa.ASucc p"); // {"Sⁱ"}
+    index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸q].ASucc p", normalize_index_zero); // {"0ⁱ"}
+    index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: 𝔸q].Πa.ASucc p", normalize_index_succ); // {"Sⁱ"}
 
-    arity_eliminator_ = axiom("Elimₐ",  "Πq: ℚ. ΠP: [Π𝔸q.*q]. ΠP(0ₐq). Π[Πa:𝔸q.ΠP a.P(ASucc (q,a))]. Πa: 𝔸q. P a",
+    arity_eliminator_ = axiom("Elimₐ",  "Πq: ℚ. ΠP: [Π𝔸q.*q]. ΠP(0ₐq). Π[Πa:𝔸q. ΠP a.P(ASucc (q,a))]. Πa: 𝔸q. P a",
                               normalize_arity_eliminator);
     arity_recursor_to_arity_ = axiom("Recₐ𝔸", "Πq: ℚ. Π𝔸q. Π[Π𝔸q. Π𝔸q. 𝔸q]. Π𝔸q. 𝔸q", normalize_arity_eliminator);
     arity_recursor_to_multi_ = axiom("Recₐ𝕄", "Πq: ℚ. Π𝕄q. Π[Π𝔸q. Π𝕄q. 𝕄q]. Π𝔸q. 𝕄q", normalize_arity_eliminator);
     arity_recursor_to_star_  = axiom("Recₐ*", "Πq: ℚ. Π*q. Π[Π𝔸q. Π*q. *q]. Π𝔸q. *q", normalize_arity_eliminator);
-    // index_eliminator_ = axiom(fe::parse(*this, "Πq: ℚ.ΠP:[Πa:𝔸(q).Πa.*(q)].ΠP(0ₐ(q)).Π[Πa:𝔸(q).ΠP(a).P(ASucc (q,a))].Πa:𝔸(q).P a"));
+    index_eliminator_ = axiom("ElimI", "Πq: ℚ. ΠP: [Πa: 𝔸q. Πa. *q]." // P := dependent return type
+                              "Π[Πa:𝔸q. P (ASucc (q, a)) (I0 (q, a))]." // base case
+                              "Π[Πa:𝔸q. Πi:a. ΠP a i. P (ASucc (q, a)) (IS (q, a) i)]." // step case
+                              "Πa: 𝔸q. Πi:a. (P a i)",
+                              normalize_index_eliminator);
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_end_     = lambda(cn(unit()), {"end"});
@@ -344,7 +348,7 @@ const Def* World::index_zero(const Def* arity, Location location) {
     if (arity->type()->isa<ArityKind>()) {
         if (auto a = arity->isa<Arity>())
             return index(a->value() + 1, 0, location);
-        return app(index_zero_, arity, {location});
+        return app(index_zero_, tuple({arity->qualifier(), arity}), {location});
     } else {
         errorf("expected '{}' to have an 𝔸 type", arity);
     }

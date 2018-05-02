@@ -278,22 +278,10 @@ public:
     //@}
 
     //@{ stream
-    virtual Printer& name_stream(Printer& os) const {
-        if (name() != "" || is_nominal()) {
-            qualifier_stream(os);
-            return os << name();
-        }
-        return stream(os);
-    }
-    Printer& qualifier_stream(Printer& os) const;
-    Printer& stream(Printer& os) const {
-        if (is_nominal()) {
-            qualifier_stream(os);
-            return os << name();
-        }
-        return vstream(os);
-    }
-    void dump() const;
+    virtual Printer& name_stream(Printer&) const;
+    Printer& qualifier_stream(Printer&) const;
+    Printer& stream(Printer&) const;
+    std::ostream& stream_out(std::ostream&) const override;
     //@}
 
 protected:

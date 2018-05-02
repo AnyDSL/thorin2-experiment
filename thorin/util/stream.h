@@ -4,6 +4,7 @@
 #include <cassert>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <type_traits>
 
@@ -18,6 +19,23 @@ public:
     virtual ~Streamable() {}
 
     virtual S& stream(S&) const = 0;
+    virtual std::ostream& stream_out(std::ostream&) const = 0;
+    std::string to_string() {
+        std::ostringstream os;
+        stream(os);
+        return os.str();
+    }
+    void dump() const { stream_out(std::cout); }
+};
+
+template<>
+class Streamable<std::ostream> {
+public:
+    virtual ~Streamable() {}
+
+    virtual std::ostream& stream(std::ostream&) const = 0;
+    std::ostream& stream_out(std::ostream& s) const { return stream(s); }
+    void dump() const { stream_out(std::cout); }
 };
 
 template<class L, class F>
@@ -32,7 +50,6 @@ struct stream_list {
     const L& list;
     F f;
 };
-
 
 template<class T, class = void> struct is_stream_list : std::false_type {};
 template<class T> struct is_stream_list<T, std::void_t<typename T::stream_list_tag>> : std::true_type {};

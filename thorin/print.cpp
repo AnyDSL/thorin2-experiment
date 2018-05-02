@@ -6,19 +6,37 @@ namespace thorin {
 
 //------------------------------------------------------------------------------
 
-void Def::dump() const {
-    Printer printer(std::cout);
-    stream(printer);
+Printer& Def::name_stream(Printer& os) const {
+    if (name() != "" || is_nominal()) {
+        qualifier_stream(os);
+        return os << name();
+    }
+    return stream(os);
 }
 
-//------------------------------------------------------------------------------
+Printer& Def::stream(Printer& os) const {
+    if (is_nominal()) {
+        qualifier_stream(os);
+        return os << name();
+    }
+    return vstream(os);
+}
+
+std::ostream& Def::stream_out(std::ostream& os) const {
+    Printer printer(os);
+    stream(printer);
+    return os;
+}
 
 Printer& Def::qualifier_stream(Printer& p) const {
     if (!has_values() || tag() == Tag::QualifierType)
         return p;
     if (type()->is_kind()) {
-        auto q = type()->op(0)->as<Qualifier>();
-        if (q->qualifier_tag() != QualifierTag::u)
+        auto q = type()->op(0);
+        if (auto qual = q->isa<Qualifier>()) {
+            if (qual->qualifier_tag() != QualifierTag::u)
+                p << q;
+        } else
             p << q;
     }
     return p;
@@ -72,7 +90,10 @@ Printer& Intersection::vstream(Printer& p) const {
 }
 
 Printer& Lit::vstream(Printer& p) const {
-    return qualifier_stream(p) << std::to_string(box().get_u64());
+    qualifier_stream(p);
+    if (!name().empty())
+        return p << name();
+    return p << std::to_string(box().get_u64());
 }
 
 Printer& Match::vstream(Printer& p) const {
