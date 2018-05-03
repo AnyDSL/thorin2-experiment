@@ -17,8 +17,8 @@ namespace thorin {
  */
 enum class QualifierTag {
     Unlimited = 0,
-    Relevant  = 1 << 0,
-    Affine    = 1 << 1,
+    Relevant  = 1 << 0, ///< min 1 use
+    Affine    = 1 << 1, ///< max 1 use
     Linear = Affine | Relevant,
     u = Unlimited, r = Relevant, a = Affine, l = Linear,
 };
