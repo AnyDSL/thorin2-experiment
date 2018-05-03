@@ -30,7 +30,7 @@ public:
     bool operator==(const char* s) const { return c_str() == Symbol(s).c_str(); }
     bool operator!=(const char* s) const { return c_str() != Symbol(s).c_str(); }
     bool empty() const { return *str_ == '\0'; }
-    bool is_anonymous() { return (*this) == "_"; }
+    bool is_anonymous() const { return (*this) == "_"; }
     std::string remove_quotation() const;
 
 private:
