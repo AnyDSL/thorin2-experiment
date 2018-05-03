@@ -32,9 +32,9 @@ inline bool operator<(QualifierTag lhs, QualifierTag rhs) {
     if (rhs == QualifierTag::Linear) return true;
     return false;
 }
-inline bool operator> (QualifierTag lhs, QualifierTag rhs){ return rhs < lhs; }
-inline bool operator<=(QualifierTag lhs, QualifierTag rhs){ return !(lhs > rhs); }
-inline bool operator>=(QualifierTag lhs, QualifierTag rhs){ return !(lhs < rhs); }
+inline bool operator> (QualifierTag lhs, QualifierTag rhs) { return rhs < lhs; }
+inline bool operator<=(QualifierTag lhs, QualifierTag rhs) { return !(lhs > rhs); }
+inline bool operator>=(QualifierTag lhs, QualifierTag rhs) { return !(lhs < rhs); }
 
 constexpr const char* qualifier2str(QualifierTag q) {
     switch (q) {
