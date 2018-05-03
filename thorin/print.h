@@ -12,6 +12,8 @@ public:
     {}
 };
 
+template void Streamable<Printer>::dump() const;
+
 }
 
 #endif
