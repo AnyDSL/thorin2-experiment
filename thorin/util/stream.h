@@ -25,7 +25,7 @@ public:
         stream(os);
         return os.str();
     }
-    void dump() const { stream_out(std::cout); }
+    void dump() const { stream_out(std::cout) << std::endl; }
 };
 
 template<>
@@ -35,7 +35,7 @@ public:
 
     virtual std::ostream& stream(std::ostream&) const = 0;
     std::ostream& stream_out(std::ostream& s) const { return stream(s); }
-    void dump() const { stream_out(std::cout); }
+    void dump() const { stream_out(std::cout) << std::endl; }
 };
 
 template<class L, class F>
