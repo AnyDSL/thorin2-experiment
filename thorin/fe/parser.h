@@ -28,13 +28,13 @@ private:
     struct Tracker {
         Tracker(const Parser* parser)
             : parser(*parser)
-            , line(parser->ahead_[0].location().front_line())
-            , col(parser->ahead_[0].location().front_col())
+            , line(parser->ahead_[0].loc().front_line())
+            , col(parser->ahead_[0].loc().front_col())
         {}
 
-        Location location() const {
-            auto back_line = parser.ahead_[0].location().back_line();
-            auto back_col  = parser.ahead_[0].location().back_col();
+        Loc loc() const {
+            auto back_line = parser.ahead_[0].loc().back_line();
+            auto back_col  = parser.ahead_[0].loc().back_col();
             return {parser.lexer_.filename(), line, col, back_line, back_col};
         }
 
@@ -43,7 +43,7 @@ private:
         uint32_t col;
     };
 
-    void parse_curried_defs(std::vector<std::pair<const Def*, Location>>&);
+    void parse_curried_defs(std::vector<std::pair<const Def*, Loc>>&);
     const Def* parse_debruijn();
     const Def* parse_cn();
     const Def* parse_pi();
@@ -140,14 +140,14 @@ private:
     void push_scope();
     void pop_scope();
     template<typename... Args>
-    [[noreturn]] void error(Location location, const char* fmt, Args... args) {
+    [[noreturn]] void error(Loc loc, const char* fmt, Args... args) {
         std::ostringstream oss;
-        streamf(oss, "{}: parse error: ", location);
+        streamf(oss, "{}: parse error: ", loc);
         streamf(oss, fmt, std::forward<Args>(args)...);
         throw std::logic_error(oss.str());
     }
     template<typename... Args>
-    [[noreturn]] void error(const char* fmt, Args... args) { error(ahead().location(), fmt, std::forward<Args>(args)...); }
+    [[noreturn]] void error(const char* fmt, Args... args) { error(ahead().loc(), fmt, std::forward<Args>(args)...); }
 
     World& world_;
     Lexer& lexer_;

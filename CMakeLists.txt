@@ -58,8 +58,8 @@ add_library(thorin
     thorin/util/indexmap.h
     thorin/util/indexset.h
     thorin/util/iterator.h
-    thorin/util/location.cpp
-    thorin/util/location.h
+    thorin/util/debug.cpp
+    thorin/util/debug.h
     thorin/util/log.cpp
     thorin/util/log.h
     thorin/util/stream.h

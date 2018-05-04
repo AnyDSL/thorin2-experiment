@@ -3,7 +3,7 @@
 
 #include "thorin/tables.h"
 #include "thorin/util/array.h"
-#include "thorin/util/location.h"
+#include "thorin/util/debug.h"
 
 namespace thorin {
 

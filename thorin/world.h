@@ -51,7 +51,7 @@ public:
 
     //@{ get Debug information
     Debug& debug() const { return debug_; }
-    Location location() const { return debug_; }
+    Loc loc() const { return debug_; }
     Symbol name() const { return debug().name(); }
     //@}
 
@@ -200,21 +200,21 @@ public:
     //@}
 
     //@{ create Index
-    const Lit* index(u64 arity, u64 idx, Location location = {}) {
-        return index(this->arity(arity), idx, location);
+    const Lit* index(u64 arity, u64 idx, Loc loc = {}) {
+        return index(this->arity(arity), idx, loc);
     }
-    const Lit* index(const Arity* arity, u64 index, Location location = {});
+    const Lit* index(const Arity* arity, u64 index, Loc loc = {});
     const Def* index_zero() const { return index_zero_; }
-    const Def* index_zero(const Def* arity, Location location = {});
+    const Def* index_zero(const Def* arity, Loc loc = {});
     const Def* index_succ() const { return index_succ_; }
     const Def* index_succ(const Def* index, Debug dbg = {});
     const Axiom* index_eliminator() const { return index_eliminator_; };
     //@}
 
     //@{ create Arity
-    const Arity* arity(const Def* q, u64 a, Location location = {});
-    const Arity* arity(QualifierTag q, u64 a, Location location = {}) { return arity(qualifier(q), a, location); }
-    const Arity* arity(u64 a, Location location = {}) { return arity(QualifierTag::u, a, location); }
+    const Arity* arity(const Def* q, u64 a, Loc loc = {});
+    const Arity* arity(QualifierTag q, u64 a, Loc loc = {}) { return arity(qualifier(q), a, loc); }
+    const Arity* arity(u64 a, Loc loc = {}) { return arity(QualifierTag::u, a, loc); }
     const Axiom* arity_succ() { return arity_succ_; }
     const Def* arity_succ(const Def* arity, Debug dbg = {});
     const Axiom* arity_eliminator() const { return arity_eliminator_; }
@@ -265,7 +265,7 @@ public:
     //@}
 
     //@{ values for bool and nat
-    const Lit* lit_nat(int64_t val, Location location = {});
+    const Lit* lit_nat(int64_t val, Loc loc = {});
     const Lit* lit_nat_0() { return lit_nat_0_; }
     const Lit* lit_nat_1() { return lit_nat_[0]; }
     const Lit* lit_nat_2() { return lit_nat_[1]; }

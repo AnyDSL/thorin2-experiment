@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "thorin/util/location.h"
+#include "thorin/util/debug.h"
 #include "thorin/util/symbol.h"
 #include "thorin/util/types.h"
 #include "thorin/util/utility.h"
@@ -80,25 +80,25 @@ public:
     };
 
     Token() {}
-    Token(Location loc, Literal lit)
+    Token(Loc loc, Literal lit)
         : tag_(Tag::Literal)
-        , location_(loc)
+        , loc_(loc)
         , literal_(lit)
     {}
-    Token(Location loc, const std::string& identifier)
+    Token(Loc loc, const std::string& identifier)
         : tag_(Tag::Identifier)
-        , location_(loc)
+        , loc_(loc)
         , symbol_(identifier)
     {}
-    Token(Location loc, Tag tag)
+    Token(Loc loc, Tag tag)
         : tag_(tag)
-        , location_(loc)
+        , loc_(loc)
     {}
 
     Tag tag() const { return tag_; }
     Literal literal() const { return literal_; }
     Symbol symbol() const { return symbol_; }
-    Location location() const { return location_; }
+    Loc loc() const { return loc_; }
 
     bool isa(Tag tag) const { return tag_ == tag; }
     bool is_app_arg() const {
@@ -124,7 +124,7 @@ public:
 
 private:
     Tag tag_;
-    Location location_;
+    Loc loc_;
 
     Literal literal_;
     Symbol symbol_;

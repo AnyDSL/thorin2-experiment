@@ -1,15 +1,15 @@
-#include "thorin/util/location.h"
+#include "thorin/util/debug.h"
 #include "thorin/util/stream.h"
 
 namespace thorin {
 
-Location& Location::operator+=(Location other) {
+Loc& Loc::operator+=(Loc other) {
     this->back_line_ = other.back_line_;
     this->back_col_  = other.back_col_;
     return *this;
 }
 
-std::ostream& operator<<(std::ostream& os, Location l) {
+std::ostream& operator<<(std::ostream& os, Loc l) {
 #ifdef _MSC_VER
     return os << l.filename() << "(" << l.front_line() << ")";
 #else // _MSC_VER
@@ -33,11 +33,11 @@ std::ostream& operator<<(std::ostream& os, Location l) {
 }
 
 Debug operator+(Debug d1, Debug d2) {
-    return {(Location)d1 + (Location)d2, d1.name() + std::string(".") + d2.name()};
+    return {(Loc)d1 + (Loc)d2, d1.name() + std::string(".") + d2.name()};
 }
 
 std::ostream& operator<<(std::ostream& os, Debug dbg) {
-    return streamf(os, "{{{}, {}}}", (Location)dbg, dbg.name());
+    return streamf(os, "{{{}, {}}}", (Loc)dbg, dbg.name());
 }
 
 }

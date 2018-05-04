@@ -60,7 +60,7 @@ Debug Def::debug_history() const {
 #ifndef NDEBUG
     auto& w = world();
     if (!isa<Axiom>() && !w.is_external(this))
-        return w.track_history() ? Debug(location(), unique_name()) : debug();
+        return w.track_history() ? Debug(loc(), unique_name()) : debug();
 #endif
     return debug();
 }

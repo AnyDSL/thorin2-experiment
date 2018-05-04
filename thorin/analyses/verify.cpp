@@ -8,7 +8,7 @@ static void verify_top_level(World& world) {
     Scope::for_each(world, [&] (const Scope& scope) {
         for (auto def : scope.free()) {
             if (!def->isa_lambda())
-                ELOG("top-level continuation '{}' got free def '{}' at location '{}'", scope.entry(), def, def->location());
+                ELOG("top-level continuation '{}' got free def '{}' at location '{}'", scope.entry(), def, def->loc());
         }
     });
 }
