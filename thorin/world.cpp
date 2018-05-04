@@ -171,10 +171,10 @@ World::~World() {
         def->~Def();
 }
 
-const Arity* World::arity(const Def* q, size_t a, Location location) {
+const Arity* World::arity(const Def* q, size_t a, Loc loc) {
     assert(q->type() == qualifier_type());
     auto cur = Def::gid_counter();
-    auto result = unify<Arity>(3, arity_kind(q), a, location);
+    auto result = unify<Arity>(3, arity_kind(q), a, loc);
 
     if (result->gid() >= cur)
         result->debug().set(std::to_string(a) + "ₐ");
@@ -320,11 +320,11 @@ const Def* World::extract(const Def* def, size_t i, Debug dbg) {
         errorf("can only extract with constant on constant arities");
 }
 
-const Lit* World::index(const Arity* a, u64 i, Location location) {
+const Lit* World::index(const Arity* a, u64 i, Loc loc) {
     auto arity_val = a->value();
     if (i < arity_val) {
         auto cur = Def::gid_counter();
-        auto result = lit(a, i, location);
+        auto result = lit(a, i, loc);
 
         if (result->gid() >= cur) { // new literal -> build name
             std::string s = std::to_string(i);
@@ -344,11 +344,11 @@ const Lit* World::index(const Arity* a, u64 i, Location location) {
     }
 }
 
-const Def* World::index_zero(const Def* arity, Location location) {
+const Def* World::index_zero(const Def* arity, Loc loc) {
     if (arity->type()->isa<ArityKind>()) {
         if (auto a = arity->isa<Arity>())
-            return index(a->value() + 1, 0, location);
-        return app(index_zero_, tuple({arity->qualifier(), arity}), {location});
+            return index(a->value() + 1, 0, loc);
+        return app(index_zero_, tuple({arity->qualifier(), arity}), {loc});
     } else {
         errorf("expected '{}' to have an 𝔸 type", arity);
     }
@@ -686,9 +686,9 @@ const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
     }
 }
 
-const Lit* World::lit_nat(int64_t val, Location location) {
+const Lit* World::lit_nat(int64_t val, Loc loc) {
     auto cur = Def::gid_counter();
-    auto result = lit(type_nat(), {val}, {location});
+    auto result = lit(type_nat(), {val}, {loc});
     if (result->gid() >= cur)
         result->debug().set(std::to_string(val));
     return result;

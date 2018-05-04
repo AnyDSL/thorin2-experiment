@@ -2,7 +2,7 @@
 #define THORIN_FE_LEXER_H
 
 #include "thorin/fe/token.h"
-#include "thorin/util/location.h"
+#include "thorin/util/debug.h"
 #include "thorin/util/stream.h"
 
 namespace thorin::fe {
@@ -47,7 +47,7 @@ private:
     template<typename... Args>
     [[noreturn]] void error(const char* fmt, Args... args) {
         std::ostringstream oss;
-        streamf(oss, "{}: lex error: ", location());
+        streamf(oss, "{}: lex error: ", loc());
         streamf(oss, fmt, std::forward<Args>(args)...);
         throw std::logic_error(oss.str());
     }
@@ -55,7 +55,7 @@ private:
     uint32_t next();
     uint32_t peek() const { return peek_; }
     const std::string& str() const { return str_; }
-    Location location() const { return {filename_, front_line_, front_col_, back_line_, back_col_}; }
+    Loc loc() const { return {filename_, front_line_, front_col_, back_line_, back_col_}; }
 
     std::istream& stream_;
     uint32_t peek_ = 0;

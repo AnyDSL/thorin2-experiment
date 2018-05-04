@@ -7,7 +7,7 @@
 #include <ostream>
 #include <sstream>
 
-#include "thorin/util/location.h"
+#include "thorin/util/debug.h"
 #include "thorin/util/stream.h"
 
 namespace thorin {
@@ -33,10 +33,10 @@ public:
     static std::string colorize(const std::string&, int);
 
     template<typename... Args>
-    static void log(Level level, Location location, const char* fmt, Args... args) {
+    static void log(Level level, Loc loc, const char* fmt, Args... args) {
         if (Log::get_stream() && Log::get_min_level() <= level) {
             std::ostringstream oss;
-            oss << location;
+            oss << loc;
             if (Log::get_print_loc())
                 Log::stream() << colorize(level2string(level), level2color(level)) << ':'
                               << colorize(oss.str(), 7) << ": ";
@@ -48,8 +48,8 @@ public:
     }
 
     template<typename... Args>
-    [[noreturn]] static void error(Location location, const char* fmt, Args... args) {
-        log(Error, location, fmt, args...);
+    [[noreturn]] static void error(Loc loc, const char* fmt, Args... args) {
+        log(Error, loc, fmt, args...);
         std::abort();
     }
 
@@ -65,12 +65,12 @@ private:
 
 }
 
-#define ELOG(...) thorin::Log::log(thorin::Log::Error,   Location(__FILE__, __LINE__, -1), __VA_ARGS__)
-#define WLOG(...) thorin::Log::log(thorin::Log::Warn,    Location(__FILE__, __LINE__, -1), __VA_ARGS__)
-#define ILOG(...) thorin::Log::log(thorin::Log::Info,    Location(__FILE__, __LINE__, -1), __VA_ARGS__)
-#define VLOG(...) thorin::Log::log(thorin::Log::Verbose, Location(__FILE__, __LINE__, -1), __VA_ARGS__)
+#define ELOG(...) thorin::Log::log(thorin::Log::Error,   Loc(__FILE__, __LINE__, -1), __VA_ARGS__)
+#define WLOG(...) thorin::Log::log(thorin::Log::Warn,    Loc(__FILE__, __LINE__, -1), __VA_ARGS__)
+#define ILOG(...) thorin::Log::log(thorin::Log::Info,    Loc(__FILE__, __LINE__, -1), __VA_ARGS__)
+#define VLOG(...) thorin::Log::log(thorin::Log::Verbose, Loc(__FILE__, __LINE__, -1), __VA_ARGS__)
 #ifndef NDEBUG
-#define DLOG(...) thorin::Log::log(thorin::Log::Debug,   Location(__FILE__, __LINE__, -1), __VA_ARGS__)
+#define DLOG(...) thorin::Log::log(thorin::Log::Debug,   Loc(__FILE__, __LINE__, -1), __VA_ARGS__)
 #else
 #define DLOG(...) do {} while (false)
 #endif

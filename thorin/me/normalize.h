@@ -2,7 +2,7 @@
 #define THORIN_ME_NORMALIZE_H
 
 #include "thorin/me/tables.h"
-#include "thorin/util/location.h"
+#include "thorin/util/debug.h"
 
 namespace thorin {
 

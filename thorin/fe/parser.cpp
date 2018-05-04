@@ -22,7 +22,7 @@ namespace thorin::fe {
 
 const Def* Parser::parse_def() {
     Tracker tracker(this);
-    std::vector<std::pair<const Def*, Location>> defs;
+    std::vector<std::pair<const Def*, Loc>> defs;
     parse_curried_defs(defs);
     assert(!defs.empty());
     const Def* def = defs.front().first;
@@ -31,7 +31,7 @@ const Def* Parser::parse_def() {
     return def;
 }
 
-void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Location>>& defs) {
+void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Loc>>& defs) {
     Tracker tracker(this);
     const Def* def = nullptr;
 
@@ -63,7 +63,7 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Location>>& de
         def = parse_extract_or_insert(tracker, def);
     // TODO insert <-
 
-    defs.emplace_back(def, tracker.location());
+    defs.emplace_back(def, tracker.loc());
 
     // an expression follows that can be an argument for an app
     if (ahead().is_app_arg())
@@ -98,9 +98,9 @@ const Def* Parser::parse_debruijn() {
                         [[fallthrough]];
                     default: assertf(false, "expected type for De Bruijn variable after '::'");
                 }
-                return world_.var(type, index, tracker.location());
+                return world_.var(type, index, tracker.loc());
             }
-            return world_.var(debruijn_types_[debruijn_types_.size() - index - 1], index, tracker.location());
+            return world_.var(debruijn_types_[debruijn_types_.size() - index - 1], index, tracker.loc());
         } else {
             assertf(false, "untyped literal expected after '\'");
             THORIN_UNREACHABLE;
@@ -115,7 +115,7 @@ const Def* Parser::parse_cn() {
     Tracker tracker(this);
     eat(Token::Tag::Cn);
     auto domain = parse_def();
-    return world_.cn(domain, tracker.location());
+    return world_.cn(domain, tracker.loc());
 }
 
 const Def* Parser::parse_pi() {
@@ -126,7 +126,7 @@ const Def* Parser::parse_pi() {
     expect(Token::Tag::Dot, "Π type");
     auto body = parse_def();
     pop_debruijn_binders();
-    return world_.pi(domain, body, tracker.location());
+    return world_.pi(domain, body, tracker.loc());
 }
 
 std::vector<const Def*> Parser::parse_sigma_ops() {
@@ -143,7 +143,7 @@ std::vector<const Def*> Parser::parse_sigma_ops() {
         auto body = parse_def();
         expect(Token::Tag::R_Bracket, "variadic");
         pop_debruijn_binders();
-        return {world_.variadic(first, body, tracker.location())};
+        return {world_.variadic(first, body, tracker.loc())};
     }
 
     auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] {
@@ -159,7 +159,7 @@ std::vector<const Def*> Parser::parse_sigma_ops() {
 
 const Def* Parser::parse_sigma_or_variadic() {
     Tracker tracker(this);
-    return world_.sigma(parse_sigma_ops(), tracker.location());
+    return world_.sigma(parse_sigma_ops(), tracker.loc());
 }
 
 const Def* Parser::parse_lambda() {
@@ -170,7 +170,7 @@ const Def* Parser::parse_lambda() {
     expect(Token::Tag::Dot, "λ abstraction");
     auto body = parse_def();
     pop_debruijn_binders();
-    return world_.lambda(domain, body, tracker.location());
+    return world_.lambda(domain, body, tracker.loc());
 }
 
 const Def* Parser::parse_optional_qualifier() {
@@ -217,11 +217,11 @@ const Def* Parser::parse_tuple_or_pack() {
         auto body = parse_def();
         expect(Token::Tag::R_Paren, "pack");
         pop_debruijn_binders();
-        return world_.pack(first, body, tracker.location());
+        return world_.pack(first, body, tracker.loc());
     }
 
     auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); }, "elements of tuple", first);
-    return world_.tuple(defs, tracker.location());
+    return world_.tuple(defs, tracker.loc());
 }
 
 const Def* Parser::parse_lit() {
@@ -238,17 +238,17 @@ const Def* Parser::parse_lit() {
     auto type = parse_def();
     expect(Token::Tag::R_Brace, "literal");
 
-    return world_.lit(type, box, tracker.location());
+    return world_.lit(type, box, tracker.loc());
 }
 
 const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {
     auto b = parse_def();
     if (accept(Token::Tag::Arrow)) {
         auto c = parse_def();
-        return world_.insert(a, b, c, tracker.location());
+        return world_.insert(a, b, c, tracker.loc());
     }
 
-    return world_.extract(a, b, tracker.location());
+    return world_.extract(a, b, tracker.loc());
 }
 
 const Def* Parser::parse_literal() {
@@ -260,10 +260,10 @@ const Def* Parser::parse_literal() {
         auto index_arity = next().literal();
         assert(index_arity.tag == Literal::Tag::Lit_index_arity);
         const Def* qualifier = parse_optional_qualifier();
-        return world_.index(world_.arity(qualifier, index_arity.box.get_u64()), literal.box.get_u64(), tracker.location());
+        return world_.index(world_.arity(qualifier, index_arity.box.get_u64()), literal.box.get_u64(), tracker.loc());
     } else if (literal.tag == Literal::Tag::Lit_arity) {
         const Def* qualifier = parse_optional_qualifier();
-        return world_.arity(qualifier, literal.box.get_u64(), tracker.location());
+        return world_.arity(qualifier, literal.box.get_u64(), tracker.loc());
     }
 
     assertf(false, "unhandled literal {}", literal.box.get_u64());
@@ -323,12 +323,12 @@ const Def* Parser::parse_identifier() {
         expect(Token::Tag::ColonEqual, "a nominal definition");
 
         if (accept(Token::Tag::Lambda)) {
-            auto lambda = world_.lambda(type->as<Pi>(), tracker.location()); // TODO properly set back location
+            auto lambda = world_.lambda(type->as<Pi>(), tracker.loc()); // TODO properly set back location
             insert_identifier(symbol, lambda);
             Tracker tracker(this);
             push_scope();
             auto symbol = expect(Token::Tag::Identifier, "parameter name for nomimal λ").symbol();
-            insert_identifier(symbol, lambda->param({tracker.location(), symbol}));
+            insert_identifier(symbol, lambda->param({tracker.loc(), symbol}));
             expect(Token::Tag::Dot, "λ abstraction");
             auto body = parse_def();
             pop_scope();
@@ -349,9 +349,9 @@ const Def* Parser::parse_identifier() {
             auto index = depth_ - it.depth;
             assert(index > 0);
             auto type = shift_free_vars(debruijn_types_[it.depth], index);
-            const Def* var = world_.var(type, index - 1, tracker.location());
+            const Def* var = world_.var(type, index - 1, tracker.loc());
             for (auto i : reverse_range(it.indices))
-                var = world_.extract(var, i, tracker.location());
+                var = world_.extract(var, i, tracker.loc());
             def = var;
         } else { // nominal, let, or axiom
             return def_or_index.def();
@@ -401,7 +401,7 @@ Parser::DefOrIndex Parser::lookup(const Tracker& tracker, Symbol identifier) {
         else if (auto e = world_.lookup_external(identifier))
             return e;
         else {
-            error(tracker.location(), "'{}' not found in current scope", identifier.str());
+            error(tracker.loc(), "'{}' not found in current scope", identifier.str());
         }
     }
     return def_or_index->second;
