@@ -4,10 +4,10 @@ sudo: true
 addons:
   apt:
     sources:
-      - llvm-toolchain-trusty-5.0
+      - llvm-toolchain-trusty-6.0
       - ubuntu-toolchain-r-test
     packages:
-      - clang-5.0
+      - clang-6.0
       - g++-7
       - valgrind
 
@@ -30,7 +30,7 @@ install:
   - cmake --version
 
 script:
-  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-5.0"; fi
+  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-6.0"; fi
   - if [ "$CXX" = "g++" ]    ; then export CXX="g++-7";       fi
   - ${CXX} --version
   - mkdir -p build
