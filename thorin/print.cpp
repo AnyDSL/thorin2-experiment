@@ -35,9 +35,9 @@ Printer& Def::qualifier_stream(Printer& p) const {
         auto q = type()->op(0);
         if (auto qual = q->isa<Qualifier>()) {
             if (qual->qualifier_tag() != QualifierTag::u)
-                p << q;
+                q->stream(p);
         } else
-            p << q;
+            q->stream(p);
     }
     return p;
 }
@@ -145,7 +145,7 @@ Printer& Pick::vstream(Printer& p) const {
 }
 
 Printer& Qualifier::vstream(Printer& p) const {
-    return p << name();
+    return p << qualifier_tag();
 }
 
 Printer& QualifierType::vstream(Printer& p) const {
