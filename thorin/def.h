@@ -604,6 +604,7 @@ private:
     {}
 
 public:
+    void check(TypeCheck&, DefVector&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
@@ -639,6 +640,7 @@ private:
 public:
     const Def* scrutinee() const { return op(0); }
     const Def* index() const { return op(1); }
+    void check(TypeCheck&, DefVector&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:

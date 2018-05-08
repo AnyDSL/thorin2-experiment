@@ -33,8 +33,9 @@ inline bool operator<(QualifierTag lhs, QualifierTag rhs) {
     return false;
 }
 inline bool operator> (QualifierTag lhs, QualifierTag rhs) { return rhs < lhs; }
-inline bool operator<=(QualifierTag lhs, QualifierTag rhs) { return !(lhs > rhs); }
-inline bool operator>=(QualifierTag lhs, QualifierTag rhs) { return !(lhs < rhs); }
+// DO NOT "OPTIMIZE" (QualifierTags, <=) is a partially ordered set: !(lhs > rhs) does not work!
+inline bool operator<=(QualifierTag lhs, QualifierTag rhs) { return lhs == rhs || lhs < rhs ; }
+inline bool operator>=(QualifierTag lhs, QualifierTag rhs) { return rhs <= lhs; }
 
 constexpr const char* qualifier2str(QualifierTag q) {
     switch (q) {
