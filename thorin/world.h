@@ -9,6 +9,7 @@
 #include "thorin/tables.h"
 #include "thorin/util/iterator.h"
 #include "thorin/util/symbol.h"
+#include "thorin/check.h"
 
 namespace thorin {
 
@@ -337,6 +338,7 @@ public:
     bool track_history() const;
     void enable_history(bool flag = true);
 #endif
+    void check(const Def* def) { type_check_.check(def); }
     bool expensive_checks_enabled() const { return expensive_checks_; }
     void enable_expensive_checks(bool on = true) { expensive_checks_ = on; }
     bool assignable(const Def* a, const Def* b) { return !expensive_checks_enabled() || a->assignable(b); }
@@ -504,6 +506,7 @@ protected:
     std::array<const Lit*, 7> lit_nat_;
     const Axiom* cn_br_;
     Lambda* cn_end_;
+    TypeCheck type_check_;
 #ifndef NDEBUG
     Breakpoints breakpoints_;
     bool track_history_ = false;

@@ -75,6 +75,22 @@ TEST(Lambda, AppCurry) {
     EXPECT_EQ(cur, w.lit_nat_32());
 }
 
+TEST(Lambda, MassiveCurryPerfCheck) {
+    World w;
+    auto op = w.axiom(w.pi(w.sigma({w.type_nat(), w.type_nat()}), w.type_nat()), {"op"});
+    auto var = [&](auto i) { return w.var(w.type_nat(), i); };
+    const Def* cur = var(0);
+    for (int i = 0; i < test_num_vars; ++i)
+        cur = w.app(op, w.tuple({var(i), cur}));
+
+    for (int i = 0; i < test_num_vars; ++i) {
+        ASSERT_TRUE(cur->free_vars().any());
+        cur = w.lambda(w.type_nat(), cur);
+    }
+
+    ASSERT_TRUE(cur->free_vars().none());
+}
+
 TEST(Lambda, AppArity) {
     World w;
     auto l = w.lambda(w.sigma(DefArray{test_num_vars, w.type_nat()}), w.lit_nat_32());

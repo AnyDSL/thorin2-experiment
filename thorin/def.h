@@ -19,7 +19,7 @@ class App;
 class Axiom;
 class Def;
 class Lambda;
-class Sema;
+class TypeCheck;
 class Tracker;
 class Param;
 class World;
@@ -235,7 +235,7 @@ public:
 
     //@{ type checking
     void check() const;
-    virtual void check(Sema&) const;
+    virtual void check(TypeCheck&, DefVector&) const;
     virtual bool assignable(const Def* def) const { return this == def->type(); }
     bool subtype_of(const Def* def) const {
         if (this == def)
@@ -444,7 +444,7 @@ public:
     const Def* arity() const override;
     bool assignable(const Def* def) const override;
     bool has_values() const override;
-    void check(Sema&) const override;
+    void check(TypeCheck&, DefVector&) const override;
     const Def* kind_qualifier() const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -504,7 +504,7 @@ public:
     Lambdas succs() const;
     //@}
 
-    void check(Sema&) const override;
+    void check(TypeCheck&, DefVector&) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     Lambda* vstub(World&, const Def*, Debug) const override;
@@ -557,7 +557,7 @@ public:
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     Sigma* vstub(World&, const Def*, Debug) const override;
-    void check(Sema&) const override;
+    void check(TypeCheck&, DefVector&) const override;
 
 private:
     static const Def* max_type(Defs ops, const Def* qualifier);
@@ -580,7 +580,7 @@ public:
     bool is_homogeneous() const { return !body()->free_vars().test(0); };
     bool has_values() const override;
     bool assignable(const Def* def) const override;
-    void check(Sema&) const override;
+    void check(TypeCheck&, DefVector&) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
@@ -620,7 +620,7 @@ private:
 
 public:
     const Def* body() const { return op(0); }
-    void check(Sema&) const override;
+    void check(TypeCheck&, DefVector&) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
@@ -864,7 +864,7 @@ public:
     u64 index() const { return extra().index_; }
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
     Printer& name_stream(Printer& os) const override { return vstream(os); }
-    void check(Sema&) const override;
+    void check(TypeCheck&, DefVector&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:

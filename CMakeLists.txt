@@ -9,6 +9,8 @@ option(BUILD_SHARED_LIBS "Build shared libraries (so/dll)" ON)
 add_library(thorin
     thorin/def.cpp
     thorin/def.h
+    thorin/check.cpp
+    thorin/check.h
     thorin/normalize.cpp
     thorin/normalize.h
     thorin/print.cpp
