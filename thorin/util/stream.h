@@ -38,6 +38,9 @@ public:
     void dump() const { stream_out(std::cout) << std::endl; }
 };
 
+template<class S>
+std::ostream& operator<<(std::ostream& stream, const Streamable<S>* p) { return p->stream_out(stream); }
+
 template<class L, class F>
 struct stream_list {
     struct stream_list_tag {};
