@@ -5,8 +5,6 @@
 namespace thorin {
 
 void TypeCheck::check(const Def* def, DefVector& types) {
-    if (def->num_ops() == 0)
-        return;
     if (def->free_vars().none())
         types = {};
     if (done_.emplace(DefArray(types), def).second)
