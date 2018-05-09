@@ -65,9 +65,10 @@ void Sigma::check(TypeCheck& tc, DefVector& types) const {
 }
 
 void Var::check(TypeCheck&, DefVector& types) const {
-    auto reverse_index = types.size() - 1 - index();
-    if (reverse_index < 0)
+    // free variables are always typed correctly / will be checked later
+    if (types.size() <= index())
         return;
+    auto reverse_index = types.size() - 1 - index();
     auto shifted_type = shift_free_vars(type(), -index() - 1);
     auto env_type = types[reverse_index];
     if (env_type != shifted_type)
