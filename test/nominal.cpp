@@ -69,12 +69,10 @@ TEST(Nominal, Nat) {
 TEST(Nominal, SigmaFreeVars) {
     World w;
     auto S = w.star();
-    auto N = w.type_nat();
-
     auto sig = w.sigma_type(3);
     auto v0 = w.var(S, 0);
     auto v1 = w.var(S, 1);
-    sig->set(0, N)->set(1, v0)->set(2, v1);
+    sig->set(0, S)->set(1, v0)->set(2, v1);
     EXPECT_TRUE (sig->op(1)->free_vars().test(0));
     EXPECT_FALSE(sig->op(1)->free_vars().test(1));
     EXPECT_FALSE(sig->op(1)->free_vars().test(2));
