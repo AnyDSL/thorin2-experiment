@@ -125,7 +125,7 @@ World::World(Debug dbg)
         arity_kind_[i] = insert<ArityKind>(1, *this, qualifier_[i]);
         multi_arity_kind_[i] = insert<MultiArityKind>(1, *this, qualifier_[i]);
         unit_[i] = arity(qualifier_[i], 1);
-        unit_val_[i] = index_zero(unit_[i]);
+        unit_val_[i] = index(unit_[i], 0);
     }
 
     type_bool_ = axiom(star(), {"bool"});
