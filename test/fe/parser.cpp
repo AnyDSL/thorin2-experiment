@@ -9,6 +9,12 @@
 using namespace thorin;
 using namespace thorin::fe;
 
+TEST(Parser, Unit) {
+    World w;
+    EXPECT_EQ(parse(w, "()"), w.val_unit());
+    EXPECT_EQ(parse(w, "()")->type(), w.unit());
+}
+
 TEST(Parser, Simple) {
     World w;
     EXPECT_EQ(parse(w, "bool"), w.type_bool());

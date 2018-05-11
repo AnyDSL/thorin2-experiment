@@ -491,7 +491,7 @@ protected:
     const Axiom* index_eliminator_;
     std::array<const Qualifier*, 4> qualifier_;
     std::array<const Star*,  4> star_;
-    std::array<const Def*, 4> unit_;
+    std::array<const Arity*, 4> unit_;
     std::array<const Def*, 4> unit_val_;
     std::array<const Def*, 4> unit_kind_;
     std::array<const Def*, 4> unit_kind_val_;
