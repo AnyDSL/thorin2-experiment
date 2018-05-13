@@ -62,7 +62,7 @@ typedef HashSet<Use, UseHash> Uses;
 
 template<class T>
 struct GIDLt {
-    bool operator()(T a, T b) { return a->gid() < b->gid(); }
+    bool operator()(T a, T b) const { return a->gid() < b->gid(); }
 };
 
 template<class T>

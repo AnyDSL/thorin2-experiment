@@ -62,6 +62,7 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
                         case 16: return world.lit(t, F<16, false, false>::run(ba, bb));
                         case 32: return world.lit(t, F<32, false, false>::run(ba, bb));
                         case 64: return world.lit(t, F<64, false, false>::run(ba, bb));
+                        default: THORIN_UNREACHABLE;
                     }
                 case int64_t(WFlags::nsw):
                     switch (w) {
@@ -69,6 +70,7 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
                         case 16: return world.lit(t, F<16,  true, false>::run(ba, bb));
                         case 32: return world.lit(t, F<32,  true, false>::run(ba, bb));
                         case 64: return world.lit(t, F<64,  true, false>::run(ba, bb));
+                        default: THORIN_UNREACHABLE;
                     }
                 case int64_t(WFlags::nuw):
                     switch (w) {
@@ -76,6 +78,7 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
                         case 16: return world.lit(t, F<16, false,  true>::run(ba, bb));
                         case 32: return world.lit(t, F<32, false,  true>::run(ba, bb));
                         case 64: return world.lit(t, F<64, false,  true>::run(ba, bb));
+                        default: THORIN_UNREACHABLE;
                     }
                 case int64_t(WFlags::nsw | WFlags::nuw):
                     switch (w) {
@@ -83,6 +86,7 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
                         case 16: return world.lit(t, F<16,  true,  true>::run(ba, bb));
                         case 32: return world.lit(t, F<32,  true,  true>::run(ba, bb));
                         case 64: return world.lit(t, F<64,  true,  true>::run(ba, bb));
+                        default: THORIN_UNREACHABLE;
                     }
             }
         } catch (BottomException) {
