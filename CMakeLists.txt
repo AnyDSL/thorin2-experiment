@@ -39,6 +39,7 @@ add_library(thorin
     thorin/analyses/scope.h
     thorin/analyses/verify.cpp
     thorin/analyses/verify.h
+    thorin/analyses/free_vars_params.h
     thorin/fe/lexer.cpp
     thorin/fe/lexer.h
     thorin/fe/parser.cpp

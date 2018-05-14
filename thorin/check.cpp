@@ -1,7 +1,6 @@
 #include "thorin/check.h"
 #include "thorin/world.h"
 #include "thorin/transform/reduce.h"
-#include "thorin/util/log.h"
 
 namespace thorin {
 
@@ -92,7 +91,6 @@ void Extract::check(TypeCheck& tc, DefVector& types) const {
     }
     add_occurrences(occ, tc.occurrences[index()]);
     tc.occurrences.emplace(this, occ);
-    WLOG("{} {} {}", this, tc.occurrences[scrutinee()], tc.occurrences[this]);
 }
 
 void Lambda::check(TypeCheck& tc, DefVector& types) const {

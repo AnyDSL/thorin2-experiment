@@ -11,6 +11,10 @@ namespace thorin {
  * helpers
  */
 
+uint64_t DefIndexHash::hash(DefIndex s) {
+    return murmur3(uint64_t(s->gid()) << 32_u64 | uint64_t(s.index()));
+}
+
 DefArray qualifiers(Defs defs) {
     DefArray result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)

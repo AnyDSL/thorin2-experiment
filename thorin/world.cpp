@@ -4,6 +4,7 @@
 #include "thorin/world.h"
 #include "thorin/normalize.h"
 #include "thorin/fe/parser.h"
+#include "thorin/analyses/free_vars_params.h"
 #include "thorin/transform/reduce.h"
 
 namespace thorin {
@@ -37,13 +38,13 @@ static bool any_of(const Def* def, Defs defs) {
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
-template<class T, class I>
-const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
+template<class T, bool infer_qualifier, class I>
+const Def* World::bound(const Def* q, Range<I> defs) {
     if (defs.distance() == 0)
         return star(q ? q : qualifier(T::Qualifier::min));
 
     auto first = *defs.begin();
-    auto inferred_q = first->qualifier();
+    auto inferred_q = infer_qualifier ? first->qualifier() : q;
     auto max = first;
 
     auto iter = defs.begin();
@@ -53,16 +54,20 @@ const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
         if (def->is_value())
             errorf("can't have value '{}' as operand of bound operator", def);
 
-        if (def->qualifier()->free_vars().any_range(0, i)) {
-            // qualifier is dependent within this type/kind, go to top directly
-            // TODO might want to assert that this will always be a kind?
-            inferred_q = qualifier(T::Qualifier::max);
-        } else {
-            auto qualifier = shift_free_vars(def->qualifier(), -i);
-            inferred_q = join<T>(qualifier_type(), {inferred_q, qualifier}, {});
+        if (infer_qualifier) {
+            if (def->qualifier()->free_vars().any_range(0, i)) {
+                // qualifier is dependent within this type/kind, go to top directly
+                // TODO might want to assert that this will always be a kind?
+                inferred_q = qualifier(T::Qualifier::max);
+            } else {
+                auto qualifier = shift_free_vars(def->qualifier(), -i);
+                inferred_q = join<T>(qualifier_type(), {inferred_q, qualifier}, {});
+            }
         }
 
         // TODO somehow build into a def->is_subtype_of(other)/similar
+        if (def == qualifier_type() && max == qualifier_type())
+            continue;
         bool is_arity = def->template isa<ArityKind>();
         bool is_star = def->template isa<Star>();
         bool is_marity = is_arity || def->template isa<MultiArityKind>();
@@ -80,8 +85,10 @@ const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
     }
 
     if (max->template isa<Star>()) {
-        if (!require_qualifier)
+        if (!infer_qualifier) {
+            assert(inferred_q == q);
             return star(q ? q : qualifier(T::Qualifier::min));
+        }
         if (q == nullptr) {
             // no provided qualifier, so we use the inferred one
             assert(!max || max->op(0) == inferred_q);
@@ -93,8 +100,9 @@ const Def* World::bound(const Def* q, Range<I> defs, bool require_qualifier) {
                     auto iq = i_qual->qualifier_tag();
                     if (auto q_qual = q->template isa<Qualifier>()) {
                         auto qual = q_qual->qualifier_tag();
-                        if (l.q_less(iq, qual))
-                            errorf("qualifier must be '{}' than the '{}' of the operands' qualifiers", l.short_name, l.full_name);
+                        // TODO implement this in the Qualifier structs in variant/intersection, then re-enable
+                        if (T::Qualifier::less(iq, qual))
+                            errorf("qualifier must be '{}' than the '{}' of the operands' qualifiers", T::Qualifier::less_name, T::op_name);
                     }
                 }
             }
@@ -441,12 +449,12 @@ template const Def* World::join<Intersection>(const Def*, Defs, Debug);
 template const Def* World::join<Variant     >(const Def*, Defs, Debug);
 
 const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg) {
-    if (!codomain->is_value()) {
-        auto type = type_bound<Variant>(q, {domain, codomain}, false);
-        return unify<Pi>(2, type, domain, codomain, dbg);
-    } else {
+    if (codomain->is_value())
         errorf("codomain '{}' of type '{}' of function type cannot be a value", codomain, codomain->type());
-    }
+    else if (domain->is_value())
+        errorf("domain '{}' of type '{}' of function type cannot be a value", domain, domain->type());
+    auto type = type_bound<Variant, false>(q, {domain, codomain});
+    return unify<Pi>(2, type, domain, codomain, dbg);
 }
 
 const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
@@ -459,7 +467,71 @@ const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
     return def;
 }
 
+class QualifierJoinVisitor {
+public:
+    QualifierJoinVisitor(World& world, size_t ignore_offset = 1)
+        : world_(world)
+        , qualifier_(world.unlimited())
+        , ignore_offset_(ignore_offset)
+    {}
+
+    const Def* visit_nominal(const Def* def, size_t offset) { return set_visited(def, offset); }
+    const Def* visit_no_free_vars(const Def* def, size_t offset) { return set_visited(def, offset); }
+    std::optional<const Def*> is_visited(const Def* def, size_t offset) {
+        if (visited_.contains({def, offset}))
+            return qualifier_;
+        return std::nullopt;
+    }
+    const Def* visit_free_var(const Var* var, size_t offset, const Def*) {
+        if (var->index() - offset < ignore_offset_)
+            return set_visited(var, offset);
+        return visit_varparam(var, offset); }
+    const Def* visit_param(const Param* param, size_t offset, const Def*) {  return visit_varparam(param, offset); }
+    const Def* visit_nonfree_var(const Var* def, size_t offset, const Def*) { return set_visited(def, offset); }
+    std::optional<const Def*> stop_recursion(const Def* def, size_t offset, const Def*) {
+        set_visited(def, offset);
+        if (qualifier_ == world_.linear())
+            return qualifier_;
+        // TODO can we avoid recursing in more cases? probably not...
+        return std::nullopt;
+    }
+    bool visit_pre_ops(const Def*, size_t, const Def*) { return false; }
+    void visit_op(const Def*, size_t, bool, size_t, const Def*) { }
+    const Def* visit_post_ops(const Def*, size_t, const Def*, bool) { return qualifier_; }
+
+    const Def* qualifier() { return qualifier_; }
+private:
+    World& world_;
+    DefIndexSet visited_;
+    const Def* qualifier_;
+    /// how many more variables to consider non-free with regards to qualifiers, usually 1
+    size_t ignore_offset_;
+
+    const Def* set_visited(const Def* def, size_t offset) {
+        visited_.emplace(def, offset);
+        return qualifier_;
+    }
+    const Def* visit_varparam(const Def* def, size_t offset) {
+        visited_.emplace(def, offset);
+        if (def->is_value())
+            qualifier_ = world_.variant({qualifier_, def->qualifier()});
+        return qualifier_;
+    }
+};
+
 const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, const Def* body, Debug dbg) {
+    if (domain->is_value())
+        errorf("domain '{}' of type '{}' of function type cannot be a value", domain, domain->type());
+    if (body->free_vars().any_begin(1)) {
+        QualifierJoinVisitor visitor(*this);
+        // TODO check against q
+        auto inferred_q = visit_free_vars_params<QualifierJoinVisitor, const Def*>(visitor, body);
+        if (q != nullptr & q != inferred_q)
+            errorf("λ{}.{} captures free variables of combined qualifier {}, can't use qualifier {}.",
+                   domain, body, inferred_q, q);
+        q = inferred_q;
+    } else if (q == nullptr)
+        q = unlimited();
     auto type = pi(q, domain, body->type(), dbg);
     // TODO check/infer qualifier from free variables/params
 
