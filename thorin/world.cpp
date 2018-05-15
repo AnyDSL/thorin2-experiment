@@ -429,6 +429,100 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
 template const Def* World::join<Intersection>(const Def*, Defs, Debug);
 template const Def* World::join<Variant     >(const Def*, Defs, Debug);
 
+const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, const Def* body, Debug dbg) {
+    auto type = pi(q, domain, body->type(), dbg);
+    // TODO check/infer qualifier from free variables/params
+
+    if (auto app = body->isa<App>()) {
+        bool eta_property = app->arg()->isa<Var>() && app->arg()->as<Var>()->index() == 0;
+
+        if (!app->callee()->free_vars().test(0) && eta_property)
+            return shift_free_vars(app->callee(), -1);
+    }
+
+    return unify<Lambda>(2, type, filter, body, dbg);
+}
+
+const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
+    auto type = def->destructing_type();
+
+    if (handlers.size() == 1) {
+        if (!type->isa<Variant>())
+            return app(handlers.front(), def, dbg);
+        else
+            errorf("matching with one handler implies matching a non-variant-typed value");
+    }
+
+    if (auto matched_type = type->as<Variant>()) {
+        if (type->num_ops() == handlers.size()) {
+            DefArray sorted_handlers(handlers);
+            std::sort(sorted_handlers.begin(), sorted_handlers.end(), [](const Def* a, const Def* b) {
+                    auto a_dom = a->type()->as<Pi>()->domain();
+                    auto b_dom = b->type()->as<Pi>()->domain();
+                    return a_dom->gid() < b_dom->gid(); });
+
+            if (expensive_checks_enabled()) {
+                for (size_t i = 0; i < sorted_handlers.size(); ++i) {
+                    auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
+                    if (domain != matched_type->op(i))
+                        errorf("handler '{}' with domain '{}' does not match type '{}'", i, domain, matched_type->op(i));
+                }
+            }
+            auto types = DefArray(sorted_handlers.size(), [&](size_t i) { return handlers[i]->type()->as<Pi>()->codomain(); });
+            unique_gid_sort(&types); // we're not actually building a sum type here, we need uniqueness
+            return unify<Match>(1+sorted_handlers.size(), variant(types), def, sorted_handlers, dbg);
+        } else {
+            errorf("number of handlers does not match number of cases");
+        }
+    } else {
+        errorf("matched type must be a variant");
+    }
+}
+
+const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
+    if (auto sigma = arity->isa<Sigma>())
+        return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
+
+    if (auto v = arity->isa<Variadic>()) {
+        if (auto a = v->has_constant_arity()) {
+            assert(!v->body()->free_vars().test(0));
+            assert(a != 1);
+            auto result = flatten(body, DefArray(*a, shift_free_vars(v->body(), *a-1)));
+            for (size_t i = *a; i-- != 0;)
+                result = pack(shift_free_vars(v->body(), i-1), result, dbg);
+            return result;
+        }
+    }
+
+    if (auto a_literal = arity->isa<Arity>()) {
+        auto a = a_literal->value();
+        if (a == 0) {
+            if (body->is_type())
+                return unify<Pack>(1, unit_kind(body->qualifier()), unit(body->qualifier()), dbg);
+            return val_unit(body->type()->qualifier());
+        }
+        if (a == 1) return reduce(body, index(1, 0));
+        if (body->free_vars().test(0))
+            return tuple(DefArray(a, [&](auto i) { return reduce(body, this->index(a, i)); }), dbg);
+    }
+
+    if (auto extract = body->isa<Extract>()) {
+        if (auto var = extract->index()->isa<Var>()) {
+            if (var->index() == 0 && !extract->scrutinee()->free_vars().test(0))
+                return shift_free_vars(extract->scrutinee(), -1);
+        }
+    }
+
+    assert(body->is_term() || body->is_type());
+    return unify<Pack>(1, variadic(arity, body->type()), body, dbg);
+}
+
+const Def* World::pack(Defs arity, const Def* body, Debug dbg) {
+    if (arity.empty())
+        return body;
+    return pack(arity.skip_back(), pack(arity.back(), body, dbg), dbg);
+}
+
 const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg) {
     if (!codomain->is_value()) {
         auto type = type_bound<Variant>(q, {domain, codomain}, false);
@@ -446,64 +540,6 @@ const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
 
     assert(type == def->type());
     return def;
-}
-
-const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, const Def* body, Debug dbg) {
-    auto type = pi(q, domain, body->type(), dbg);
-    // TODO check/infer qualifier from free variables/params
-
-    if (auto app = body->isa<App>()) {
-        bool eta_property = app->arg()->isa<Var>() && app->arg()->as<Var>()->index() == 0;
-
-        if (!app->callee()->free_vars().test(0) && eta_property)
-            return shift_free_vars(app->callee(), -1);
-    }
-
-    return unify<Lambda>(2, type, filter, body, dbg);
-}
-
-const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
-    if (assignable(multi_arity_kind(), arity)) {
-        if (auto s = arity->isa<Sigma>()) {
-            if (!s->is_nominal())
-                return variadic(s->ops(), flatten(body, s->ops()), dbg);
-            else
-                errorf("can't have nominal sigma arities");
-        } else if (auto v = arity->isa<Variadic>()) {
-            if (auto a = v->has_constant_arity()) {
-                assert(!v->body()->free_vars().test(0));
-                assert(a != 1);
-                auto result = flatten(body, DefArray(*a, shift_free_vars(v->body(), *a-1)));
-                for (size_t i = *a; i-- != 0;)
-                    result = variadic(shift_free_vars(v->body(), i-1), result, dbg);
-                return result;
-            }
-        } else if (auto a_literal = arity->isa<Arity>()) {
-            auto a = a_literal->value();
-            switch (a) {
-                case 0:
-                    if (body->is_kind())
-                        return unify<Variadic>(2, universe(), this->arity(0), star(body->qualifier()), dbg);
-                    return unit(body->type()->qualifier());
-                case 1:
-                    return reduce(body, index(1, 0));
-                default:
-                    if (body->free_vars().test(0))
-                        return sigma(DefArray(a, [&](auto i) { return shift_free_vars(reduce(body, index(a, i)), i); }), dbg);
-            }
-        }
-
-        assert(body->type()->is_kind() || body->type()->is_universe());
-        return unify<Variadic>(2, shift_free_vars(body->type(), -1), arity, body, dbg);
-    } else {
-        errorf("'{}' of type '{}' provided to variadic constructor is not a (multi-) arity", arity, arity->type());
-    }
-}
-
-const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
-    if (arity.empty())
-        return body;
-    return variadic(arity.skip_back(), variadic(arity.back(), body, dbg), dbg);
 }
 
 const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
@@ -565,50 +601,6 @@ const Def* World::singleton(const Def* def, Debug dbg) {
     return unify<Singleton>(1, def, dbg);
 }
 
-const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
-    if (auto sigma = arity->isa<Sigma>())
-        return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
-
-    if (auto v = arity->isa<Variadic>()) {
-        if (auto a = v->has_constant_arity()) {
-            assert(!v->body()->free_vars().test(0));
-            assert(a != 1);
-            auto result = flatten(body, DefArray(*a, shift_free_vars(v->body(), *a-1)));
-            for (size_t i = *a; i-- != 0;)
-                result = pack(shift_free_vars(v->body(), i-1), result, dbg);
-            return result;
-        }
-    }
-
-    if (auto a_literal = arity->isa<Arity>()) {
-        auto a = a_literal->value();
-        if (a == 0) {
-            if (body->is_type())
-                return unify<Pack>(1, unit_kind(body->qualifier()), unit(body->qualifier()), dbg);
-            return val_unit(body->type()->qualifier());
-        }
-        if (a == 1) return reduce(body, index(1, 0));
-        if (body->free_vars().test(0))
-            return tuple(DefArray(a, [&](auto i) { return reduce(body, this->index(a, i)); }), dbg);
-    }
-
-    if (auto extract = body->isa<Extract>()) {
-        if (auto var = extract->index()->isa<Var>()) {
-            if (var->index() == 0 && !extract->scrutinee()->free_vars().test(0))
-                return shift_free_vars(extract->scrutinee(), -1);
-        }
-    }
-
-    assert(body->is_term() || body->is_type());
-    return unify<Pack>(1, variadic(arity, body->type()), body, dbg);
-}
-
-const Def* World::pack(Defs arity, const Def* body, Debug dbg) {
-    if (arity.empty())
-        return body;
-    return pack(arity.skip_back(), pack(arity.back(), body, dbg), dbg);
-}
-
 const Def* World::tuple(Defs defs, Debug dbg) {
     size_t size = defs.size();
     if (size == 0)
@@ -650,41 +642,57 @@ const Def* World::tuple(Defs defs, Debug dbg) {
     return unify<Tuple>(size, type->as<SigmaBase>(), defs, dbg);
 }
 
-const Def* World::match(const Def* def, Defs handlers, Debug dbg) {
-    auto type = def->destructing_type();
+Unknown* World::unknown(const Def* type, Loc loc) {
+    std::ostringstream oss;
+    streamf(oss, "<?{}>", Def::gid_counter());
+    return insert<Unknown>(0, type, Debug(loc, oss.str()));
+}
 
-    if (handlers.size() == 1) {
-        if (!type->isa<Variant>())
-            return app(handlers.front(), def, dbg);
-        else
-            errorf("matching with one handler implies matching a non-variant-typed value");
-    }
-
-    if (auto matched_type = type->as<Variant>()) {
-        if (type->num_ops() == handlers.size()) {
-            DefArray sorted_handlers(handlers);
-            std::sort(sorted_handlers.begin(), sorted_handlers.end(), [](const Def* a, const Def* b) {
-                    auto a_dom = a->type()->as<Pi>()->domain();
-                    auto b_dom = b->type()->as<Pi>()->domain();
-                    return a_dom->gid() < b_dom->gid(); });
-
-            if (expensive_checks_enabled()) {
-                for (size_t i = 0; i < sorted_handlers.size(); ++i) {
-                    auto domain = sorted_handlers[i]->type()->as<Pi>()->domain();
-                    if (domain != matched_type->op(i))
-                        errorf("handler '{}' with domain '{}' does not match type '{}'", i, domain, matched_type->op(i));
-                }
+const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
+    if (assignable(multi_arity_kind(), arity)) {
+        if (auto s = arity->isa<Sigma>()) {
+            if (!s->is_nominal())
+                return variadic(s->ops(), flatten(body, s->ops()), dbg);
+            else
+                errorf("can't have nominal sigma arities");
+        } else if (auto v = arity->isa<Variadic>()) {
+            if (auto a = v->has_constant_arity()) {
+                assert(!v->body()->free_vars().test(0));
+                assert(a != 1);
+                auto result = flatten(body, DefArray(*a, shift_free_vars(v->body(), *a-1)));
+                for (size_t i = *a; i-- != 0;)
+                    result = variadic(shift_free_vars(v->body(), i-1), result, dbg);
+                return result;
             }
-            auto types = DefArray(sorted_handlers.size(), [&](size_t i) { return handlers[i]->type()->as<Pi>()->codomain(); });
-            unique_gid_sort(&types); // we're not actually building a sum type here, we need uniqueness
-            return unify<Match>(1+sorted_handlers.size(), variant(types), def, sorted_handlers, dbg);
-        } else {
-            errorf("number of handlers does not match number of cases");
+        } else if (auto a_literal = arity->isa<Arity>()) {
+            auto a = a_literal->value();
+            switch (a) {
+                case 0:
+                    if (body->is_kind())
+                        return unify<Variadic>(2, universe(), this->arity(0), star(body->qualifier()), dbg);
+                    return unit(body->type()->qualifier());
+                case 1:
+                    return reduce(body, index(1, 0));
+                default:
+                    if (body->free_vars().test(0))
+                        return sigma(DefArray(a, [&](auto i) { return shift_free_vars(reduce(body, index(a, i)), i); }), dbg);
+            }
         }
+
+        assert(body->type()->is_kind() || body->type()->is_universe());
+        return unify<Variadic>(2, shift_free_vars(body->type(), -1), arity, body, dbg);
     } else {
-        errorf("matched type must be a variant");
+        errorf("'{}' of type '{}' provided to variadic constructor is not a (multi-) arity", arity, arity->type());
     }
 }
+
+const Def* World::variadic(Defs arity, const Def* body, Debug dbg) {
+    if (arity.empty())
+        return body;
+    return variadic(arity.skip_back(), variadic(arity.back(), body, dbg), dbg);
+}
+
+//------------------------------------------------------------------------------
 
 const Lit* World::lit_nat(int64_t val, Loc loc) {
     auto cur = Def::gid_counter();
@@ -693,6 +701,8 @@ const Lit* World::lit_nat(int64_t val, Loc loc) {
         result->debug().set(std::to_string(val));
     return result;
 }
+
+//------------------------------------------------------------------------------
 
 #ifndef NDEBUG
 

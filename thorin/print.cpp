@@ -172,6 +172,10 @@ Printer& Universe::vstream(Printer& p) const {
     return p << name();
 }
 
+Printer& Unknown::vstream(Printer& p) const {
+    return streamf(p, "<?_{}>", gid());
+}
+
 Printer& Tuple::vstream(Printer& p) const {
     return streamf(p, "({, })", stream_list(ops(), [&](const Def* def) { def->name_stream(p); }));
 }

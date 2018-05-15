@@ -348,6 +348,7 @@ const Def* Singleton     ::arity() const { return op(0)->arity(); }
 const Def* Star          ::arity() const { return world().arity(1); }
 const Def* Top           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Universe      ::arity() const { THORIN_UNREACHABLE; }
+const Def* Unknown       ::arity() const { return world().arity(1); } // TODO is this correct?
 const Def* Var           ::arity() const { return is_value() ? destructing_type()->arity() : nullptr; }
 const Def* Variant       ::arity() const { return world().variant(DefArray(num_ops(), [&](auto i) { return op(i)->arity(); })); }
 
@@ -452,6 +453,7 @@ const Def* Star          ::rebuild(World& to, const Def*  , Defs ops) const { re
 const Def* Top           ::rebuild(World& to, const Def* t, Defs    ) const { return to.top(t); }
 const Def* Tuple         ::rebuild(World& to, const Def*  , Defs ops) const { return to.tuple(ops, debug()); }
 const Def* Universe      ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(); }
+const Def* Unknown       ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Var           ::rebuild(World& to, const Def* t, Defs    ) const { return to.var(t, index(), debug()); }
 const Def* Variant       ::rebuild(World& to, const Def* t, Defs ops) const { return to.variant(t, ops, debug()); }
 const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { return to.variadic(ops[0], ops[1], debug()); }
@@ -465,6 +467,7 @@ const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { re
 Axiom*   Axiom  ::vstub(World& to, const Def* type, Debug dbg) const { return to.axiom(type, normalizer(), dbg); }
 Lambda*  Lambda ::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.lambda (type->as<Pi>(),  dbg); }
 Sigma*   Sigma  ::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.sigma  (type, num_ops(), dbg); }
+Unknown* Unknown::vstub(World& to, const Def* type, Debug dbg) const { return to.unknown(type, dbg); }
 Variant* Variant::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.variant(type, num_ops(), dbg); }
 
 //------------------------------------------------------------------------------

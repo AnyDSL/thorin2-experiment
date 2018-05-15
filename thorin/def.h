@@ -119,6 +119,7 @@ public:
         Star, Universe,
         Bottom, Top,
         Singleton,
+        Unknown,
         Var,
         Num
     };
@@ -1058,6 +1059,23 @@ private:
     Printer& vstream(Printer&) const override;
 
     friend const Axiom* get_axiom(const Def*);
+    friend class World;
+};
+
+/// A value that is unkown during IR construction.
+/// Thorin tries to infer this value later on in a dedicated pass.
+class Unknown : public Def {
+private:
+    Unknown(const Def* type, Debug dbg)
+        : Def(Tag::Unknown, type, 0, dbg)
+    {}
+
+public:
+    const Def* arity() const override;
+    const Def* rebuild(World&, const Def*, Defs) const override;
+    Unknown* vstub(World&, const Def*, Debug) const override;
+    Printer& vstream(Printer&) const override;
+
     friend class World;
 };
 
