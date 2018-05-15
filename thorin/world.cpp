@@ -313,6 +313,16 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     }
 }
 
+const Def* World::extract(const Def* def, size_t i, size_t a, Debug dbg) {
+    if (auto arity = def->has_constant_arity()) {
+        if (*arity == a)
+            return extract(def, index(*arity, i, dbg), dbg);
+        errorf("given arity '{}' does not match the inherent arity '{}'", a, *arity);
+    } else {
+        errorf("can only extract with constant on constant arities");
+    }
+}
+
 const Def* World::extract(const Def* def, size_t i, Debug dbg) {
     if (auto arity = def->has_constant_arity())
         return extract(def, index(*arity, i, dbg), dbg);

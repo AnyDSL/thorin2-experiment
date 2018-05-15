@@ -193,6 +193,7 @@ public:
     //@{ create Extract
     const Def* extract(const Def* def, const Def* index, Debug dbg = {});
     const Def* extract(const Def* def, u64 index, Debug dbg = {});
+    const Def* extract(const Def* def, u64 index, u64 arity, Debug dbg = {});
     //@}
 
     //@{ create Insert
