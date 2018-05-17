@@ -1066,8 +1066,8 @@ private:
 /// Thorin tries to infer this value later on in a dedicated pass.
 class Unknown : public Def {
 private:
-    Unknown(const Def* type, Debug dbg)
-        : Def(Tag::Unknown, type, 0, dbg)
+    Unknown(Debug dbg)
+        : Def(Tag::Unknown, nullptr, 0, dbg)
     {}
 
 public:

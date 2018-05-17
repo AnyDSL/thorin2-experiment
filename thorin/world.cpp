@@ -652,10 +652,10 @@ const Def* World::tuple(Defs defs, Debug dbg) {
     return unify<Tuple>(size, type->as<SigmaBase>(), defs, dbg);
 }
 
-Unknown* World::unknown(const Def* type, Loc loc) {
+Unknown* World::unknown(Loc loc) {
     std::ostringstream oss;
     streamf(oss, "<?{}>", Def::gid_counter());
-    return insert<Unknown>(0, type, Debug(loc, oss.str()));
+    return insert<Unknown>(0, Debug(loc, oss.str()));
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {

@@ -254,7 +254,7 @@ public:
     const Def* singleton(const Def* def, Debug dbg = {});
     const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
     const Var* var(const Def* type, u64 index, Debug dbg = {}) { return unify<Var>(0, type, index, dbg); }
-    Unknown* unknown(const Def* type, Loc loc = {});
+    Unknown* unknown(Loc loc = {});
     //@}
 
     //@{ top/bottom

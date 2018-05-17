@@ -467,7 +467,7 @@ const Def* Variadic      ::rebuild(World& to, const Def*  , Defs ops) const { re
 Axiom*   Axiom  ::vstub(World& to, const Def* type, Debug dbg) const { return to.axiom(type, normalizer(), dbg); }
 Lambda*  Lambda ::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.lambda (type->as<Pi>(),  dbg); }
 Sigma*   Sigma  ::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.sigma  (type, num_ops(), dbg); }
-Unknown* Unknown::vstub(World& to, const Def* type, Debug dbg) const { return to.unknown(type, dbg); }
+Unknown* Unknown::vstub(World& to, const Def*     , Debug dbg) const { return to.unknown(dbg); }
 Variant* Variant::vstub(World& to, const Def* type, Debug dbg) const { assert(is_nominal()); return to.variant(type, num_ops(), dbg); }
 
 //------------------------------------------------------------------------------
