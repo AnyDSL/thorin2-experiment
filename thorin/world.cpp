@@ -526,7 +526,7 @@ const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, con
         QualifierJoinVisitor visitor(*this);
         // TODO check against q
         auto inferred_q = visit_free_vars_params<QualifierJoinVisitor, const Def*>(visitor, body);
-        if (q != nullptr & q != inferred_q)
+        if (q != nullptr && q != inferred_q)
             errorf("λ{}.{} captures free variables of combined qualifier {}, can't use qualifier {}.",
                    domain, body, inferred_q, q);
         q = inferred_q;
