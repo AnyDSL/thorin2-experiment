@@ -21,7 +21,7 @@ inline static uint64_t   end_mask(size_t i) { return -1_u64 >> (64_s - i % 64_s)
 bool BitSet::any_range(const size_t begin, size_t end) const {
     end = std::min(end, num_bits());
     size_t i = begin / 64_s;
-    if (end - begin < 64_s)
+    if (end - begin <= 64_s)
         return words()[i] & (begin_mask(begin) & end_mask(end));
 
     bool result = false;
