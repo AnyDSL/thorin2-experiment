@@ -45,7 +45,9 @@ auto test_range(int l_offset, int r_offset) {
     BitSet b;
     EXPECT_TRUE(b.none());
     EXPECT_FALSE(b.any());
+
     b.set(7 + l_offset);
+    EXPECT_NE(7 + l_offset == 7 + r_offset, b.any_range(7 + l_offset, 7 + r_offset));
     EXPECT_TRUE(b.any_range(3 + l_offset, 10 + r_offset));
     b.clear(7 + l_offset);
 
