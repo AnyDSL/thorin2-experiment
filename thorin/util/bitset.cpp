@@ -1,4 +1,5 @@
 #include "thorin/util/bitset.h"
+#include "thorin/util/stream.h"
 
 namespace thorin {
 
@@ -15,13 +16,13 @@ size_t BitSet::count() const {
     return result;
 }
 
-inline static uint64_t begin_mask(uint64_t i) { return -1_u64 << (         i % 64_u64); }
-inline static uint64_t   end_mask(uint64_t i) { return -1_u64 >> (64_u64 - i % 64_u64); }
+inline static uint64_t begin_mask(uint64_t i) { return -1_u64 << (i % 64_u64); }
+inline static uint64_t   end_mask(uint64_t i) { return ~begin_mask(i); }
 
 bool BitSet::any_range(const size_t begin, size_t end) const {
     end = std::min(end, num_bits());
-    size_t i = begin / 64_s;
-    if (end - begin <= 64_s)
+    size_t i = begin / 64_s, e = end / 64_s;
+    if (i == e)
         return words()[i] & (begin_mask(begin) & end_mask(end));
 
     bool result = false;
@@ -30,7 +31,7 @@ bool BitSet::any_range(const size_t begin, size_t end) const {
         ++i;
     }
 
-    for (size_t e = end / 64_s; !result && i != e; ++i)
+    for (; !result && i != e; ++i)
         result |= words()[i];
 
     if (auto mask = end_mask(end); mask != -1_u64)
