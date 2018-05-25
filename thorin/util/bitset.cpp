@@ -15,8 +15,8 @@ size_t BitSet::count() const {
     return result;
 }
 
-inline static uint64_t begin_mask(size_t i) { return -1_u64 << (       i % 64_s); }
-inline static uint64_t   end_mask(size_t i) { return -1_u64 >> (64_s - i % 64_s); }
+inline static uint64_t begin_mask(uint64_t i) { return -1_u64 << (         i % 64_u64); }
+inline static uint64_t   end_mask(uint64_t i) { return -1_u64 >> (64_u64 - i % 64_u64); }
 
 bool BitSet::any_range(const size_t begin, size_t end) const {
     end = std::min(end, num_bits());
