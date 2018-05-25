@@ -52,9 +52,14 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
     auto new_type = reduce(old_def->type(), offset);
 
     if (auto var = old_def->isa<Var>()) {
+        if (offset > var->index())
+            // var is not free - keep index, substitute type
+            return world().var(new_type, var->index(), var->debug());
+
+        // free variable
         if (!is_shift_only()) {
             // Is var within our args? - Map index() back into the original argument array.
-            if (offset <= var->index() && var->index() < offset + shift()) {
+            if (var->index() < offset + shift()) {
                 // remember that the lowest index corresponds to the last element in args due to De Bruijn's
                 // way of counting
                 size_t arg_index = shift() - (var->index() - offset) - 1;
@@ -62,14 +67,9 @@ const Def* Reducer::reduce(const Def* old_def, size_t offset) {
                 return shift_free_vars(args_[arg_index], offset);
             }
         }
-
-        // is var not free? - keep index, substitute type
-        if (var->index() < offset)
-            return world().var(new_type, var->index(), var->debug());
-
-        // this var is free - shift by shift but inline a sole tuple arg if applicable
+        // shift by shift but inline a sole tuple arg if applicable
         auto total_shift = shift() == 1 && !is_shift_only()
-                && args_[0]->isa<Tuple>() ? -args_[0]->num_ops()+1 : shift();
+            && args_[0]->isa<Tuple>() ? -args_[0]->num_ops()+1 : shift();
         return world().var(new_type, var->index() - total_shift, var->debug());
     }
 

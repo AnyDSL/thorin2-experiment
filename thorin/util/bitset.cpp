@@ -1,4 +1,5 @@
 #include "thorin/util/bitset.h"
+#include "thorin/util/stream.h"
 
 namespace thorin {
 
@@ -15,28 +16,30 @@ size_t BitSet::count() const {
     return result;
 }
 
-inline static uint64_t begin_mask(size_t i) { return -1_u64 << (        i  % 64_s); }
-inline static uint64_t   end_mask(size_t i) { return -1_u64 >> ((64_s - i) % 64_s); }
+inline static uint64_t begin_mask(uint64_t i) { return -1_u64 << (i % 64_u64); }
+inline static uint64_t   end_mask(uint64_t i) { return ~begin_mask(i); }
 
 bool BitSet::any_range(const size_t begin, size_t end) const {
+    assert(begin <= end);
+
     end = std::min(end, num_bits());
     size_t i = begin / 64_s;
-    if (end - begin < 64_s)
-        return words()[i] & (begin_mask(begin) & end_mask(end));
+    size_t e =   end / 64_s;
+    auto bmask = begin_mask(begin);
+    auto emask =   end_mask(  end);
 
-    bool result = false;
-    if (auto mask = begin_mask(begin); mask != -1_u64) {
-        result |= words()[i] & mask;
-        ++i;
-    }
+    // if i and e are within the same word
+    if (i == e) return words()[i] & bmask & emask;
 
-    for (size_t e = end / 64_s; !result && i != e; ++i)
+    // use bmask for the first word
+    bool result = (words()[i++] & bmask);
+
+    // all other words except the last one
+    for (; !result && i != e; ++i)
         result |= words()[i];
 
-    if (auto mask = end_mask(end); mask != -1_u64)
-        result |= words()[i] & mask;
-
-    return result;
+    // only use emask if there actually *is* an emask - otherwise we are getting out of bounds
+    return result || (emask && (words_[i] & emask));
 }
 
 BitSet& BitSet::operator>>=(uint64_t shift) {
