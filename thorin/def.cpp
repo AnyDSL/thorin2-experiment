@@ -141,6 +141,9 @@ void Def::finalize() {
         is_dependent_ |= is_dependent_ || op(i)->free_vars().any_end(i);
     }
 
+    if (!(isa<Pi>() || isa<Sigma>() || isa<Variadic>()))
+        is_dependent_ = false;
+
     if (type() != nullptr)
         free_vars_ |= type()->free_vars_;
 

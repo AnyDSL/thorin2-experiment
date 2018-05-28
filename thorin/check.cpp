@@ -61,7 +61,6 @@ void dependent_check(TypeCheck& tc, DefVector& types, Defs defs, Defs bodies) {
 }
 
 void Def::check() const {
-    assert(free_vars().none());
     world().check(this);
 }
 
