@@ -108,6 +108,8 @@ TEST(Substructural, TypeCheck) {
     w.axiom(w.star(a), {"atype"});
     EXPECT_THROW(parse(w, "λa:atype. (a, a, ())")->check(), TypeError);
     EXPECT_NO_THROW(parse(w, "λa:atype. λi:3ₐ. (a, a, ())#i")->check());
+    EXPECT_THROW(parse(w, "λa:𝔸ᴬ.(i:a; (i, i, ()))")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "λi:3ₐ. λa:𝔸ᴬ.(j:a; (j, j, ())#i)")->check());
 
     w.axiom(w.star(w.relevant()), {"rtype"});
     EXPECT_THROW(parse(w, "λr:rtype. ()")->check(), TypeError);

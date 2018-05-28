@@ -93,41 +93,45 @@ void Extract::check(TypeCheck& tc, DefVector& types) const {
     tc.occurrences.emplace(this, occ);
 }
 
-void Lambda::check(TypeCheck& tc, DefVector& types) const {
-    // do Pi type check inline to reuse built up environment
-    fcheck(tc, type()->type(), types);
-    dependent_check(tc, types, {domain()}, {type()->codomain(), body()});
-    auto occ = tc.occurrences[body()];
-    auto dom_qual = domain()->qualifier();
+void check_bound_occurrences(TypeCheck& tc, const Def* def, const Def* domain_qualifier, const Def* body) {
+    auto occ = tc.occurrences[body];
+    auto dom_qual = domain_qualifier;
     if (!occ.empty()) {
         if (auto q = dom_qual->isa<Qualifier>()) {
             // DO NOT "OPTIMIZE" this condition, qualifiers are partially ordered
             if (!(q->qualifier_tag() <= occ[0].to_qualifier()))
-                world().errorf("usage {} of bound variable in {} would imply qualifier {}, but has {}",
-                              occ[0], this, occ[0].to_qualifier(), domain()->qualifier());
+                def->world().errorf("usage {} of bound variable in {} would imply qualifier {}, but has {}",
+                                    occ[0], def, occ[0].to_qualifier(), domain_qualifier);
         } else if (occ[0].to_qualifier() != QualifierTag::Linear) {
-            world().errorf("usage {} of bound variable in {} needs to be linear (exactly once), as it has qualifier {}",
-                           occ[0], this, domain()->qualifier());
-
+            def->world().errorf("usage {} of bound variable in {} needs to be linear (exactly once), as it has qualifier {}",
+                                occ[0], def, domain_qualifier);
         }
         occ = occ.skip_front();
     } else if (auto q = dom_qual->isa<Qualifier>()) {
         if (q->qualifier_tag() == QualifierTag::Relevant)
-            world().errorf("bound variable unused in {}, but needs to be used at least once as it has qualifier {}",
-                           this, domain()->qualifier());
+            def->world().errorf("bound variable unused in {}, but needs to be used at least once as it has qualifier {}",
+                                def, domain_qualifier);
         else if (q->qualifier_tag() == QualifierTag::Linear)
-            world().errorf("bound variable unused in {}, but needs to be used exactly once as it has qualifier {}",
-                           this, domain()->qualifier());
+            def->world().errorf("bound variable unused in {}, but needs to be used exactly once as it has qualifier {}",
+                                def, domain_qualifier);
     } else {
-        world().errorf("bound variable unused in {}, but needs to be used exactly once as it has qualifier {}",
-                       this, domain()->qualifier());
+        def->world().errorf("bound variable unused in {}, but needs to be used exactly once as it has qualifier {}",
+                            def, domain_qualifier);
     }
-    tc.occurrences.emplace(this, occ);
+    tc.occurrences.emplace(def, occ);
+}
+
+void Lambda::check(TypeCheck& tc, DefVector& types) const {
+    // do Pi type check inline to reuse built up environment
+    fcheck(tc, type()->type(), types);
+    dependent_check(tc, types, {domain()}, {type()->codomain(), body()});
+    check_bound_occurrences(tc, this, domain()->qualifier(), body());
 }
 
 void Pack::check(TypeCheck& tc, DefVector& types) const {
     fcheck(tc, type(), types);
     dependent_check(tc, types, {arity()}, {body()});
+    check_bound_occurrences(tc, this, arity()->qualifier(), body());
 }
 
 void Pi::check(TypeCheck& tc, DefVector& types) const {
