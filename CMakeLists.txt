@@ -85,6 +85,7 @@ if(BUILD_TESTING)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
     add_executable(thorin-gtest
+        test/util.h
         test/arity.cpp
         test/bitset.cpp
         test/cn.cpp
