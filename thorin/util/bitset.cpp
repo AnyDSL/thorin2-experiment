@@ -20,7 +20,7 @@ inline static uint64_t begin_mask(uint64_t i) { return -1_u64 << (i % 64_u64); }
 inline static uint64_t   end_mask(uint64_t i) { return ~begin_mask(i); }
 
 bool BitSet::any_range(const size_t begin, size_t end) const {
-    if (begin > end)
+    if (begin >= end)
         return false;
 
     end = std::min(end, num_bits());

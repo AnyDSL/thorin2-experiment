@@ -72,6 +72,12 @@ TEST(Bitset, Range) {
     test_range(64,  128);
 }
 
+TEST(Bitset, Range2) {
+    BitSet b;
+    b.set(127);
+    EXPECT_FALSE(b.any_range(128, 128));
+}
+
 TEST(Bitset, Or) {
     BitSet b, c;
     b.set(3).set(100);
