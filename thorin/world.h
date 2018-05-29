@@ -355,6 +355,7 @@ public:
     auto lambdas() const { return map_range(range(defs_,
                 [](auto def) { return def->isa_lambda(); }),
                 [](auto def) { return def->as_lambda(); }); }
+    const Def* types_from_tuple_type(const Def* type);
     //@}
 
     friend void swap(World& w1, World& w2) {

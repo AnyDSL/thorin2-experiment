@@ -694,6 +694,17 @@ const Lit* World::lit_nat(int64_t val, Loc loc) {
     return result;
 }
 
+const Def* World::types_from_tuple_type(const Def* type) {
+    assertf(!type->type()->is_universe(), "can't reflect operands of {} in a tuple, at least one kind in operands", type);
+    if (auto sig = type->isa<Sigma>()) {
+        assertf(!sig->is_dependent(), "can't reflect operands of dependent sigma type {} in a tuple", sig);
+        return tuple(DefArray(sig->num_ops(), [&](auto i) { return shift_free_vars(sig->op(i), -i); }));
+    } else if (auto var = type->isa<Variadic>()) {
+        return pack(var->arity(), var->body());
+    }
+    return type;
+}
+
 #ifndef NDEBUG
 
 void World::breakpoint(size_t number) { breakpoints_.insert(number); }
