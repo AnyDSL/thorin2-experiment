@@ -474,7 +474,7 @@ const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, con
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
-    if (assignable(multi_arity_kind(), arity)) {
+    if (assignable(multi_arity_kind(arity->qualifier()), arity)) {
         if (auto s = arity->isa<Sigma>()) {
             if (!s->is_nominal())
                 return variadic(s->ops(), flatten(body, s->ops()), dbg);
