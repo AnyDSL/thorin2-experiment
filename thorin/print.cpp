@@ -177,8 +177,8 @@ Printer& Tuple::vstream(Printer& p) const {
 }
 
 Printer& Var::vstream(Printer& p) const {
-    p << "<" << index() << ":";
-    return type()->name_stream(p) << ">";
+    p << "\\\\" << index() << "::";
+    return type()->name_stream(p);
 }
 
 Printer& Variadic::vstream(Printer& p) const {
