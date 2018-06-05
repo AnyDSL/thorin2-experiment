@@ -39,6 +39,7 @@ add_library(thorin
     thorin/analyses/scope.h
     thorin/analyses/verify.cpp
     thorin/analyses/verify.h
+    thorin/analyses/free_vars_params.h
     thorin/fe/lexer.cpp
     thorin/fe/lexer.h
     thorin/fe/parser.cpp
@@ -85,6 +86,7 @@ if(BUILD_TESTING)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
     add_executable(thorin-gtest
+        test/util.h
         test/arity.cpp
         test/bitset.cpp
         test/cn.cpp

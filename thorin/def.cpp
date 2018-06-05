@@ -11,6 +11,10 @@ namespace thorin {
  * helpers
  */
 
+uint64_t DefIndexHash::hash(DefIndex s) {
+    return murmur3(uint64_t(s->gid()) << 32_u64 | uint64_t(s.index()));
+}
+
 DefArray qualifiers(Defs defs) {
     DefArray result(defs.size());
     for (size_t i = 0, e = result.size(); i != e; ++i)
@@ -136,6 +140,9 @@ void Def::finalize() {
         contains_lambda_ |= op(i)->tag() == Tag::Lambda || op(i)->contains_lambda();
         is_dependent_ |= is_dependent_ || op(i)->free_vars().any_end(i);
     }
+
+    if (!(isa<Pi>() || isa<Sigma>() || isa<Variadic>()))
+        is_dependent_ = false;
 
     if (type() != nullptr)
         free_vars_ |= type()->free_vars_;

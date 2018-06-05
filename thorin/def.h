@@ -84,6 +84,19 @@ using Def2Def = DefMap<const Def*>;
 using DefLt   = GIDLt<const Def*>;
 using SortedDefSet = std::set<const Def*, DefLt>;
 
+typedef TaggedPtr<const Def, size_t> DefIndex;
+
+struct DefIndexHash {
+    static uint64_t hash(DefIndex s);
+    static bool eq(DefIndex a, DefIndex b) { return a == b; }
+    static DefIndex sentinel() { return DefIndex(nullptr, 0); }
+};
+
+typedef HashSet<DefIndex, DefIndexHash> DefIndexSet;
+
+template<class To>
+using DefIndexMap = HashMap<DefIndex, To, DefIndexHash>;
+
 typedef Array<const Def*> DefArray;
 typedef ArrayRef<const Def*> Defs;
 typedef std::vector<const Def*> DefVector;
@@ -605,6 +618,7 @@ private:
     {}
 
 public:
+    void check(TypeCheck&, DefVector&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
@@ -640,6 +654,7 @@ private:
 public:
     const Def* scrutinee() const { return op(0); }
     const Def* index() const { return op(1); }
+    void check(TypeCheck&, DefVector&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:

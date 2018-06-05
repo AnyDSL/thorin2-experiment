@@ -100,6 +100,28 @@ TEST(Qualifiers, Kinds) {
     EXPECT_EQ(l, w.variant({w.star(r), w.star(l)})->qualifier());
 }
 
+TEST(Substructural, TypeCheck) {
+    World w;
+    EXPECT_THROW(parse(w, "λq:ℚ. λt:*q. λa:t. (a, a, ())")->check(), TypeError);
+
+    auto a = w.affine();
+    w.axiom(w.star(a), {"atype"});
+    EXPECT_THROW(parse(w, "λa:atype. (a, a, ())")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "λa:atype. λi:3ₐ. (a, a, ())#i")->check());
+    EXPECT_THROW(parse(w, "λa:𝔸ᴬ.(i:a; (i, i, ()))")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "λi:3ₐ. λa:𝔸ᴬ.(j:a; (j, j, ())#i)")->check());
+
+    w.axiom(w.star(w.relevant()), {"rtype"});
+    EXPECT_THROW(parse(w, "λr:rtype. ()")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λr:rtype. (42ₐ, 12ₐ)")->check(), TypeError);
+
+    w.axiom(w.star(w.linear()), {"ltype"});
+    EXPECT_THROW(parse(w, "λl:ltype. ()")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λl:ltype. (42ₐ, 12ₐ)")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λl:ltype. (l, 42ₐ, l)")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "λl:ltype. λi:3ₐ. (l, (), l)#i")->check());
+}
+
 #if 0
 TEST(Substructural, Misc) {
     World w;

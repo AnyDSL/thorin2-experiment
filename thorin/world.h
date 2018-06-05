@@ -98,7 +98,7 @@ public:
 
     //@{ create Lambda
     const Def* lambda(const Def* domain, const Def* body, Debug dbg = {}) {
-        return lambda(unlimited(), domain, lit_true(), body, dbg);
+        return lambda(nullptr, domain, lit_true(), body, dbg);
     }
     const Def* lambda(const Def* q, const Def* domain, const Def* filter, const Def* body, Debug dbg = {});
     /// @em nominal lambda --- may be recursive
@@ -234,7 +234,7 @@ public:
 
     //@{ pick, intersection and match, variant
     template<class T> const Def* join(const Def* type, Defs ops, Debug dbg = {});
-    template<class T> const Def* join(Defs defs, Debug dbg = {}) { return join<T>(type_bound<T>(nullptr, defs), defs, dbg); }
+    template<class T> const Def* join(Defs defs, Debug dbg = {}) { return join<T>(type_bound<T, true>(nullptr, defs), defs, dbg); }
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {}) { return join<Intersection>(type, defs, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {}) { return join<Intersection>(defs, dbg); }
     Intersection* intersection(const Def* type, size_t num_ops, Debug dbg = {}) {
@@ -357,6 +357,7 @@ public:
     auto lambdas() const { return map_range(range(defs_,
                 [](auto def) { return def->isa_lambda(); }),
                 [](auto def) { return def->as_lambda(); }); }
+    const Def* types_from_tuple_type(const Def* type);
     //@}
 
     friend void swap(World& w1, World& w2) {
@@ -373,22 +374,22 @@ public:
     }
 
 private:
-    template<class T, class I>
-    const Def* bound(const Def* q, Range<I> ops, bool require_qualifier = true);
-    template<class T>
-    const Def* bound(const Def* q, Defs ops, bool require_qualifier = true) {
-        return bound<T>(q, range(ops), require_qualifier);
+    template<class T, bool infer_qualifier = true, class I>
+    const Def* bound(const Def* q, Range<I> ops);
+    template<class T, bool infer_qualifier = true>
+    const Def* bound(const Def* q, Defs ops) {
+        return bound<T, infer_qualifier>(q, range(ops));
     }
-    template<class T, class I>
-    const Def* type_bound(const Def* q, Range<I> ops, bool require_qualifier = true) {
-        return bound<T>(q, map_range(ops, [&] (auto def) {
+    template<class T, bool infer_qualifier = true, class I>
+    const Def* type_bound(const Def* q, Range<I> ops) {
+        return bound<T, infer_qualifier>(q, map_range(ops, [&] (auto def) {
                     assertf(!def->is_universe(), "{} has no type, can't be used as subexpression in types", def);
                     return def->type();
-                }), require_qualifier);
+                }));
     }
-    template<class T>
-    const Def* type_bound(const Def* q, Defs ops, bool require_qualifier = true) {
-        return type_bound<T>(q, range(ops), require_qualifier);
+    template<class T, bool infer_qualifier = true>
+    const Def* type_bound(const Def* q, Defs ops) {
+        return type_bound<T, infer_qualifier>(q, range(ops));
     }
 
 protected:

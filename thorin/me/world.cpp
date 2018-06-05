@@ -72,16 +72,6 @@ const Def* World::op_enter(const Def* mem, Debug dbg) {
     return app(op_enter_, mem, dbg);
 }
 
-const Def* types_from_tuple_type(const Def* type) {
-    auto& w = type->world();
-    if (auto sig = type->isa<Sigma>()) {
-        return w.tuple(sig->ops());
-    } else if (auto var = type->isa<Variadic>()) {
-        return w.pack(var->arity(), var->body());
-    }
-    return type;
-}
-
 const Def* World::op_lea(const Def* ptr, const Def* index, Debug dbg) {
     auto types = types_from_tuple_type(app_arg(ptr->type(), 0));
     return app(app(op_lea_, {types->arity(), types, app_arg(ptr->type(), 1)}, dbg), {ptr, index}, dbg);
