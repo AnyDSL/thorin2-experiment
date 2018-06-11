@@ -164,10 +164,10 @@ World::World(Debug dbg)
     arity_recursor_to_arity_ = axiom("Recₐ𝔸", "Πq: ℚ. Π𝔸q. Π[Π𝔸q. Π𝔸q. 𝔸q]. Π𝔸q. 𝔸q", normalize_arity_eliminator);
     arity_recursor_to_multi_ = axiom("Recₐ𝕄", "Πq: ℚ. Π𝕄q. Π[Π𝔸q. Π𝕄q. 𝕄q]. Π𝔸q. 𝕄q", normalize_arity_eliminator);
     arity_recursor_to_star_  = axiom("Recₐ*", "Πq: ℚ. Π*q. Π[Π𝔸q. Π*q. *q]. Π𝔸q. *q", normalize_arity_eliminator);
-    index_eliminator_ = axiom("ElimI", "Πq: ℚ. ΠP: [Πa: 𝔸q. Πa. *q]." // P := dependent return type
-                              "Π[Πa:𝔸q. P (ASucc (q, a)) (I0 (q, a))]." // base case
-                              "Π[Πa:𝔸q. Πi:a. ΠP a i. P (ASucc (q, a)) (IS (q, a) i)]." // step case
-                              "Πa: 𝔸q. Πi:a. (P a i)",
+    index_eliminator_ = axiom("ElimI", "Πq: ℚ. ΠP: [Πa: 𝔸. Πa. *q]." // P := dependent return type
+                              "Π[Πa:𝔸. P (ASucc (ᵁ, a)) (I0 (ᵁ, a))]." // base case
+                              "Π[Πa:𝔸. Πi:a. ΠP a i. P (ASucc (ᵁ, a)) (IS (ᵁ, a) i)]." // step case
+                              "Πa: 𝔸. Πi:a. (P a i)",
                               normalize_index_eliminator);
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
@@ -453,6 +453,9 @@ const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug 
         errorf("codomain '{}' of type '{}' of function type cannot be a value", codomain, codomain->type());
     else if (domain->is_value())
         errorf("domain '{}' of type '{}' of function type cannot be a value", domain, domain->type());
+    else if (domain->has_values() && domain->is_substructural() && !codomain->has_values())
+        errorf("substructural domain '{}' of type '{}' not allowed for function type with codomain {}",
+               domain, domain->type(), codomain);
     auto type = type_bound<Variant, false>(q, {domain, codomain});
     return unify<Pi>(2, type, domain, codomain, dbg);
 }
@@ -611,6 +614,18 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
         return variadic(arity(QualifierTag::u, defs.size(), dbg), shift_free_vars(defs.front(), -1), dbg);
     }
 
+    BitSet substructural;
+    substructural.ensure_capacity(defs.size());
+    for (size_t i = 0, e = defs.size(); i != e; ++i) {
+        // check whether any free variable is substructurally typed
+        // free vars of index larger than i-1 don't matter, because they will be false in 'substructural' anyway
+        if ((defs[i]->free_vars() & substructural).any())
+            errorf("type [{, }] is dependent on substructurally-typed terms at position {} and is thus not allowed", defs, i);
+
+        substructural >>= 1;
+        if (defs[i]->is_substructural())
+            substructural.set(0);
+    }
     return unify<Sigma>(defs.size(), type, defs, dbg);
 }
 

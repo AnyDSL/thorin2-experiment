@@ -43,7 +43,7 @@ public:
     BitSet(const BitSet& other)
         : BitSet()
     {
-        enlarge(other.num_bits()-1);
+        ensure_capacity(other.num_bits()-1);
         std::copy_n(other.words(), other.num_words(), words());
     }
     BitSet(BitSet&& other)
@@ -61,13 +61,13 @@ public:
         return *(words() + i/64_s) & (1_u64 << i%64_u64);
     }
 
-    BitSet& set   (size_t i) { enlarge(i); *(words() + i/64_s) |=  (1_u64 << i%64_u64); return *this; }
-    BitSet& toggle(size_t i) { enlarge(i); *(words() + i/64_s) ^=  (1_u64 << i%64_u64); return *this; }
-    BitSet& clear (size_t i) { enlarge(i); *(words() + i/64_s) &= ~(1_u64 << i%64_u64); return *this; }
+    BitSet& set   (size_t i) { ensure_capacity(i); *(words() + i/64_s) |=  (1_u64 << i%64_u64); return *this; }
+    BitSet& toggle(size_t i) { ensure_capacity(i); *(words() + i/64_s) ^=  (1_u64 << i%64_u64); return *this; }
+    BitSet& clear (size_t i) { ensure_capacity(i); *(words() + i/64_s) &= ~(1_u64 << i%64_u64); return *this; }
     /// clears all bits
     void clear() { dealloc(); num_words_ = 1; word_ = 0; }
 
-    reference operator[](size_t i) { enlarge(i); return reference(words() + i/64_s, i%64_u64); }
+    reference operator[](size_t i) { ensure_capacity(i); return reference(words() + i/64_s, i%64_u64); }
     bool operator[](size_t i) const { return (*const_cast<BitSet*>(this))[i]; }
     //@}
 
@@ -121,11 +121,13 @@ public:
 
     BitSet& operator=(BitSet other) { swap(*this, other); return *this; }
 
+    void ensure_capacity(size_t num_bits) const;
+
 private:
     template<class F>
     BitSet& op_assign(const BitSet& other) {
         if (this->num_words() < other.num_words())
-            this->enlarge(other.num_bits()-1);
+            this->ensure_capacity(other.num_bits()-1);
         auto  this_words = this->words();
         auto other_words = other.words();
         for (size_t i = 0, e = other.num_words(); i != e; ++i)
@@ -134,7 +136,6 @@ private:
     }
 
     void dealloc() const;
-    void enlarge(size_t i) const;
     const uint64_t* words() const { return num_words_ == 1 ? &word_ : words_; }
     uint64_t* words() { return num_words_ == 1 ? &word_ : words_; }
     size_t num_words() const { return num_words_; }

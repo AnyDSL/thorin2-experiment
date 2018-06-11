@@ -66,7 +66,7 @@ BitSet& BitSet::operator>>=(uint64_t shift) {
     return *this;
 }
 
-void BitSet::enlarge(size_t i) const {
+void BitSet::ensure_capacity(size_t i) const {
     size_t num_new_words = (i+64_s) / 64_s;
     if (num_new_words > num_words_) {
         num_new_words = round_to_power_of_2(num_new_words);
