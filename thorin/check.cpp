@@ -136,11 +136,13 @@ void Pack::check(TypeCheck& tc, DefVector& types) const {
 void Pi::check(TypeCheck& tc, DefVector& types) const {
     fcheck(tc, type(), types);
     dependent_check(tc, types, {domain()}, {codomain()});
+    // TODO forbid Pi types dependent on substructural values
 }
 
 void Sigma::check(TypeCheck& tc, DefVector& types) const {
     fcheck(tc, type(), types);
     dependent_check(tc, types, ops(), Defs());
+    // TODO forbid Sigma types dependent on substructural values
 }
 
 void Tuple::check(TypeCheck& tc, DefVector& types) const {
