@@ -28,11 +28,11 @@ const Def* infer_shape(World& world, const Def* def) {
     return world.arity(1);
 }
 
-static bool all_of(Defs defs) {
+static bool all_equal_of(Defs defs) {
     return std::all_of(defs.begin() + 1, defs.end(), [&](auto def) { return def == defs.front(); });
 }
 
-static bool any_of(const Def* def, Defs defs) {
+static bool any_equal_of(const Def* def, Defs defs) {
     return std::any_of(defs.begin(), defs.end(), [&](auto d){ return d == def; });
 }
 
@@ -459,7 +459,7 @@ const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug 
 
 const Def* World::pick(const Def* type, const Def* def, Debug dbg) {
     if (auto intersection = def->type()->isa<Intersection>()) {
-        assert_unused(any_of(type, intersection->ops()) && "picked type must be a part of the intersection type");
+        assert_unused(any_equal_of(type, intersection->ops()) && "picked type must be a part of the intersection type");
         return unify<Pick>(1, type, def, dbg);
     }
 
@@ -595,7 +595,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
         return unit(type->qualifier());
 
     if (type == multi_arity_kind()) {
-        if (any_of(arity(0), defs))
+        if (any_equal_of(arity(0), defs))
             return arity(0);
     }
 
@@ -606,7 +606,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
             errorf("type '{}' and inferred type '{}' don't match", defs.front()->type(), type);
     }
 
-    if (defs.front()->free_vars().none_end(defs.size() - 1) && all_of(defs)) {
+    if (defs.front()->free_vars().none_end(defs.size() - 1) && all_equal_of(defs)) {
         assert(q == nullptr || defs.front()->qualifier() == q);
         return variadic(arity(QualifierTag::u, defs.size(), dbg), shift_free_vars(defs.front(), -1), dbg);
     }
@@ -724,7 +724,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
     };
 
     if (size != 0) {
-        if (all_of(defs))
+        if (all_equal_of(defs))
             return pack(arity(QualifierTag::u, size, dbg), shift_free_vars(defs.front(), 1), dbg);
         else if (auto same = eta_property())
             return same;
