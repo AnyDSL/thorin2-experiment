@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/util.h"
 
 #include "thorin/util/bitset.h"
 

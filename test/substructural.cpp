@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/util.h"
 
 #include "thorin/world.h"
 #include "thorin/fe/parser.h"
@@ -100,7 +100,7 @@ TEST(Qualifiers, Kinds) {
     EXPECT_EQ(l, w.variant({w.star(r), w.star(l)})->qualifier());
 }
 
-TEST(Substructural, TypeCheck) {
+TEST(Substructural, TypeCheckLambda) {
     World w;
     EXPECT_THROW(parse(w, "λq:ℚ. λt:*q. λa:t. (a, a, ())")->check(), TypeError);
 
@@ -108,8 +108,6 @@ TEST(Substructural, TypeCheck) {
     w.axiom(w.star(a), {"atype"});
     EXPECT_THROW(parse(w, "λa:atype. (a, a, ())")->check(), TypeError);
     EXPECT_NO_THROW(parse(w, "λa:atype. λi:3ₐ. (a, a, ())#i")->check());
-    EXPECT_THROW(parse(w, "λa:𝔸ᴬ.(i:a; (i, i, ()))")->check(), TypeError);
-    EXPECT_NO_THROW(parse(w, "λi:3ₐ. λa:𝔸ᴬ.(j:a; (j, j, ())#i)")->check());
 
     w.axiom(w.star(w.relevant()), {"rtype"});
     EXPECT_THROW(parse(w, "λr:rtype. ()")->check(), TypeError);
@@ -120,6 +118,40 @@ TEST(Substructural, TypeCheck) {
     EXPECT_THROW(parse(w, "λl:ltype. (42ₐ, 12ₐ)")->check(), TypeError);
     EXPECT_THROW(parse(w, "λl:ltype. (l, 42ₐ, l)")->check(), TypeError);
     EXPECT_NO_THROW(parse(w, "λl:ltype. λi:3ₐ. (l, (), l)#i")->check());
+}
+
+TEST(Substructural, TypeCheckPack) {
+    World w;
+    w.axiom(w.arity_kind(w.affine()), {"aarity"});
+    EXPECT_THROW(parse(w, "(i:aarity; (i, (), i))")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λa:𝔸ᴬ.(i:a; (i, i, ()))")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "λi:3ₐ. λa:𝔸ᴬ.(j:a; (j, j, ())#i)")->check());
+
+    w.axiom(w.arity_kind(w.relevant()), {"rarity"});
+    EXPECT_THROW(parse(w, "(r:rarity; ())")->check(), TypeError);
+    EXPECT_THROW(parse(w, "(r:rarity; (42ₐ, 12ₐ))")->check(), TypeError);
+
+    w.axiom(w.arity_kind(w.linear()), {"larity"});
+    EXPECT_THROW(parse(w, "(l:larity; ())")->check(), TypeError);
+    EXPECT_THROW(parse(w, "(l:larity; (42ₐ, 12ₐ))")->check(), TypeError);
+    EXPECT_THROW(parse(w, "(l:larity; (l, 42ₐ, l))")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "(l:larity; λi:3ₐ. (l, (), l)#i)")->check());
+}
+
+TEST(Substructural, TypeCheckSigma) {
+    World w;
+
+    EXPECT_THROW(parse(w, "[i:2ₐᴿ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
+    EXPECT_THROW(parse(w, "[i:2ₐᴬ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
+    EXPECT_THROW(parse(w, "[i:2ₐᴸ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
+}
+
+TEST(Substructural, TypeCheckPi) {
+    World w;
+
+    EXPECT_THROW(parse(w, "ΠT:*ᴿ. ΠT. *"), TypeError);
+    EXPECT_THROW(parse(w, "ΠT:*ᴬ. ΠT. *"), TypeError);
+    EXPECT_THROW(parse(w, "ΠT:*ᴸ. ΠT. *"), TypeError);
 }
 
 #if 0
@@ -202,6 +234,7 @@ TEST(Substructural, AffineRefs) {
     auto Star = w.star();
 
     w.axiom(w.pi(Star, w.star(a)), {"ARef"});
+    EXPECT_TRUE(parse(w, "ARef(\\0::*)")->has_values());
     w.axiom(parse(w, "ΠT: *. ΠT. ARef(T)"), {"NewARef"});
     w.axiom(parse(w, "ΠT: *. ΠARef(T). [T, ARef(T)]"), {"ReadARef"});
     w.axiom(parse(w, "ΠT: *. Π[ARef(T), T]. ARef(T)"), {"WriteARef"});
@@ -222,7 +255,7 @@ TEST(Substructural, AffineCapabilityRefs) {
 
     auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C:*, CRef(T, C), ACap(C)]"), {"NewCRef"});
     auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, CRef(T, C), ACap(C)]. [T, ACap(C)]"), {"ReadCRef"});
-    w.axiom(parse(w, "ΠT: *. Π[C:*, CRef(T, C)]. T"), {"AliasReadCRef"});
+    w.axiom(parse(w, "ΠT: *. Π[C: *, CRef(T, C)]. T"), {"AliasReadCRef"});
     w.axiom(parse(w, "ΠT: *. Π[C: *, CRef(T, C), ACap(C), T]. ACap(C)"), {"WriteCRef"});
     w.axiom(parse(w, "ΠT: *. Π[C: *, CRef(T, C), ACap(C)]. []"), {"FreeCRef"});
 

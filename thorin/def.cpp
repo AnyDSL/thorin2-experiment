@@ -242,16 +242,22 @@ Star::Star(World& world, const Def* qualifier)
  * has_values
  */
 
+bool is_type_with_values(const Def* def) {
+    return def->is_type() && !def->type()->has_values();
+}
+
 bool Arity::has_values() const { return true; }
-bool Axiom::has_values() const { return sort() == Sort::Type && !type()->has_values(); }
+bool App::has_values() const { return is_type_with_values(this); }
+bool Axiom::has_values() const { return is_type_with_values(this); }
 bool Intersection::has_values() const {
     return std::all_of(ops().begin(), ops().end(), [&](auto op){ return op->has_values(); });
 }
-bool Lit::has_values() const { return sort() == Sort::Type && !type()->has_values(); }
+bool Lit::has_values() const { return is_type_with_values(this); }
 bool Pi::has_values() const { return true; }
 bool QualifierType::has_values() const { return true; }
 bool Sigma::has_values() const { return true; }
 bool Singleton::has_values() const { return op(0)->is_value(); }
+bool Var::has_values() const { return is_type_with_values(this); }
 bool Variadic::has_values() const { return true; }
 bool Variant::has_values() const {
     return std::any_of(ops().begin(), ops().end(), [&](auto op){ return op->has_values(); });
@@ -291,7 +297,7 @@ const Def* Intersection::kind_qualifier() const {
 
 const Def* Pi::kind_qualifier() const {
     assert(is_kind());
-    // TODO the qualifier of a Pi is upper bounded by the qualifiers of the free variables within it
+    // TODO ensure that no Pi kinds with substructural qualifiers can exist -> polymorphic/dependent functions must always be unlimited
     return world().unlimited();
 }
 
@@ -326,6 +332,11 @@ const Def* Variant::kind_qualifier() const {
     assert(is_kind());
     auto qualifiers = DefArray(num_ops(), [&](auto i) { return this->op(i)->qualifier(); });
     return w.variant(w.qualifier_type(), qualifiers);
+}
+
+bool Def::is_substructural() const {
+    auto q = qualifier();
+    return q != world().unlimited();
 }
 
 //------------------------------------------------------------------------------

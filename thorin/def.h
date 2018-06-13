@@ -232,6 +232,7 @@ public:
     //@{ get Qualifier
     const Def* qualifier() const;
     bool maybe_affine() const;
+    bool is_substructural() const;
     //@}
 
     //@{ misc getters
@@ -877,6 +878,7 @@ private:
 
 public:
     const Def* arity() const override;
+    bool has_values() const override;
     u64 index() const { return extra().index_; }
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
     Printer& name_stream(Printer& os) const override { return vstream(os); }
@@ -907,7 +909,6 @@ private:
 public:
     const Def* arity() const override;
     Box box() const { return extra().box_; }
-
     bool has_values() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
@@ -1063,6 +1064,7 @@ public:
     const Def* unfold() const;
 
     const Def* arity() const override;
+    bool has_values() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
