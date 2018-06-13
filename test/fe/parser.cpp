@@ -152,7 +152,7 @@ TEST(Parser, NestedDependentBinders) {
 
     w.axiom("int", "Πnat. *");
     w.axiom("add", "Πf: nat. Πw: nat. Πs: 𝕄. Π[ [s; int w], [s; int w]]. [s; int w]");
-    EXPECT_TRUE(parse(w, "λ[f: nat, w: nat, x: int w]. add f w 1ₐ ({0u64: int w}, x)")->isa<Lambda>());
+    EXPECT_TRUE(parse(w, "λ[f: nat, w: nat, x: int w]. add f w 1ₐ (0u64::int w, x)")->isa<Lambda>());
 }
 
 TEST(Parser, IntArithOp) {
