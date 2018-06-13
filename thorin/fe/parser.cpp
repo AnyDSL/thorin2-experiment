@@ -47,7 +47,7 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Loc>>& defs) {
     else if (ahead().isa(Token::Tag::Backslash))    def = parse_debruijn();
     else if (ahead().isa(Token::Tag::Identifier))   def = parse_identifier();
     else if (ahead().isa(Token::Tag::L_Paren))      def = parse_tuple_or_pack();
-    else if (ahead().isa(Token::Tag::L_Brace))      def = parse_lit();
+    else if (ahead().isa(Token::Tag::L_Brace))      def = parse_variant();
     else if (ahead().isa(Token::Tag::Literal))      def = parse_literal();
     else if (accept(Token::Tag::Qualifier_Type))    def = world_.qualifier_type();
     else if (accept(Token::Tag::QualifierU))        def = world_.unlimited();
@@ -61,7 +61,6 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Loc>>& defs) {
 
     if (accept(Token::Tag::Sharp))
         def = parse_extract_or_insert(tracker, def);
-    // TODO insert <-
 
     defs.emplace_back(def, tracker.loc());
 
@@ -162,6 +161,17 @@ const Def* Parser::parse_sigma_or_variadic() {
     return world_.sigma(parse_sigma_ops(), tracker.loc());
 }
 
+const Def* Parser::parse_variant() {
+    Tracker tracker(this);
+    eat(Token::Tag::L_Brace);
+
+    auto defs = parse_list(Token::Tag::R_Brace, Token::Tag::Comma, [&] { auto elem = parse_def(); return elem; },
+                           "elements of variant type");
+    if (defs.empty())
+        error("expected variant type with at least one operand at {}", tracker.loc());
+    return world_.variant(defs, tracker.loc());
+}
+
 const Def* Parser::parse_lambda() {
     Tracker tracker(this);
     eat(Token::Tag::Lambda);
@@ -224,23 +234,6 @@ const Def* Parser::parse_tuple_or_pack() {
     return world_.tuple(defs, tracker.loc());
 }
 
-const Def* Parser::parse_lit() {
-    Tracker tracker(this);
-
-    eat(Token::Tag::L_Brace);
-    if (!ahead().isa(Token::Tag::Literal))
-        error("literal expected");
-
-    auto box = ahead().literal().box;
-    eat(Token::Tag::Literal);
-
-    expect(Token::Tag::Colon, "literal");
-    auto type = parse_def();
-    expect(Token::Tag::R_Brace, "literal");
-
-    return world_.lit(type, box, tracker.loc());
-}
-
 const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {
     auto b = parse_def();
     if (accept(Token::Tag::Arrow)) {
@@ -266,8 +259,9 @@ const Def* Parser::parse_literal() {
         return world_.arity(qualifier, literal.box.get_u64(), tracker.loc());
     }
 
-    assertf(false, "unhandled literal {}", literal.box.get_u64());
-    THORIN_UNREACHABLE;
+    expect(Token::Tag::ColonColon, "literal");
+    auto type = parse_def();
+    return world_.lit(type, literal.box, tracker.loc());
 }
 
 Token Parser::next() {

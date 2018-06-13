@@ -65,7 +65,7 @@ World::World(Debug dbg)
     op_enter_ = axiom("enter", "ΠM. [M, F]");
     op_slot_  = axiom("slot",  "Π[T: *, a: nat]. Π[F, nat]. ptr(T, a)");
 
-    cn_pe_info_ = axiom("pe_info", "cn[T: *, ptr(int {8s64: nat}, {0s64: nat}), T, cn[]]");
+    cn_pe_info_ = axiom("pe_info", "cn[T: *, ptr(int 8s64::nat, 0s64::nat), T, cn[]]");
 }
 
 const Def* World::op_enter(const Def* mem, Debug dbg) {

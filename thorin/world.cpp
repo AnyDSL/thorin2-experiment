@@ -198,6 +198,8 @@ const Def* World::arity_succ(const Def* a, Debug dbg) {
 }
 
 const Def* World::app(const Def* callee, const Def* arg, Debug dbg) {
+    if (!callee->type()->isa<Pi>())
+        errorf("callee {} with type {} can't be applied to {}, as it does not have function type", callee, callee->type(), arg);
     auto callee_type = callee->type()->as<Pi>();
 
     if (assignable(callee_type->domain(), arg)) {

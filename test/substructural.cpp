@@ -221,7 +221,7 @@ TEST(Substructural, UnlimitedRefs) {
     auto ReadRef = w.axiom(parse(w, "ΠT: *. ΠRef(T). T"), {"ReadRef"});
     w.axiom(parse(w, "ΠT: *. Π[Ref(T), T]. []"), {"WriteRef"});
     w.axiom(parse(w, "ΠT: *. ΠRef(T). []"), {"FreeRef"});
-    auto ref42 = parse(w, "(NewRef(nat))({42s64:nat})");
+    auto ref42 = parse(w, "(NewRef(nat))(42s64::nat)");
     EXPECT_EQ(ref42->type(), parse(w, "Ref(nat)"));
     auto read42 = w.app(w.app(ReadRef, Nat), ref42);
     EXPECT_EQ(read42->type(), Nat);
@@ -280,21 +280,22 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
     auto n0 = w.lit(Nat, 0);
 
     w.axiom(w.pi(w.sigma({Star, Star}), Star), {"FRef"});
-    auto Write = w.sigma_type(0, {"Wr"});
-    w.make_external(Write);
-    // TODO Replace Star by a more precise kind allowing only Wr/Rd
-    auto Read = w.axiom(w.pi(Star, Star), {"Rd"});
-    w.axiom(w.pi(w.sigma({Star, Star}), w.star(a)), {"FCap"});
+    auto Write = w.axiom(Star, {"Write"});
+    auto Read = w.axiom(Star, {"Read"});
+    auto WriteOrRead = w.variant({Write, Read});
+    auto Wr = w.axiom(Write, {"Wr"});
+    auto Rd = w.axiom(w.pi(WriteOrRead, Read), {"Rd"});
+    w.axiom(w.pi(w.sigma({Star, WriteOrRead}), w.star(a)), {"FCap"});
 
     auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C:*, FRef(T, C), FCap(C, Wr)]"), {"NewFRef"});
-    auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, F:*, FRef(T, C), FCap(C, F)]. [T, FCap(C, F)]"), {"ReadFRef"});
+    auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, F:{Write, Read}, FRef(T, C), FCap(C, F)]. [T, FCap(C, F)]"), {"ReadFRef"});
     print_value_type(ReadRef);
     auto WriteRef = w.axiom(parse(w, "ΠT: *. Π[C: *, FRef(T, C), FCap(C, Wr), T]. FCap(C, Wr)"), {"WriteFRef"});
     print_value_type(WriteRef);
     auto FreeRef = w.axiom(parse(w, "ΠT: *. Π[C: *, FRef(T, C), FCap(C, Wr)]. []"), {"FreeFRef"});
     print_value_type(FreeRef);
-    auto SplitFCap = w.axiom(parse(w, "Π[C:*, F:*, FCap(C, F)]. [FCap(C, Rd(F)), FCap(C, Rd(F))]"), {"SplitFCap"});
-    auto JoinFCap = w.axiom(parse(w, "Π[C:*, F:*, FCap(C, Rd(F)), FCap(C, Rd(F))]. FCap(C, F)"), {"JoinFCap"});
+    auto SplitFCap = w.axiom(parse(w, "Π[C:*, F:{Write, Read}, FCap(C, F)]. [FCap(C, Rd(F)), FCap(C, Rd(F))]"), {"SplitFCap"});
+    auto JoinFCap = w.axiom(parse(w, "Π[C:*, F:{Write, Read}, FCap(C, Rd(F)), FCap(C, Rd(F))]. FCap(C, F)"), {"JoinFCap"});
 
     auto ref42 = w.app(w.app(NewRef, Nat), n42, {"&42"});
     auto phantom = w.extract(ref42, 0_s);
@@ -303,16 +304,16 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
     print_value_type(ref);
     auto cap = w.extract(ref42, 2, {"cap"});
     print_value_type(cap);
-    auto read42 = w.app(w.app(ReadRef, Nat), {phantom, Write, ref, cap}, {"read42"});
+    auto read42 = w.app(w.app(ReadRef, Nat), {phantom, Wr, ref, cap}, {"read42"});
     print_value_type(read42);
     auto read_cap = w.extract(read42, 1);
     auto write0 = w.app(w.app(WriteRef, Nat), {phantom, ref, read_cap, n0}, {"write0"});
     print_value_type(write0);
-    auto split = w.app(SplitFCap, {phantom, Write, write0}, {"split"});
+    auto split = w.app(SplitFCap, {phantom, Wr, write0}, {"split"});
     print_value_type(split);
-    auto read0 = w.app(w.app(ReadRef, Nat), {phantom, w.app(Read, Write), ref, w.extract(split, 0_s)}, {"read0"});
+    auto read0 = w.app(w.app(ReadRef, Nat), {phantom, w.app(Rd, Wr), ref, w.extract(split, 0_s)}, {"read0"});
     print_value_type(read0);
-    auto join = w.app(JoinFCap, {phantom, Write, w.extract(split, 1), w.extract(read0, 1)}, {"join"});
+    auto join = w.app(JoinFCap, {phantom, Wr, w.extract(split, 1), w.extract(read0, 1)}, {"join"});
     print_value_type(join);
     auto free = w.app(w.app(FreeRef, Nat), {phantom, ref, join}, {"free"});
     print_value_type(free);

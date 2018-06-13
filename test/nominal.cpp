@@ -43,9 +43,7 @@ TEST(Nominal, PolymorphicList) {
     auto nil = w.sigma_type(0, {"Nil"});
     auto list = w.lambda(w.pi(star, star), {"List"});
     EXPECT_TRUE(list->is_nominal());
-    list->dump();
     auto app_var = w.app(list, list->param());
-    app_var->dump();
     EXPECT_TRUE(app_var->isa<App>());
     auto cons = w.sigma({list->param(), app_var});
     list->set(w.variant({nil, cons}));

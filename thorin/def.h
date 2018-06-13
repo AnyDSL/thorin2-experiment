@@ -253,15 +253,8 @@ public:
     //@{ type checking
     void check() const;
     virtual void check(TypeCheck&, DefVector&) const;
-    virtual bool assignable(const Def* def) const { return this == def->type(); }
-    bool subtype_of(const Def* def) const {
-        if (this == def)
-            return true;
-        auto s = sort();
-        if (s == Sort::Term || is_value() || def->is_value() || s != def->sort())
-            return false;
-        return vsubtype_of(def);
-    }
+    virtual bool assignable(const Def* def) const;
+    bool subtype_of(const Def* def) const;
     //@}
 
     //@{ Lambda-related stuff
@@ -406,7 +399,6 @@ private:
 
 public:
     const Def* arity() const override;
-    bool assignable(const Def* def) const override;
     Printer& name_stream(Printer& os) const override { return vstream(os); }
     const Def* kind_qualifier() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
@@ -459,7 +451,6 @@ public:
     const Def* apply(const Def*) const;
 
     const Def* arity() const override;
-    bool assignable(const Def* def) const override;
     bool has_values() const override;
     void check(TypeCheck&, DefVector&) const override;
     const Def* kind_qualifier() const override;
@@ -725,6 +716,7 @@ private:
 
 public:
     const Def* arity() const override;
+    bool contains(const Def* def) const;
     Variant* set(size_t i, const Def* def) { return Def::set(i, def)->as<Variant>(); };
     const Def* kind_qualifier() const override;
     bool has_values() const override;

@@ -511,6 +511,18 @@ const Def* Lambda::apply(const Def* arg) const {
  * TODO: introduce subtyping by qualifiers? i.e. x:*u -> x:*a
  */
 
+bool Def::subtype_of(const Def* def) const {
+    if (this == def)
+        return true;
+    auto s = sort();
+    if (s == Sort::Term || is_value() || def->is_value() || s != def->sort())
+        return false;
+    if (auto variant = def->isa<Variant>())
+        if (!this->isa<Variant>())
+            return variant->contains(this);
+    return vsubtype_of(def);
+}
+
 bool ArityKind::vsubtype_of(const Def* def) const {
     return (def->isa<MultiArityKind>() || def->isa<Star>()) && op(0) == def->op(0);
 }
@@ -556,8 +568,7 @@ bool Sigma::vsubtype_of(const Def* def) const {
 // bool Variadic::vsubtype_of(const Def* def) const {
 // }
 
-bool MultiArityKind::assignable(const Def* def) const { return def->destructing_type()->subtype_of(this); }
-bool Pi            ::assignable(const Def* def) const { return def->destructing_type()->subtype_of(this); }
+bool Def::assignable(const Def* def) const { return def->destructing_type()->subtype_of(this); }
 
 bool Sigma::assignable(const Def* def) const {
     auto& w = world();
@@ -696,6 +707,10 @@ Lambdas Lambda::succs() const {
     }
 
     return succs;
+}
+
+bool Variant::contains(const Def* def) const {
+    return std::binary_search(ops().begin(), ops().end(), def, [&] (auto a, auto b) { return DefLt()(a, b); });
 }
 
 #if 0

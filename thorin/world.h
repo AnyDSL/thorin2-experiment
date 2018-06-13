@@ -318,14 +318,11 @@ public:
     //@{ externals
     const SymbolMap<const Def*>& externals() const { return externals_; }
     void make_external(const Def* def) {
-        auto [i, success] = externals_.emplace(def->name().c_str(), def);
+        auto [i, success] = externals_.emplace(def->name(), def);
         assert_unused(success || i->second == def);
     }
     bool is_external(const Def* def) const { return externals_.contains(def->name()); }
-    const Def* lookup_external(Symbol s) const {
-        auto i = externals_.find(s);
-        return i->second;
-    }
+    const Def* lookup_external(Symbol s) const { return find(externals_, s); }
     auto external_lambdas() const { return map_range(range(externals_,
                 [](auto p) { return p.second->template isa<Lambda>(); }),
                 [](auto p) { return p.second->as_lambda(); });

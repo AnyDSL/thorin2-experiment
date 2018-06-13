@@ -52,7 +52,7 @@ private:
     const Def* parse_optional_qualifier();
     const Def* parse_qualified_kind();
     const Def* parse_tuple_or_pack();
-    const Def* parse_lit();
+    const Def* parse_variant();
     const Def* parse_param();
     const Def* parse_extract_or_insert(Tracker, const Def*);
     const Def* parse_literal();
