@@ -53,6 +53,7 @@ TEST(Arity, Variadic) {
     EXPECT_EQ(unit, w.variadic({a1, a0}, unit));
     EXPECT_EQ(w.unit_kind(), w.variadic({a0, a2}, w.arity_kind()));
     EXPECT_EQ(w.variadic(a2, w.unit_kind()), w.variadic({a2, a0, a2}, w.arity_kind()));
+    EXPECT_EQ(w.multi_arity_kind(), w.variadic(a2, a2)->type());
 }
 
 TEST(Arity, Pack) {
@@ -144,4 +145,13 @@ TEST(Arity, DependentIndexEliminator) {
     EXPECT_EQ(w.index(2, 1), w.app(w.app(index_is_even, w.arity(3)), w.index(3, 0)));
     EXPECT_EQ(w.index(2, 1), w.app(w.app(index_is_even, w.arity(8)), w.index(8, 4)));
     EXPECT_EQ(w.index(2, 0), w.app(w.app(index_is_even, w.arity(8)), w.index(8, 1)));
+}
+
+TEST(Arity, MultiArityRecursors) {
+    World w;
+    auto count_step = fe::parse(w, "λ[acc:𝔸, curr:𝔸]. ASucc (ᵁ, acc)");
+    auto rank = w.app(w.app(w.multi_arity_recursor(), w.arity(0)), count_step);
+    EXPECT_EQ(w.arity(1), w.app(rank, w.arity(0)));
+    EXPECT_EQ(w.arity(3), w.app(rank, w.sigma({w.arity(4), w.arity(2), w.arity(3)})));
+    EXPECT_EQ(w.arity(4), w.app(rank, w.variadic(w.arity(4), w.arity(2))));
 }

@@ -23,6 +23,7 @@ const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug d
 const Def* normalize_index_zero(const Def* callee, const Def* arg, Debug dbg);
 const Def* normalize_index_succ(const Def* callee, const Def* arg, Debug dbg);
 const Def* normalize_index_eliminator(const Def* callee, const Def* arg, Debug dbg);
+const Def* normalize_multi_arity_recursor(const Def* callee, const Def* arg, Debug dbg);
 template<BOp> const Def* normalize_BOp(const Def*, const Def*, Debug);
 template<NOp> const Def* normalize_NOp(const Def*, const Def*, Debug);
 
