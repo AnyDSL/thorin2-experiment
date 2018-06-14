@@ -188,6 +188,35 @@ const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug d
     return nullptr;
 }
 
+const Def* normalize_multi_arity_recursor(const Def* callee, const Def* arg, Debug dbg) {
+    auto& w = callee->world();
+    outf("{} : {} with {}\n", callee, callee->type(), arg);
+    if (!callee->type()->op(1)->isa<ArityKind>())
+        return nullptr;
+    auto ret = callee->op(0)->op(1);
+    auto step = callee->op(1);
+    if (arg->type()->isa<ArityKind>()) {
+        outf("  is single arity\n");
+        ret = w.app(step, w.tuple({ret, arg}), dbg);
+    } else if (auto sigma = arg->isa<Sigma>()) {
+        outf("  is sigma\n");
+        for (auto arity : sigma->ops())
+            ret = w.app(step, w.tuple({ret, arity}), dbg);
+    } else if (auto variadic = arg->isa<Variadic>()) {
+        outf("  is variadic\n");
+        if (auto rank = variadic->has_constant_arity()) {
+            // body of variadic must be homogeneous because of normalization and may not depend on var 0
+            auto arity = shift_free_vars(variadic->body(), -1);
+            outf("  with {} - {}\n", *rank, arity);
+            for (size_t i = 0; i != rank; ++i)
+                ret = w.app(step, w.tuple({ret, arity}), dbg);
+        } else
+            return nullptr; // rank not constant
+    } else
+        return nullptr;
+    return ret;
+}
+
 template<BOp op>
 const Def* normalize_BOp(const Def* callee, const Def* arg, Debug dbg) {
     auto& world = static_cast<World&>(callee->world());

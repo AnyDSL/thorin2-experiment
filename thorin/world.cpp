@@ -169,6 +169,7 @@ World::World(Debug dbg)
                               "Π[Πa:𝔸. Πi:a. ΠP a i. P (ASucc (ᵁ, a)) (IS (ᵁ, a) i)]." // step case
                               "Πa: 𝔸. Πi:a. (P a i)",
                               normalize_index_eliminator);
+    multi_arity_recursor_ = axiom("Recₘ𝕄", "Π𝔸. Π[Π[𝔸,𝔸]. 𝔸]. Πm: 𝕄. 𝔸", normalize_multi_arity_recursor);
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_end_     = lambda(cn(unit()), {"end"});
@@ -582,7 +583,9 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
         }
 
         assert(body->type()->is_kind() || body->type()->is_universe());
-        return unify<Variadic>(2, shift_free_vars(body->type(), -1), arity, body, dbg);
+        // TODO check whether qualifiers correct here
+        auto type = type_bound<Variant, false>(body->qualifier(), {arity, body});
+        return unify<Variadic>(2, type, arity, body, dbg);
     } else {
         errorf("'{}' of type '{}' provided to variadic constructor is not a (multi-) arity", arity, arity->type());
     }
