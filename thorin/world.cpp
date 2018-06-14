@@ -248,6 +248,9 @@ Axiom* World::axiom(Symbol name, const char* s, Normalizer normalizer) {
 }
 
 const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
+    if (def->isa<Unknown>() || index->isa<Unknown>())
+        return unify<Extract>(2, unknown(), def, index, dbg);
+
     if (index->type() == arity(1)) return def;
     if (!def->is_value())
         errorf("can only extract from values, but '{}' is not a value", def);
@@ -332,11 +335,15 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
             index, index->type(), def, type);
 }
 
-const Def* World::extract(const Def* def, size_t i, Debug dbg) {
+const Def* World::extract(const Def* def, u64 i, Debug dbg) {
     if (auto arity = def->has_constant_arity())
         return extract(def, index(*arity, i, dbg), dbg);
     else
         errorf("can only extract with constant on constant arities");
+}
+
+const Def* World::extract(const Def* def, u64 i, u64 a, Debug dbg) {
+    return extract(def, index(a, i, dbg), dbg);
 }
 
 const Lit* World::index(const Arity* a, u64 i, Loc loc) {
@@ -449,13 +456,16 @@ template const Def* World::join<Intersection>(const Def*, Defs, Debug);
 template const Def* World::join<Variant     >(const Def*, Defs, Debug);
 
 const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg) {
-    if (codomain->is_value())
-        errorf("codomain '{}' of type '{}' of function type cannot be a value", codomain, codomain->type());
-    else if (domain->is_value())
-        errorf("domain '{}' of type '{}' of function type cannot be a value", domain, domain->type());
-    else if (domain->has_values() && domain->is_substructural() && !codomain->has_values())
-        errorf("substructural domain '{}' of type '{}' not allowed for function type with codomain {}",
-               domain, domain->type(), codomain);
+    if (!domain->isa<Unknown>() && !codomain->isa<Unknown>()) {
+        if (codomain->is_value())
+            errorf("codomain '{}' of type '{}' of function type cannot be a value", codomain, codomain->type());
+        else if (domain->is_value())
+            errorf("domain '{}' of type '{}' of function type cannot be a value", domain, domain->type());
+        else if (domain->has_values() && domain->is_substructural() && !codomain->has_values())
+            errorf("substructural domain '{}' of type '{}' not allowed for function type with codomain {}",
+                domain, domain->type(), codomain);
+    }
+
     auto type = type_bound<Variant, false>(q, {domain, codomain});
     return unify<Pi>(2, type, domain, codomain, dbg);
 }
@@ -523,7 +533,7 @@ private:
 };
 
 const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, const Def* body, Debug dbg) {
-    if (domain->is_value())
+    if (!domain->isa<Unknown>() && domain->is_value())
         errorf("domain '{}' of type '{}' of function type cannot be a value", domain, domain->type());
     if (body->free_vars().any_begin(1)) {
         QualifierJoinVisitor visitor(*this);
@@ -751,7 +761,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
 Unknown* World::unknown(Loc loc) {
     std::ostringstream oss;
     streamf(oss, "<?{}>", Def::gid_counter());
-    return insert<Unknown>(0, Debug(loc, oss.str()));
+    return insert<Unknown>(0, Debug(loc, oss.str()), *this);
 }
 
 const Def* World::match(const Def* def, Defs handlers, Debug dbg) {

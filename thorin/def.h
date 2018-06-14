@@ -212,9 +212,11 @@ public:
 
     //@{ get World, type, and Sort
     World& world() const {
-        if (tag()                 == Tag::Universe) return *world_;
-        if (type()->tag()         == Tag::Universe) return *type()->world_;
-        if (type()->type()->tag() == Tag::Universe) return *type()->type()->world_;
+        auto has_world = [](Tag tag) { return tag == Tag::Universe || tag == Tag::Unknown; };
+        if (has_world(tag())) return *world_;
+        if (has_world(type()->tag())) return *type()->world_;
+        if (has_world(type()->type()->tag())) return *type()->type()->world_;
+        assert(has_world(type()->type()->type()->tag()));
         return *type()->type()->type()->world_;
     }
     const Def* type() const { assert(tag() != Tag::Universe); return type_; }
@@ -1083,8 +1085,8 @@ private:
 /// Thorin tries to infer this value later on in a dedicated pass.
 class Unknown : public Def {
 private:
-    Unknown(Debug dbg)
-        : Def(Tag::Unknown, nullptr, 0, dbg)
+    Unknown(Debug dbg, World& world)
+        : Def(Tag::Unknown, reinterpret_cast<const Def*>(&world), 0, dbg)
     {}
 
 public:
