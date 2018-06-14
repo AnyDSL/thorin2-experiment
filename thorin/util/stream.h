@@ -155,7 +155,7 @@ S& streamf(S& s, const char* fmt, const T& val, const Args&... args) {
     throw std::invalid_argument("invalid format string for 'streamf': runaway arguments; use 'catch throw' in 'gdb'");
 }
 
-template<class S, class... Args> S& streamln(S& s, const char* fmt, Args... args) { return streamf(s, fmt, std::forward<Args>(args)...) << std::endl; }
+template<class S, class... Args> S& streamln(S& s, const char* fmt, Args... args) { streamf(s, fmt, std::forward<Args>(args)...) << std::endl; return s; }
 template<class... Args> std::ostream& outf (const char* fmt, Args... args) { return streamf (std::cout, fmt, std::forward<Args>(args)...); }
 template<class... Args> std::ostream& outln(const char* fmt, Args... args) { return streamln(std::cout, fmt, std::forward<Args>(args)...); }
 template<class... Args> std::ostream& errf (const char* fmt, Args... args) { return streamf (std::cerr, fmt, std::forward<Args>(args)...); }
