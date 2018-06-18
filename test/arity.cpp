@@ -149,9 +149,7 @@ TEST(Arity, DependentIndexEliminator) {
 
 TEST(Arity, MultiArityRecursors) {
     World w;
-    auto count_step = fe::parse(w, "λ[acc:𝔸, curr:𝔸]. ASucc (ᵁ, acc)");
-    auto rank = w.app(w.app(w.multi_arity_recursor(), w.arity(0)), count_step);
-    EXPECT_EQ(w.arity(1), w.app(rank, w.arity(0)));
-    EXPECT_EQ(w.arity(3), w.app(rank, w.sigma({w.arity(4), w.arity(2), w.arity(3)})));
-    EXPECT_EQ(w.arity(4), w.app(rank, w.variadic(w.arity(4), w.arity(2))));
+    EXPECT_EQ(w.arity(1), w.rank(w.arity(0)));
+    EXPECT_EQ(w.arity(3), w.rank(w.sigma({w.arity(4), w.arity(2), w.arity(3)})));
+    EXPECT_EQ(w.arity(4), w.rank(w.variadic(w.arity(4), w.arity(2))));
 }

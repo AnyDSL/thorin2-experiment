@@ -224,6 +224,8 @@ public:
     const Axiom* arity_recursor_to_multi() const { return arity_recursor_to_multi_; }
     const Axiom* arity_recursor_to_star() const { return arity_recursor_to_star_; }
     const Axiom* multi_arity_recursor() const { return multi_arity_recursor_; }
+    const Def* rank() { return rank_; }
+    const Def* rank(const Def* type) { return app(app(rank(), type->qualifier()), type); }
     //@}
 
     //@{ axioms
@@ -491,6 +493,7 @@ protected:
     const Axiom* index_succ_;
     const Axiom* index_eliminator_;
     const Axiom* multi_arity_recursor_;
+    const Def* rank_;
     std::array<const Qualifier*, 4> qualifier_;
     std::array<const Star*,  4> star_;
     std::array<const Arity*, 4> unit_;
