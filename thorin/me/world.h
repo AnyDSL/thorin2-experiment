@@ -29,7 +29,7 @@ public:
     const App* type_frame(const Def* addr_space) { return app(type_frame_, addr_space)->as<App>(); }
     const Axiom* type_dbz() { return type_dbz_; }
     const Axiom* type_ptr() { return type_ptr_; }
-    const Def* type_ptr(const Def* pointee, Debug dbg = {}) { return type_ptr(pointee, lit_nat_1(), dbg); }
+    const Def* type_ptr(const Def* pointee, Debug dbg = {}) { return type_ptr(pointee, lit_nat_0(), dbg); }
     const Def* type_ptr(const Def* pointee, const Def* addr_space, Debug dbg = {}) {
         return app(type_ptr_, {pointee, addr_space}, dbg);
     }

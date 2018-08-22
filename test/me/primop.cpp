@@ -177,7 +177,7 @@ TEST(Primop, Normalize) {
 
 TEST(Primop, Ptr) {
     World w;
-    const Def* m = w.axiom(w.type_mem(w.lit_nat_1()), {"m"});
+    const Def* m = w.axiom(w.type_mem(w.lit_nat_0()), {"m"});
     auto e = w.op_enter(m);
     auto f = w.extract(e, 1);
     m = w.extract(e, 0_u64);
