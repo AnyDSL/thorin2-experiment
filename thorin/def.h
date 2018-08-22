@@ -939,15 +939,6 @@ inline bool is_fzero(int64_t w, const Lit* lit) {
     return (lit->box().get_u64() & ~(1_u64 << (u64(w)-1_u64))) == 0_u64;
 }
 
-inline bool is_one(int64_t w, const Lit* lit) {
-    switch (w) {
-        case 16: return lit->box().get_f16() == 1._f16;
-        case 32: return lit->box().get_f32() == 1._f32;
-        case 64: return lit->box().get_f64() == 1._f64;
-        default: THORIN_UNREACHABLE;
-    }
-}
-
 class Bottom : public Def {
 private:
     Bottom(const Def* type)
