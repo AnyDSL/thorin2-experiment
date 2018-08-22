@@ -27,8 +27,8 @@ enum class FFlags : int64_t {
 
 /// Integer operations that might wrap and, hence, take @p WFlags.
 #define THORIN_W_OP(m) m(WOp, add) m(WOp, sub) m(WOp, mul) m(WOp, shl)
-/// Integer operations that might produce a side effect (division by zero).
-#define THORIN_M_OP(m) m(MOp, sdiv) m(MOp, udiv) m(MOp, smod) m(MOp, umod)
+/// Integer operations that might produce a "division by zero" side effect.
+#define THORIN_M_OP(m) m(ZOp, sdiv) m(ZOp, udiv) m(ZOp, smod) m(ZOp, umod)
 /// Integer operations that neither take wflags nor do they produce a side effect.
 #define THORIN_I_OP(m) m(IOp, ashr) m(IOp, lshr) m(IOp, iand) m(IOp, ior) m(IOp, ixor)
 /// Floating point (float) operations that take @p FFlags.
@@ -94,7 +94,7 @@ enum class WOp : size_t {
 #undef CODE
 };
 
-enum class MOp : size_t {
+enum class ZOp : size_t {
 #define CODE(T, o) o,
     THORIN_M_OP(CODE)
 #undef CODE
@@ -157,7 +157,7 @@ constexpr const char* op2str(WOp o) {
     }
 }
 
-constexpr const char* op2str(MOp o) {
+constexpr const char* op2str(ZOp o) {
     switch (o) {
 #define CODE(T, o) case T::o: return #o;
     THORIN_M_OP(CODE)
@@ -217,7 +217,7 @@ namespace thorin {
 
 #define CODE(T, o) + 1_s
 template<> constexpr auto Num<me::WOp>  = 0_s THORIN_W_OP (CODE);
-template<> constexpr auto Num<me::MOp>  = 0_s THORIN_M_OP (CODE);
+template<> constexpr auto Num<me::ZOp>  = 0_s THORIN_M_OP (CODE);
 template<> constexpr auto Num<me::IOp>  = 0_s THORIN_I_OP (CODE);
 template<> constexpr auto Num<me::FOp>  = 0_s THORIN_F_OP (CODE);
 template<> constexpr auto Num<me::ICmp> = 0_s THORIN_I_CMP(CODE);

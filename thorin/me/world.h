@@ -27,6 +27,7 @@ public:
     const App* type_mem(const Def* addr_space) { return app(type_mem_, addr_space)->as<App>(); }
     const Axiom* type_frame() { return type_frame_; }
     const App* type_frame(const Def* addr_space) { return app(type_frame_, addr_space)->as<App>(); }
+    const Axiom* type_dbz() { return type_dbz_; }
     const Axiom* type_ptr() { return type_ptr_; }
     const Def* type_ptr(const Def* pointee, Debug dbg = {}) { return type_ptr(pointee, lit_nat_1(), dbg); }
     const Def* type_ptr(const Def* pointee, const Def* addr_space, Debug dbg = {}) {
@@ -57,13 +58,13 @@ public:
     }
     //@}
 
-    //@{ arithmetic operations for MOp
-    template<MOp o> const Axiom* op() { return MOp_[size_t(o)]; }
-    template<MOp o> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
+    //@{ arithmetic operations for ZOp
+    template<ZOp o> const Axiom* op() { return ZOp_[size_t(o)]; }
+    template<ZOp o> const Def* op(const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
         auto [width, shape] = infer_width_and_shape(*this, a);
         return op<o>(width, shape, m, a, b, dbg);
     }
-    template<MOp o> const Def* op(const Def* width, const Def* shape, const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
+    template<ZOp o> const Def* op(const Def* width, const Def* shape, const Def* m, const Def* a, const Def* b, Debug dbg = {}) {
         return app(app(app(op<o>(), width), shape), {m, a, b}, dbg);
     }
     //@}
@@ -165,9 +166,10 @@ private:
     const Axiom* type_f_;
     const Axiom* type_mem_;
     const Axiom* type_frame_;
+    const Axiom* type_dbz_;
     const Axiom* type_ptr_;
     std::array<const Axiom*, Num<WOp >> WOp_;
-    std::array<const Axiom*, Num<MOp >> MOp_;
+    std::array<const Axiom*, Num<ZOp >> ZOp_;
     std::array<const Axiom*, Num<IOp >> IOp_;
     std::array<const Axiom*, Num<FOp >> FOp_;
     std::array<const Axiom*, Num<ICmp>> ICmp_;

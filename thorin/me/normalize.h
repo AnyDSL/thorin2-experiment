@@ -11,7 +11,7 @@ class Def;
 namespace me {
 
 template<WOp > const Def* normalize_WOp (const Def*, const Def*, Debug);
-template<MOp > const Def* normalize_MOp (const Def*, const Def*, Debug);
+template<ZOp > const Def* normalize_ZOp (const Def*, const Def*, Debug);
 template<IOp > const Def* normalize_IOp (const Def*, const Def*, Debug);
 template<FOp > const Def* normalize_FOp (const Def*, const Def*, Debug);
 template<ICmp> const Def* normalize_ICmp(const Def*, const Def*, Debug);
