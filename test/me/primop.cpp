@@ -166,7 +166,7 @@ TEST(Primop, Normalize) {
     auto x = w.axiom(w.type_f(16), {"x"});
     EXPECT_FALSE(w.op<FOp::fmul>(x, w.lit_f(0._f16))->isa<Lit>());
     EXPECT_FALSE(w.op<FOp::fmul>(FFlags::nnan, x, w.lit_f(0._f16))->isa<Lit>());
-    EXPECT_EQ(w.op<FOp::fmul>(FFlags::fast, w.lit_f(0._f16), x), w.lit_f(0._f16));
+    EXPECT_EQ(w.op<FOp::fmul>(FFlags::fast, w.lit_f( 0._f16), x), w.lit_f( 0._f16));
     EXPECT_EQ(w.op<FOp::fmul>(FFlags::fast, w.lit_f(-0._f16), x), w.lit_f(-0._f16));
 
     //auto m = w.axiom(w.type_mem(), {"m"});
