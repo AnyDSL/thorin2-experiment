@@ -20,7 +20,7 @@ public:
 
     virtual S& stream(S&) const = 0;
     virtual std::ostream& stream_out(std::ostream&) const = 0;
-    std::string to_string() {
+    std::string to_string() const {
         std::ostringstream os;
         stream(os);
         return os.str();

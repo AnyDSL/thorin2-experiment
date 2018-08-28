@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "thorin/me/world.h"
+#include "thorin/print2.h"
 
 namespace thorin::me {
 
@@ -194,6 +195,21 @@ TEST(Primop, Ptr) {
     //EXPECT_NE(l1, l2);
     //EXPECT_EQ(w.extract(l1, 0_u64)->type(), w.type_mem());
     EXPECT_EQ(w.extract(l1, 1_u64)->type(), w.type_f(32));
+}
+
+TEST(Primop, Print2) {
+    World w;
+
+    auto a = w.axiom(w.type_i(8), {"a"});
+    auto b = w.axiom(w.type_i(8), {"b"});
+    auto c = w.axiom(w.type_i(8), {"c"});
+    auto d = w.axiom(w.type_i(8), {"d"});
+    auto _1 = w.op<WOp::mul>( b,  c);
+    auto _2 = w.op<WOp::sub>( a, _1);
+    auto _3 = w.op<WOp::sub>(_1,  d);
+    auto _4 = w.op<WOp::add>(_2, _3);
+
+    print2(_4);
 }
 
 }

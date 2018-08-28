@@ -5,7 +5,7 @@ namespace thorin {
 
 class Def;
 
-void print(const Def*);
+void print2(const Def*);
 
 }
 
