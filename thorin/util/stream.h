@@ -148,7 +148,7 @@ S& streamf(S& s, const char* fmt, const T& val, const Args&... args) {
                 continue;
             }
             // TODO give exact position
-            throw std::invalid_argument("nmatched/unescaped closing brace '}' in format string");
+            throw std::invalid_argument("unmatched/unescaped closing brace '}' in format string");
         } else
             s << *fmt++;
     }
