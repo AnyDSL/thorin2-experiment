@@ -55,13 +55,6 @@ const CFNode* DomTreeBase<forward>::lca(const CFNode* i, const CFNode* j) const 
     return i;
 }
 
-template<bool forward>
-void DomTreeBase<forward>::stream_ycomp(std::ostream& out) const {
-    thorin::ycomp(out, YCompOrientation::TopToBottom, scope(), range(cfg().reverse_post_order()),
-        [&] (const CFNode* n) { return range(children(n)); }
-    );
-}
-
 template class DomTreeBase<true>;
 template class DomTreeBase<false>;
 

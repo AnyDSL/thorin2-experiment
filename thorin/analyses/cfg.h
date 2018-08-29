@@ -8,7 +8,6 @@
 #include "thorin/util/indexmap.h"
 #include "thorin/util/indexset.h"
 #include "thorin/util/stream.h"
-#include "thorin/util/ycomp.h"
 
 namespace thorin {
 
@@ -102,7 +101,7 @@ private:
  * @see DomTreeBase
  */
 template<bool forward>
-class CFG : public YComp {
+class CFG {
 public:
     template<class Value>
     using Map = IndexMap<CFG<forward>, const CFNode*, Value>;
@@ -134,7 +133,6 @@ public:
     const DomTreeBase<forward>& domtree() const;
     const LoopTree<forward>& looptree() const;
     const DomFrontierBase<forward>& domfrontier() const;
-    void stream_ycomp(std::ostream& out) const override;
 
     static size_t index(const CFNode* n) { return forward ? n->f_index_ : n->b_index_; }
 

@@ -156,19 +156,14 @@ void CFA::verify() {
         }
     }
 
-    if (error) {
-        // TODO
-        //ycomp();
-        assert(false && "CFG not sound");
-    }
+    assert(!error && "CFG not sound");
 }
 
 //------------------------------------------------------------------------------
 
 template<bool forward>
 CFG<forward>::CFG(const CFA& cfa)
-    : YComp(cfa.scope(), forward ? "f_cfg" : "b_cfg")
-    , cfa_(cfa)
+    : cfa_(cfa)
     , rpo_(*this)
 {
 #ifndef NDEBUG
@@ -192,14 +187,6 @@ size_t CFG<forward>::post_order_visit(const CFNode* n, size_t i) {
     rpo_[n] = n;
     return n_index;
 }
-
-template<bool forward>
-void CFG<forward>::stream_ycomp(std::ostream& out) const {
-    thorin::ycomp(out, YCompOrientation::TopToBottom, scope(), range(reverse_post_order()),
-        [&] (const CFNode* n) { return range(succs(n)); }
-    );
-}
-
 
 template<bool forward> const CFNodes& CFG<forward>::preds(const CFNode* n) const { assert(n != nullptr); return forward ? n->preds() : n->succs(); }
 template<bool forward> const CFNodes& CFG<forward>::succs(const CFNode* n) const { assert(n != nullptr); return forward ? n->succs() : n->preds(); }

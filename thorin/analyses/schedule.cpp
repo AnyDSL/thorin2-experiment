@@ -1,5 +1,7 @@
 #include "thorin/analyses/schedule.h"
 
+#include <fstream>
+
 #include "thorin/world.h"
 #include "thorin/analyses/cfg.h"
 #include "thorin/analyses/domtree.h"
