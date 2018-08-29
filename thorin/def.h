@@ -1041,6 +1041,8 @@ private:
 public:
     const Def* callee() const { return op(0); }
     const Def* arg() const { return op(1); }
+    bool has_axiom() const { return extra().cache_.index(); }
+    const Axiom* axiom() const { assert(has_axiom()); return extra().cache_->as<Axiom>(); }
 
     /**
      * Forces an unfold of this App if possible - may diverge.
@@ -1055,8 +1057,6 @@ public:
 private:
     Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
     const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
-    bool has_axiom() const { return extra().cache_.index(); }
-    const Axiom* axiom() const { assert(has_axiom()); return extra().cache_->as<Axiom>(); }
     const Def* cache() const { assert(!has_axiom()); return extra().cache_; }
     Printer& vstream(Printer&) const override;
 

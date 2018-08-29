@@ -205,7 +205,7 @@ TEST(Primop, Print2) {
     auto c = w.axiom(w.type_i(8), {"c"});
     auto d = w.axiom(w.type_i(8), {"d"});
     auto _1 = w.op<WOp::mul>( b,  c);
-    auto _2 = w.op<WOp::sub>( a, _1);
+    auto _2 = w.op<WOp::shl>( a, _1);
     auto _3 = w.op<WOp::sub>(_1,  d);
     auto _4 = w.op<WOp::add>(_2, _3);
 

@@ -1,4 +1,4 @@
-#include "thorin/print2.h"
+#include <stack>
 
 #include "thorin/def.h"
 
@@ -12,29 +12,37 @@ public:
     void print(const Def* def);
 
 private:
-    void enqueue(const Def* def) {
-        if (done_.emplace(def).second)
-            queue_.emplace(def);
+    bool push(const Def* def) {
+        if (done_.emplace(def).second) {
+            stack_.emplace(def);
+            return true;
+        }
+        return false;
     };
 
-    std::queue<const Def*> queue_;
+    std::stack<const Def*> stack_;
     DefSet done_;
 };
 
 void Printer2::print(const Def* def) {
-    queue_.emplace(def);
+    stack_.emplace(def);
 
-    while (!queue_.empty()) {
-        auto def = pop(queue_);
-        def->dump();
+    while (!stack_.empty()) {
+        auto def = stack_.top();
 
-        if (def->isa<Axiom>() || def->isa<Lit>()) {
-            //def->dump();
-            continue;
+        bool todo = false;
+        for (auto op : def->ops()) {
+            todo |= push(op);
         }
 
-        for (auto op : def->ops()) {
-            enqueue(op);
+        if (auto app = def->isa<App>(); !todo || app->has_axiom()) {
+            //if (def->isa<Axiom>() || def->isa<Lit>()) {
+                ////def->dump();
+                //continue;
+            //}
+
+            def->dump();
+            stack_.pop();
         }
     }
 }
