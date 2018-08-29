@@ -156,7 +156,7 @@ void CFA::verify() {
         }
     }
 
-    assert(!error && "CFG not sound");
+    assert_unused(!error && "CFG not sound");
 }
 
 //------------------------------------------------------------------------------
