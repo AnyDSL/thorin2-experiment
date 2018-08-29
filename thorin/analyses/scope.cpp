@@ -86,16 +86,12 @@ void Scope::for_each(const World& world, std::function<void(Scope&)> f) {
 
     while (!queue.empty()) {
         auto lambda = pop(queue);
-        if (elide_empty && lambda->empty())
-            continue;
+        if (elide_empty && lambda->empty()) continue;
         Scope scope(lambda);
         f(scope);
 
-        for (auto n : scope.f_cfg().reverse_post_order()) {
-            for (auto succ : n->lambda()->succs()) {
-                if (!scope.contains(succ))
-                    enqueue(succ);
-            }
+        for (auto def : scope.free()) {
+            if (auto lambda = def->isa_lambda()) enqueue(lambda);
         }
     }
 }

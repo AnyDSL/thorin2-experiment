@@ -6,8 +6,7 @@ namespace thorin {
 
 class Printer2 {
 public:
-    Printer2()
-    {}
+    Printer2() {}
 
     void print(const Def* def);
 
@@ -32,7 +31,7 @@ void Printer2::print(const Def* def) {
 
         bool todo = false;
         for (auto op : def->ops()) {
-            todo |= push(op);
+            todo |=push(op);
         }
 
         if (auto app = def->isa<App>(); !todo || app->has_axiom()) {

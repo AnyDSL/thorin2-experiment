@@ -647,68 +647,6 @@ Lambda* Lambda::jump(const Def* callee, Defs args, Debug dbg ) { return jump(cal
 
 Lambda* Lambda::br(const Def* cond, const Def* t, const Def* f, Debug dbg) { return jump(world().cn_br(), {cond, t, f}, dbg); }
 
-Lambdas Lambda::preds() const {
-    Lambdas preds;
-    std::queue<Use> queue;
-    DefSet done;
-
-    auto enqueue = [&] (const Def* def) {
-        for (auto use : def->uses()) {
-            if (done.find(use) == done.end()) {
-                queue.push(use);
-                done.insert(use);
-            }
-        }
-    };
-
-    done.insert(this);
-    enqueue(this);
-
-    while (!queue.empty()) {
-        auto use = pop(queue);
-        if (auto lambda = use->isa_lambda()) {
-            preds.emplace_back(lambda);
-            continue;
-        }
-
-        enqueue(use);
-    }
-
-    return preds;
-}
-
-Lambdas Lambda::succs() const {
-    Lambdas succs;
-    std::queue<const Def*> queue;
-    DefSet done;
-
-    auto enqueue = [&] (const Def* def) {
-        if (done.find(def) == done.end()) {
-            queue.push(def);
-            done.insert(def);
-        }
-    };
-
-    done.insert(this);
-    if (!empty())
-        enqueue(body());
-
-    while (!queue.empty()) {
-        auto def = pop(queue);
-        if (auto lambda = def->isa_lambda()) {
-            succs.emplace_back(lambda);
-            continue;
-        }
-
-        for (auto op : def->ops()) {
-            if (op->contains_lambda())
-                enqueue(op);
-        }
-    }
-
-    return succs;
-}
-
 bool Variant::contains(const Def* def) const {
     return std::binary_search(ops().begin(), ops().end(), def, [&] (auto a, auto b) { return DefLt()(a, b); });
 }

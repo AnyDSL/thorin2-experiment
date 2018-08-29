@@ -503,15 +503,6 @@ public:
     Lambda* br(const Def* cond, const Def* t, const Def* f, Debug dbg = {});
     //@}
 
-    //@{ succs/preds
-    Lambdas direct_preds() const;
-    Lambdas direct_succs() const;
-    Lambdas indirect_preds() const;
-    Lambdas indirect_succs() const;
-    Lambdas preds() const;
-    Lambdas succs() const;
-    //@}
-
     void check(TypeCheck&, DefVector&) const override;
     size_t shift(size_t) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
