@@ -9,26 +9,25 @@ public:
     Printer2() {}
 
     void print(const Def* def);
+};
 
-private:
-    bool push(const Def* def) {
+void Printer2::print(const Def* def) {
+    std::stack<const Def*> stack;
+    DefSet done;
+
+    auto push = [&](const Def* def) {
         // inline-dump defs with zero ops
-        if (def->num_ops() > 0 && done_.emplace(def).second) {
-            stack_.emplace(def);
+        if (def->num_ops() > 0 && done.emplace(def).second) {
+            stack.emplace(def);
             return true;
         }
         return false;
     };
 
-    std::stack<const Def*> stack_;
-    DefSet done_;
-};
+    stack.emplace(def);
 
-void Printer2::print(const Def* def) {
-    stack_.emplace(def);
-
-    while (!stack_.empty()) {
-        auto def = stack_.top();
+    while (!stack.empty()) {
+        auto def = stack.top();
 
         bool todo = false;
         if (auto app = def->isa<App>()) {
@@ -53,7 +52,7 @@ void Printer2::print(const Def* def) {
 post_order_visit:
         if (!todo) {
             def->dump();
-            stack_.pop();
+            stack.pop();
         }
     }
 }
