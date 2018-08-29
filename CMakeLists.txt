@@ -15,8 +15,6 @@ add_library(thorin
     thorin/normalize.h
     thorin/print.cpp
     thorin/print.h
-    thorin/print2.cpp
-    thorin/print2.h
     thorin/qualifier.h
     thorin/tables.h
     thorin/world.cpp

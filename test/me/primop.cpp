@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "thorin/me/world.h"
-#include "thorin/print2.h"
+#include "thorin/print.h"
 
 namespace thorin::me {
 
@@ -209,7 +209,7 @@ TEST(Primop, Print2) {
     auto _3 = w.op<WOp::sub>(_1,  d);
     auto _4 = w.op<WOp::add>(_2, _3);
 
-    print2(_4);
+    print(_4);
 }
 
 }
