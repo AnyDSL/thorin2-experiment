@@ -12,7 +12,8 @@ public:
 
 private:
     bool push(const Def* def) {
-        if (done_.emplace(def).second) {
+        // inline-dump defs with zero ops
+        if (def->num_ops() > 0 && done_.emplace(def).second) {
             stack_.emplace(def);
             return true;
         }
@@ -30,16 +31,27 @@ void Printer2::print(const Def* def) {
         auto def = stack_.top();
 
         bool todo = false;
-        for (auto op : def->ops()) {
-            todo |=push(op);
+        if (auto app = def->isa<App>()) {
+            // inline-dump callee if it's an axiom or a curried axiom
+            if (get_axiom(app->callee()) == nullptr)
+                todo |= push(app->callee());
+
+            if (auto tuple = app->arg()->isa<Tuple>()) {
+                for (auto op : tuple->ops())
+                    todo |= push(op);
+
+            } else {
+                todo |= push(app->arg());
+            }
+
+            goto post_order_visit;
         }
 
-        if (auto app = def->isa<App>(); !todo || app->has_axiom()) {
-            //if (def->isa<Axiom>() || def->isa<Lit>()) {
-                ////def->dump();
-                //continue;
-            //}
+        for (auto op : def->ops())
+            todo |= push(op);
 
+post_order_visit:
+        if (!todo) {
             def->dump();
             stack_.pop();
         }
