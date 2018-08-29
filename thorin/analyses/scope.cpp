@@ -91,7 +91,9 @@ void Scope::for_each(const World& world, std::function<void(Scope&)> f) {
         f(scope);
 
         for (auto def : scope.free()) {
-            if (auto lambda = def->isa_lambda()) enqueue(lambda);
+            // TODO we need to look through the free defs as well, as lambdas might be stored in e.g. globals
+            if (auto lambda = def->isa_lambda())
+                enqueue(lambda);
         }
     }
 }
