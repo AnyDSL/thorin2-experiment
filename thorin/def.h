@@ -1023,7 +1023,7 @@ private:
     App(const Def* type, const Def* callee, const Def* arg, Debug dbg)
         : Def(Tag::App, type, {callee, arg}, dbg)
     {
-        if (auto axiom = get_axiom(callee))
+        if (auto axiom = get_axiom(callee); axiom && type->isa<Pi>())
             extra().cache_ = TaggedPtr<const Def, bool>(axiom, true);
         else
             extra().cache_ = TaggedPtr<const Def, bool>(nullptr, false);
