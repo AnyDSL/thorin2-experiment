@@ -45,10 +45,10 @@ DefArray unique_gid_sorted(Defs defs) {
 }
 
 const Axiom* get_axiom(const Def* def) {
+    if (auto axiom = def->isa<Axiom>())
+        return axiom;
     if (auto app = def->isa<App>(); app != nullptr && app->has_axiom())
         return app->axiom();
-    else if (auto axiom = def->isa<Axiom>())
-        return axiom;
     return nullptr;
 }
 
