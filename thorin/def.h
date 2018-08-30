@@ -1031,6 +1031,7 @@ private:
 
 public:
     const Def* callee() const { return op(0); }
+    const Pi* callee_type() const { return callee()->type()->as<Pi>(); }
     const Def* arg() const { return op(1); }
     bool has_axiom() const { return extra().cache_.index(); }
     const Axiom* axiom() const { assert(has_axiom()); return extra().cache_->as<Axiom>(); }

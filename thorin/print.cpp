@@ -8,13 +8,16 @@ namespace thorin {
 
 //------------------------------------------------------------------------------
 
+static bool descend(const Def* def) {
+    return def->num_ops() != 0 && get_axiom(def) == nullptr;
+}
+
 void Printer::print(const Def* def) {
     std::stack<const Def*> stack;
     DefSet done;
 
     auto push = [&](const Def* def) {
-        // inline-dump defs with zero ops
-        if (def->num_ops() > 0 && done.emplace(def).second) {
+        if (descend(def) && done.emplace(def).second) {
             stack.emplace(def);
             return true;
         }
@@ -28,27 +31,21 @@ void Printer::print(const Def* def) {
 
         bool todo = false;
         if (auto app = def->isa<App>()) {
-            // inline-dump callee if it's an axiom or a curried axiom
-            if (get_axiom(app->callee()) == nullptr)
-                todo |= push(app->callee());
+            todo |= push(app->callee());
 
-            if (auto tuple = app->arg()->isa<Tuple>()) {
-                for (auto op : tuple->ops())
+            if (app->arg()->isa<Tuple>() || app->arg()->isa<Pack>()) {
+                for (auto op : app->arg()->ops())
                     todo |= push(op);
-
             } else {
                 todo |= push(app->arg());
             }
-
-            goto post_order_visit;
+        } else {
+            for (auto op : def->ops())
+                todo |= push(op);
         }
 
-        for (auto op : def->ops())
-            todo |= push(op);
-
-post_order_visit:
         if (!todo) {
-            def->dump();
+            streamf(*this, "{} = {}\n", def->unique_name(), def);
             stack.pop();
         }
     }
@@ -100,7 +97,21 @@ Printer& Def::qualifier_stream(Printer& p) const {
 //------------------------------------------------------------------------------
 
 Printer& App::vstream(Printer& p) const {
-    auto domain = callee()->type()->as<Pi>()->domain();
+    if (callee()->num_ops() == 0 || get_axiom(callee()) != nullptr)
+        streamf(p, "{}", callee());
+    else {
+        std::cout<< "stf";
+        streamf(p, "{}", callee()->unique_name());
+    }
+
+    if (arg()->num_ops() == 0 || arg()->isa<Tuple>() || arg()->isa<Pack>())
+        streamf(p, " {}", arg()); // descend
+    else
+        streamf(p, " {}", arg()->unique_name()); // descend
+
+    return p;
+#if 0
+    auto domain = callee_type();
     if (domain->is_kind()) {
         qualifier_stream(p);
     }
@@ -110,6 +121,7 @@ Printer& App::vstream(Printer& p) const {
     arg()->name_stream(p);
     if (!arg()->isa<Tuple>() && !arg()->isa<Pack>())
         p << ")";
+#endif
     return p;
 }
 
