@@ -51,11 +51,6 @@ void Printer::print(const Def* def) {
     }
 }
 
-void print(const Def* def) {
-    Printer printer;
-    printer.print(def);
-}
-
 //------------------------------------------------------------------------------
 
 Printer& Def::name_stream(Printer& os) const {
@@ -94,6 +89,20 @@ Printer& Def::qualifier_stream(Printer& p) const {
     return p;
 }
 
+Printer& Def::stream_assign(Printer& p) const {
+    return streamf(p, "{} = {}\n", unique_name(), this);
+}
+
+void Def::dump_assign() const {
+    Printer printer;
+    stream_assign(printer);
+}
+
+void Def::dump_rec() const {
+    Printer printer;
+    printer.print(this);
+}
+
 //------------------------------------------------------------------------------
 
 Printer& App::vstream(Printer& p) const {
@@ -120,7 +129,6 @@ Printer& App::vstream(Printer& p) const {
     if (!arg()->isa<Tuple>() && !arg()->isa<Pack>())
         p << ")";
 #endif
-    return p;
 }
 
 Printer& Arity::vstream(Printer& p) const {

@@ -35,6 +35,8 @@ TEST(Cn, Simple) {
     EXPECT_TRUE(scope.contains(r));
     EXPECT_TRUE(scope.contains(cmp));
     EXPECT_FALSE(scope.contains(i0));
+
+    k->dump_rec();
 }
 
 TEST(Cn, Poly) {

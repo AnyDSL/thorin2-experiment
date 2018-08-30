@@ -18,8 +18,6 @@ public:
 
 template void Streamable<Printer>::dump() const;
 
-void print(const Def* def);
-
 }
 
 #endif

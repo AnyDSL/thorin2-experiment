@@ -292,6 +292,9 @@ public:
     Printer& qualifier_stream(Printer&) const;
     Printer& stream(Printer&) const override;
     std::ostream& stream_out(std::ostream&) const override;
+    Printer& stream_assign(Printer&) const;
+    void dump_assign() const;
+    void dump_rec() const;
     //@}
 
 protected:
