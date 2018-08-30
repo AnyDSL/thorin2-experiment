@@ -97,15 +97,13 @@ Printer& Def::qualifier_stream(Printer& p) const {
 //------------------------------------------------------------------------------
 
 Printer& App::vstream(Printer& p) const {
-    if (callee()->num_ops() == 0 || get_axiom(callee()) != nullptr)
-        streamf(p, "{}", callee());
-    else {
-        std::cout<< "stf";
+    if (descend(callee()))
         streamf(p, "{}", callee()->unique_name());
-    }
+    else
+        streamf(p, "{}", callee());
 
-    if (arg()->num_ops() == 0 || arg()->isa<Tuple>() || arg()->isa<Pack>())
-        streamf(p, " {}", arg()); // descend
+    if (arg()->isa<Tuple>() || arg()->isa<Pack>() || !descend(arg()))
+        streamf(p, " {}", arg());
     else
         streamf(p, " {}", arg()->unique_name()); // descend
 
@@ -244,7 +242,7 @@ Printer& Unknown::vstream(Printer& p) const {
 }
 
 Printer& Tuple::vstream(Printer& p) const {
-    return streamf(p, "({, })", stream_list(ops(), [&](const Def* def) { def->name_stream(p); }));
+    return streamf(p, "({, })", stream_list(ops(), [&](const Def* def) { descend(def) ? streamf(p, "{}", def->unique_name()) : def->name_stream(p); }));
 }
 
 Printer& Var::vstream(Printer& p) const {
