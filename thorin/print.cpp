@@ -45,7 +45,7 @@ void Printer::print(const Def* def) {
         }
 
         if (!todo) {
-            streamf(*this, "{} = {}\n", def->unique_name(), def);
+            def->stream_assign(*this);
             stack.pop();
         }
     }
@@ -90,7 +90,7 @@ Printer& Def::qualifier_stream(Printer& p) const {
 }
 
 Printer& Def::stream_assign(Printer& p) const {
-    return streamf(p, "{} = {}\n", unique_name(), this);
+    return streamf(p, "{} = {};", unique_name(), this).endl();
 }
 
 void Def::dump_assign() const {
@@ -188,8 +188,15 @@ Printer& MultiArityKind::vstream(Printer& p) const {
 Printer& Param::vstream(Printer& p) const { return p << unique_name(); }
 
 Printer& Lambda::vstream(Printer& p) const {
+    streamf(p, "λ{} -> {}", domain(), codomain()).indent().endl();
+    return streamf(p, "{}", body()).dedent().endl();
+#if 0
+    streamf("λ{} -> {}", domain(), codomain());
+    p.indent().endl();
+    streamf("{}");
     domain()->name_stream(p << "λ");
     return body()->name_stream(p << ".");
+#endif
 }
 
 Printer& Pack::vstream(Printer& p) const {

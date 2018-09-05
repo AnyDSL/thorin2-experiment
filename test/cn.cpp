@@ -9,9 +9,9 @@ namespace thorin::me {
 TEST(Cn, Simple) {
     World w;
     auto C = w.cn(w.unit());
-    C->dump();
+    //C->dump();
     auto k = w.lambda(fe::parse(w, "cn[int 32s64::nat, cn int 32s64::nat]")->as<Pi>(), {"k"});
-    k->type()->dump();
+    //k->type()->dump();
     auto x = k->param(0, {"x"});
     auto r = k->param(1, {"r"});
     auto t = w.lambda(C, {"t"});
