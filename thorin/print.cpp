@@ -184,7 +184,9 @@ DefPrinter& MultiArityKind::vstream(DefPrinter& p) const {
     return p << op(0);
 }
 
-DefPrinter& Param::vstream(DefPrinter& p) const { return p << unique_name(); }
+DefPrinter& Param::vstream(DefPrinter& p) const {
+    return streamf(p, "param {}", lambda());
+}
 
 DefPrinter& Lambda::vstream(DefPrinter& p) const {
     streamf(p, "λ{} -> {}", domain(), codomain()).indent().endl();

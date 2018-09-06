@@ -16,13 +16,13 @@ TEST(Cn, Simple) {
     auto r = k->param(1, {"r"});
     auto t = w.lambda(C, {"t"});
     auto f = w.lambda(C, {"f"});
-    auto n = w.lambda(fe::parse(w, "cn[int 32s64::nat]")->as<Pi>());
+    auto n = w.lambda(fe::parse(w, "cn[int 32s64::nat]")->as<Pi>(), {"n"});
     auto i0 = w.lit_i(0_u32);
     auto cmp = w.op<ICmp::ug>(x, i0);
     k->br(cmp, t, f);
     t->jump(n, w.lit_i(23_u32));
     f->jump(n, w.lit_i(42_u32));
-    n->jump(r, n->param());
+    n->jump(r, n->param({"res"}));
 
     w.make_external(k);
 
