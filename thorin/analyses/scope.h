@@ -21,7 +21,7 @@ class CFNode;
  * Transitively, all user's of the @p entry's parameters are pooled into this @p Scope.
  * Each @p Scope contains the dummy @p Lambda @p World::lambda_end to mark the end of a @p Scope.
  */
-class Scope : public Streamable<std::ostream> {
+class Scope : public Streamable<Printer> {
 public:
     Scope(const Scope&) = delete;
     Scope& operator=(Scope) = delete;
@@ -53,9 +53,9 @@ public:
 
     //@{ dump
     // Note that we don't use overloading for the following methods in order to have them accessible from gdb.
-    virtual std::ostream& stream(std::ostream&) const override;  ///< Streams thorin to file @p out.
-    void write_thorin(const char* filename) const;               ///< Dumps thorin to file with name @p filename.
-    void thorin() const;                                         ///< Dumps thorin to a file with an auto-generated file name.
+    virtual Printer& stream(Printer&) const override;  ///< Streams thorin to file @p out.
+    void write_thorin(const char* filename) const;     ///< Dumps thorin to file with name @p filename.
+    void thorin() const;                               ///< Dumps thorin to a file with an auto-generated file name.
     //@}
 
     /**

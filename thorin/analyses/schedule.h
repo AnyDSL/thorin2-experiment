@@ -6,7 +6,7 @@
 
 namespace thorin {
 
-class Schedule : public Streamable<std::ostream> {
+class Schedule : public Streamable<Printer> {
 public:
     enum Tag { Early, Late, Smart };
 
@@ -62,9 +62,9 @@ public:
     void verify();
 
     // Note that we don't use overloading for the following methods in order to have them accessible from gdb.
-    virtual std::ostream& stream(std::ostream&) const override;  ///< Streams thorin to file @p out.
-    void write_thorin(const char* filename) const;               ///< Dumps thorin to file with name @p filename.
-    void thorin() const;                                         ///< Dumps thorin to a file with an auto-generated file name.
+    virtual Printer& stream(Printer&) const override;  ///< Streams thorin to file @p out.
+    void write_thorin(const char* filename) const;     ///< Dumps thorin to file with name @p filename.
+    void thorin() const;                               ///< Dumps thorin to a file with an auto-generated file name.
 
     typedef ArrayRef<const Block>::const_iterator const_iterator;
     const_iterator begin() const { return blocks().begin(); }

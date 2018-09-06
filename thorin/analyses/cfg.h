@@ -23,7 +23,7 @@ typedef GIDSet<const CFNode*> CFNodes;
  * A Control-Flow Node.
  * Managed by @p CFA.
  */
-class CFNode : public RuntimeCast<CFNode>, public Streamable<std::ostream> {
+class CFNode : public RuntimeCast<CFNode>, public Streamable<Printer> {
 public:
     CFNode(Lambda* lambda)
         : lambda_(lambda)
@@ -32,7 +32,7 @@ public:
 
     uint64_t gid() const { return gid_; }
     Lambda* lambda() const { return lambda_; }
-    std::ostream& stream(std::ostream& os) const override;
+    Printer& stream(Printer& os) const override;
 
 private:
     const CFNodes& preds() const { return preds_; }

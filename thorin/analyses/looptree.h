@@ -31,7 +31,7 @@ public:
     * The root node is a @p Head without any CFNode%s but further @p Node children and @p depth_ -1.
     * Thus, the forest is pooled into a tree.
     */
-    class Node : public RuntimeCast<Node>, public Streamable<std::ostream> {
+    class Node : public RuntimeCast<Node>, public Streamable<Printer> {
     protected:
         Node(Head* parent, int depth, const std::vector<const CFNode*>&);
 
@@ -42,8 +42,6 @@ public:
         size_t num_cf_nodes() const { return cf_nodes().size(); }
 
     protected:
-        std::ostream& indent() const;
-
         Head* parent_;
         std::vector<const CFNode*> cf_nodes_;
         int depth_;
@@ -63,7 +61,7 @@ public:
         const Super* child(size_t i) const { return children_[i].get(); }
         size_t num_children() const { return children().size(); }
         bool is_root() const { return Super::parent_ == 0; }
-        virtual std::ostream& stream(std::ostream&) const override;
+        virtual Printer& stream(Printer&) const override;
 
     private:
         std::vector<std::unique_ptr<Super>> children_;
@@ -88,7 +86,7 @@ public:
         const CFNode* cf_node() const { return Super::cf_nodes().front(); }
         /// Index of a DFS of the @p LoopTree's @p Leaf%s.
         size_t index() const { return index_; }
-        virtual std::ostream& stream(std::ostream&) const override;
+        virtual Printer& stream(Printer&) const override;
 
     private:
         size_t index_;

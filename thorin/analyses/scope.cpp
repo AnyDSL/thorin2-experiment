@@ -101,7 +101,7 @@ void Scope::for_each(const World& world, std::function<void(Scope&)> f) {
 template void Scope::for_each<true> (const World&, std::function<void(Scope&)>);
 template void Scope::for_each<false>(const World&, std::function<void(Scope&)>);
 
-std::ostream& Scope::stream(std::ostream& os) const { return schedule(*this).stream(os); }
+Printer& Scope::stream(Printer& p) const { return schedule(*this).stream(p); }
 void Scope::write_thorin(const char* filename) const { return schedule(*this).write_thorin(filename); }
 void Scope::thorin() const { schedule(*this).thorin(); }
 

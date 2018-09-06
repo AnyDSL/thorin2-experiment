@@ -19,27 +19,53 @@ public:
     virtual ~Streamable() {}
 
     virtual S& stream(S&) const = 0;
-    virtual std::ostream& stream_out(std::ostream&) const = 0;
     std::string to_string() const {
         std::ostringstream os;
         stream(os);
         return os.str();
     }
-    void dump() const { stream_out(std::cout) << std::endl; }
+    void dump() const { std::cout << this << std::endl; }
 };
 
-template<>
-class Streamable<std::ostream> {
+template<class P>
+class PrinterBase {
 public:
-    virtual ~Streamable() {}
+    explicit PrinterBase(std::ostream& ostream, const char* tab)
+        : ostream_(ostream)
+        , tab_(tab)
+    {}
 
-    virtual std::ostream& stream(std::ostream&) const = 0;
-    std::ostream& stream_out(std::ostream& s) const { return stream(s); }
-    void dump() const { stream_out(std::cout) << std::endl; }
+    std::ostream& ostream() { return ostream_; };
+    const char* tab() const { return tab_; }
+    P& indent() { ++level_; return child(); }
+    P& dedent() { assert(level_ > 0); --level_; return child(); }
+    P& endl() {
+        ostream() << std::endl;
+        for (int i = 0; i != level_; ++i) ostream() << tab();
+        return child();
+    }
+    template<class T> P& operator<<(const T& val) { ostream() << val; return child(); }
+
+private:
+    P& child() { return static_cast<P&>(*this); }
+
+    std::ostream& ostream_;
+    const char* tab_;
+    int level_ = 0;
+};
+
+class Printer : public PrinterBase<Printer> {
+public:
+    explicit Printer(std::ostream& ostream, const char* tab = "    ")
+        : PrinterBase(ostream, tab)
+    {}
 };
 
 template<class S>
-std::ostream& operator<<(std::ostream& stream, const Streamable<S>* p) { return p->stream_out(stream); }
+std::ostream& operator<<(std::ostream& stream, const Streamable<S>* p) { 
+    S s(stream); 
+    return p->stream(s).ostream();
+}
 
 template<class L, class F>
 struct stream_list {
@@ -172,33 +198,6 @@ template<class... Args> std::ostream& errln(const char* fmt, Args... args) { ret
         } \
     } while (false)
 #endif
-
-template<class P>
-class IndentPrinter {
-public:
-    explicit IndentPrinter(std::ostream& ostream, const char* tab = "    ")
-        : ostream_(ostream)
-        , tab_(tab)
-    {}
-
-    std::ostream& ostream() { return ostream_; };
-    const char* tab() const { return tab_; }
-    P& indent() { ++level_; return child(); }
-    P& dedent() { assert(level_ > 0); --level_; return child(); }
-    P& endl() {
-        ostream() << std::endl;
-        for (int i = 0; i != level_; ++i) ostream() << tab();
-        return child();
-    }
-    template<class T> P& operator<<(const T& val) { ostream() << val; return child(); }
-
-private:
-    P& child() { return static_cast<P&>(*this); }
-
-    std::ostream& ostream_;
-    const char* tab_;
-    int level_ = 0;
-};
 
 }
 

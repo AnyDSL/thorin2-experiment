@@ -119,7 +119,7 @@ DefArray unique_gid_sorted(Defs defs);
  * However, you can have this Extra field.
  * See App or Lit how this is done.
  */
-class Def : public RuntimeCast<Def>, public Streamable<Printer> {
+class Def : public RuntimeCast<Def>, public Streamable<DefPrinter> {
 public:
     enum class Tag {
         Match, Variant,
@@ -288,11 +288,10 @@ public:
     //@}
 
     //@{ stream
-    virtual Printer& name_stream(Printer&) const;
-    Printer& qualifier_stream(Printer&) const;
-    Printer& stream(Printer&) const override;
-    std::ostream& stream_out(std::ostream&) const override;
-    Printer& stream_assign(Printer&) const;
+    virtual DefPrinter& name_stream(DefPrinter&) const;
+    DefPrinter& qualifier_stream(DefPrinter&) const;
+    DefPrinter& stream(DefPrinter&) const override;
+    DefPrinter& stream_assign(DefPrinter&) const;
     void dump_assign() const;
     void dump_rec() const;
     //@}
@@ -312,7 +311,7 @@ private:
     /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
     virtual const Def* kind_qualifier() const;
     virtual bool vsubtype_of(const Def*) const { return false; }
-    virtual Printer& vstream(Printer& os) const = 0;
+    virtual DefPrinter& vstream(DefPrinter&) const = 0;
 
     static uint32_t gid_counter_;
 
@@ -385,13 +384,13 @@ private:
 
 public:
     const Def* arity() const override;
-    Printer& name_stream(Printer& os) const override { return vstream(os); }
+    DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
     const Def* kind_qualifier() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
     bool vsubtype_of(const Def*) const override;
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -402,13 +401,13 @@ private:
 
 public:
     const Def* arity() const override;
-    Printer& name_stream(Printer& os) const override { return vstream(os); }
+    DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
     const Def* kind_qualifier() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
     bool vsubtype_of(const Def*) const override;
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -433,7 +432,7 @@ public:
 private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
     Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
     const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
 
@@ -463,7 +462,7 @@ public:
 
 private:
     bool vsubtype_of(const Def* def) const override;
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -513,7 +512,7 @@ public:
     const Def* apply(const Def*) const;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -564,7 +563,7 @@ public:
 private:
     static const Def* max_type(Defs ops, const Def* qualifier);
     bool vsubtype_of(const Def* def) const override;
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -587,7 +586,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -610,7 +609,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -628,7 +627,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -646,7 +645,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -664,7 +663,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -692,7 +691,7 @@ public:
     };
     static constexpr auto op_name = "intersection";
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -724,7 +723,7 @@ public:
     };
     static constexpr auto op_name = "variant";
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -740,7 +739,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -759,7 +758,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -779,7 +778,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -796,7 +795,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
     Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
     const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
 
@@ -814,7 +813,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -826,12 +825,12 @@ private:
 public:
     const Def* arity() const override;
     bool assignable(const Def* def) const override;
-    Printer& name_stream(Printer& os) const override { return vstream(os); }
+    DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
     const Def* kind_qualifier() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -847,7 +846,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -869,14 +868,14 @@ public:
     bool has_values() const override;
     u64 index() const { return extra().index_; }
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
-    Printer& name_stream(Printer& os) const override { return vstream(os); }
+    DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
     void check(TypeCheck&, DefVector&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
     Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
     const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
 
@@ -903,7 +902,7 @@ public:
 private:
     uint64_t vhash() const override;
     bool equal(const Def*) const override;
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
     Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
     const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
 
@@ -936,7 +935,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -952,7 +951,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -978,7 +977,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };
@@ -1010,7 +1009,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
 
 private:
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
     Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
     const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
 
@@ -1053,7 +1052,7 @@ private:
     Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
     const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
     const Def* cache() const { assert(!has_axiom()); return extra().cache_; }
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend const Axiom* get_axiom(const Def*);
     friend class World;
@@ -1071,7 +1070,7 @@ public:
     const Def* arity() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     Unknown* vstub(World&, const Def*, Debug) const override;
-    Printer& vstream(Printer&) const override;
+    DefPrinter& vstream(DefPrinter&) const override;
 
     friend class World;
 };

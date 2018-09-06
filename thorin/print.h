@@ -7,16 +7,16 @@ namespace thorin {
 
 class Def;
 
-class Printer : public thorin::IndentPrinter<Printer> {
+class DefPrinter : public PrinterBase<DefPrinter> {
 public:
-    explicit Printer(std::ostream& ostream = std::cout, const char* tab = "    ")
-        : IndentPrinter<Printer>(ostream, tab)
+    explicit DefPrinter(std::ostream& ostream = std::cout, const char* tab = "    ")
+        : PrinterBase<DefPrinter>(ostream, tab)
     {}
 
     void print(const Def* def);
 };
 
-template void Streamable<Printer>::dump() const;
+template void Streamable<DefPrinter>::dump() const;
 
 }
 

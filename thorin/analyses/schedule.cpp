@@ -257,7 +257,7 @@ void Schedule::verify() {
 #endif
 }
 
-std::ostream& Schedule::stream(std::ostream& os) const {
+Printer& Schedule::stream(Printer& p) const {
 #if 0
     for (auto& block : *this) {
         auto lambda = block.lambda();
@@ -277,10 +277,14 @@ std::ostream& Schedule::stream(std::ostream& os) const {
     }
     return os << endl;
 #endif
-    return os;
+    return p;
 }
 
-void Schedule::write_thorin(const char* filename) const { std::ofstream file(filename); stream(file); }
+void Schedule::write_thorin(const char* filename) const {
+    std::ofstream file(filename);
+    Printer printer(file);
+    stream(printer);
+}
 
 void Schedule::thorin() const {
     auto filename = world().name() + "_" + scope().entry()->unique_name() + ".thorin";
