@@ -31,7 +31,7 @@ DefPrinter& DefPrinter::recurse(const Def* def) {
 
     while (!lambdas_.empty()) {
         auto lambda = pop(lambdas_);
-        lambda->stream_assign(*this).indent().endl();
+        (lambda->stream_assign(*this) << " {").indent();
         push(lambda->body());
 
         while (!stack_.empty()) {
@@ -53,12 +53,12 @@ DefPrinter& DefPrinter::recurse(const Def* def) {
             }
 
             if (!todo) {
-                def->stream_assign(*this).endl();
+                def->stream_assign(endl()) << ';';
                 stack_.pop();
             }
         }
 
-        dedent().endl();
+        (dedent().endl() << "}").endl().endl();
     }
 
     return *this;
