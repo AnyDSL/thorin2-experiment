@@ -61,12 +61,17 @@ DefPrinter& Def::name_stream(DefPrinter& os) const {
     return stream(os);
 }
 
-DefPrinter& Def::stream(DefPrinter& os) const {
+DefPrinter& Def::stream(DefPrinter& p) const {
+    if (descend(this))
+        return p << unique_name();
+    return vstream(p);
+#if 0
     if (is_nominal()) {
         qualifier_stream(os);
         return os << name();
     }
     return vstream(os);
+#endif
 }
 
 DefPrinter& Def::qualifier_stream(DefPrinter& p) const {
@@ -84,7 +89,7 @@ DefPrinter& Def::qualifier_stream(DefPrinter& p) const {
 }
 
 DefPrinter& Def::stream_assign(DefPrinter& p) const {
-    return streamf(p, "{} = {};", unique_name(), this).endl();
+    return vstream(p << unique_name() << " = ").endl();
 }
 
 void Def::dump_assign() const {
