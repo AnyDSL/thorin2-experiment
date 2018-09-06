@@ -62,8 +62,8 @@ public:
 };
 
 template<class S>
-std::ostream& operator<<(std::ostream& stream, const Streamable<S>* p) { 
-    S s(stream); 
+std::ostream& operator<<(std::ostream& stream, const Streamable<S>* p) {
+    S s(stream);
     return p->stream(s).ostream();
 }
 
@@ -89,14 +89,14 @@ namespace detail {
     template<class S, class T> typename std::enable_if<!is_stream_list<T>::value && !is_ranged<T>::value, void>::type stream(S& s, const std::string&, const T& val) { s << val; }
     template<class S, class T> typename std::enable_if<!is_stream_list<T>::value &&  is_ranged<T>::value, void>::type stream(S& s, const std::string& spec_fmt, const T& list) {
         const char* cur_sep = "";
-        for (const auto& elem : list) {
+        for (auto&& elem : list) {
             s << cur_sep;
             stream(s, {""}, elem);
             cur_sep = spec_fmt.c_str();
         }
     }
 
-    template<class S, class T> typename std::enable_if< is_stream_list<T>::value && !is_ranged<T>::value, void>::type stream(S& s, const std::string& spec_fmt, const T& stream_list) {
+    template<class S, class T> typename std::enable_if<is_stream_list<T>::value && !is_ranged<T>::value, void>::type stream(S& s, const std::string& spec_fmt, const T& stream_list) {
         const char* cur_sep = "";
         for (const auto& elem : stream_list.list) {
             s << cur_sep;
@@ -145,6 +145,10 @@ template<class S> S& streamf(S& s, const char* fmt) {
  * You can specify the separator within the braces:
 @code{.cpp}
     streamf(s, "({, })", list) // yields "(a, b, c)"
+@endcode
+ * Furthermore, you can provide a list and a lambda with the help of @p stream_list:
+@code{.cpp}
+    streamf(s, "({, })", stream_list(my_list, [&](auto x) { do_sth(x); }))
 @endcode
  */
 template<class S, class T, class... Args>
