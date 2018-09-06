@@ -26,39 +26,47 @@ bool DefPrinter::push(const Def* def) {
     return false;
 }
 
-DefPrinter& DefPrinter::recurse(const Def* def) {
-    _push(def);
+DefPrinter& DefPrinter::recurse(const Lambda* lambda) {
+    _push(lambda);
 
     while (!lambdas_.empty()) {
         auto lambda = pop(lambdas_);
         (lambda->stream_assign(*this) << " {").indent();
-        push(lambda->body());
+        recurse(lambda->body());
+        (dedent().endl() << "}").endl().endl();
+    }
 
-        while (!stack_.empty()) {
-            auto def = stack_.top();
+    return *this;
+}
 
-            bool todo = false;
-            if (auto app = def->isa<App>()) {
-                todo |= push(app->callee());
+DefPrinter& DefPrinter::recurse(const Def* def) {
+    if (auto lambda = def->isa<Lambda>())
+        return recurse(lambda);
 
-                if (app->arg()->isa<Tuple>() || app->arg()->isa<Pack>()) {
-                    for (auto op : app->arg()->ops())
-                        todo |= push(op);
-                } else {
-                    todo |= push(app->arg());
-                }
-            } else {
-                for (auto op : def->ops())
+    _push(def);
+
+    while (!stack_.empty()) {
+        auto def = stack_.top();
+
+        bool todo = false;
+        if (auto app = def->isa<App>()) {
+            todo |= push(app->callee());
+
+            if (app->arg()->isa<Tuple>() || app->arg()->isa<Pack>()) {
+                for (auto op : app->arg()->ops())
                     todo |= push(op);
+            } else {
+                todo |= push(app->arg());
             }
-
-            if (!todo) {
-                def->stream_assign(endl()) << ';';
-                stack_.pop();
-            }
+        } else {
+            for (auto op : def->ops())
+                todo |= push(op);
         }
 
-        (dedent().endl() << "}").endl().endl();
+        if (!todo) {
+            def->stream_assign(endl()) << ';';
+            stack_.pop();
+        }
     }
 
     return *this;

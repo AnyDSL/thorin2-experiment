@@ -16,7 +16,8 @@ public:
         : PrinterBase<DefPrinter>(ostream, tab)
     {}
 
-    DefPrinter& recurse(const Def* def);
+    DefPrinter& recurse(const Def*);
+    DefPrinter& recurse(const Lambda*);
 
 private:
     bool push(const Def* def);
