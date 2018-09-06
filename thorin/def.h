@@ -271,7 +271,7 @@ public:
     //@}
 
     //@{ stream
-    virtual DefPrinter& name_stream(DefPrinter&) const;
+    //virtual DefPrinter& name_stream(DefPrinter&) const;
     DefPrinter& qualifier_stream(DefPrinter&) const;
     DefPrinter& stream(DefPrinter&) const override;
     DefPrinter& stream_assign(DefPrinter&) const;
@@ -367,7 +367,7 @@ private:
 
 public:
     const Def* arity() const override;
-    DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
+    //DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
     const Def* kind_qualifier() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
@@ -384,7 +384,7 @@ private:
 
 public:
     const Def* arity() const override;
-    DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
+    //DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
     const Def* kind_qualifier() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
@@ -808,7 +808,7 @@ private:
 public:
     const Def* arity() const override;
     bool assignable(const Def* def) const override;
-    DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
+    //DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
     const Def* kind_qualifier() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
@@ -851,7 +851,7 @@ public:
     bool has_values() const override;
     u64 index() const { return extra().index_; }
     /// Do not print variable names as they aren't bound in the output without analysing DeBruijn-Indices.
-    DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
+    //DefPrinter& name_stream(DefPrinter& p) const override { return vstream(p); }
     void check(TypeCheck&, DefVector&) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
 
