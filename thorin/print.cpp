@@ -193,7 +193,10 @@ DefPrinter& Param::vstream(DefPrinter& p) const {
 }
 
 DefPrinter& Lambda::vstream(DefPrinter& p) const {
-    streamf(p, "λ{} -> {}", domain(), codomain()).indent().endl();
+    if (codomain()->isa<Bottom>())
+        streamf(p, "cn {}", domain()).indent().endl();
+    else
+        streamf(p, "λ{} -> {}", domain(), codomain()).indent().endl();
     return streamf(p, "{}", body()).dedent().endl();
 #if 0
     streamf("λ{} -> {}", domain(), codomain());
