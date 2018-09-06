@@ -107,12 +107,10 @@ DefPrinter& App::vstream(DefPrinter& p) const {
     else
         streamf(p, "{}", callee());
 
-    if (arg()->isa<Tuple>() || arg()->isa<Pack>() || !descend(arg()))
-        streamf(p, " {}", arg());
-    else
-        streamf(p, " {}", arg()->unique_name()); // descend
+    if (arg()->isa<Tuple>() || arg()->isa<Pack>())
+        return arg()->vstream(p << ' ');
+    return streamf(p, " {}", arg());
 
-    return p;
 #if 0
     auto domain = callee_type();
     if (domain->is_kind()) {
