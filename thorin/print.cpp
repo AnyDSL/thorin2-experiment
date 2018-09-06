@@ -1,7 +1,5 @@
 #include "thorin/print.h"
 
-#include <stack>
-
 #include "thorin/def.h"
 
 namespace thorin {
@@ -12,22 +10,19 @@ static bool descend(const Def* def) {
     return def->num_ops() != 0 && get_axiom(def) == nullptr;
 }
 
-void DefPrinter::print(const Def* def) {
-    std::stack<const Def*> stack;
-    DefSet done;
+bool DefPrinter::push(const Def* def) {
+    if (descend(def) && done_.emplace(def).second) {
+        stack_.emplace(def);
+        return true;
+    }
+    return false;
+}
 
-    auto push = [&](const Def* def) {
-        if (descend(def) && done.emplace(def).second) {
-            stack.emplace(def);
-            return true;
-        }
-        return false;
-    };
+DefPrinter& DefPrinter::recurse(const Def* def) {
+    stack_.emplace(def);
 
-    stack.emplace(def);
-
-    while (!stack.empty()) {
-        auto def = stack.top();
+    while (!stack_.empty()) {
+        auto def = stack_.top();
 
         bool todo = false;
         if (auto app = def->isa<App>()) {
@@ -46,9 +41,11 @@ void DefPrinter::print(const Def* def) {
 
         if (!todo) {
             def->stream_assign(*this);
-            stack.pop();
+            stack_.pop();
         }
     }
+
+    return *this;
 }
 
 //------------------------------------------------------------------------------
@@ -99,7 +96,7 @@ void Def::dump_assign() const {
 
 void Def::dump_rec() const {
     DefPrinter printer;
-    printer.print(this);
+    printer.recurse(this);
 }
 
 //------------------------------------------------------------------------------

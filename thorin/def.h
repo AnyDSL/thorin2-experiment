@@ -60,23 +60,6 @@ typedef HashSet<Use, UseHash> Uses;
 
 //------------------------------------------------------------------------------
 
-template<class T>
-struct GIDLt {
-    bool operator()(T a, T b) const { return a->gid() < b->gid(); }
-};
-
-template<class T>
-struct GIDHash {
-    static uint64_t hash(T n) { return n->gid(); }
-    static bool eq(T a, T b) { return a == b; }
-    static T sentinel() { return T(1); }
-};
-
-template<class Key, class Value>
-using GIDMap = thorin::HashMap<Key, Value, GIDHash<Key>>;
-template<class Key>
-using GIDSet = thorin::HashSet<Key, GIDHash<Key>>;
-
 template<class To>
 using DefMap  = GIDMap<const Def*, To>;
 using DefSet  = GIDSet<const Def*>;
