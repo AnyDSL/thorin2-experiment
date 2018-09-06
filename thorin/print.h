@@ -1,14 +1,13 @@
 #ifndef THORIN_PRINT_H
 #define THORIN_PRINT_H
 
-#include <stack>
-
 #include "thorin/util/hash.h"
 #include "thorin/util/stream.h"
 
 namespace thorin {
 
 class Def;
+class Lambda;
 using DefSet = GIDSet<const Def*>;
 
 class DefPrinter : public PrinterBase<DefPrinter> {
@@ -21,8 +20,10 @@ public:
 
 private:
     bool push(const Def* def);
+    void _push(const Def* def);
 
     std::stack<const Def*> stack_;
+    std::queue<const Lambda*> lambdas_;
     DefSet done_;
 };
 

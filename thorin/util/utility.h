@@ -4,6 +4,7 @@
 #include <cassert>
 #include <memory>
 #include <queue>
+#include <stack>
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -44,6 +45,13 @@ template<class T>
 T pop(std::queue<T>& queue) {
     auto val = queue.front();
     queue.pop();
+    return val;
+}
+
+template<class T>
+T pop(std::stack<T>& stack) {
+    auto val = stack.top();
+    stack.pop();
     return val;
 }
 

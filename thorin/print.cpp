@@ -10,39 +10,55 @@ static bool descend(const Def* def) {
     return def->num_ops() != 0 && get_axiom(def) == nullptr;
 }
 
+void DefPrinter::_push(const Def* def) {
+    if (auto lambda = def->isa<Lambda>())
+        lambdas_.emplace(lambda);
+    else
+        stack_.emplace(def);
+    done_.emplace(def);
+}
+
 bool DefPrinter::push(const Def* def) {
     if (descend(def) && done_.emplace(def).second) {
-        stack_.emplace(def);
+        _push(def);
         return true;
     }
     return false;
 }
 
 DefPrinter& DefPrinter::recurse(const Def* def) {
-    stack_.emplace(def);
+    _push(def);
 
-    while (!stack_.empty()) {
-        auto def = stack_.top();
+    while (!lambdas_.empty()) {
+        auto lambda = pop(lambdas_);
+        lambda->stream_assign(*this).indent().endl();
+        push(lambda->body());
 
-        bool todo = false;
-        if (auto app = def->isa<App>()) {
-            todo |= push(app->callee());
+        while (!stack_.empty()) {
+            auto def = stack_.top();
 
-            if (app->arg()->isa<Tuple>() || app->arg()->isa<Pack>()) {
-                for (auto op : app->arg()->ops())
-                    todo |= push(op);
+            bool todo = false;
+            if (auto app = def->isa<App>()) {
+                todo |= push(app->callee());
+
+                if (app->arg()->isa<Tuple>() || app->arg()->isa<Pack>()) {
+                    for (auto op : app->arg()->ops())
+                        todo |= push(op);
+                } else {
+                    todo |= push(app->arg());
+                }
             } else {
-                todo |= push(app->arg());
+                for (auto op : def->ops())
+                    todo |= push(op);
             }
-        } else {
-            for (auto op : def->ops())
-                todo |= push(op);
+
+            if (!todo) {
+                def->stream_assign(*this).endl();
+                stack_.pop();
+            }
         }
 
-        if (!todo) {
-            def->stream_assign(*this);
-            stack_.pop();
-        }
+        dedent().endl();
     }
 
     return *this;
@@ -88,17 +104,17 @@ DefPrinter& Def::qualifier_stream(DefPrinter& p) const {
 }
 
 DefPrinter& Def::stream_assign(DefPrinter& p) const {
-    return vstream(p << unique_name() << " = ").endl();
+    return vstream(p << unique_name() << " = ");
 }
 
 void Def::dump_assign() const {
     DefPrinter printer;
-    stream_assign(printer);
+    stream_assign(printer).endl();
 }
 
 void Def::dump_rec() const {
-    DefPrinter printer;
-    printer.recurse(this);
+    DefPrinter p;
+    p.recurse(this);
 }
 
 //------------------------------------------------------------------------------
@@ -194,10 +210,8 @@ DefPrinter& Param::vstream(DefPrinter& p) const {
 
 DefPrinter& Lambda::vstream(DefPrinter& p) const {
     if (codomain()->isa<Bottom>())
-        streamf(p, "cn {}", domain()).indent().endl();
-    else
-        streamf(p, "λ{} -> {}", domain(), codomain()).indent().endl();
-    return streamf(p, "{}", body()).dedent().endl();
+        return streamf(p, "cn {}", domain());
+    return streamf(p, "λ{} -> {}", domain(), codomain());
 #if 0
     streamf("λ{} -> {}", domain(), codomain());
     p.indent().endl();
