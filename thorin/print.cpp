@@ -64,7 +64,12 @@ DefPrinter& DefPrinter::recurse(const Lambda* lambda) {
 
     while (!lambdas_.empty()) {
         auto lambda = pop(lambdas_);
-        (lambda->stream_assign(*this) << " {").indent();
+
+        if (lambda->codomain()->isa<Bottom>())
+            streamf(*this, "{} := cn {} {{", lambda->unique_name(), str(lambda->domain())).indent();
+        else
+            streamf(*this, "{} := λ{} -> {} {{", lambda->unique_name(), str(lambda->domain()), str(lambda->codomain())).indent();
+
         recurse(lambda->body());
         (dedent().endl() << "}").endl().endl();
     }
@@ -220,8 +225,8 @@ DefPrinter& Param::stream(DefPrinter& p) const {
 
 DefPrinter& Lambda::stream(DefPrinter& p) const {
     if (codomain()->isa<Bottom>())
-        return streamf(p, "cn {}", p.str(domain()));
-    return streamf(p, "λ{} -> {}", p.str(domain()), p.str(codomain()));
+        return streamf(p, "{} := cn {} {{ {} }}", unique_name(), p.str(domain()), body());
+    return streamf(p, "{} := λ{} -> {} {{ {} }}", unique_name(), p.str(domain()), p.str(codomain()), body());
 #if 0
     streamf("λ{} -> {}", domain(), codomain());
     p.indent().endl();
