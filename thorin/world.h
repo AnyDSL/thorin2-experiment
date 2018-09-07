@@ -105,7 +105,7 @@ public:
     Lambda* lambda(const Pi* type, Debug dbg = {}) {
         assertf(type->free_vars().none_begin(1),
                 "function type {} of a nominal lambda may not contain free variables", type);
-        return insert<Lambda>(2, type, dbg);
+        return insert<Lambda>(2, type, dbg)->Def::set(0, lit_false())->Def::set(1, bottom(unit()))->as_lambda();
     }
     const Param* param(const Lambda* lambda, Debug dbg = {}) { return unify<Param>(1, lambda->domain(), lambda, dbg); }
     //@}

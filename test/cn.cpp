@@ -1,8 +1,9 @@
 #include "gtest/gtest.h"
 
 #include "thorin/analyses/scope.h"
-#include "thorin/me/world.h"
 #include "thorin/fe/parser.h"
+#include "thorin/me/world.h"
+#include "thorin/util/log.h"
 
 namespace thorin::me {
 
@@ -20,6 +21,7 @@ TEST(Cn, Simple) {
     auto i0 = w.lit_i(0_u32);
     auto cmp = w.op<ICmp::ug>(x, i0);
     k->br(cmp, t, f);
+    k->body()->dump();
     t->jump(n, w.lit_i(23_u32));
     f->jump(n, w.lit_i(42_u32));
     n->jump(r, n->param({"res"}));
@@ -36,11 +38,14 @@ TEST(Cn, Simple) {
     EXPECT_TRUE(scope.contains(cmp));
     EXPECT_FALSE(scope.contains(i0));
 
+    //scope.dump();
+
     k->dump_rec();
 }
 
 TEST(Cn, Poly) {
     World w;
+    Log::set_min_level(Log::Debug);
     auto k = w.lambda(fe::parse(w, "cn[T: *, T, cn T]")->as<Pi>(), {"k"});
     k->jump(k->param(2, {"ret"}), k->param(1, {"x"}));
 

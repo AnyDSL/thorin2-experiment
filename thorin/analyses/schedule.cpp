@@ -68,32 +68,11 @@ private:
 };
 
 void Scheduler::compute_def2uses() {
-    std::queue<const Def*> queue;
-    DefSet done;
-
-    auto enqueue = [&](const Def* def, size_t i, const Def* op) {
-        if (scope_.contains(op)) {
-            auto p1 = def2uses_[op].emplace(def, i);
-            assert_unused(p1.second);
-            auto p2 = done.emplace(op);
-            if (p2.second)
-                queue.push(op);
-        }
-    };
-
-    for (auto n : cfg_.reverse_post_order()) {
-        queue.push(n->lambda());
-        auto p = done.emplace(n->lambda());
-        assert_unused(p.second);
-    }
-
-    while (!queue.empty()) {
-        auto def = pop(queue);
-        for (size_t i = 0, e = def->num_ops(); i != e; ++i) {
-            // all reachable lambdas have already been registered above
-            // NOTE we might still see references to unreachable lambdas in the schedule
-            if (!def->op(i)->isa<Lambda>())
-                enqueue(def, i, def->op(i));
+    for (auto def : scope_.defs()) {
+        auto& uses = def2uses_[def];
+        for (auto use : def->uses()) {
+            if (scope_.contains(use))
+                uses.emplace(use);
         }
     }
 }
@@ -103,8 +82,10 @@ const CFNode* Scheduler::schedule_early(const Def* def) {
     if (i != def2early_.end())
         return i->second;
 
-    if (auto param = def->isa<Param>())
+    if (auto param = def->isa<Param>()) {
+        DLOG("early: {} <- {}", param->lambda(), def);
         return def2early_[def] = cfg_[param->lambda()];
+    }
 
     auto result = cfg_.entry();
     for (auto op : def->ops()) {
@@ -115,6 +96,7 @@ const CFNode* Scheduler::schedule_early(const Def* def) {
         }
     }
 
+    DLOG("early: {} <- {}", result, def);
     return def2early_[def] = result;
 }
 
@@ -123,8 +105,10 @@ const CFNode* Scheduler::schedule_late(const Def* def) {
     if (i != def2late_.end())
         return i->second;
 
-    if (auto lambda = def->isa_lambda())
-        return def2late_[def] = cfg_[lambda];
+    if (auto lambda = def->isa_lambda()) {
+        DLOG("late: {} <- {}", lambda, lambda);
+        return def2late_[lambda] = cfg_[lambda];
+    }
 
     const CFNode* result = nullptr;
     for (auto use : uses(def)) {
@@ -132,6 +116,7 @@ const CFNode* Scheduler::schedule_late(const Def* def) {
         result = result ? domtree_.lca(result, n) : n;
     }
 
+    DLOG("late: {} <- {}", result, def);
     return def2late_[def] = result;
 }
 
@@ -165,6 +150,7 @@ const CFNode* Scheduler::schedule_smart(const Def* def) {
         }
     }
 
+    DLOG("smart: {} <- {}", result, def);
     return def2smart_[def] = result;
 }
 

@@ -31,10 +31,11 @@ void Scope::run() {
     std::queue<const Def*> queue;
 
     auto enqueue = [&] (const Def* def) {
-        if (defs_.insert(def).second)
+        if (defs_.emplace(def).second)
             queue.push(def);
     };
 
+    // TODO maybe it's better to not include entry itself in the scope
     enqueue(entry_);
     enqueue(entry_->param());
 

@@ -10,6 +10,39 @@ static bool descend(const Def* def) {
     return def->num_ops() != 0 && get_axiom(def) == nullptr;
 }
 
+inline stream_list<Defs, std::function<void(const Def*)>> DefPrinter::list(Defs defs) {
+    auto f = std::function<void(const Def*)>([&](const Def* def) { return *this << this->str(def); });
+    return stream_list(defs, f);
+}
+
+#if 0
+DefPrinter& Def::name_stream(DefPrinter& os) const {
+    if (name() != "" || is_nominal()) {
+        qualifier_stream(os);
+        return os << name();
+    }
+    return stream(os);
+}
+#endif
+
+std::string DefPrinter::str(const Def* def) const {
+    if (descend(def))
+        return def->unique_name();
+
+    std::ostringstream os;
+    DefPrinter printer(os, tab());
+    def->stream(printer);
+    return os.str();
+#if 0
+    if (is_nominal()) {
+        qualifier_stream(os);
+        return os << name();
+    }
+    return vstream(os);
+#endif
+}
+
+
 void DefPrinter::_push(const Def* def) {
     if (auto lambda = def->isa<Lambda>())
         lambdas_.emplace(lambda);
@@ -74,29 +107,6 @@ DefPrinter& DefPrinter::recurse(const Def* def) {
 
 //------------------------------------------------------------------------------
 
-#if 0
-DefPrinter& Def::name_stream(DefPrinter& os) const {
-    if (name() != "" || is_nominal()) {
-        qualifier_stream(os);
-        return os << name();
-    }
-    return stream(os);
-}
-#endif
-
-DefPrinter& Def::stream(DefPrinter& p) const {
-    if (descend(this))
-        return p << unique_name();
-    return vstream(p);
-#if 0
-    if (is_nominal()) {
-        qualifier_stream(os);
-        return os << name();
-    }
-    return vstream(os);
-#endif
-}
-
 DefPrinter& Def::qualifier_stream(DefPrinter& p) const {
     if (!has_values() || tag() == Tag::QualifierType)
         return p;
@@ -112,7 +122,7 @@ DefPrinter& Def::qualifier_stream(DefPrinter& p) const {
 }
 
 DefPrinter& Def::stream_assign(DefPrinter& p) const {
-    return vstream(p << unique_name() << " = ");
+    return stream(p << unique_name() << " = ");
 }
 
 void Def::dump_assign() const {
@@ -127,15 +137,12 @@ void Def::dump_rec() const {
 
 //------------------------------------------------------------------------------
 
-DefPrinter& App::vstream(DefPrinter& p) const {
-    if (descend(callee()))
-        streamf(p, "{}", callee()->unique_name());
-    else
-        streamf(p, "{}", callee());
+DefPrinter& App::stream(DefPrinter& p) const {
+    streamf(p, "{}", p.str(callee()));
 
     if (arg()->isa<Tuple>() || arg()->isa<Pack>())
-        return arg()->vstream(p << ' ');
-    return streamf(p, " {}", arg());
+        return arg()->stream(p << ' ');
+    return streamf(p, " {}", p.str(arg()));
 
 #if 0
     auto domain = callee_type();
@@ -151,11 +158,11 @@ DefPrinter& App::vstream(DefPrinter& p) const {
 #endif
 }
 
-DefPrinter& Arity::vstream(DefPrinter& p) const {
+DefPrinter& Arity::stream(DefPrinter& p) const {
     return p << name();
 }
 
-DefPrinter& ArityKind::vstream(DefPrinter& p) const {
+DefPrinter& ArityKind::stream(DefPrinter& p) const {
     p << name();
     if (auto q = op(0)->isa<Qualifier>())
         if (q->qualifier_tag() == QualifierTag::u)
@@ -163,48 +170,43 @@ DefPrinter& ArityKind::vstream(DefPrinter& p) const {
     return p << op(0);
 }
 
-DefPrinter& Axiom::vstream(DefPrinter& p) const {
+DefPrinter& Axiom::stream(DefPrinter& p) const {
     return qualifier_stream(p) << name();
 }
 
-DefPrinter& Bottom::vstream(DefPrinter& p) const { return streamf(p, "{{⊥: {}}}", type()); }
-DefPrinter& Top   ::vstream(DefPrinter& p) const { return streamf(p, "{{⊤: {}}}", type()); }
+DefPrinter& Bottom::stream(DefPrinter& p) const { return streamf(p, "{{⊥: {}}}", p.str(type())); }
+DefPrinter& Top   ::stream(DefPrinter& p) const { return streamf(p, "{{⊤: {}}}", p.str(type())); }
 
-DefPrinter& Extract::vstream(DefPrinter& p) const {
-    return streamf(p, "{}#{}", scrutinee(), index());
+DefPrinter& Extract::stream(DefPrinter& p) const {
+    return streamf(p, "{}#{}", p.str(scrutinee()), p.str(index()));
 #if 0
     return scrutinee()->name_stream(p) << "#" << index();
 #endif
 }
 
-DefPrinter& Insert::vstream(DefPrinter& p) const {
-    return streamf(p, "{}#{} <- ", scrutinee(), index(), value());
+DefPrinter& Insert::stream(DefPrinter& p) const {
+    return streamf(p, "{}#{} <- ", p.str(scrutinee()), p.str(index()), p.str(value()));
 #if 0
     return scrutinee()->name_stream(p) << "." << index() << "=" << value();
 #endif
 }
 
-DefPrinter& Intersection::vstream(DefPrinter& p) const {
-    //return streamf(qualifier_stream(p), "({ ∩ })", stream_list(ops(), [&](auto def) { def->name_stream(p); }));
-    return streamf(qualifier_stream(p), "({ ∩ })", ops());
+DefPrinter& Intersection::stream(DefPrinter& p) const {
+    return streamf(qualifier_stream(p), "({ ∩ })", p.list(ops()));
 }
 
-DefPrinter& Lit::vstream(DefPrinter& p) const {
+DefPrinter& Lit::stream(DefPrinter& p) const {
     qualifier_stream(p);
     if (!name().empty())
         return p << name();
     return p << std::to_string(box().get_u64());
 }
 
-DefPrinter& Match::vstream(DefPrinter& p) const {
-    return streamf(p,"match {} with ({, })", destructee(), handlers());
-    //p << "match ";
-    //destructee()->name_stream(p);
-    //p << " with ";
-    //return stream_list(p, handlers(), "(", ")", [&](const Def* def) { def->name_stream(p); });
+DefPrinter& Match::stream(DefPrinter& p) const {
+    return streamf(p,"match {} with ({, })", p.str(destructee()), p.list(handlers()));
 }
 
-DefPrinter& MultiArityKind::vstream(DefPrinter& p) const {
+DefPrinter& MultiArityKind::stream(DefPrinter& p) const {
     p << name();
     if (auto q = op(0)->isa<Qualifier>())
         if (q->qualifier_tag() == QualifierTag::u)
@@ -212,14 +214,14 @@ DefPrinter& MultiArityKind::vstream(DefPrinter& p) const {
     return p << op(0);
 }
 
-DefPrinter& Param::vstream(DefPrinter& p) const {
-    return streamf(p, "param {}", lambda());
+DefPrinter& Param::stream(DefPrinter& p) const {
+    return streamf(p, "param {}", p.str(lambda()));
 }
 
-DefPrinter& Lambda::vstream(DefPrinter& p) const {
+DefPrinter& Lambda::stream(DefPrinter& p) const {
     if (codomain()->isa<Bottom>())
-        return streamf(p, "cn {}", domain());
-    return streamf(p, "λ{} -> {}", domain(), codomain());
+        return streamf(p, "cn {}", p.str(domain()));
+    return streamf(p, "λ{} -> {}", p.str(domain()), p.str(codomain()));
 #if 0
     streamf("λ{} -> {}", domain(), codomain());
     p.indent().endl();
@@ -229,7 +231,7 @@ DefPrinter& Lambda::vstream(DefPrinter& p) const {
 #endif
 }
 
-DefPrinter& Pack::vstream(DefPrinter& p) const {
+DefPrinter& Pack::stream(DefPrinter& p) const {
     p << "(";
     if (auto var = type()->isa<Variadic>())
         p << var->op(0);
@@ -237,10 +239,10 @@ DefPrinter& Pack::vstream(DefPrinter& p) const {
         assert(type()->isa<Sigma>());
         p << type()->num_ops() << "ₐ";
     }
-    return streamf(p, "; {})", body());
+    return streamf(p, "; {})", p.str(body()));
 }
 
-DefPrinter& Pi::vstream(DefPrinter& p) const {
+DefPrinter& Pi::stream(DefPrinter& p) const {
 #if 0
     qualifier_stream(p);
     p  << "Π";
@@ -248,11 +250,11 @@ DefPrinter& Pi::vstream(DefPrinter& p) const {
     return codomain()->name_stream(p << ".");
 #endif
     if (codomain()->isa<Bottom>())
-        return streamf(p, "Cn {}", domain());
-    return streamf(p, "Π{} -> {}", domain(), codomain());
+        return streamf(p, "Cn {}", p.str(domain()));
+    return streamf(p, "Π{} -> {}", p.str(domain()), p.str(codomain()));
 }
 
-DefPrinter& Pick::vstream(DefPrinter& p) const {
+DefPrinter& Pick::stream(DefPrinter& p) const {
 #if 0
     p << "pick:";
     type()->name_stream(p);
@@ -262,25 +264,23 @@ DefPrinter& Pick::vstream(DefPrinter& p) const {
     return p << "TODO";
 }
 
-DefPrinter& Qualifier::vstream(DefPrinter& p) const {
+DefPrinter& Qualifier::stream(DefPrinter& p) const {
     return p << qualifier_tag();
 }
 
-DefPrinter& QualifierType::vstream(DefPrinter& p) const {
+DefPrinter& QualifierType::stream(DefPrinter& p) const {
     return p << name();
 }
 
-DefPrinter& Sigma::vstream(DefPrinter& p) const {
-    //return streamf(qualifier_stream(p), "[{, }]", stream_list(ops(), [&](const Def* def) { def->name_stream(p); }));
-    return streamf(qualifier_stream(p), "[{, }]", ops());
+DefPrinter& Sigma::stream(DefPrinter& p) const {
+    return streamf(qualifier_stream(p), "[{, }]", p.list((ops())));
 }
 
-DefPrinter& Singleton::vstream(DefPrinter& p) const {
-    //return streamf(p, "S({, })", stream_list(ops(), [&](const Def* def) { def->name_stream(p); }));
-    return streamf(p, "S({, })", ops());
+DefPrinter& Singleton::stream(DefPrinter& p) const {
+    return streamf(p, "S({, })", p.list(ops()));
 }
 
-DefPrinter& Star::vstream(DefPrinter& p) const {
+DefPrinter& Star::stream(DefPrinter& p) const {
     p << name();
     if (auto q = op(0)->isa<Qualifier>())
         if (q->qualifier_tag() == QualifierTag::u)
@@ -288,33 +288,32 @@ DefPrinter& Star::vstream(DefPrinter& p) const {
     return p << op(0);
 }
 
-DefPrinter& Universe::vstream(DefPrinter& p) const {
+DefPrinter& Universe::stream(DefPrinter& p) const {
     return p << name();
 }
 
-DefPrinter& Unknown::vstream(DefPrinter& p) const {
+DefPrinter& Unknown::stream(DefPrinter& p) const {
     return streamf(p, "<?_{}>", gid());
 }
 
-DefPrinter& Tuple::vstream(DefPrinter& p) const {
-    return streamf(p, "({, })", ops());
+DefPrinter& Tuple::stream(DefPrinter& p) const {
+    return streamf(p, "({, })", p.list(ops()));
 }
 
-DefPrinter& Var::vstream(DefPrinter& p) const {
+DefPrinter& Var::stream(DefPrinter& p) const {
 #if 0
     p << "\\\\" << index() << "::";
     return type()->name_stream(p);
 #endif
-    return streamf(p, "\\\\{}::{}", index(), type());
+    return streamf(p, "\\\\{}::{}", index(), p.str(type()));
 }
 
-DefPrinter& Variadic::vstream(DefPrinter& p) const {
-    return streamf(p, "[{}; {}]", op(0), body());
+DefPrinter& Variadic::stream(DefPrinter& p) const {
+    return streamf(p, "[{}; {}]", p.str(arity()), p.str(body()));
 }
 
-DefPrinter& Variant::vstream(DefPrinter& p) const {
-    //return streamf(qualifier_stream(p), "({ ∪ })", stream_list(ops(), [&](const Def* def) { def->name_stream(p); }));
-    return streamf(qualifier_stream(p), "({ ∪ })", ops());
+DefPrinter& Variant::stream(DefPrinter& p) const {
+    return streamf(qualifier_stream(p), "({ ∪ })", p.list(ops()));
 }
 
 }

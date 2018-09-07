@@ -651,19 +651,6 @@ bool Variant::contains(const Def* def) const {
     return std::binary_search(ops().begin(), ops().end(), def, [&] (auto a, auto b) { return DefLt()(a, b); });
 }
 
-#if 0
-
-Lambda* Cn::set(const Def* filter, const Def* callee, const Def* arg, Debug dbg) {
-    extra().jump_debug_ = dbg;
-    return Def::set(0, filter)->Def::set(1, callee)->Def::set(2, arg)->as<Cn>();
-}
-
-Cn* Cn::set(const Def* filter, const Def* callee, Defs args, Debug dbg) {
-    return set(filter, callee, world().tuple(args), dbg);
-}
-
-#endif
-
 //------------------------------------------------------------------------------
 
 }
