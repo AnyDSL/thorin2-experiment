@@ -472,7 +472,7 @@ public:
     //@}
 
     //@{ set body -- nominal Lambda%s only
-    Lambda* set(const Def* filter, const Def* body) { unset(0); unset(1); return Def::set(0, filter)->Def::set(1, body)->as<Lambda>(); }
+    Lambda* set(const Def* filter, const Def* body) { /*unset(0); unset(1);*/ return Def::set(0, filter)->Def::set(1, body)->as<Lambda>(); }
     /// Uses @c false as filter.
     Lambda* set(const Def* body);
     Lambda* jump(const Def* callee, const Def* arg, Debug dbg = {});
