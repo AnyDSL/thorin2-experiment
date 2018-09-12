@@ -123,19 +123,19 @@ TEST(Substructural, TypeCheckLambda) {
 TEST(Substructural, TypeCheckPack) {
     World w;
     w.axiom(w.arity_kind(w.affine()), {"aarity"});
-    EXPECT_THROW(parse(w, "(i:aarity; (i, (), i))")->check(), TypeError);
-    EXPECT_THROW(parse(w, "λa:𝔸ᴬ.(i:a; (i, i, ()))")->check(), TypeError);
-    EXPECT_NO_THROW(parse(w, "λi:3ₐ. λa:𝔸ᴬ.(j:a; (j, j, ())#i)")->check());
+    EXPECT_THROW(parse(w, "‹i:aarity; (i, (), i)›")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λa:𝔸ᴬ.‹i:a; (i, i, ())›")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "λi:3ₐ. λa:𝔸ᴬ.‹j:a; (j, j, ())#i›")->check());
 
     w.axiom(w.arity_kind(w.relevant()), {"rarity"});
-    EXPECT_THROW(parse(w, "(r:rarity; ())")->check(), TypeError);
-    EXPECT_THROW(parse(w, "(r:rarity; (42ₐ, 12ₐ))")->check(), TypeError);
+    EXPECT_THROW(parse(w, "‹r:rarity; ()›")->check(), TypeError);
+    EXPECT_THROW(parse(w, "‹r:rarity; (42ₐ, 12ₐ)›")->check(), TypeError);
 
     w.axiom(w.arity_kind(w.linear()), {"larity"});
-    EXPECT_THROW(parse(w, "(l:larity; ())")->check(), TypeError);
-    EXPECT_THROW(parse(w, "(l:larity; (42ₐ, 12ₐ))")->check(), TypeError);
-    EXPECT_THROW(parse(w, "(l:larity; (l, 42ₐ, l))")->check(), TypeError);
-    EXPECT_NO_THROW(parse(w, "(l:larity; λi:3ₐ. (l, (), l)#i)")->check());
+    EXPECT_THROW(parse(w, "‹l:larity; ()›")->check(), TypeError);
+    EXPECT_THROW(parse(w, "‹l:larity; (42ₐ, 12ₐ)›")->check(), TypeError);
+    EXPECT_THROW(parse(w, "‹l:larity; (l, 42ₐ, l)›")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "‹l:larity; λi:3ₐ. (l, (), l)#i›")->check());
 }
 
 TEST(Substructural, TypeCheckSigma) {

@@ -47,7 +47,8 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Loc>>& defs) {
             || ahead().isa(TT::Multi_Arity_Kind)) def = parse_qualified_kind();
     else if (ahead().isa(TT::Backslash))    def = parse_debruijn();
     else if (ahead().isa(TT::Identifier))   def = parse_identifier();
-    else if (ahead().isa(TT::D_paren_l))    def = parse_tuple_or_pack();
+    else if (ahead().isa(TT::D_paren_l))    def = parse_tuple();
+    else if (ahead().isa(TT::D_angle_l))    def = parse_pack();
     else if (ahead().isa(TT::D_brace_l))    def = parse_variant();
     else if (ahead().isa(TT::Literal))      def = parse_literal();
     else if (accept(TT::Qualifier_Type))    def = world_.qualifier_type();
@@ -213,24 +214,25 @@ const Def* Parser::parse_qualified_kind() {
     }
 }
 
-const Def* Parser::parse_tuple_or_pack() {
+const Def* Parser::parse_tuple() {
     Tracker tracker(this);
     eat(TT::D_paren_l);
+    auto elems = parse_list(TT::D_paren_r, TT::Comma, [&] { return parse_def(); }, "elements of tuple");
+    return world_.tuple(elems, tracker.loc());
+}
 
-    if (accept(TT::D_paren_r))
-        return world_.val_unit();
+const Def* Parser::parse_pack() {
+    Tracker tracker(this);
+    eat(TT::D_angle_l);
 
-    auto first = parse_def();
-    if (accept(TT::Semicolon)) {
-        push_debruijn_type(first);
-        auto body = parse_def();
-        expect(TT::D_paren_r, "pack");
-        pop_debruijn_binders();
-        return world_.pack(first, body, tracker.loc());
-    }
+    auto arity = parse_def();
+    expect(TT::Semicolon, "pack");
+    push_debruijn_type(arity);
+    auto body = parse_def();
+    expect(TT::D_angle_r, "pack");
+    pop_debruijn_binders();
 
-    auto defs = parse_list(TT::D_paren_r, TT::Comma, [&] { return parse_def(); }, "elements of tuple", first);
-    return world_.tuple(defs, tracker.loc());
+    return world_.pack(arity, body, tracker.loc());
 }
 
 const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {

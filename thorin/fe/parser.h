@@ -52,7 +52,8 @@ private:
     const Def* parse_lambda();
     const Def* parse_optional_qualifier();
     const Def* parse_qualified_kind();
-    const Def* parse_tuple_or_pack();
+    const Def* parse_tuple();
+    const Def* parse_pack();
     const Def* parse_variant();
     const Def* parse_param();
     const Def* parse_extract_or_insert(Tracker, const Def*);
@@ -60,25 +61,20 @@ private:
     const Def* parse_identifier();
     std::vector<const Def*> parse_sigma_ops();
 
-    DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const char* context, const Def* first = nullptr) {
+    DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const char* context) {
         DefVector elems;
-
-        if (first != nullptr)
-            elems.emplace_back(first);
 
         if (ahead().isa(end)) {
             eat(end);
             return elems;
         }
 
-        if (first != nullptr)
-            eat(sep);
-
         elems.emplace_back(f());
         while (ahead().isa(sep)) {
             eat(sep);
             elems.emplace_back(f());
         }
+
         expect(end, context);
         return elems;
     }
