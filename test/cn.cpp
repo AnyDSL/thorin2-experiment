@@ -1,4 +1,4 @@
-#include "test/util.h"
+#include "gtest/gtest.h"
 
 #include "thorin/analyses/scope.h"
 #include "thorin/me/world.h"

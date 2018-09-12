@@ -177,11 +177,11 @@ static const Def* try_mfold(const Def* callee, const Def* m, const Def* a, const
     return normalize_mtuple(callee, m, a, b, dbg);
 }
 
-template<MOp op>
-const Def* normalize_MOp(const Def* callee, const Def* arg, Debug dbg) {
+template<ZOp op>
+const Def* normalize_ZOp(const Def* callee, const Def* arg, Debug dbg) {
     auto& world = static_cast<World&>(callee->world());
     auto [m, a, b] = msplit(arg);
-    if (auto result = try_mfold<FoldMOp<op>::template Fold>(callee, m, a, b, dbg)) return result;
+    if (auto result = try_mfold<FoldZOp<op>::template Fold>(callee, m, a, b, dbg)) return result;
 
     return world.raw_app(callee, {m, a, b}, dbg);
 }
