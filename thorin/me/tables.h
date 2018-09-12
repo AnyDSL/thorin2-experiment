@@ -34,7 +34,7 @@ enum class FFlags : int64_t {
 /// Floating point (float) operations that take @p FFlags.
 #define THORIN_F_OP(m) m(FOp, fadd) m(FOp, fsub) m(FOp, fmul) m(FOp, fdiv) m(FOp, fmod)
 /// All cast operations that cast from/to float/signed/unsigned.
-#define THORIN_CAST(m) m(Cast, scast) m(Cast, ucast) m(Cast, fcast) m(Cast, s2f) m(Cast, u2f) m(Cast, f2s) m(Cast, f2u)
+#define THORIN_CAST(m) m(Cast, s2s) m(Cast, u2u) m(Cast, f2f) m(Cast, s2f) m(Cast, u2f) m(Cast, f2s) m(Cast, f2u)
 
 #define THORIN_I_CMP(m)              /* PM MP G L E                                                   */ \
                      m(ICmp,    f)   /*  o  o o o o - always false                                    */ \

@@ -136,8 +136,8 @@ TEST(Primop, Cmp) {
 
 TEST(Primop, Cast) {
     World w;
-    auto x = w.op<Cast::fcast>(16, w.lit_f(23.f));
-    auto y = w.op<Cast::f2s>(8, w.lit_f(-1.f));
+    auto x = w.op<Cast::f2f>(16, w.lit_f(23.f));
+    auto y = w.op<Cast::f2s>( 8, w.lit_f(-1.f));
     x->dump(); x->type()->dump();
     y->dump(); y->type()->dump();
 }
