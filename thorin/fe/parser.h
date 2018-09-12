@@ -59,7 +59,6 @@ private:
     const Def* parse_extract_or_insert(Tracker, const Def*);
     const Def* parse_literal();
     const Def* parse_identifier();
-    std::vector<const Def*> parse_sigma_ops();
 
     DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const char* context) {
         DefVector elems;
