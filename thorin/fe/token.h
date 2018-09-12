@@ -11,14 +11,15 @@
 namespace thorin::fe {
 
 #define THORIN_APP_ARG_TOKENS(f) \
-    f(L_Brace,          "{") \
-    f(L_Paren,          "(") \
-    f(L_Bracket,        "[") \
-    f(L_Angle,          "<") \
-    f(QualifierU,       "ᵁ") \
-    f(QualifierR,       "ᴿ") \
-    f(QualifierA,       "ᴬ") \
-    f(QualifierL,       "ᴸ") \
+    f(D_brace_l,        "{") \
+    f(D_paren_l,        "(") \
+    f(D_bracket_l,      "[") \
+    f(D_angle_l,        "‹") \
+    f(D_quote_l,        "«") \
+    f(Q_u,              "ᵁ") \
+    f(Q_r,              "ᴿ") \
+    f(Q_a,              "ᴬ") \
+    f(Q_l,              "ᴸ") \
     f(Backslash,        "\\") \
     f(Pi,               "\\pi") \
     f(Lambda,           "\\lambda") \
@@ -33,10 +34,11 @@ namespace thorin::fe {
     f(Star,             "*")
 
 #define THORIN_OP_TOKENS(f) \
-    f(R_Brace,          "}") \
-    f(R_Paren,          ")") \
-    f(R_Bracket,        "]") \
-    f(R_Angle,          ">") \
+    f(D_brace_r,          "}") \
+    f(D_paren_r,          ")") \
+    f(D_bracket_r,        "]") \
+    f(D_angle_r,          "›") \
+    f(D_quote_r,          "»") \
     f(Colon,            ":") \
     f(ColonColon,       "::") \
     f(ColonEqual,       ":=") \
@@ -129,6 +131,8 @@ private:
     Literal literal_;
     Symbol symbol_;
 };
+
+typedef Token::Tag TT;
 
 std::ostream& operator<<(std::ostream& os, const Token& t);
 

@@ -9,18 +9,20 @@ using namespace thorin;
 using namespace thorin::fe;
 
 TEST(Lexer, Tokens) {
-    std::string str ="{ } ( ) < > [ ] : , . * \\pi \\lambda cn bool";
+    std::string str ="{ } ( ) « » ‹ › [ ] : , . * \\pi \\lambda cn bool";
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::L_Brace));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::R_Brace));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::L_Paren));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::R_Paren));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::L_Angle));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::R_Angle));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::L_Bracket));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::R_Bracket));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::D_brace_l));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::D_brace_r));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::D_paren_l));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::D_paren_r));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::D_quote_l));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::D_quote_r));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::D_angle_l));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::D_angle_r));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::D_bracket_l));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::D_bracket_r));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Colon));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Comma));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Dot));

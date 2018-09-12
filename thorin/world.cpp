@@ -146,8 +146,8 @@ World::World(Debug dbg)
     for (size_t j = 0; j != lit_nat_.size(); ++j)
         lit_nat_[j] = lit_nat(1 << int64_t(j));
 
-    auto type_BOp  = fe::parse(*this, "Πs: 𝕄. Π[[s; bool], [s; bool]]. [s; bool]");
-    auto type_NOp  = fe::parse(*this, "Πs: 𝕄. Π[[s;  nat], [s;  nat]]. [s;  nat]");
+    auto type_BOp  = fe::parse(*this, "Πs: 𝕄. Π[«s; bool», «s; bool»]. «s; bool»");
+    auto type_NOp  = fe::parse(*this, "Πs: 𝕄. Π[«s;  nat», «s;  nat»]. «s;  nat»");
 
 #define CODE(T, o) \
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});
@@ -169,10 +169,12 @@ World::World(Debug dbg)
                               "Π[Πa:𝔸. Πi:a. ΠP a i. P (ASucc (ᵁ, a)) (IS (ᵁ, a) i)]." // step case
                               "Πa: 𝔸. Πi:a. (P a i)",
                               normalize_index_eliminator);
-    multi_arity_recursor_ = axiom("Recₘ𝕄", "Π𝔸. Π[Π[𝔸,𝔸]. 𝔸]. Πm: 𝕄. 𝔸", normalize_multi_arity_recursor);
+    multi_arity_recursor_ = axiom("Recₘ𝕄", "Π𝔸. Π[Π[𝔸,𝔸]. 𝔸]. Πq: ℚ. Π𝕄q. 𝔸", normalize_multi_arity_recursor);
+    rank_ = app(app(multi_arity_recursor(), arity(0)), fe::parse(*this, "λ[acc:𝔸, curr:𝔸]. ASucc (ᵁ, acc)"));
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_end_     = lambda(cn(unit()), {"end"});
+
 }
 
 World::~World() {

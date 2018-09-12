@@ -110,7 +110,7 @@ bool Def::maybe_affine() const {
     const Def* q = qualifier();
     assert(q != nullptr);
     if (auto qu = q->isa<Qualifier>()) {
-        return qu->qualifier_tag() >= QualifierTag::Affine;
+        return qu->qualifier_tag() >= QualifierTag::a;
     }
     return true;
 }

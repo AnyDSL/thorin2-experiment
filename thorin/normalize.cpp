@@ -192,8 +192,9 @@ const Def* normalize_multi_arity_recursor(const Def* callee, const Def* arg, Deb
     auto& w = callee->world();
     if (!callee->type()->op(1)->isa<ArityKind>())
         return nullptr;
-    auto ret = callee->op(0)->op(1);
-    auto step = callee->op(1);
+    // Recₘ𝕄 base step qual arg
+    auto ret = callee->op(0)->op(0)->op(1);
+    auto step = callee->op(0)->op(1);
     if (arg->type()->isa<ArityKind>()) {
         ret = w.app(step, w.tuple({ret, arg}), dbg);
     } else if (auto sigma = arg->isa<Sigma>()) {

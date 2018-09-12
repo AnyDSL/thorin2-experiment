@@ -18,12 +18,12 @@ public:
         // glb(L, x) = x, so one not important here
         if (zero) {
             if (many)
-                return QualifierTag::Unlimited; // glb(a, r)
-            return QualifierTag::Affine;
+                return QualifierTag::u; // glb(a, r)
+            return QualifierTag::a;
         } else if (many) {
-            return QualifierTag::Relevant;
+            return QualifierTag::r;
         }
-        return QualifierTag::Linear; // either one, or none set, most precise
+        return QualifierTag::l; // either one, or none set, most precise
     };
 
     static Occurrences join(const Occurrences& a, const Occurrences& b) {

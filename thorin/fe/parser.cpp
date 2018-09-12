@@ -36,30 +36,32 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Loc>>& defs) {
     const Def* def = nullptr;
 
     if (false) {}
-    else if (accept(Token::Tag::Bool))              def = world_.type_bool();
-    else if (ahead().isa(Token::Tag::Cn))           def = parse_cn();
-    else if (ahead().isa(Token::Tag::Pi))           def = parse_pi();
-    else if (ahead().isa(Token::Tag::L_Bracket))    def = parse_sigma_or_variadic();
-    else if (ahead().isa(Token::Tag::Lambda))       def = parse_lambda();
-    else if (ahead().isa(Token::Tag::Star)
-            || ahead().isa(Token::Tag::Arity_Kind)
-            || ahead().isa(Token::Tag::Multi_Arity_Kind)) def = parse_qualified_kind();
-    else if (ahead().isa(Token::Tag::Backslash))    def = parse_debruijn();
-    else if (ahead().isa(Token::Tag::Identifier))   def = parse_identifier();
-    else if (ahead().isa(Token::Tag::L_Paren))      def = parse_tuple_or_pack();
-    else if (ahead().isa(Token::Tag::L_Brace))      def = parse_variant();
-    else if (ahead().isa(Token::Tag::Literal))      def = parse_literal();
-    else if (accept(Token::Tag::Qualifier_Type))    def = world_.qualifier_type();
-    else if (accept(Token::Tag::QualifierU))        def = world_.unlimited();
-    else if (accept(Token::Tag::QualifierR))        def = world_.relevant();
-    else if (accept(Token::Tag::QualifierA))        def = world_.affine();
-    else if (accept(Token::Tag::QualifierL))        def = world_.linear();
-    else if (accept(Token::Tag::Multi_Arity_Kind))  def = world_.multi_arity_kind();
+    else if (accept(TT::Bool))              def = world_.type_bool();
+    else if (ahead().isa(TT::Cn))           def = parse_cn();
+    else if (ahead().isa(TT::Pi))           def = parse_pi();
+    else if (ahead().isa(TT::D_bracket_l))  def = parse_sigma();
+    else if (ahead().isa(TT::D_quote_l))    def = parse_variadic();
+    else if (ahead().isa(TT::Lambda))       def = parse_lambda();
+    else if (ahead().isa(TT::Star)
+            || ahead().isa(TT::Arity_Kind)
+            || ahead().isa(TT::Multi_Arity_Kind)) def = parse_qualified_kind();
+    else if (ahead().isa(TT::Backslash))    def = parse_debruijn();
+    else if (ahead().isa(TT::Identifier))   def = parse_identifier();
+    else if (ahead().isa(TT::D_paren_l))    def = parse_tuple();
+    else if (ahead().isa(TT::D_angle_l))    def = parse_pack();
+    else if (ahead().isa(TT::D_brace_l))    def = parse_variant();
+    else if (ahead().isa(TT::Literal))      def = parse_literal();
+    else if (accept(TT::Qualifier_Type))    def = world_.qualifier_type();
+    else if (accept(TT::Q_u))               def = world_.unlimited();
+    else if (accept(TT::Q_r))               def = world_.relevant();
+    else if (accept(TT::Q_a))               def = world_.affine();
+    else if (accept(TT::Q_l))               def = world_.linear();
+    else if (accept(TT::Multi_Arity_Kind))  def = world_.multi_arity_kind();
 
     if (def == nullptr)
         error("expected some expression");
 
-    if (accept(Token::Tag::Sharp))
+    if (accept(TT::Sharp))
         def = parse_extract_or_insert(tracker, def);
 
     defs.emplace_back(def, tracker.loc());
@@ -72,24 +74,25 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Loc>>& defs) {
 const Def* Parser::parse_debruijn() {
     Tracker tracker(this);
     // De Bruijn index
-    eat(Token::Tag::Backslash);
-    if (ahead().isa(Token::Tag::Literal)) {
+    eat(TT::Backslash);
+    if (ahead().isa(TT::Literal)) {
         auto lit = ahead().literal();
-        eat(Token::Tag::Literal);
+        eat(TT::Literal);
         if (lit.tag == Literal::Tag::Lit_untyped) {
             auto index = lit.box.get_u64();
-            if (accept(Token::Tag::ColonColon)) {
+            if (accept(TT::ColonColon)) {
                 const Def* type = nullptr;
                 switch (ahead().tag()) {
-                    case Token::Tag::Backslash:  type = parse_debruijn(); break;
-                    case Token::Tag::Identifier: type = parse_identifier(); break;
-                    case Token::Tag::Pi:         type = parse_pi(); break;
-                    case Token::Tag::L_Bracket:  type = parse_sigma_or_variadic(); break;
-                    case Token::Tag::Qualifier_Type: type = world_.qualifier_type(); break;
-                    case Token::Tag::Star:
-                    case Token::Tag::Arity_Kind:
-                    case Token::Tag::Multi_Arity_Kind: type = parse_qualified_kind(); break;
-                    case Token::Tag::Literal:
+                    case TT::Backslash:      type = parse_debruijn(); break;
+                    case TT::Identifier:     type = parse_identifier(); break;
+                    case TT::Pi:             type = parse_pi(); break;
+                    case TT::D_bracket_l:    type = parse_sigma(); break;
+                    case TT::D_quote_l:      type = parse_variadic(); break;
+                    case TT::Qualifier_Type: type = world_.qualifier_type(); break;
+                    case TT::Star:
+                    case TT::Arity_Kind:
+                    case TT::Multi_Arity_Kind: type = parse_qualified_kind(); break;
+                    case TT::Literal:
                         if (ahead().literal().tag == Literal::Tag::Lit_arity) {
                             type = parse_literal();
                             break;
@@ -112,60 +115,57 @@ const Def* Parser::parse_debruijn() {
 
 const Def* Parser::parse_cn() {
     Tracker tracker(this);
-    eat(Token::Tag::Cn);
+    eat(TT::Cn);
     auto domain = parse_def();
     return world_.cn(domain, tracker.loc());
 }
 
 const Def* Parser::parse_pi() {
     Tracker tracker(this);
-    eat(Token::Tag::Pi);
+    eat(TT::Pi);
     auto domain = parse_def();
     push_debruijn_type(domain);
-    expect(Token::Tag::Dot, "Π type");
+    expect(TT::Dot, "Π type");
     auto body = parse_def();
     pop_debruijn_binders();
     return world_.pi(domain, body, tracker.loc());
 }
 
-std::vector<const Def*> Parser::parse_sigma_ops() {
+const Def* Parser::parse_sigma() {
     Tracker tracker(this);
-    eat(Token::Tag::L_Bracket);
+    eat(TT::D_bracket_l);
 
-    if (accept(Token::Tag::R_Bracket))
-        return {};
-
-    auto first = parse_def();
-    push_debruijn_type(first);
-
-    if (accept(Token::Tag::Semicolon)) {
-        auto body = parse_def();
-        expect(Token::Tag::R_Bracket, "variadic");
-        pop_debruijn_binders();
-        return {world_.variadic(first, body, tracker.loc())};
-    }
-
-    auto defs = parse_list(Token::Tag::R_Bracket, Token::Tag::Comma, [&] {
+    auto elems = parse_list(TT::D_bracket_r, TT::Comma, [&] {
             auto elem = parse_def();
             push_debruijn_type(elem);
             return elem;
-        }, "elements of sigma type", first);
+        }, "elements of sigma type");
     // shift binders declared within the sigma by generating
     // extracts to the DeBruijn variable \0 (the current binder)
-    shift_binders(defs.size());
-    return defs;
+    shift_binders(elems.size());
+
+    return world_.sigma(elems, tracker.loc());
 }
 
-const Def* Parser::parse_sigma_or_variadic() {
+const Def* Parser::parse_variadic() {
     Tracker tracker(this);
-    return world_.sigma(parse_sigma_ops(), tracker.loc());
+    eat(TT::D_quote_l);
+
+    auto arity = parse_def();
+    push_debruijn_type(arity);
+
+    expect(TT::Semicolon, "variadic");
+    auto body = parse_def();
+    expect(TT::D_quote_r, "variadic");
+    pop_debruijn_binders();
+    return world_.variadic(arity, body, tracker.loc());
 }
 
 const Def* Parser::parse_variant() {
     Tracker tracker(this);
-    eat(Token::Tag::L_Brace);
+    eat(TT::D_brace_l);
 
-    auto defs = parse_list(Token::Tag::R_Brace, Token::Tag::Comma, [&] { auto elem = parse_def(); return elem; },
+    auto defs = parse_list(TT::D_brace_r, TT::Comma, [&] { auto elem = parse_def(); return elem; },
                            "elements of variant type");
     if (defs.empty())
         error("expected variant type with at least one operand at {}", tracker.loc());
@@ -174,10 +174,10 @@ const Def* Parser::parse_variant() {
 
 const Def* Parser::parse_lambda() {
     Tracker tracker(this);
-    eat(Token::Tag::Lambda);
+    eat(TT::Lambda);
     auto domain = parse_def();
     push_debruijn_type(domain);
-    expect(Token::Tag::Dot, "λ abstraction");
+    expect(TT::Dot, "λ abstraction");
     auto body = parse_def();
     pop_debruijn_binders();
     return world_.lambda(domain, body, tracker.loc());
@@ -186,12 +186,12 @@ const Def* Parser::parse_lambda() {
 const Def* Parser::parse_optional_qualifier() {
     const Def* q = world_.unlimited();
     switch (ahead().tag()) {
-        case Token::Tag::Backslash:  q = parse_debruijn(); break;
-        case Token::Tag::Identifier: q = parse_identifier(); break;
-        case Token::Tag::QualifierU: next(); q = world_.unlimited(); break;
-        case Token::Tag::QualifierR: next(); q = world_.relevant(); break;
-        case Token::Tag::QualifierA: next(); q = world_.affine(); break;
-        case Token::Tag::QualifierL: next(); q = world_.linear(); break;
+        case TT::Backslash:   q = parse_debruijn();   break;
+        case TT::Identifier:  q = parse_identifier(); break;
+        case TT::Q_u: next(); q = world_.unlimited(); break;
+        case TT::Q_r: next(); q = world_.relevant();  break;
+        case TT::Q_a: next(); q = world_.affine();    break;
+        case TT::Q_l: next(); q = world_.linear();    break;
         default: break;
     }
 
@@ -203,40 +203,41 @@ const Def* Parser::parse_qualified_kind() {
     eat(kind_tag);
     const Def* qualifier = parse_optional_qualifier();
     switch (kind_tag) {
-        case Token::Tag::Star:
+        case TT::Star:
             return world_.star(qualifier);
-        case Token::Tag::Arity_Kind:
+        case TT::Arity_Kind:
             return world_.arity_kind(qualifier);
-        case Token::Tag::Multi_Arity_Kind:
+        case TT::Multi_Arity_Kind:
             return world_.multi_arity_kind(qualifier);
         default:
             THORIN_UNREACHABLE;
     }
 }
 
-const Def* Parser::parse_tuple_or_pack() {
+const Def* Parser::parse_tuple() {
     Tracker tracker(this);
-    eat(Token::Tag::L_Paren);
+    eat(TT::D_paren_l);
+    auto elems = parse_list(TT::D_paren_r, TT::Comma, [&] { return parse_def(); }, "elements of tuple");
+    return world_.tuple(elems, tracker.loc());
+}
 
-    if (accept(Token::Tag::R_Paren))
-        return world_.val_unit();
+const Def* Parser::parse_pack() {
+    Tracker tracker(this);
+    eat(TT::D_angle_l);
 
-    auto first = parse_def();
-    if (accept(Token::Tag::Semicolon)) {
-        push_debruijn_type(first);
-        auto body = parse_def();
-        expect(Token::Tag::R_Paren, "pack");
-        pop_debruijn_binders();
-        return world_.pack(first, body, tracker.loc());
-    }
+    auto arity = parse_def();
+    expect(TT::Semicolon, "pack");
+    push_debruijn_type(arity);
+    auto body = parse_def();
+    expect(TT::D_angle_r, "pack");
+    pop_debruijn_binders();
 
-    auto defs = parse_list(Token::Tag::R_Paren, Token::Tag::Comma, [&] { return parse_def(); }, "elements of tuple", first);
-    return world_.tuple(defs, tracker.loc());
+    return world_.pack(arity, body, tracker.loc());
 }
 
 const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {
     auto b = parse_def();
-    if (accept(Token::Tag::Arrow)) {
+    if (accept(TT::Arrow)) {
         auto c = parse_def();
         return world_.insert(a, b, c, tracker.loc());
     }
@@ -246,10 +247,10 @@ const Def* Parser::parse_extract_or_insert(Tracker tracker, const Def* a) {
 
 const Def* Parser::parse_literal() {
     Tracker tracker(this);
-    assert(ahead().isa(Token::Tag::Literal));
+    assert(ahead().isa(TT::Literal));
     auto literal = next().literal();
     if (literal.tag == Literal::Tag::Lit_index) {
-        assert(ahead().isa(Token::Tag::Literal));
+        assert(ahead().isa(TT::Literal));
         auto index_arity = next().literal();
         assert(index_arity.tag == Literal::Tag::Lit_index_arity);
         const Def* qualifier = parse_optional_qualifier();
@@ -259,7 +260,7 @@ const Def* Parser::parse_literal() {
         return world_.arity(qualifier, literal.box.get_u64(), tracker.loc());
     }
 
-    expect(Token::Tag::ColonColon, "literal");
+    expect(TT::ColonColon, "literal");
     auto type = parse_def();
     return world_.lit(type, literal.box, tracker.loc());
 }
@@ -271,14 +272,14 @@ Token Parser::next() {
     return result;
 }
 
-Token Parser::eat(Token::Tag tag) {
+Token Parser::eat(TT tag) {
     auto result = ahead();
     assert_unused(result.isa(tag));
     next();
     return result;
 }
 
-Token Parser::expect(Token::Tag tag, const char* context) {
+Token Parser::expect(TT tag, const char* context) {
     auto result = ahead();
     if (!ahead().isa(tag)) {
         error("expected '{}', got '{}' while parsing {}", Token::tag_to_string(tag), Token::tag_to_string(ahead().tag()), context);
@@ -287,7 +288,7 @@ Token Parser::expect(Token::Tag tag, const char* context) {
     return result;
 }
 
-bool Parser::accept(Token::Tag tag) {
+bool Parser::accept(TT tag) {
     if (!ahead().isa(tag))
         return false;
     next();
@@ -296,34 +297,34 @@ bool Parser::accept(Token::Tag tag) {
 
 const Def* Parser::parse_identifier() {
     Tracker tracker(this);
-    auto symbol = eat(Token::Tag::Identifier).symbol();
+    auto symbol = eat(TT::Identifier).symbol();
     const Def* def = nullptr;
-    if (accept(Token::Tag::Colon)) {
+    if (accept(TT::Colon)) {
         // binder
         def = parse_def();
         insert_identifier(symbol);
-    } else if (accept(Token::Tag::Equal)) { // id = e; def
+    } else if (accept(TT::Equal)) { // id = e; def
         // let
         // TODO parse multiple lets/nominals into one scope for mutual recursion and such
         push_scope();
         auto let = parse_def();
-        expect(Token::Tag::Semicolon, "a let definition");
+        expect(TT::Semicolon, "a let definition");
         insert_identifier(symbol, let);
         def = parse_def();
         pop_scope();
-    } else if (accept(Token::Tag::ColonColon)) { // id :: type := e; def
+    } else if (accept(TT::ColonColon)) { // id :: type := e; def
         // TODO parse multiple lets/nominals into one scope for mutual recursion and such
         auto type = parse_def();
-        expect(Token::Tag::ColonEqual, "a nominal definition");
+        expect(TT::ColonEqual, "a nominal definition");
 
-        if (accept(Token::Tag::Lambda)) {
+        if (accept(TT::Lambda)) {
             auto lambda = world_.lambda(type->as<Pi>(), tracker.loc()); // TODO properly set back location
             insert_identifier(symbol, lambda);
             Tracker tracker(this);
             push_scope();
-            auto symbol = expect(Token::Tag::Identifier, "parameter name for nomimal λ").symbol();
+            auto symbol = expect(TT::Identifier, "parameter name for nomimal λ").symbol();
             insert_identifier(symbol, lambda->param({tracker.loc(), symbol}));
-            expect(Token::Tag::Dot, "λ abstraction");
+            expect(TT::Dot, "λ abstraction");
             auto body = parse_def();
             pop_scope();
             lambda->set(body);
@@ -331,7 +332,7 @@ const Def* Parser::parse_identifier() {
             assert(false && "TODO");
         }
 
-        eat(Token::Tag::Semicolon);
+        eat(TT::Semicolon);
         push_scope();
         def = parse_def();
         pop_scope();

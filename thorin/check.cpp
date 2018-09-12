@@ -101,16 +101,16 @@ void check_bound_occurrences(TypeCheck& tc, const Def* def, const Def* domain_qu
             if (!(q->qualifier_tag() <= occ[0].to_qualifier()))
                 def->world().errorf("usage {} of bound variable in {} would imply qualifier {}, but has {}",
                                     occ[0], def, occ[0].to_qualifier(), domain_qualifier);
-        } else if (occ[0].to_qualifier() != QualifierTag::Linear) {
+        } else if (occ[0].to_qualifier() != QualifierTag::l) {
             def->world().errorf("usage {} of bound variable in {} needs to be linear (exactly once), as it has qualifier {}",
                                 occ[0], def, domain_qualifier);
         }
         occ = occ.skip_front();
     } else if (auto q = dom_qual->isa<Qualifier>()) {
-        if (q->qualifier_tag() == QualifierTag::Relevant)
+        if (q->qualifier_tag() == QualifierTag::r)
             def->world().errorf("bound variable unused in {}, but needs to be used at least once as it has qualifier {}",
                                 def, domain_qualifier);
-        else if (q->qualifier_tag() == QualifierTag::Linear)
+        else if (q->qualifier_tag() == QualifierTag::l)
             def->world().errorf("bound variable unused in {}, but needs to be used exactly once as it has qualifier {}",
                                 def, domain_qualifier);
     } else {
