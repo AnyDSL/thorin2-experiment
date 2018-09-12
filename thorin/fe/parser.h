@@ -60,7 +60,7 @@ private:
     const Def* parse_literal();
     const Def* parse_identifier();
 
-    DefVector parse_list(Token::Tag end, Token::Tag sep, std::function<const Def*()> f, const char* context) {
+    DefVector parse_list(Token::Tag end, Token::Tag sep, const char* context, std::function<const Def*()> f) {
         DefVector elems;
 
         if (ahead().isa(end)) {

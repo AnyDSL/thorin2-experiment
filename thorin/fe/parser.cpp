@@ -135,11 +135,11 @@ const Def* Parser::parse_sigma() {
     Tracker tracker(this);
     eat(TT::D_bracket_l);
 
-    auto elems = parse_list(TT::D_bracket_r, TT::Comma, [&] {
+    auto elems = parse_list(TT::D_bracket_r, TT::Comma, "elements of sigma type", [&]{
             auto elem = parse_def();
             push_debruijn_type(elem);
             return elem;
-        }, "elements of sigma type");
+    });
     // shift binders declared within the sigma by generating
     // extracts to the DeBruijn variable \0 (the current binder)
     shift_binders(elems.size());
@@ -165,8 +165,7 @@ const Def* Parser::parse_variant() {
     Tracker tracker(this);
     eat(TT::D_brace_l);
 
-    auto defs = parse_list(TT::D_brace_r, TT::Comma, [&] { auto elem = parse_def(); return elem; },
-                           "elements of variant type");
+    auto defs = parse_list(TT::D_brace_r, TT::Comma, "elements of variant type", [&]{ auto elem = parse_def(); return elem; });
     if (defs.empty())
         error("expected variant type with at least one operand at {}", tracker.loc());
     return world_.variant(defs, tracker.loc());
@@ -217,7 +216,7 @@ const Def* Parser::parse_qualified_kind() {
 const Def* Parser::parse_tuple() {
     Tracker tracker(this);
     eat(TT::D_paren_l);
-    auto elems = parse_list(TT::D_paren_r, TT::Comma, [&] { return parse_def(); }, "elements of tuple");
+    auto elems = parse_list(TT::D_paren_r, TT::Comma, "elements of tuple", [&]{ return parse_def(); });
     return world_.tuple(elems, tracker.loc());
 }
 
