@@ -85,21 +85,21 @@ TEST(Parser, Kinds) {
     World w;
     EXPECT_EQ(parse(w, "*"), w.star());
     EXPECT_EQ(parse(w, "*ᵁ"), w.star());
-    EXPECT_EQ(parse(w, "*ᴿ"), w.star(QualifierTag::Relevant));
-    EXPECT_EQ(parse(w, "*ᴬ"), w.star(QualifierTag::Affine));
-    EXPECT_EQ(parse(w, "*ᴸ"), w.star(QualifierTag::Linear));
+    EXPECT_EQ(parse(w, "*ᴿ"), w.star(QualifierTag::r));
+    EXPECT_EQ(parse(w, "*ᴬ"), w.star(QualifierTag::a));
+    EXPECT_EQ(parse(w, "*ᴸ"), w.star(QualifierTag::l));
     EXPECT_EQ(parse(w, "Πq:ℚ.*q"), w.pi(w.qualifier_type(), w.star(w.var(w.qualifier_type(), 0))));
     EXPECT_EQ(parse(w, "𝔸"), w.arity_kind());
     EXPECT_EQ(parse(w, "𝔸ᵁ"), w.arity_kind());
-    EXPECT_EQ(parse(w, "𝔸ᴿ"), w.arity_kind(QualifierTag::Relevant));
-    EXPECT_EQ(parse(w, "𝔸ᴬ"), w.arity_kind(QualifierTag::Affine));
-    EXPECT_EQ(parse(w, "𝔸ᴸ"), w.arity_kind(QualifierTag::Linear));
+    EXPECT_EQ(parse(w, "𝔸ᴿ"), w.arity_kind(QualifierTag::r));
+    EXPECT_EQ(parse(w, "𝔸ᴬ"), w.arity_kind(QualifierTag::a));
+    EXPECT_EQ(parse(w, "𝔸ᴸ"), w.arity_kind(QualifierTag::l));
     EXPECT_EQ(parse(w, "Πq:ℚ.𝔸q"), w.pi(w.qualifier_type(), w.arity_kind(w.var(w.qualifier_type(), 0))));
     EXPECT_EQ(parse(w, "𝕄"), w.multi_arity_kind());
     EXPECT_EQ(parse(w, "𝕄ᵁ"), w.multi_arity_kind());
-    EXPECT_EQ(parse(w, "𝕄ᴿ"), w.multi_arity_kind(QualifierTag::Relevant));
-    EXPECT_EQ(parse(w, "𝕄ᴬ"), w.multi_arity_kind(QualifierTag::Affine));
-    EXPECT_EQ(parse(w, "𝕄ᴸ"), w.multi_arity_kind(QualifierTag::Linear));
+    EXPECT_EQ(parse(w, "𝕄ᴿ"), w.multi_arity_kind(QualifierTag::r));
+    EXPECT_EQ(parse(w, "𝕄ᴬ"), w.multi_arity_kind(QualifierTag::a));
+    EXPECT_EQ(parse(w, "𝕄ᴸ"), w.multi_arity_kind(QualifierTag::l));
     EXPECT_EQ(parse(w, "Πq:ℚ.𝕄q"), w.pi(w.qualifier_type(), w.multi_arity_kind(w.var(w.qualifier_type(), 0))));
 }
 
@@ -170,9 +170,9 @@ TEST(Parser, IntArithOp) {
 
 TEST(Parser, Apps) {
     World w;
-    auto a5 = w.arity(QualifierTag::Affine, 5);
+    auto a5 = w.arity(QualifierTag::a, 5);
     auto i0_5 = w.index(a5, 0);
-    auto ma = w.multi_arity_kind(QualifierTag::Affine);
+    auto ma = w.multi_arity_kind(QualifierTag::a);
     EXPECT_EQ(parse(w, "(λs: 𝕄ᴬ. λq: ℚ. λi: s. (s, q, i)) 5ₐᴬ ᴿ 0₅ᴬ"), w.tuple({a5, w.relevant(), i0_5}));
     auto ax = w.axiom(w.pi(ma, w.pi(w.qualifier_type(), w.star())), {"ax"});
     EXPECT_EQ(parse(w, "(ax 5ₐᴬ) ᴿ"), w.app(w.app(ax, a5), w.relevant()));

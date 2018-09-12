@@ -58,19 +58,19 @@ public:
 
     //@{ create universe and kinds
     const Universe* universe() const { return universe_; }
-    const ArityKind* arity_kind(QualifierTag q = QualifierTag::Unlimited) const { return arity_kind_[size_t(q)]; }
+    const ArityKind* arity_kind(QualifierTag q = QualifierTag::u) const { return arity_kind_[size_t(q)]; }
     const ArityKind* arity_kind(const Def* q) {
         if (auto cq = q->isa<Qualifier>())
             return arity_kind(cq->qualifier_tag());
         return unify<ArityKind>(1, *this, q);
     }
-    const MultiArityKind* multi_arity_kind(QualifierTag q = QualifierTag::Unlimited) const { return multi_arity_kind_[size_t(q)]; }
+    const MultiArityKind* multi_arity_kind(QualifierTag q = QualifierTag::u) const { return multi_arity_kind_[size_t(q)]; }
     const MultiArityKind* multi_arity_kind(const Def* q) {
         if (auto cq = q->isa<Qualifier>())
             return multi_arity_kind(cq->qualifier_tag());
         return unify<MultiArityKind>(1, *this, q);
     }
-    const Star* star(QualifierTag q = QualifierTag::Unlimited) const { return star_[size_t(q)]; }
+    const Star* star(QualifierTag q = QualifierTag::u) const { return star_[size_t(q)]; }
     const Star* star(const Def* q) {
         if (auto cq = q->isa<Qualifier>())
             return star(cq->qualifier_tag());
@@ -81,10 +81,10 @@ public:
     //@{ create qualifier
     const QualifierType* qualifier_type() const { return qualifier_type_; }
     const Qualifier* qualifier(QualifierTag q) const { return qualifier_[size_t(q)]; }
-    const Qualifier* unlimited() const { return qualifier(QualifierTag::Unlimited); }
-    const Qualifier* affine() const { return qualifier(QualifierTag::Affine); }
-    const Qualifier* linear() const { return qualifier(QualifierTag::Linear); }
-    const Qualifier* relevant() const { return qualifier(QualifierTag::Relevant); }
+    const Qualifier* unlimited() const { return qualifier(QualifierTag::u); }
+    const Qualifier* affine() const { return qualifier(QualifierTag::a); }
+    const Qualifier* linear() const { return qualifier(QualifierTag::l); }
+    const Qualifier* relevant() const { return qualifier(QualifierTag::r); }
     //@}
 
     //@{ create Pi
@@ -123,13 +123,13 @@ public:
     //@}
 
     //@{ create Units
-    const Def* unit(QualifierTag q = QualifierTag::Unlimited) { return unit_[size_t(q)]; }
+    const Def* unit(QualifierTag q = QualifierTag::u) { return unit_[size_t(q)]; }
     const Def* unit(const Def* q) {
         if (auto cq = q->isa<Qualifier>())
             return unit(cq->qualifier_tag());
         return arity(q, 1);
     }
-    const Def* unit_kind(QualifierTag q = QualifierTag::Unlimited) { return variadic(arity(0), star(q)); }
+    const Def* unit_kind(QualifierTag q = QualifierTag::u) { return variadic(arity(0), star(q)); }
     const Def* unit_kind(const Def* q) { return variadic(arity(0), star(q)); }
     //@}
 
@@ -159,7 +159,7 @@ public:
     const Def* variadic(const Def* arities, const Def* body, Debug dbg = {});
     const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
     const Def* variadic(u64 a, const Def* body, Debug dbg = {}) {
-        return variadic(arity(QualifierTag::Unlimited, a, dbg), body, dbg);
+        return variadic(arity(QualifierTag::u, a, dbg), body, dbg);
     }
     const Def* variadic(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
         return variadic(DefArray(a.size(), [&](auto i) { return arity(QualifierTag::u, a[i], dbg); }), body, dbg);
@@ -171,13 +171,13 @@ public:
     //@}
 
     //@{ create unit values
-    const Def* val_unit(QualifierTag q = QualifierTag::Unlimited) { return unit_val_[size_t(q)]; }
+    const Def* val_unit(QualifierTag q = QualifierTag::u) { return unit_val_[size_t(q)]; }
     const Def* val_unit(const Def* q) {
         if (auto cq = q->isa<Qualifier>())
             return val_unit(cq->qualifier_tag());
         return index_zero(arity(q, 1));
     }
-    const Def* val_unit_kind(QualifierTag q = QualifierTag::Unlimited) { return pack(arity(0), unit(q)); }
+    const Def* val_unit_kind(QualifierTag q = QualifierTag::u) { return pack(arity(0), unit(q)); }
     const Def* val_unit_kind(const Def* q) { return pack(arity(0), unit(q)); }
     //@}
 

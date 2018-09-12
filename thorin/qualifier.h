@@ -16,11 +16,10 @@ namespace thorin {
  * Where Linear is the largest element in the partial orders </<= and Unlimited the smallest.
  */
 enum class QualifierTag {
-    Unlimited = 0,
-    Relevant  = 1 << 0, ///< min 1 use
-    Affine    = 1 << 1, ///< max 1 use
-    Linear = Affine | Relevant,
-    u = Unlimited, r = Relevant, a = Affine, l = Linear,
+    u = 0,      ///< unlimited
+    r = 1 << 0, ///< relevant -> min 1 use
+    a = 1 << 1, ///< affine   -> max 1 use
+    l = a | r   ///< linear -> must use exactly once
 };
 
 constexpr std::array<QualifierTag, 4> QualifierTags = {{QualifierTag::u, QualifierTag::r, QualifierTag::a, QualifierTag::l}};
@@ -28,8 +27,8 @@ constexpr std::array<QualifierTag, 4> QualifierTags = {{QualifierTag::u, Qualifi
 /// Linear is the largest, Unlimited the smallest.
 inline bool operator<(QualifierTag lhs, QualifierTag rhs) {
     if (lhs == rhs) return false;
-    if (lhs == QualifierTag::Unlimited) return true;
-    if (rhs == QualifierTag::Linear) return true;
+    if (lhs == QualifierTag::u) return true;
+    if (rhs == QualifierTag::l) return true;
     return false;
 }
 inline bool operator> (QualifierTag lhs, QualifierTag rhs) { return rhs < lhs; }

@@ -12,10 +12,10 @@ void print_value_type(const Def* def) {
 
 TEST(Qualifiers, Lattice) {
     World w;
-    auto U = QualifierTag::Unlimited;
-    auto R = QualifierTag::Relevant;
-    auto A = QualifierTag::Affine;
-    auto L = QualifierTag::Linear;
+    auto U = QualifierTag::u;
+    auto R = QualifierTag::r;
+    auto A = QualifierTag::a;
+    auto L = QualifierTag::l;
 
     EXPECT_LT(U, A);
     EXPECT_LT(U, R);
