@@ -151,10 +151,10 @@ Token Lexer::lex() {
         if (accept(U'𝔸')) return {loc(), TT::Arity_Kind};
         if (accept(U'𝕄')) return {loc(), TT::Multi_Arity_Kind};
         if (accept(U'ℚ')) return {loc(), TT::Qualifier_Type};
-        if (accept(U'ᵁ')) return {loc(), TT::QualifierU};
-        if (accept(U'ᴿ')) return {loc(), TT::QualifierR};
-        if (accept(U'ᴬ')) return {loc(), TT::QualifierA};
-        if (accept(U'ᴸ')) return {loc(), TT::QualifierL};
+        if (accept(U'ᵁ')) return {loc(), TT::Q_u};
+        if (accept(U'ᴿ')) return {loc(), TT::Q_r};
+        if (accept(U'ᴬ')) return {loc(), TT::Q_a};
+        if (accept(U'ᴸ')) return {loc(), TT::Q_l};
         if (accept(U'«')) return {loc(), TT::D_quote_l};
         if (accept(U'»')) return {loc(), TT::D_quote_r};
         if (accept(U'‹')) return {loc(), TT::D_angle_l};

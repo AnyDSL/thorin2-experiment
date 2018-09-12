@@ -11,15 +11,15 @@
 namespace thorin::fe {
 
 #define THORIN_APP_ARG_TOKENS(f) \
-    f(D_brace_l,          "{") \
-    f(D_paren_l,          "(") \
-    f(D_bracket_l,        "[") \
-    f(D_angle_l,          "‹") \
-    f(D_quote_l,          "«") \
-    f(QualifierU,       "ᵁ") \
-    f(QualifierR,       "ᴿ") \
-    f(QualifierA,       "ᴬ") \
-    f(QualifierL,       "ᴸ") \
+    f(D_brace_l,        "{") \
+    f(D_paren_l,        "(") \
+    f(D_bracket_l,      "[") \
+    f(D_angle_l,        "‹") \
+    f(D_quote_l,        "«") \
+    f(Q_u,              "ᵁ") \
+    f(Q_r,              "ᴿ") \
+    f(Q_a,              "ᴬ") \
+    f(Q_l,              "ᴸ") \
     f(Backslash,        "\\") \
     f(Pi,               "\\pi") \
     f(Lambda,           "\\lambda") \

@@ -52,10 +52,10 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Loc>>& defs) {
     else if (ahead().isa(TT::D_brace_l))    def = parse_variant();
     else if (ahead().isa(TT::Literal))      def = parse_literal();
     else if (accept(TT::Qualifier_Type))    def = world_.qualifier_type();
-    else if (accept(TT::QualifierU))        def = world_.unlimited();
-    else if (accept(TT::QualifierR))        def = world_.relevant();
-    else if (accept(TT::QualifierA))        def = world_.affine();
-    else if (accept(TT::QualifierL))        def = world_.linear();
+    else if (accept(TT::Q_u))               def = world_.unlimited();
+    else if (accept(TT::Q_r))               def = world_.relevant();
+    else if (accept(TT::Q_a))               def = world_.affine();
+    else if (accept(TT::Q_l))               def = world_.linear();
     else if (accept(TT::Multi_Arity_Kind))  def = world_.multi_arity_kind();
 
     if (def == nullptr)
@@ -186,12 +186,12 @@ const Def* Parser::parse_lambda() {
 const Def* Parser::parse_optional_qualifier() {
     const Def* q = world_.unlimited();
     switch (ahead().tag()) {
-        case TT::Backslash:  q = parse_debruijn(); break;
-        case TT::Identifier: q = parse_identifier(); break;
-        case TT::QualifierU: next(); q = world_.unlimited(); break;
-        case TT::QualifierR: next(); q = world_.relevant(); break;
-        case TT::QualifierA: next(); q = world_.affine(); break;
-        case TT::QualifierL: next(); q = world_.linear(); break;
+        case TT::Backslash:   q = parse_debruijn();   break;
+        case TT::Identifier:  q = parse_identifier(); break;
+        case TT::Q_u: next(); q = world_.unlimited(); break;
+        case TT::Q_r: next(); q = world_.relevant();  break;
+        case TT::Q_a: next(); q = world_.affine();    break;
+        case TT::Q_l: next(); q = world_.linear();    break;
         default: break;
     }
 
