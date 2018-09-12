@@ -56,7 +56,7 @@ TEST(Parser, SimpleVariadic) {
 
     // TODO simplify further once we can parse arity literals
     auto v = w.pi(M, w.pi(w.variadic(w.var(M, 0), S), S));
-    EXPECT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. *"), v);
+    EXPECT_EQ(parse(w, "Πa:𝕄. Π«x:a; *». *"), v);
 }
 
 TEST(Parser, Arities) {
@@ -111,7 +111,7 @@ TEST(Parser, ComplexVariadics) {
     auto v = w.pi(M, w.pi(w.variadic(w.var(M, 0), S),
                           w.variadic(w.var(M, 1),
                                      w.extract(w.var(w.variadic(w.var(M, 2), S), 1), w.var(w.var(M, 2), 0)))));
-    EXPECT_EQ(parse(w, "Πa:𝕄. Πx:[a; *]. [i:a; x#i]"), v);
+    EXPECT_EQ(parse(w, "Πa:𝕄. Πx:«a; *». «i:a; x#i»"), v);
 }
 
 TEST(Parser, NestedBinders) {
@@ -151,7 +151,7 @@ TEST(Parser, NestedDependentBinders) {
     EXPECT_EQ(parse(w, "Π[[n0 : nat, n1: nat], d: dt(n1)]. typ(n1, d)"), def);
 
     w.axiom("int", "Πnat. *");
-    w.axiom("add", "Πf: nat. Πw: nat. Πs: 𝕄. Π[ [s; int w], [s; int w]]. [s; int w]");
+    w.axiom("add", "Πf: nat. Πw: nat. Πs: 𝕄. Π[ «s; int w», «s; int w»]. «s; int w»");
     EXPECT_TRUE(parse(w, "λ[f: nat, w: nat, x: int w]. add f w 1ₐ (0u64::int w, x)")->isa<Lambda>());
 }
 

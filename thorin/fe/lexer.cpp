@@ -110,51 +110,55 @@ Token Lexer::lex() {
         front_col_ = peek_col_;
 
         if (stream_.eof())
-            return {loc(), Token::Tag::Eof};
+            return {loc(), TT::Eof};
 
-        if (accept('{')) return {loc(), Token::Tag::L_Brace};
-        if (accept('}')) return {loc(), Token::Tag::R_Brace};
-        if (accept('(')) return {loc(), Token::Tag::L_Paren};
-        if (accept(')')) return {loc(), Token::Tag::R_Paren};
-        if (accept('[')) return {loc(), Token::Tag::L_Bracket};
-        if (accept(']')) return {loc(), Token::Tag::R_Bracket};
+        if (accept('{')) return {loc(), TT::D_brace_l};
+        if (accept('}')) return {loc(), TT::D_brace_r};
+        if (accept('(')) return {loc(), TT::D_paren_l};
+        if (accept(')')) return {loc(), TT::D_paren_r};
+        if (accept('[')) return {loc(), TT::D_bracket_l};
+        if (accept(']')) return {loc(), TT::D_bracket_r};
         if (accept('<')) {
-            if (accept('-')) return {loc(), Token::Tag::Arrow};
-            return {loc(), Token::Tag::L_Angle};
+            if (accept('-')) return {loc(), TT::Arrow};
+            return {loc(), TT::D_angle_l}; // TODO
         }
-        if (accept('>')) return {loc(), Token::Tag::R_Angle};
+        if (accept('>')) return {loc(), TT::D_angle_r};
         if (accept(':')) {
-            if (accept(':')) return {loc(), Token::Tag::ColonColon};
-            else if (accept('=')) return {loc(), Token::Tag::ColonEqual};
-            else return {loc(), Token::Tag::Colon};
+            if (accept(':')) return {loc(), TT::ColonColon};
+            else if (accept('=')) return {loc(), TT::ColonEqual};
+            else return {loc(), TT::Colon};
         }
-        if (accept('=')) return {loc(), Token::Tag::Equal};
-        if (accept(',')) return {loc(), Token::Tag::Comma};
-        if (accept('.')) return {loc(), Token::Tag::Dot};
-        if (accept(';')) return {loc(), Token::Tag::Semicolon};
-        if (accept('*')) return {loc(), Token::Tag::Star};
+        if (accept('=')) return {loc(), TT::Equal};
+        if (accept(',')) return {loc(), TT::Comma};
+        if (accept('.')) return {loc(), TT::Dot};
+        if (accept(';')) return {loc(), TT::Semicolon};
+        if (accept('*')) return {loc(), TT::Star};
 
         if (accept('\\')) {
-            if (accept("lambda")) return {loc(), Token::Tag::Lambda};
-            if (accept("pi"))     return {loc(), Token::Tag::Pi};
+            if (accept("lambda")) return {loc(), TT::Lambda};
+            if (accept("pi"))     return {loc(), TT::Pi};
             //if (accept("true"))   return {loc(), Literal(Literal::Tag::Lit_bool, Box(true))};
             //if (accept("false"))  return {loc(), Literal(Literal::Tag::Lit_bool, Box(false))};
 
-            return {loc(), Token::Tag::Backslash};
+            return {loc(), TT::Backslash};
         }
 
-        if (accept('#')) return {loc(), Token::Tag::Sharp};
+        if (accept('#')) return {loc(), TT::Sharp};
 
         // greek letters
-        if (accept(U'λ')) return {loc(), Token::Tag::Lambda};
-        if (accept(U'Π')) return {loc(), Token::Tag::Pi};
-        if (accept(U'𝔸')) return {loc(), Token::Tag::Arity_Kind};
-        if (accept(U'𝕄')) return {loc(), Token::Tag::Multi_Arity_Kind};
-        if (accept(U'ℚ')) return {loc(), Token::Tag::Qualifier_Type};
-        if (accept(U'ᵁ')) return {loc(), Token::Tag::QualifierU};
-        if (accept(U'ᴿ')) return {loc(), Token::Tag::QualifierR};
-        if (accept(U'ᴬ')) return {loc(), Token::Tag::QualifierA};
-        if (accept(U'ᴸ')) return {loc(), Token::Tag::QualifierL};
+        if (accept(U'λ')) return {loc(), TT::Lambda};
+        if (accept(U'Π')) return {loc(), TT::Pi};
+        if (accept(U'𝔸')) return {loc(), TT::Arity_Kind};
+        if (accept(U'𝕄')) return {loc(), TT::Multi_Arity_Kind};
+        if (accept(U'ℚ')) return {loc(), TT::Qualifier_Type};
+        if (accept(U'ᵁ')) return {loc(), TT::QualifierU};
+        if (accept(U'ᴿ')) return {loc(), TT::QualifierR};
+        if (accept(U'ᴬ')) return {loc(), TT::QualifierA};
+        if (accept(U'ᴸ')) return {loc(), TT::QualifierL};
+        if (accept(U'«')) return {loc(), TT::D_quote_l};
+        if (accept(U'»')) return {loc(), TT::D_quote_r};
+        if (accept(U'‹')) return {loc(), TT::D_angle_l};
+        if (accept(U'›')) return {loc(), TT::D_angle_r};
 
         if (dec(peek()) || sgn(peek())) {
             auto lit = parse_literal();
@@ -177,8 +181,8 @@ Token Lexer::lex() {
             while (accept_if(sym) || accept_if(dec)) {}
 
             // TODO make this mechanism better
-            if (str() == "cn")   return {loc(), Token::Tag::Cn};
-            if (str() == "bool") return {loc(), Token::Tag::Bool};
+            if (str() == "cn")   return {loc(), TT::Cn};
+            if (str() == "bool") return {loc(), TT::Bool};
             return {loc(), str()};
         }
 

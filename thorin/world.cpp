@@ -146,8 +146,8 @@ World::World(Debug dbg)
     for (size_t j = 0; j != lit_nat_.size(); ++j)
         lit_nat_[j] = lit_nat(1 << int64_t(j));
 
-    auto type_BOp  = fe::parse(*this, "Πs: 𝕄. Π[[s; bool], [s; bool]]. [s; bool]");
-    auto type_NOp  = fe::parse(*this, "Πs: 𝕄. Π[[s;  nat], [s;  nat]]. [s;  nat]");
+    auto type_BOp  = fe::parse(*this, "Πs: 𝕄. Π[«s; bool», «s; bool»]. «s; bool»");
+    auto type_NOp  = fe::parse(*this, "Πs: 𝕄. Π[«s;  nat», «s;  nat»]. «s;  nat»");
 
 #define CODE(T, o) \
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});

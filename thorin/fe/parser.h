@@ -47,7 +47,8 @@ private:
     const Def* parse_debruijn();
     const Def* parse_cn();
     const Def* parse_pi();
-    const Def* parse_sigma_or_variadic();
+    const Def* parse_sigma();
+    const Def* parse_variadic();
     const Def* parse_lambda();
     const Def* parse_optional_qualifier();
     const Def* parse_qualified_kind();

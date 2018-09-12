@@ -61,7 +61,8 @@ TEST(Lambda, PolyIdPredicative) {
 }
 #endif
 
-static const int test_num_vars = 1000;
+//static const int test_num_vars = 1000;
+static const int test_num_vars = 100;
 
 TEST(Lambda, AppCurry) {
     World w;
