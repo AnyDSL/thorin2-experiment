@@ -64,9 +64,9 @@ TEST(Parser, Arities) {
     EXPECT_EQ(parse(w, "0ₐ"), w.arity(0));
     EXPECT_EQ(parse(w, "42ₐ"), w.arity(42));
     EXPECT_EQ(parse(w, "0ₐᵁ"), w.arity(0));
-    EXPECT_EQ(parse(w, "1ₐᴿ"), w.arity(w.relevant(), 1));
-    EXPECT_EQ(parse(w, "2ₐᴬ"), w.arity(w.affine(),   2));
-    EXPECT_EQ(parse(w, "3ₐᴸ"), w.arity(w.linear(),   3));
+    EXPECT_EQ(parse(w, "1ₐᴿ"), w.arity(w.qualifier_r(), 1));
+    EXPECT_EQ(parse(w, "2ₐᴬ"), w.arity(w.qualifier_a(), 2));
+    EXPECT_EQ(parse(w, "3ₐᴸ"), w.arity(w.qualifier_l(), 3));
     EXPECT_EQ(parse(w, "Πq:ℚ.42ₐq"), w.pi(w.qualifier_type(), w.arity(w.var(w.qualifier_type(), 0), 42)));
 }
 
@@ -74,10 +74,10 @@ TEST(Parser, Indices) {
     World w;
     EXPECT_EQ(parse(w, "0₁"), w.index(1, 0));
     EXPECT_EQ(parse(w, "42₁₉₀"), w.index(190, 42));
-    EXPECT_EQ(parse(w, "4₅ᵁ"), w.index(w.arity(w.unlimited(), 5), 4));
-    EXPECT_EQ(parse(w, "4₅ᴿ"), w.index(w.arity(w.relevant(),  5), 4));
-    EXPECT_EQ(parse(w, "4₅ᴬ"), w.index(w.arity(w.affine(),    5), 4));
-    EXPECT_EQ(parse(w, "4₅ᴸ"), w.index(w.arity(w.linear(),    5), 4));
+    EXPECT_EQ(parse(w, "4₅ᵁ"), w.index(w.arity(w.qualifier_u(), 5), 4));
+    EXPECT_EQ(parse(w, "4₅ᴿ"), w.index(w.arity(w.qualifier_r(), 5), 4));
+    EXPECT_EQ(parse(w, "4₅ᴬ"), w.index(w.arity(w.qualifier_a(), 5), 4));
+    EXPECT_EQ(parse(w, "4₅ᴸ"), w.index(w.arity(w.qualifier_l(), 5), 4));
     EXPECT_EQ(parse(w, "λq:ℚ.4₅q"), w.lambda(w.qualifier_type(), w.index(w.arity(w.var(w.qualifier_type(), 0), 5), 4)));
 }
 
@@ -173,10 +173,10 @@ TEST(Parser, Apps) {
     auto a5 = w.arity(QualifierTag::a, 5);
     auto i0_5 = w.index(a5, 0);
     auto ma = w.multi_arity_kind(QualifierTag::a);
-    EXPECT_EQ(parse(w, "(λs: 𝕄ᴬ. λq: ℚ. λi: s. (s, q, i)) 5ₐᴬ ᴿ 0₅ᴬ"), w.tuple({a5, w.relevant(), i0_5}));
+    EXPECT_EQ(parse(w, "(λs: 𝕄ᴬ. λq: ℚ. λi: s. (s, q, i)) 5ₐᴬ ᴿ 0₅ᴬ"), w.tuple({a5, w.qualifier_r(), i0_5}));
     auto ax = w.axiom(w.pi(ma, w.pi(w.qualifier_type(), w.star())), {"ax"});
-    EXPECT_EQ(parse(w, "(ax 5ₐᴬ) ᴿ"), w.app(w.app(ax, a5), w.relevant()));
-    EXPECT_EQ(parse(w, "ax 5ₐᴬ ᴿ"), w.app(w.app(ax, a5), w.relevant()));
+    EXPECT_EQ(parse(w, "(ax 5ₐᴬ) ᴿ"), w.app(w.app(ax, a5), w.qualifier_r()));
+    EXPECT_EQ(parse(w, "ax 5ₐᴬ ᴿ"), w.app(w.app(ax, a5), w.qualifier_r()));
 }
 
 TEST(Parser, Let) {

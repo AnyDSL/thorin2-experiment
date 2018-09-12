@@ -274,14 +274,14 @@ const Def* Def::qualifier() const {
         case Sort::Term:     return type()->type()->kind_qualifier();
         case Sort::Type:     return type()->kind_qualifier();
         case Sort::Kind:     return kind_qualifier();
-        case Sort::Universe: return world().unlimited();
+        case Sort::Universe: return world().qualifier_u();
     }
     THORIN_UNREACHABLE;
 }
 
 const Def* Def::kind_qualifier() const {
     assert(is_kind() || is_universe());
-    return world().unlimited();
+    return world().qualifier_u();
 }
 
 const Def* ArityKind::kind_qualifier() const { return op(0); }
@@ -298,15 +298,15 @@ const Def* Intersection::kind_qualifier() const {
 const Def* Pi::kind_qualifier() const {
     assert(is_kind());
     // TODO ensure that no Pi kinds with substructural qualifiers can exist -> polymorphic/dependent functions must always be unlimited
-    return world().unlimited();
+    return world().qualifier_u();
 }
 
-const Def* QualifierType::kind_qualifier() const { return world().unlimited(); }
+const Def* QualifierType::kind_qualifier() const { return world().qualifier_u(); }
 
 const Def* Sigma::kind_qualifier() const {
     assert(is_kind());
     auto& w = world();
-    auto unlimited = w.unlimited();
+    auto unlimited = w.qualifier_u();
     if (num_ops() == 0)
         return unlimited;
     auto qualifiers = DefArray(num_ops(), [&](auto i) {
@@ -324,7 +324,7 @@ const Def* Star::kind_qualifier() const { return op(0); }
 
 const Def* Variadic::kind_qualifier() const {
     assert(is_kind());
-    return body()->has_values() ? shift_free_vars(body()->qualifier(), 1) : world().unlimited();
+    return body()->has_values() ? shift_free_vars(body()->qualifier(), 1) : world().qualifier_u();
 }
 
 const Def* Variant::kind_qualifier() const {
@@ -336,7 +336,7 @@ const Def* Variant::kind_qualifier() const {
 
 bool Def::is_substructural() const {
     auto q = qualifier();
-    return q != world().unlimited();
+    return q != world().qualifier_u();
 }
 
 //------------------------------------------------------------------------------

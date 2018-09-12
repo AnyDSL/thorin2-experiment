@@ -40,10 +40,10 @@ TEST(Qualifiers, Lattice) {
 
 TEST(Qualifiers, Variants) {
     World w;
-    auto u = w.unlimited();
-    auto r = w.relevant();
-    auto a = w.affine();
-    auto l = w.linear();
+    auto u = w.qualifier_u();
+    auto r = w.qualifier_r();
+    auto a = w.qualifier_a();
+    auto l = w.qualifier_l();
     auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
 
     EXPECT_EQ(u, u->qualifier());
@@ -72,10 +72,10 @@ TEST(Qualifiers, Variants) {
 
 TEST(Qualifiers, Kinds) {
     World w;
-    auto u = w.unlimited();
-    auto r = w.relevant();
-    auto a = w.affine();
-    auto l = w.linear();
+    auto u = w.qualifier_u();
+    auto r = w.qualifier_r();
+    auto a = w.qualifier_a();
+    auto l = w.qualifier_l();
     auto v = w.var(w.qualifier_type(), 0);
     EXPECT_TRUE(w.qualifier_type()->has_values());
     EXPECT_TRUE(w.qualifier_type()->is_kind());
@@ -104,16 +104,16 @@ TEST(Substructural, TypeCheckLambda) {
     World w;
     EXPECT_THROW(parse(w, "λq:ℚ. λt:*q. λa:t. (a, a, ())")->check(), TypeError);
 
-    auto a = w.affine();
+    auto a = w.qualifier_a();
     w.axiom(w.star(a), {"atype"});
     EXPECT_THROW(parse(w, "λa:atype. (a, a, ())")->check(), TypeError);
     EXPECT_NO_THROW(parse(w, "λa:atype. λi:3ₐ. (a, a, ())#i")->check());
 
-    w.axiom(w.star(w.relevant()), {"rtype"});
+    w.axiom(w.star(w.qualifier_r()), {"rtype"});
     EXPECT_THROW(parse(w, "λr:rtype. ()")->check(), TypeError);
     EXPECT_THROW(parse(w, "λr:rtype. (42ₐ, 12ₐ)")->check(), TypeError);
 
-    w.axiom(w.star(w.linear()), {"ltype"});
+    w.axiom(w.star(w.qualifier_l()), {"ltype"});
     EXPECT_THROW(parse(w, "λl:ltype. ()")->check(), TypeError);
     EXPECT_THROW(parse(w, "λl:ltype. (42ₐ, 12ₐ)")->check(), TypeError);
     EXPECT_THROW(parse(w, "λl:ltype. (l, 42ₐ, l)")->check(), TypeError);
@@ -122,16 +122,16 @@ TEST(Substructural, TypeCheckLambda) {
 
 TEST(Substructural, TypeCheckPack) {
     World w;
-    w.axiom(w.arity_kind(w.affine()), {"aarity"});
+    w.axiom(w.arity_kind(w.qualifier_a()), {"aarity"});
     EXPECT_THROW(parse(w, "‹i:aarity; (i, (), i)›")->check(), TypeError);
     EXPECT_THROW(parse(w, "λa:𝔸ᴬ.‹i:a; (i, i, ())›")->check(), TypeError);
     EXPECT_NO_THROW(parse(w, "λi:3ₐ. λa:𝔸ᴬ.‹j:a; (j, j, ())#i›")->check());
 
-    w.axiom(w.arity_kind(w.relevant()), {"rarity"});
+    w.axiom(w.arity_kind(w.qualifier_r()), {"rarity"});
     EXPECT_THROW(parse(w, "‹r:rarity; ()›")->check(), TypeError);
     EXPECT_THROW(parse(w, "‹r:rarity; (42ₐ, 12ₐ)›")->check(), TypeError);
 
-    w.axiom(w.arity_kind(w.linear()), {"larity"});
+    w.axiom(w.arity_kind(w.qualifier_l()), {"larity"});
     EXPECT_THROW(parse(w, "‹l:larity; ()›")->check(), TypeError);
     EXPECT_THROW(parse(w, "‹l:larity; (42ₐ, 12ₐ)›")->check(), TypeError);
     EXPECT_THROW(parse(w, "‹l:larity; (l, 42ₐ, l)›")->check(), TypeError);
@@ -230,7 +230,7 @@ TEST(Substructural, UnlimitedRefs) {
 
 TEST(Substructural, AffineRefs) {
     World w;
-    auto a = w.affine();
+    auto a = w.qualifier_a();
     auto Star = w.star();
 
     w.axiom(w.pi(Star, w.star(a)), {"ARef"});
@@ -245,7 +245,7 @@ TEST(Substructural, AffineRefs) {
 
 TEST(Substructural, AffineCapabilityRefs) {
     World w;
-    auto a = w.affine();
+    auto a = w.qualifier_a();
     auto Star = w.star();
     auto Nat = w.type_nat();
     auto n42 = w.lit(Nat, 42);
@@ -273,7 +273,7 @@ TEST(Substructural, AffineCapabilityRefs) {
 
 TEST(Substructural, AffineFractionalCapabilityRefs) {
     World w;
-    auto a = w.affine();
+    auto a = w.qualifier_a();
     auto Star = w.star();
     auto Nat = w.type_nat();
     auto n42 = w.lit(Nat, 42);

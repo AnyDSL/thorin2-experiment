@@ -489,7 +489,7 @@ class QualifierJoinVisitor {
 public:
     QualifierJoinVisitor(World& world, size_t ignore_offset = 1)
         : world_(world)
-        , qualifier_(world.unlimited())
+        , qualifier_(world.qualifier_u())
         , ignore_offset_(ignore_offset)
     {}
 
@@ -508,7 +508,7 @@ public:
     const Def* visit_nonfree_var(const Var* def, size_t offset, const Def*) { return set_visited(def, offset); }
     std::optional<const Def*> stop_recursion(const Def* def, size_t offset, const Def*) {
         set_visited(def, offset);
-        if (qualifier_ == world_.linear())
+        if (qualifier_ == world_.qualifier_l())
             return qualifier_;
         // TODO can we avoid recursing in more cases? probably not...
         return std::nullopt;
@@ -549,7 +549,7 @@ const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, con
                    domain, body, inferred_q, q);
         q = inferred_q;
     } else if (q == nullptr)
-        q = unlimited();
+        q = qualifier_u();
     auto type = pi(q, domain, body->type(), dbg);
     // TODO check/infer qualifier from free variables/params
 

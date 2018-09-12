@@ -110,7 +110,7 @@ TEST(Arity, DependentArityEliminator) {
     World w;
     auto lam_bool = w.lambda(w.arity_kind(), w.type_bool());
     auto step_negate = w.lambda(w.arity_kind(), w.lambda(w.type_bool(), w.op_bnot(w.var(w.type_bool(), 0))));
-    auto arity_is_even = w.app(w.app(w.app(w.app(w.arity_eliminator(), w.unlimited()), lam_bool), w.lit_true()), step_negate);
+    auto arity_is_even = w.app(w.app(w.app(w.app(w.arity_eliminator(), w.qualifier_u()), lam_bool), w.lit_true()), step_negate);
     EXPECT_EQ(w.lit_true(), w.app(arity_is_even, w.arity(0)));
     EXPECT_EQ(w.lit_false(), w.app(arity_is_even, w.arity(3)));
 }
@@ -118,15 +118,15 @@ TEST(Arity, DependentArityEliminator) {
 TEST(Arity, ArityRecursors) {
     World w;
     auto double_step = fe::parse(w, "λcurr:𝔸. λacc:𝔸. ASucc (ᵁ, ASucc (ᵁ, acc))");
-    auto arity_double = w.app(w.app(w.app(w.arity_recursor_to_arity(), w.unlimited()), w.arity(0)), double_step);
+    auto arity_double = w.app(w.app(w.app(w.arity_recursor_to_arity(), w.qualifier_u()), w.arity(0)), double_step);
     EXPECT_EQ(w.arity(0), w.app(arity_double, w.arity(0)));
     EXPECT_EQ(w.arity(8), w.app(arity_double, w.arity(4)));
     auto quad_step = fe::parse(w, "λcurr:𝔸. λacc:𝕄. «ASucc (ᵁ, curr); ASucc (ᵁ, curr)»)");
-    auto arity_quad = w.app(w.app(w.app(w.arity_recursor_to_multi(), w.unlimited()), w.arity(0)), quad_step);
+    auto arity_quad = w.app(w.app(w.app(w.arity_recursor_to_multi(), w.qualifier_u()), w.arity(0)), quad_step);
     EXPECT_EQ(w.arity(0), w.app(arity_quad, w.arity(0)));
     EXPECT_EQ(w.variadic(w.arity(3), w.arity(3)), w.app(arity_quad, w.arity(3)));
     auto nest_step = fe::parse(w, "λcurr:𝔸. λacc:*. «ASucc (ᵁ, curr); acc»)");
-    auto arity_nest = w.app(w.app(w.app(w.arity_recursor_to_star(), w.unlimited()), w.type_nat()), nest_step);
+    auto arity_nest = w.app(w.app(w.app(w.arity_recursor_to_star(), w.qualifier_u()), w.type_nat()), nest_step);
     EXPECT_EQ(w.type_nat(), w.app(arity_nest, w.arity(0)));
     EXPECT_EQ(w.type_nat(), w.app(arity_nest, w.arity(1)));
     EXPECT_EQ(w.variadic(w.arity(3), w.variadic(w.arity(2), w.type_nat())), w.app(arity_nest, w.arity(3)));
@@ -135,7 +135,7 @@ TEST(Arity, ArityRecursors) {
 TEST(Arity, DependentIndexEliminator) {
     World w;
     auto elim = w.index_eliminator();
-    auto u = w.unlimited();
+    auto u = w.qualifier_u();
     auto elimu = w.app(elim, u);
     auto to_arity2 = fe::parse(w, "λa:𝔸. λi:a. 2ₐ");
     auto base_is_even = fe::parse(w, "λa:𝔸. 1₂");

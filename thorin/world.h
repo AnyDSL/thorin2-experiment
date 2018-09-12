@@ -81,15 +81,15 @@ public:
     //@{ create qualifier
     const QualifierType* qualifier_type() const { return qualifier_type_; }
     const Qualifier* qualifier(QualifierTag q) const { return qualifier_[size_t(q)]; }
-    const Qualifier* unlimited() const { return qualifier(QualifierTag::u); }
-    const Qualifier* affine() const { return qualifier(QualifierTag::a); }
-    const Qualifier* linear() const { return qualifier(QualifierTag::l); }
-    const Qualifier* relevant() const { return qualifier(QualifierTag::r); }
+    const Qualifier* qualifier_u() const { return qualifier(QualifierTag::u); }
+    const Qualifier* qualifier_r() const { return qualifier(QualifierTag::r); }
+    const Qualifier* qualifier_a() const { return qualifier(QualifierTag::a); }
+    const Qualifier* qualifier_l() const { return qualifier(QualifierTag::l); }
     //@}
 
     //@{ create Pi
     const Pi* pi(const Def* domain, const Def* codomain, Debug dbg = {}) {
-        return pi(unlimited(), domain, codomain, dbg);
+        return pi(qualifier_u(), domain, codomain, dbg);
     }
     const Pi* pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg = {});
     const Pi* cn(const Def* domain, Debug dbg = {}) { return pi(domain, bottom(star()), dbg); }
@@ -145,7 +145,7 @@ public:
     }
     /// @em nominal Sigma of type Star
     Sigma* sigma_type(size_t num_ops, Debug dbg = {}) {
-        return sigma_type(unlimited(), num_ops, dbg);
+        return sigma_type(qualifier_u(), num_ops, dbg);
     }
     /// @em nominal Sigma of type Star
     Sigma* sigma_type(const Def* q, size_t num_ops, Debug dbg = {}) {
