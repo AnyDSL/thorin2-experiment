@@ -237,14 +237,14 @@ DefPrinter& Lambda::stream(DefPrinter& p) const {
 }
 
 DefPrinter& Pack::stream(DefPrinter& p) const {
-    p << "(";
+    p << "‹";
     if (auto var = type()->isa<Variadic>())
         p << var->op(0);
     else {
         assert(type()->isa<Sigma>());
         p << type()->num_ops() << "ₐ";
     }
-    return streamf(p, "; {})", p.str(body()));
+    return streamf(p, "; {}›", p.str(body()));
 }
 
 DefPrinter& Pi::stream(DefPrinter& p) const {
@@ -314,7 +314,7 @@ DefPrinter& Var::stream(DefPrinter& p) const {
 }
 
 DefPrinter& Variadic::stream(DefPrinter& p) const {
-    return streamf(p, "[{}; {}]", p.str(arity()), p.str(body()));
+    return streamf(p, "«{}; {}»", p.str(arity()), p.str(body()));
 }
 
 DefPrinter& Variant::stream(DefPrinter& p) const {
