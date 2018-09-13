@@ -288,7 +288,7 @@ protected:
     const char* extra_ptr() const { return const_cast<Def*>(this)->extra_ptr(); }
 
 private:
-    const Def** ops_ptr() const { return reinterpret_cast<const Def**>(reinterpret_cast<char*>(const_cast<Def*>(this)) + sizeof(Def)); }
+    const Def** ops_ptr() const { return reinterpret_cast<const Def**>(reinterpret_cast<char*>(const_cast<Def*>(this + 1))); }
     /// The qualifier of values inhabiting either this kind itself or inhabiting types within this kind.
     virtual const Def* kind_qualifier() const;
     virtual bool vsubtype_of(const Def*) const { return false; }
