@@ -19,7 +19,7 @@ enum class Qualifier {
     u = 0,      ///< unlimited
     r = 1 << 0, ///< relevant -> min 1 use
     a = 1 << 1, ///< affine   -> max 1 use
-    l = a | r   ///< linear -> must use exactly once
+    l = a | r   ///< linear   -> must use exactly once
 };
 
 constexpr std::array<Qualifier, 4> Qualifiers = {{Qualifier::u, Qualifier::r, Qualifier::a, Qualifier::l}};
