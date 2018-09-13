@@ -36,6 +36,28 @@ enum class FFlags : int64_t {
 /// All cast operations that cast from/to float/signed/unsigned.
 #define THORIN_CAST(m) m(Cast, f2f) m(Cast, f2s) m(Cast, f2u) m(Cast, s2f) m(Cast, s2s) m(Cast, u2f) m(Cast, u2u)
 
+/**
+ * The 5 relations are disjoint and are organized as follows:
+ *
+@verbatim
+               ----
+               4321
+           01234567
+           ////////
+           00001111
+     y→    00110011
+           01010101
+
+   x 0/000 ELLLPPPP
+   ↓ 1/001 GELLPPPP
+     2/010 GGELPPPP
+     3/011 GGGEPPPP
+  -4/4/100 MMMMELLL
+  -3/5/101 MMMMGELL
+  -2/6/110 MMMMGGEL   P = PM
+  -1/7/111 MMMMGGGE   M = MP
+@endverbatim
+ */
 #define THORIN_I_CMP(m)              /* PM MP G L E                                                   */ \
                      m(ICmp,    f)   /*  o  o o o o - always false                                    */ \
                      m(ICmp,    e)   /*  o  o o o x - equal                                           */ \
