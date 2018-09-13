@@ -35,12 +35,12 @@ World::World(Debug dbg)
     type_frame_ = axiom("F", "Πa: nat. *");
     type_dbz_   = axiom("Z", "*ᴸ"); // "division by zero" side effect
 
-    auto type_ZOp  = fe::parse(*this, "Πw: nat.          Πs: 𝕄. Π[Z, «s;   int w», «s;   int w»]. [Z, «s;   int w»]");
-    auto type_WOp  = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   «s;   int w», «s;   int w»].     «s;   int w» ");
-    auto type_IOp  = fe::parse(*this, "         Πw: nat. Πs: 𝕄. Π[   «s;   int w», «s;   int w»].     «s;   int w» ");
-    auto type_FOp  = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   «s; float w», «s; float w»].     «s; float w» ");
-    auto type_ICmp = fe::parse(*this, "         Πw: nat. Πs: 𝕄. Π[   «s;   int w», «s;   int w»].     «s;    bool»");
-    auto type_FCmp = fe::parse(*this, "Πf: nat. Πw: nat. Πs: 𝕄. Π[   «s; float w», «s; float w»].     «s;    bool»");
+    auto type_ZOp  = fe::parse(*this, "Π         w: nat . Πs: 𝕄. Π[Z, «s;   int w», «s;   int w»]. [Z, «s;   int w»]");
+    auto type_WOp  = fe::parse(*this, "Π[f: nat, w: nat]. Πs: 𝕄. Π[   «s;   int w», «s;   int w»].     «s;   int w» ");
+    auto type_IOp  = fe::parse(*this, "Π         w: nat . Πs: 𝕄. Π[   «s;   int w», «s;   int w»].     «s;   int w» ");
+    auto type_FOp  = fe::parse(*this, "Π[f: nat, w: nat]. Πs: 𝕄. Π[   «s; float w», «s; float w»].     «s; float w» ");
+    auto type_ICmp = fe::parse(*this, "Π         w: nat . Πs: 𝕄. Π[   «s;   int w», «s;   int w»].     «s;    bool»");
+    auto type_FCmp = fe::parse(*this, "Π[f: nat, w: nat]. Πs: 𝕄. Π[   «s; float w», «s; float w»].     «s;    bool»");
 
 #define CODE(T, o) \
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});

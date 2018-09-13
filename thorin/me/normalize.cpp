@@ -52,8 +52,9 @@ static const Def* try_wfold(const Def* callee, const Def* a, const Def* b, Debug
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
         auto t = callee->type()->template as<Pi>()->codomain();
-        auto w = get_nat(app_arg(app_callee(callee)));
-        auto f = get_nat(app_arg(app_callee(app_callee(callee))));
+        auto fw = app_arg(app_callee(callee));
+        auto f = get_nat(world.extract(fw, 0_u64));
+        auto w = get_nat(world.extract(fw, 1_u64));
         try {
             switch (f) {
                 case int64_t(WFlags::none):
@@ -233,7 +234,7 @@ static const Def* try_rfold(const Def* callee, const Def* a, const Def* b, Debug
     if (la && lb) {
         auto ba = la->box(), bb = lb->box();
         auto t = callee->type()->template as<Pi>()->codomain();
-        auto w = get_nat(app_arg(app_callee(callee)));
+        auto w = get_nat(world.extract(app_arg(app_callee(callee)), 1));
         try {
             switch (w) {
                 case 16: return world.lit(t, F<16>::run(ba, bb));
@@ -254,8 +255,9 @@ const Def* normalize_FOp(const Def* callee, const Def* arg, Debug dbg) {
     auto [a, b] = split(arg);
     if (auto result = try_rfold<FoldFOp<op>::template Fold>(callee, a, b, dbg)) return result;
 
-    auto f = FFlags(get_nat(app_arg(app_callee(app_callee(callee)))));
-    auto w = get_nat(app_arg(app_callee(callee)));
+    auto fw = app_arg(app_callee(callee));
+    auto f = FFlags(get_nat(world.extract(fw, 0_u64)));
+    auto w = get_nat(world.extract(fw, 1_u64));
 
     if (is_commutative(op)) {
         if (auto la = foldable_to_left(a, b)) {

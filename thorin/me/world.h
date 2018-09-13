@@ -54,7 +54,7 @@ public:
         return op<o>(flags, width, shape, a, b, dbg);
     }
     template<WOp o> const Def* op(WFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
+        return app(app(app(op<o>(), {lit_nat(s64(flags)), width}), shape), {a, b}, dbg);
     }
     //@}
 
@@ -88,7 +88,7 @@ public:
         return op<o>(flags, width, shape, a, b, dbg);
     }
     template<FOp o> const Def* op(FFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
+        return app(app(app(op<o>(), {lit_nat(s64(flags)), width}), shape), {a, b}, dbg);
     }
     //@}
 
@@ -111,7 +111,7 @@ public:
         return op<o>(flags, width, shape, a, b, dbg);
     }
     template<FCmp o> const Def* op(FFlags flags, const Def* width, const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
-        return app(app(app(app(op<o>(), lit_nat(s64(flags))), width), shape), {a, b}, dbg);
+        return app(app(app(op<o>(), {lit_nat(s64(flags)), width}), shape), {a, b}, dbg);
     }
 
     //@{ cast
