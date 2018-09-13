@@ -68,11 +68,11 @@ const Def* World::bound(const Def* q, Range<I> defs) {
         // TODO somehow build into a def->is_subtype_of(other)/similar
         if (def == qualifier_type() && max == qualifier_type())
             continue;
-        bool is_arity = def->template isa<ArityKind>();
-        bool is_star = def->template isa<Star>();
-        bool is_marity = is_arity || def->template isa<MultiArityKind>();
-        bool max_is_marity = max->template isa<ArityKind>() || max->template isa<MultiArityKind>();
-        bool max_is_star = max->template isa<Star>();
+        bool is_arity = def->tag() == Def::Tag::ArityKind;
+        bool is_star = def->tag() == Def::Tag::Star;
+        bool is_marity = is_arity || def->tag() == Def::Tag::MultiArityKind;
+        bool max_is_marity = max->tag() == Def::Tag::ArityKind || max->tag() == Def::Tag::MultiArityKind;
+        bool max_is_star = max->tag() == Def::Tag::Star;
         if (is_arity && max_is_marity)
             // found at least two arities, must be a multi-arity
             max = multi_arity_kind(inferred_q);
@@ -84,7 +84,7 @@ const Def* World::bound(const Def* q, Range<I> defs) {
         }
     }
 
-    if (max->template isa<Star>()) {
+    if (max->tag() == Def::Tag::Star) {
         if (!infer_qualifier) {
             assert(inferred_q == q);
             return star(q ? q : qualifier(T::Lattice::min));
@@ -127,11 +127,10 @@ World::World(Debug dbg)
     universe_ = insert<Universe>(0, *this);
     qualifier_type_ = insert<QualifierType>(0, *this);
     for (size_t i = 0; i != 4; ++i) {
-        auto q = QualifierTag(i);
-        qualifier_[i] = insert<Qualifier>(1, *this, q);
-        star_[i] = insert<Star>(1, *this, qualifier_[i]);
-        arity_kind_[i] = insert<ArityKind>(1, *this, qualifier_[i]);
-        multi_arity_kind_[i] = insert<MultiArityKind>(1, *this, qualifier_[i]);
+        qualifier_[i] = lit(qualifier_type(), s32(i), {qualifier2str(Qualifiers[i])});
+        star_[i]             = insert<Kind>(1, *this, Def::Tag::Star,           qualifier_[i]);
+        arity_kind_[i]       = insert<Kind>(1, *this, Def::Tag::ArityKind,      qualifier_[i]);
+        multi_arity_kind_[i] = insert<Kind>(1, *this, Def::Tag::MultiArityKind, qualifier_[i]);
         unit_[i] = arity(qualifier_[i], 1);
         unit_val_[i] = index(unit_[i], 0);
     }
@@ -376,7 +375,7 @@ const Lit* World::index(const Arity* a, u64 i, Loc loc) {
 }
 
 const Def* World::index_zero(const Def* arity, Loc loc) {
-    if (arity->type()->isa<ArityKind>()) {
+    if (arity->type()->tag() == Def::Tag::ArityKind) {
         if (auto a = arity->isa<Arity>())
             return index(a->value() + 1, 0, loc);
         return app(index_zero_, tuple({arity->qualifier(), arity}), {loc});
@@ -386,7 +385,7 @@ const Def* World::index_zero(const Def* arity, Loc loc) {
 }
 
 const Def* World::index_succ(const Def* index, Debug dbg) {
-    assert(index->type()->type()->isa<ArityKind>());
+    assert(index->type()->type()->tag() == Def::Tag::ArityKind);
     if (auto idx = index->isa<Lit>())
         return this->index(idx->type()->as<Arity>(), get_index(idx) + 1_u64, dbg);
 
@@ -439,8 +438,8 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
         auto accu = T::Lattice::min;
         DefVector qualifiers;
         for (auto def : defs) {
-            if (auto q = def->template isa<Qualifier>()) {
-                accu = T::Lattice::join(accu, q->qualifier_tag());
+            if (auto q = get_qualifier(def)) {
+                accu = T::Lattice::join(accu, *q);
             } else {
                 assert(is_qualifier(def));
                 assert(def);
@@ -628,7 +627,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && all_equal_of(defs)) {
         assert(q == nullptr || defs.front()->qualifier() == q);
-        return variadic(arity(QualifierTag::u, defs.size(), dbg), shift_free_vars(defs.front(), -1), dbg);
+        return variadic(arity(Qualifier::u, defs.size(), dbg), shift_free_vars(defs.front(), -1), dbg);
     }
 
     BitSet substructural;
@@ -757,7 +756,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
 
     if (size != 0) {
         if (all_equal_of(defs))
-            return pack(arity(QualifierTag::u, size, dbg), shift_free_vars(defs.front(), 1), dbg);
+            return pack(arity(Qualifier::u, size, dbg), shift_free_vars(defs.front(), 1), dbg);
         else if (auto same = eta_property())
             return same;
     }

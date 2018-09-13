@@ -8,8 +8,8 @@ using namespace thorin;
 
 TEST(Subtypes, Kinds) {
     World w;
-    for (auto q1 : QualifierTags) {
-        for (auto q2 : QualifierTags) {
+    for (auto q1 : Qualifiers) {
+        for (auto q2 : Qualifiers) {
             if (q1 == q2) {
                 EXPECT_TRUE(w.arity_kind(q1)->subtype_of(w.star(q1)));
                 EXPECT_TRUE(w.multi_arity_kind(q1)->subtype_of(w.star(q1)));
@@ -26,7 +26,7 @@ TEST(Subtypes, Kinds) {
 
 TEST(Subtypes, Pi) {
     World w;
-    for (auto q : QualifierTags) {
+    for (auto q : Qualifiers) {
         auto pi_a = w.pi(w.star(), w.arity_kind(q));
         auto pi_m = w.pi(w.star(), w.multi_arity_kind(q));
         auto pi_s = w.pi(w.star(), w.star(q));
@@ -40,7 +40,7 @@ TEST(Subtypes, Pi) {
 
 TEST(Subtypes, Sigma) {
     World w;
-    for (auto q : QualifierTags) {
+    for (auto q : Qualifiers) {
         auto am = w.sigma({w.arity_kind(q), w.multi_arity_kind(q)});
         auto ms = w.sigma({w.multi_arity_kind(q), w.star(q)});
         auto ss = w.variadic(2, w.star(q));

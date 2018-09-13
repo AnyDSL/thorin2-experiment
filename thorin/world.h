@@ -58,33 +58,34 @@ public:
 
     //@{ create universe and kinds
     const Universe* universe() const { return universe_; }
-    const ArityKind* arity_kind(QualifierTag q = QualifierTag::u) const { return arity_kind_[size_t(q)]; }
-    const ArityKind* arity_kind(const Def* q) {
-        if (auto cq = q->isa<Qualifier>())
-            return arity_kind(cq->qualifier_tag());
-        return unify<ArityKind>(1, *this, q);
+    const Kind* kind(Def::Tag tag, const Def* q) { return unify<Kind>(1, *this, tag, q); }
+    const Kind* arity_kind(Qualifier q = Qualifier::u) const { return arity_kind_[size_t(q)]; }
+    const Kind* arity_kind(const Def* def) {
+        if (auto q = get_qualifier(def))
+            return arity_kind(*q);
+        return kind(Def::Tag::ArityKind, def);
     }
-    const MultiArityKind* multi_arity_kind(QualifierTag q = QualifierTag::u) const { return multi_arity_kind_[size_t(q)]; }
-    const MultiArityKind* multi_arity_kind(const Def* q) {
-        if (auto cq = q->isa<Qualifier>())
-            return multi_arity_kind(cq->qualifier_tag());
-        return unify<MultiArityKind>(1, *this, q);
+    const Kind* multi_arity_kind(Qualifier q = Qualifier::u) const { return multi_arity_kind_[size_t(q)]; }
+    const Kind* multi_arity_kind(const Def* def) {
+        if (auto q = get_qualifier(def))
+            return multi_arity_kind(*q);
+        return kind(Def::Tag::MultiArityKind, def);
     }
-    const Star* star(QualifierTag q = QualifierTag::u) const { return star_[size_t(q)]; }
-    const Star* star(const Def* q) {
-        if (auto cq = q->isa<Qualifier>())
-            return star(cq->qualifier_tag());
-        return unify<Star>(1, *this, q);
+    const Kind* star(Qualifier q = Qualifier::u) const { return star_[size_t(q)]; }
+    const Kind* star(const Def* def) {
+        if (auto q = get_qualifier(def))
+            return star(*q);
+        return kind(Def::Tag::Star, def);
     }
     //@}
 
     //@{ create qualifier
     const QualifierType* qualifier_type() const { return qualifier_type_; }
-    const Qualifier* qualifier(QualifierTag q) const { return qualifier_[size_t(q)]; }
-    const Qualifier* qualifier_u() const { return qualifier(QualifierTag::u); }
-    const Qualifier* qualifier_r() const { return qualifier(QualifierTag::r); }
-    const Qualifier* qualifier_a() const { return qualifier(QualifierTag::a); }
-    const Qualifier* qualifier_l() const { return qualifier(QualifierTag::l); }
+    const Lit* qualifier(Qualifier q) const { return qualifier_[size_t(q)]; }
+    const Lit* qualifier_u() const { return qualifier(Qualifier::u); }
+    const Lit* qualifier_r() const { return qualifier(Qualifier::r); }
+    const Lit* qualifier_a() const { return qualifier(Qualifier::a); }
+    const Lit* qualifier_l() const { return qualifier(Qualifier::l); }
     //@}
 
     //@{ create Pi
@@ -125,13 +126,13 @@ public:
     //@}
 
     //@{ create Units
-    const Def* unit(QualifierTag q = QualifierTag::u) { return unit_[size_t(q)]; }
-    const Def* unit(const Def* q) {
-        if (auto cq = q->isa<Qualifier>())
-            return unit(cq->qualifier_tag());
-        return arity(q, 1);
+    const Def* unit(Qualifier q = Qualifier::u) { return unit_[size_t(q)]; }
+    const Def* unit(const Def* def) {
+        if (auto q = get_qualifier(def))
+            return unit(*q);
+        return arity(def, 1);
     }
-    const Def* unit_kind(QualifierTag q = QualifierTag::u) { return variadic(arity(0), star(q)); }
+    const Def* unit_kind(Qualifier q = Qualifier::u) { return variadic(arity(0), star(q)); }
     const Def* unit_kind(const Def* q) { return variadic(arity(0), star(q)); }
     //@}
 
@@ -161,10 +162,10 @@ public:
     const Def* variadic(const Def* arities, const Def* body, Debug dbg = {});
     const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
     const Def* variadic(u64 a, const Def* body, Debug dbg = {}) {
-        return variadic(arity(QualifierTag::u, a, dbg), body, dbg);
+        return variadic(arity(Qualifier::u, a, dbg), body, dbg);
     }
     const Def* variadic(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
-        return variadic(DefArray(a.size(), [&](auto i) { return arity(QualifierTag::u, a[i], dbg); }), body, dbg);
+        return variadic(DefArray(a.size(), [&](auto i) { return arity(Qualifier::u, a[i], dbg); }), body, dbg);
     }
     //@}
 
@@ -173,22 +174,22 @@ public:
     //@}
 
     //@{ create unit values
-    const Def* val_unit(QualifierTag q = QualifierTag::u) { return unit_val_[size_t(q)]; }
-    const Def* val_unit(const Def* q) {
-        if (auto cq = q->isa<Qualifier>())
-            return val_unit(cq->qualifier_tag());
-        return index_zero(arity(q, 1));
+    const Def* val_unit(Qualifier q = Qualifier::u) { return unit_val_[size_t(q)]; }
+    const Def* val_unit(const Def* def) {
+        if (auto q = get_qualifier(def))
+            return val_unit(*q);
+        return index_zero(arity(def, 1));
     }
-    const Def* val_unit_kind(QualifierTag q = QualifierTag::u) { return pack(arity(0), unit(q)); }
+    const Def* val_unit_kind(Qualifier q = Qualifier::u) { return pack(arity(0), unit(q)); }
     const Def* val_unit_kind(const Def* q) { return pack(arity(0), unit(q)); }
     //@}
 
     //@{ create Pack
     const Def* pack(const Def* arities, const Def* body, Debug dbg = {});
     const Def* pack(Defs arities, const Def* body, Debug dbg = {});
-    const Def* pack(u64 a, const Def* body, Debug dbg = {}) { return pack(arity(QualifierTag::u, a, dbg), body, dbg); }
+    const Def* pack(u64 a, const Def* body, Debug dbg = {}) { return pack(arity(Qualifier::u, a, dbg), body, dbg); }
     const Def* pack(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
-        return pack(DefArray(a.size(), [&](auto i) { return arity(QualifierTag::u, a[i], dbg); }), body, dbg);
+        return pack(DefArray(a.size(), [&](auto i) { return arity(Qualifier::u, a[i], dbg); }), body, dbg);
     }
     //@}
 
@@ -217,8 +218,8 @@ public:
 
     //@{ create Arity
     const Arity* arity(const Def* q, u64 a, Loc loc = {});
-    const Arity* arity(QualifierTag q, u64 a, Loc loc = {}) { return arity(qualifier(q), a, loc); }
-    const Arity* arity(u64 a, Loc loc = {}) { return arity(QualifierTag::u, a, loc); }
+    const Arity* arity(Qualifier q, u64 a, Loc loc = {}) { return arity(qualifier(q), a, loc); }
+    const Arity* arity(u64 a, Loc loc = {}) { return arity(Qualifier::u, a, loc); }
     const Axiom* arity_succ() { return arity_succ_; }
     const Def* arity_succ(const Def* arity, Debug dbg = {});
     const Axiom* arity_eliminator() const { return arity_eliminator_; }
@@ -496,14 +497,14 @@ protected:
     const Axiom* index_eliminator_;
     const Axiom* multi_arity_recursor_;
     const Def* rank_;
-    std::array<const Qualifier*, 4> qualifier_;
-    std::array<const Star*,  4> star_;
+    std::array<const Lit*, 4> qualifier_;
     std::array<const Arity*, 4> unit_;
     std::array<const Def*, 4> unit_val_;
     std::array<const Def*, 4> unit_kind_;
     std::array<const Def*, 4> unit_kind_val_;
-    std::array<const ArityKind*, 4> arity_kind_;
-    std::array<const MultiArityKind*, 4> multi_arity_kind_;
+    std::array<const Kind*, 4> arity_kind_;
+    std::array<const Kind*, 4> multi_arity_kind_;
+    std::array<const Kind*,  4> star_;
     std::array<const Axiom*, Num<BOp>> BOp_;
     std::array<const Axiom*, Num<NOp>> NOp_;
     const Axiom* type_bool_;

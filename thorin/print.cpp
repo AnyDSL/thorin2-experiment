@@ -117,8 +117,8 @@ DefPrinter& Def::qualifier_stream(DefPrinter& p) const {
         return p;
     if (type()->is_kind()) {
         auto q = type()->op(0);
-        if (auto qual = q->isa<Qualifier>()) {
-            if (qual->qualifier_tag() != QualifierTag::u)
+        if (auto qual = get_qualifier(q)) {
+            if (qual != Qualifier::u)
                 q->stream(p);
         } else
             q->stream(p);
@@ -167,14 +167,6 @@ DefPrinter& Arity::stream(DefPrinter& p) const {
     return p << name();
 }
 
-DefPrinter& ArityKind::stream(DefPrinter& p) const {
-    p << name();
-    if (auto q = op(0)->isa<Qualifier>())
-        if (q->qualifier_tag() == QualifierTag::u)
-            return p;
-    return p << op(0);
-}
-
 DefPrinter& Axiom::stream(DefPrinter& p) const {
     return qualifier_stream(p) << name();
 }
@@ -200,6 +192,14 @@ DefPrinter& Intersection::stream(DefPrinter& p) const {
     return streamf(qualifier_stream(p), "({ ∩ })", p.list(ops()));
 }
 
+DefPrinter& Kind::stream(DefPrinter& p) const {
+    p << name();
+    if (auto q = get_qualifier(op(0)))
+        if (q == Qualifier::u)
+            return p;
+    return p << op(0);
+}
+
 DefPrinter& Lit::stream(DefPrinter& p) const {
     qualifier_stream(p);
     if (!name().empty())
@@ -209,14 +209,6 @@ DefPrinter& Lit::stream(DefPrinter& p) const {
 
 DefPrinter& Match::stream(DefPrinter& p) const {
     return streamf(p,"match {} with ({, })", p.str(destructee()), p.list(handlers()));
-}
-
-DefPrinter& MultiArityKind::stream(DefPrinter& p) const {
-    p << name();
-    if (auto q = op(0)->isa<Qualifier>())
-        if (q->qualifier_tag() == QualifierTag::u)
-            return p;
-    return p << op(0);
 }
 
 DefPrinter& Param::stream(DefPrinter& p) const {
@@ -269,10 +261,6 @@ DefPrinter& Pick::stream(DefPrinter& p) const {
     return p << "TODO";
 }
 
-DefPrinter& Qualifier::stream(DefPrinter& p) const {
-    return p << qualifier_tag();
-}
-
 DefPrinter& QualifierType::stream(DefPrinter& p) const {
     return p << name();
 }
@@ -283,14 +271,6 @@ DefPrinter& Sigma::stream(DefPrinter& p) const {
 
 DefPrinter& Singleton::stream(DefPrinter& p) const {
     return streamf(p, "S({, })", p.list(ops()));
-}
-
-DefPrinter& Star::stream(DefPrinter& p) const {
-    p << name();
-    if (auto q = op(0)->isa<Qualifier>())
-        if (q->qualifier_tag() == QualifierTag::u)
-            return p;
-    return p << op(0);
 }
 
 DefPrinter& Universe::stream(DefPrinter& p) const {

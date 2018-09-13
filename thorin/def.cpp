@@ -109,8 +109,8 @@ bool Def::maybe_affine() const {
         return false;
     const Def* q = qualifier();
     assert(q != nullptr);
-    if (auto qu = q->isa<Qualifier>()) {
-        return qu->qualifier_tag() >= QualifierTag::a;
+    if (auto qu = get_qualifier(q)) {
+        return qu >= Qualifier::a;
     }
     return true;
 }
@@ -210,19 +210,18 @@ Lambda* Def::isa_lambda() const { if (is_nominal()) return const_cast<Lambda*>(i
  * constructors
  */
 
-ArityKind::ArityKind(World& world, const Def* qualifier)
-    : Def(Tag::ArityKind, world.universe(), {qualifier}, {"𝔸"})
-{}
-
-MultiArityKind::MultiArityKind(World& world, const Def* qualifier)
-    : Def(Tag::MultiArityKind, world.universe(), {qualifier}, {"𝕄"})
-{}
-
-Qualifier::Qualifier(World& world, QualifierTag q)
-    : Def(Tag::Qualifier, world.qualifier_type(), 0, {qualifier2str(q)})
-{
-    extra().qualifier_tag_ = q;
+static inline const char* kind2str(Def::Tag tag) {
+    switch (tag) {
+        case Def::Tag::ArityKind:      return "𝔸";
+        case Def::Tag::MultiArityKind: return "𝕄";
+        case Def::Tag::Star:           return "*";
+        default: THORIN_UNREACHABLE;
+    }
 }
+
+Kind::Kind(World& world, Tag tag, const Def* qualifier)
+    : Def(tag, world.universe(), {qualifier}, {kind2str(tag)})
+{}
 
 QualifierType::QualifierType(World& world)
     : Def(Tag::QualifierType, world.universe(), 0, {"ℚ"})
@@ -230,10 +229,6 @@ QualifierType::QualifierType(World& world)
 
 Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
     : Sigma(world.universe(), num_ops, dbg)
-{}
-
-Star::Star(World& world, const Def* qualifier)
-    : Def(Tag::Star, world.universe(), {qualifier}, {"*"})
 {}
 
 //------------------------------------------------------------------------------
@@ -284,9 +279,7 @@ const Def* Def::kind_qualifier() const {
     return world().qualifier_u();
 }
 
-const Def* ArityKind::kind_qualifier() const { return op(0); }
-
-const Def* MultiArityKind::kind_qualifier() const { return op(0); }
+const Def* Kind::kind_qualifier() const { return op(0); }
 
 const Def* Intersection::kind_qualifier() const {
     auto& w = world();
@@ -320,8 +313,6 @@ const Def* Singleton::kind_qualifier() const {
     return op(0)->qualifier();
 }
 
-const Def* Star::kind_qualifier() const { return op(0); }
-
 const Def* Variadic::kind_qualifier() const {
     assert(is_kind());
     return body()->has_values() ? shift_free_vars(body()->qualifier(), 1) : world().qualifier_u();
@@ -350,20 +341,17 @@ bool Def::is_substructural() const {
 
 const Def* Def           ::arity() const { return is_value() ? destructing_type()->arity() : nullptr; }
 const Def* Arity         ::arity() const { return world().arity(1); }
-const Def* ArityKind     ::arity() const { return world().arity(1); }
 const Def* App           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Axiom         ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Bottom        ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 // const Def* Intersection::arity() const { return TODO; }
+const Def* Kind          ::arity() const { return world().arity(1); }
 const Def* Lit           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
-const Def* MultiArityKind::arity() const { return world().arity(1); }
 const Def* Param         ::arity() const { return destructing_type()->arity(); }
 const Def* Pi            ::arity() const { return world().arity(1); }
-const Def* Qualifier     ::arity() const { return world().arity(1); }
 const Def* QualifierType ::arity() const { return world().arity(1); }
 const Def* Sigma         ::arity() const { return world().arity(num_ops()); }
 const Def* Singleton     ::arity() const { return op(0)->arity(); }
-const Def* Star          ::arity() const { return world().arity(1); }
 const Def* Top           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Universe      ::arity() const { THORIN_UNREACHABLE; }
 const Def* Unknown       ::arity() const { return world().arity(1); } // TODO is this correct?
@@ -440,19 +428,18 @@ bool Var  ::equal(const Def* other) const { return Def::equal(other) && this->in
 // TODO rebuild ts
 const Def* App           ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops[1], debug()); }
 const Def* Arity         ::rebuild(World& to, const Def* t, Defs    ) const { return to.arity(t->op(0), value(), debug()); }
-const Def* ArityKind     ::rebuild(World& to, const Def*  , Defs ops) const { return to.arity_kind(ops[0]); }
 const Def* Axiom         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Bottom        ::rebuild(World& to, const Def* t, Defs    ) const { return to.bottom(t); }
 const Def* Extract       ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
 const Def* Intersection  ::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
+const Def* Kind          ::rebuild(World& to, const Def*  , Defs ops) const { return to.kind(tag(), ops[0]); }
 const Def* Lambda        ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.lambda(t->qualifier(), t->as<Pi>()->domain(), ops[0], ops[1], debug());
 }
 const Def* Lit           ::rebuild(World& to, const Def* t, Defs    ) const { return to.lit(t, box(), debug()); }
 const Def* Match         ::rebuild(World& to, const Def*  , Defs ops) const { return to.match(ops[0], ops.skip_front(), debug()); }
-const Def* MultiArityKind::rebuild(World& to, const Def*  , Defs ops) const { return to.multi_arity_kind(ops[0]); }
 const Def* Pack          ::rebuild(World& to, const Def* t, Defs ops) const { return to.pack(t->arity(), ops[0], debug()); }
 const Def* Param         ::rebuild(World& to, const Def*  , Defs ops) const { return to.param(ops[0]->as<Lambda>(), debug()); }
 const Def* Pi            ::rebuild(World& to, const Def*  , Defs ops) const { return to.pi(ops[0], ops[1], debug()); } // TODO deal with qualifier
@@ -460,14 +447,12 @@ const Def* Pick          ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* Qualifier     ::rebuild(World& to, const Def*  , Defs    ) const { return to.qualifier(qualifier_tag()); }
 const Def* QualifierType ::rebuild(World& to, const Def*  , Defs    ) const { return to.qualifier_type(); }
 const Def* Sigma         ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.sigma(t->qualifier(), ops, debug());
 }
 const Def* Singleton     ::rebuild(World& to, const Def*  , Defs ops) const { return to.singleton(ops[0]); }
-const Def* Star          ::rebuild(World& to, const Def*  , Defs ops) const { return to.star(ops[0]); }
 const Def* Top           ::rebuild(World& to, const Def* t, Defs    ) const { return to.top(t); }
 const Def* Tuple         ::rebuild(World& to, const Def*  , Defs ops) const { return to.tuple(ops, debug()); }
 const Def* Universe      ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(); }
@@ -523,12 +508,9 @@ bool Def::subtype_of(const Def* def) const {
     return vsubtype_of(def);
 }
 
-bool ArityKind::vsubtype_of(const Def* def) const {
-    return (def->isa<MultiArityKind>() || def->isa<Star>()) && op(0) == def->op(0);
-}
-
-bool MultiArityKind::vsubtype_of(const Def* def) const {
-    return def->isa<Star>() && op(0) == def->op(0);
+bool Kind::vsubtype_of(const Def* def) const {
+    return (is_arity_kind(this)       && (is_multi_arity_kind(def) || is_star(def)) && op(0) == def->op(0))
+        || (is_multi_arity_kind(this) && (is_star(def) && op(0) == def->op(0)));
 }
 
 bool Pi::vsubtype_of(const Def* def) const {
@@ -600,10 +582,13 @@ bool Sigma::assignable(const Def* def) const {
     return true;
 }
 
-bool Star::assignable(const Def* def) const {
+bool Kind::assignable(const Def* def) const {
     return def->type()->subtype_of(this);
+    // TODO
+#if 0
     auto type = def->type();
     return this == type || ((type->isa<MultiArityKind>() || type->isa<ArityKind>()) && op(0) == type->op(0));
+#endif
 }
 
 bool Variadic::assignable(const Def* def) const {

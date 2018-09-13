@@ -14,16 +14,16 @@ public:
         : zero(zero), one(one), many(many)
     {}
 
-    QualifierTag to_qualifier() const {
+    Qualifier to_qualifier() const {
         // glb(L, x) = x, so one not important here
         if (zero) {
             if (many)
-                return QualifierTag::u; // glb(a, r)
-            return QualifierTag::a;
+                return Qualifier::u; // glb(a, r)
+            return Qualifier::a;
         } else if (many) {
-            return QualifierTag::r;
+            return Qualifier::r;
         }
-        return QualifierTag::l; // either one, or none set, most precise
+        return Qualifier::l; // either one, or none set, most precise
     };
 
     static Occurrences join(const Occurrences& a, const Occurrences& b) {

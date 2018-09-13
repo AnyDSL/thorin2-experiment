@@ -111,7 +111,7 @@ public:
         Extract, Insert, Tuple, Pack, Sigma, Variadic,
         Lit, Axiom,
         Pick, Intersection,
-        Qualifier, QualifierType,
+        QualifierType,
         Star, Universe,
         Bottom, Top,
         Singleton,
@@ -358,13 +358,14 @@ uint64_t UseHash::hash(Use use) {
 
 //------------------------------------------------------------------------------
 
-class ArityKind : public Def {
+class Kind : public Def {
 private:
-    ArityKind(World& world, const Def* qualifier);
+    Kind(World& world, Tag, const Def* qualifier);
 
 public:
     const Def* arity() const override;
     const Def* kind_qualifier() const override;
+    bool assignable(const Def* def) const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     DefPrinter& stream(DefPrinter&) const override;
 
@@ -374,34 +375,23 @@ private:
     friend class World;
 };
 
-class MultiArityKind : public Def {
-private:
-    MultiArityKind(World& world, const Def* qualifier);
-
-public:
-    const Def* arity() const override;
-    const Def* kind_qualifier() const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-    DefPrinter& stream(DefPrinter&) const override;
-
-private:
-    bool vsubtype_of(const Def*) const override;
-
-    friend class World;
-};
+inline const Def* is_arity_kind      (const Def* def) { return def->tag() == Def::Tag::ArityKind      ? def->as<Kind>()->kind_qualifier() : nullptr; }
+inline const Def* is_multi_arity_kind(const Def* def) { return def->tag() == Def::Tag::MultiArityKind ? def->as<Kind>()->kind_qualifier() : nullptr; }
+inline const Def* is_star            (const Def* def) { return def->tag() == Def::Tag::Star           ? def->as<Kind>()->kind_qualifier() : nullptr; }
 
 class Arity : public Def {
 private:
     struct Extra { u64 arity_; };
 
-    Arity(const ArityKind* type, u64 arity, Debug dbg)
+    Arity(const Kind* type, u64 arity, Debug dbg)
         : Def(Tag::Arity, type, Defs(), dbg)
     {
+        assert(type->tag() == Tag::ArityKind);
         extra().arity_ = arity;
     }
 
 public:
-    const ArityKind* type() const { return Def::type()->as<ArityKind>(); }
+    const Kind* type() const { return Def::type()->as<Kind>(); }
     u64 value() const { return extra().arity_; }
     const Def* arity() const override;
     bool has_values() const override;
@@ -649,8 +639,8 @@ public:
     DefPrinter& stream(DefPrinter&) const override;
 
     struct Lattice {
-        static constexpr auto min = QualifierTag::l;
-        static constexpr auto max = QualifierTag::u;
+        static constexpr auto min = Qualifier::l;
+        static constexpr auto max = Qualifier::u;
         static constexpr auto join = glb;
     };
     static constexpr auto op_name = "intersection";
@@ -680,8 +670,8 @@ public:
     DefPrinter& stream(DefPrinter&) const override;
 
     struct Lattice {
-        static constexpr auto min = QualifierTag::u;
-        static constexpr auto max = QualifierTag::l;
+        static constexpr auto min = Qualifier::u;
+        static constexpr auto max = Qualifier::l;
         static constexpr auto join = lub;
     };
     static constexpr auto op_name = "variant";
@@ -738,25 +728,6 @@ public:
     friend class World;
 };
 
-class Qualifier : public Def {
-private:
-    struct Extra { QualifierTag qualifier_tag_; };
-
-    Qualifier(World&, QualifierTag q);
-
-public:
-    QualifierTag qualifier_tag() const { return extra().qualifier_tag_; }
-    const Def* arity() const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-    DefPrinter& stream(DefPrinter&) const override;
-
-private:
-    Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
-    const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
-
-    friend class World;
-};
-
 class QualifierType : public Def {
 private:
     QualifierType(World& world);
@@ -764,20 +735,6 @@ private:
 public:
     const Def* arity() const override;
     bool has_values() const override;
-    const Def* kind_qualifier() const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-    DefPrinter& stream(DefPrinter&) const override;
-
-    friend class World;
-};
-
-class Star : public Def {
-private:
-    Star(World& world, const Def* qualifier);
-
-public:
-    const Def* arity() const override;
-    bool assignable(const Def* def) const override;
     const Def* kind_qualifier() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     DefPrinter& stream(DefPrinter&) const override;
@@ -855,6 +812,12 @@ private:
 
     friend class World;
 };
+
+inline std::optional<Qualifier> get_qualifier(const Def* def) {
+    if (auto lit = def->isa<Lit>(); lit && def->type()->isa<QualifierType>())
+        return {Qualifier(lit->box().get_s32())};
+    return {};
+}
 
 #define CODE(T) inline T get_ ## T(const Def* def) { return def->as<Lit>()->box().get_ ## T(); }
 THORIN_TYPES(CODE)

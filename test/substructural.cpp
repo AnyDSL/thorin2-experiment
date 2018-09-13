@@ -12,10 +12,10 @@ void print_value_type(const Def* def) {
 
 TEST(Qualifiers, Lattice) {
     World w;
-    auto U = QualifierTag::u;
-    auto R = QualifierTag::r;
-    auto A = QualifierTag::a;
-    auto L = QualifierTag::l;
+    auto U = Qualifier::u;
+    auto R = Qualifier::r;
+    auto A = Qualifier::a;
+    auto L = Qualifier::l;
 
     EXPECT_LT(U, A);
     EXPECT_LT(U, R);
@@ -32,10 +32,10 @@ TEST(Qualifiers, Lattice) {
     EXPECT_EQ(lub(L, A), L);
     EXPECT_EQ(lub(L, R), L);
 
-    EXPECT_EQ(w.qualifier(U)->qualifier_tag(), U);
-    EXPECT_EQ(w.qualifier(R)->qualifier_tag(), R);
-    EXPECT_EQ(w.qualifier(A)->qualifier_tag(), A);
-    EXPECT_EQ(w.qualifier(L)->qualifier_tag(), L);
+    EXPECT_EQ(*get_qualifier(w.qualifier(U)), U);
+    EXPECT_EQ(*get_qualifier(w.qualifier(R)), R);
+    EXPECT_EQ(*get_qualifier(w.qualifier(A)), A);
+    EXPECT_EQ(*get_qualifier(w.qualifier(L)), L);
 }
 
 TEST(Qualifiers, Variants) {
@@ -157,9 +157,9 @@ TEST(Substructural, TypeCheckPi) {
 #if 0
 TEST(Substructural, Misc) {
     World w;
-    //auto R = QualifierTag::Relevant;
-    auto A = QualifierTag::Affine;
-    auto L = QualifierTag::Linear;
+    //auto R = Qualifier::Relevant;
+    auto A = Qualifier::Affine;
+    auto L = Qualifier::Linear;
     auto a = w.affine();
     //auto l = w.linear();
     //auto r = w.relevant();
