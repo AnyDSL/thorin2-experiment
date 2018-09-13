@@ -7,13 +7,16 @@
 
 namespace thorin {
 
-/* This implements the substructural type qualifier lattice:
- *       Linear
- *       /    \
- *   Affine  Relevant
- *       \    /
- *      Unlimited
- * Where Linear is the largest element in the partial orders </<= and Unlimited the smallest.
+/**
+ * This implements the substructural type qualifier lattice:
+@verbatim
+         Linear
+         /    \
+     Affine  Relevant
+         \    /
+        Unlimited
+@endverbatim
+ * Linear is the largest element, Unlimited the smallest one in the partial orders </<=.
  */
 enum class Qualifier {
     u = 0,      ///< unlimited
