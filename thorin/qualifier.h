@@ -25,13 +25,8 @@ enum class Qualifier {
 constexpr std::array<Qualifier, 4> Qualifiers = {{Qualifier::u, Qualifier::r, Qualifier::a, Qualifier::l}};
 
 /// Linear is the largest, Unlimited the smallest.
-inline bool operator<(Qualifier lhs, Qualifier rhs) {
-    if (lhs == rhs) return false;
-    if (lhs == Qualifier::u) return true;
-    if (rhs == Qualifier::l) return true;
-    return false;
-}
-inline bool operator> (Qualifier lhs, Qualifier rhs) { return rhs < lhs; }
+inline bool operator<(Qualifier lhs, Qualifier rhs) { return lhs != rhs && (lhs == Qualifier::u || rhs == Qualifier::l); }
+inline bool operator>(Qualifier lhs, Qualifier rhs) { return rhs < lhs; }
 // DO NOT "OPTIMIZE" (Qualifiers, <=) is a partially ordered set: !(lhs > rhs) does not work!
 inline bool operator<=(Qualifier lhs, Qualifier rhs) { return lhs == rhs || lhs < rhs ; }
 inline bool operator>=(Qualifier lhs, Qualifier rhs) { return rhs <= lhs; }
@@ -46,19 +41,9 @@ constexpr const char* qualifier2str(Qualifier q) {
     }
 }
 
-inline std::ostream& operator<<(std::ostream& ostream, const Qualifier q) {
-    return ostream << qualifier2str(q);
-}
-
-/// least upper bound
-inline Qualifier lub(Qualifier a, Qualifier b) {
-    return Qualifier(static_cast<int>(a) | static_cast<int>(b));
-}
-
-/// greatest lower bound
-inline Qualifier glb(Qualifier a, Qualifier b) {
-    return Qualifier(static_cast<int>(a) & static_cast<int>(b));
-}
+inline std::ostream& operator<<(std::ostream& ostream, const Qualifier q) { return ostream << qualifier2str(q); }
+inline Qualifier lub(Qualifier a, Qualifier b) { return Qualifier(int(a) | int(b)); } ///< least upper bound
+inline Qualifier glb(Qualifier a, Qualifier b) { return Qualifier(int(a) & int(b)); } ///< greatest lower bound
 
 }
 
