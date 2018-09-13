@@ -38,6 +38,7 @@ static bool any_equal_of(const Def* def, Defs defs) {
 
 static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
 
+// TODO Rewrite this. This code is ugly as hell.
 template<class T, bool infer_qualifier, class I>
 const Def* World::bound(const Def* q, Range<I> defs) {
     if (defs.distance() == 0)
