@@ -648,7 +648,7 @@ public:
     const Def* rebuild(World&, const Def*, Defs) const override;
     DefPrinter& stream(DefPrinter&) const override;
 
-    struct Qualifier {
+    struct Lattice {
         static constexpr auto min = QualifierTag::l;
         static constexpr auto max = QualifierTag::u;
         static constexpr auto join = glb;
@@ -679,7 +679,7 @@ public:
     Variant* vstub(World&, const Def*, Debug) const override;
     DefPrinter& stream(DefPrinter&) const override;
 
-    struct Qualifier {
+    struct Lattice {
         static constexpr auto min = QualifierTag::u;
         static constexpr auto max = QualifierTag::l;
         static constexpr auto join = lub;

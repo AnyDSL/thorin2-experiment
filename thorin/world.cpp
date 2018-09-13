@@ -41,7 +41,7 @@ static bool is_qualifier(const Def* def) { return def->type() == def->world().qu
 template<class T, bool infer_qualifier, class I>
 const Def* World::bound(const Def* q, Range<I> defs) {
     if (defs.distance() == 0)
-        return star(q ? q : qualifier(T::Qualifier::min));
+        return star(q ? q : qualifier(T::Lattice::min));
 
     auto first = *defs.begin();
     auto inferred_q = infer_qualifier ? first->qualifier() : q;
@@ -58,7 +58,7 @@ const Def* World::bound(const Def* q, Range<I> defs) {
             if (def->qualifier()->free_vars().any_range(0, i)) {
                 // qualifier is dependent within this type/kind, go to top directly
                 // TODO might want to assert that this will always be a kind?
-                inferred_q = qualifier(T::Qualifier::max);
+                inferred_q = qualifier(T::Lattice::max);
             } else {
                 auto qualifier = shift_free_vars(def->qualifier(), -i);
                 inferred_q = join<T>(qualifier_type(), {inferred_q, qualifier}, {});
@@ -87,7 +87,7 @@ const Def* World::bound(const Def* q, Range<I> defs) {
     if (max->template isa<Star>()) {
         if (!infer_qualifier) {
             assert(inferred_q == q);
-            return star(q ? q : qualifier(T::Qualifier::min));
+            return star(q ? q : qualifier(T::Lattice::min));
         }
         if (q == nullptr) {
             // no provided qualifier, so we use the inferred one
@@ -436,19 +436,19 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
     // could possibly be replaced by something subtyping-generic
     if (is_qualifier(first)) {
         assert(type == qualifier_type());
-        auto accu = T::Qualifier::min;
+        auto accu = T::Lattice::min;
         DefVector qualifiers;
         for (auto def : defs) {
             if (auto q = def->template isa<Qualifier>()) {
-                accu = T::Qualifier::join(accu, q->qualifier_tag());
+                accu = T::Lattice::join(accu, q->qualifier_tag());
             } else {
                 assert(is_qualifier(def));
                 assert(def);
                 qualifiers.emplace_back(def);
             }
         }
-        if (accu == T::Qualifier::max) return qualifier(T::Qualifier::max);
-        if (accu != T::Qualifier::min) qualifiers.emplace_back(qualifier(accu));
+        if (accu == T::Lattice::max) return qualifier(T::Lattice::max);
+        if (accu != T::Lattice::min) qualifiers.emplace_back(qualifier(accu));
         if (qualifiers.size() == 1) return qualifiers.front();
         SortedDefSet set(qualifiers.begin(), qualifiers.end());
         return unify<T>(set.size(), qualifier_type(), set, dbg);
