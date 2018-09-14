@@ -58,7 +58,10 @@ public:
 
     //@{ create universe and kinds
     const Universe* universe() const { return universe_; }
-    const Kind* kind(Def::Tag tag, const Def* q) { return unify<Kind>(1, *this, tag, q); }
+    const Kind* kind(Def::Tag tag, const Def* q) {
+        assert(tag == Def::Tag::ArityKind || tag == Def::Tag::MultiKind || tag == Def::Tag::Star);
+        return unify<Kind>(1, *this, tag, q);
+    }
     const Kind* arity_kind(Qualifier q = Qualifier::u) const { return arity_kind_[size_t(q)]; }
     const Kind* multi_kind(Qualifier q = Qualifier::u) const { return multi_kind_[size_t(q)]; }
     const Kind* star      (Qualifier q = Qualifier::u) const { return       star_[size_t(q)]; }

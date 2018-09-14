@@ -127,7 +127,7 @@ DefPrinter& Def::qualifier_stream(DefPrinter& p) const {
 }
 
 DefPrinter& Def::stream_assign(DefPrinter& p) const {
-    return stream(p << unique_name() << " = ");
+    return stream(streamf(p, "{}: {} = ", unique_name(), type()));
 }
 
 void Def::dump_assign() const {
@@ -137,7 +137,7 @@ void Def::dump_assign() const {
 
 void Def::dump_rec() const {
     DefPrinter p;
-    p.recurse(this);
+    p.recurse(this).endl();
 }
 
 //------------------------------------------------------------------------------

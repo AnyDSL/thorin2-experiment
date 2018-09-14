@@ -6,10 +6,6 @@
 using namespace thorin;
 using namespace thorin::fe;
 
-void print_value_type(const Def* def) {
-    outln("<{}> {} = {}: {}", def->gid(), def->name(), def, def->type());
-}
-
 TEST(Qualifiers, Lattice) {
     World w;
     auto U = Qualifier::u;
@@ -261,13 +257,13 @@ TEST(Substructural, AffineCapabilityRefs) {
 
     auto ref42 = w.app(w.app(NewRef, Nat), n42, {"&42"});
     auto phantom = w.extract(ref42, 0_s);
-    print_value_type(ref42);
+    ref42->dump_rec();
     auto ref = w.extract(ref42, 1, {"ref"});
-    print_value_type(ref);
+    ref->dump_rec();
     auto cap = w.extract(ref42, 2, {"cap"});
-    print_value_type(cap);
+    cap->dump_rec();
     auto read42 = w.app(w.app(ReadRef, Nat), {phantom, ref, cap});
-    print_value_type(read42);
+    read42->dump_rec();
     // TODO asserts to typecheck correct and incorrect usage
 }
 
@@ -289,33 +285,33 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
 
     auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C:*, FRef(T, C), FCap(C, Wr)]"), {"NewFRef"});
     auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, F:{Write, Read}, FRef(T, C), FCap(C, F)]. [T, FCap(C, F)]"), {"ReadFRef"});
-    print_value_type(ReadRef);
+    ReadRef->dump_rec();
     auto WriteRef = w.axiom(parse(w, "ΠT: *. Π[C: *, FRef(T, C), FCap(C, Wr), T]. FCap(C, Wr)"), {"WriteFRef"});
-    print_value_type(WriteRef);
+    WriteRef->dump_rec();
     auto FreeRef = w.axiom(parse(w, "ΠT: *. Π[C: *, FRef(T, C), FCap(C, Wr)]. []"), {"FreeFRef"});
-    print_value_type(FreeRef);
+    FreeRef->dump_rec();
     auto SplitFCap = w.axiom(parse(w, "Π[C:*, F:{Write, Read}, FCap(C, F)]. [FCap(C, Rd(F)), FCap(C, Rd(F))]"), {"SplitFCap"});
     auto JoinFCap = w.axiom(parse(w, "Π[C:*, F:{Write, Read}, FCap(C, Rd(F)), FCap(C, Rd(F))]. FCap(C, F)"), {"JoinFCap"});
 
     auto ref42 = w.app(w.app(NewRef, Nat), n42, {"&42"});
     auto phantom = w.extract(ref42, 0_s);
-    print_value_type(ref42);
+    ref42->dump_rec();
     auto ref = w.extract(ref42, 1, {"ref"});
-    print_value_type(ref);
+    ref->dump_rec();
     auto cap = w.extract(ref42, 2, {"cap"});
-    print_value_type(cap);
+    cap->dump_rec();
     auto read42 = w.app(w.app(ReadRef, Nat), {phantom, Wr, ref, cap}, {"read42"});
-    print_value_type(read42);
+    read42->dump_rec();
     auto read_cap = w.extract(read42, 1);
     auto write0 = w.app(w.app(WriteRef, Nat), {phantom, ref, read_cap, n0}, {"write0"});
-    print_value_type(write0);
+    write0->dump_rec();
     auto split = w.app(SplitFCap, {phantom, Wr, write0}, {"split"});
-    print_value_type(split);
+    split->dump_rec();
     auto read0 = w.app(w.app(ReadRef, Nat), {phantom, w.app(Rd, Wr), ref, w.extract(split, 0_s)}, {"read0"});
-    print_value_type(read0);
+    read0->dump_rec();
     auto join = w.app(JoinFCap, {phantom, Wr, w.extract(split, 1), w.extract(read0, 1)}, {"join"});
-    print_value_type(join);
+    join->dump_rec();
     auto free = w.app(w.app(FreeRef, Nat), {phantom, ref, join}, {"free"});
-    print_value_type(free);
+    free->dump_rec();
     // TODO asserts to typecheck correct and incorrect usage
 }
