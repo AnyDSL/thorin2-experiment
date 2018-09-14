@@ -29,7 +29,7 @@ namespace thorin::fe {
 
 #define THORIN_SORT_TOKENS(f) \
     f(Arity_Kind,       "\\arity_kind") \
-    f(Multi_Arity_Kind, "\\multi_arity_kind") \
+    f(Multi_Kind,       "\\multi_arity_kind") \
     f(Qualifier_Type,   "\\qualifier_type") \
     f(Star,             "*")
 

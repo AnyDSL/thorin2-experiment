@@ -51,7 +51,7 @@ private:
     const Def* parse_variadic();
     const Def* parse_lambda();
     const Def* parse_optional_qualifier();
-    const Def* parse_qualified_kind();
+    const Def* parse_kind();
     const Def* parse_tuple();
     const Def* parse_pack();
     const Def* parse_variant();

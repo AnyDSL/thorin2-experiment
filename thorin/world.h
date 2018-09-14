@@ -60,23 +60,11 @@ public:
     const Universe* universe() const { return universe_; }
     const Kind* kind(Def::Tag tag, const Def* q) { return unify<Kind>(1, *this, tag, q); }
     const Kind* arity_kind(Qualifier q = Qualifier::u) const { return arity_kind_[size_t(q)]; }
-    const Kind* arity_kind(const Def* def) {
-        if (auto q = get_qualifier(def))
-            return arity_kind(*q);
-        return kind(Def::Tag::ArityKind, def);
-    }
-    const Kind* multi_arity_kind(Qualifier q = Qualifier::u) const { return multi_arity_kind_[size_t(q)]; }
-    const Kind* multi_arity_kind(const Def* def) {
-        if (auto q = get_qualifier(def))
-            return multi_arity_kind(*q);
-        return kind(Def::Tag::MultiArityKind, def);
-    }
-    const Kind* star(Qualifier q = Qualifier::u) const { return star_[size_t(q)]; }
-    const Kind* star(const Def* def) {
-        if (auto q = get_qualifier(def))
-            return star(*q);
-        return kind(Def::Tag::Star, def);
-    }
+    const Kind* multi_kind(Qualifier q = Qualifier::u) const { return multi_kind_[size_t(q)]; }
+    const Kind* star      (Qualifier q = Qualifier::u) const { return       star_[size_t(q)]; }
+    const Kind* arity_kind(const Def* def) { auto q = get_qualifier(def); return q ? arity_kind(*q) : kind(Def::Tag::ArityKind, def); }
+    const Kind* multi_kind(const Def* def) { auto q = get_qualifier(def); return q ? multi_kind(*q) : kind(Def::Tag::MultiKind, def); }
+    const Kind* star      (const Def* def) { auto q = get_qualifier(def); return q ?       star(*q) : kind(Def::Tag::     Star, def); }
     //@}
 
     //@{ create qualifier
@@ -114,9 +102,7 @@ public:
     //@}
 
     //@{ create App
-    const Def* app(const Def* callee, Defs args, Debug dbg = {}) {
-        return app(callee, tuple(args, dbg), dbg);
-    }
+    const Def* app(const Def* callee, Defs args, Debug dbg = {}) { return app(callee, tuple(args, dbg), dbg); }
     const Def* app(const Def* callee, const Def* arg, Debug dbg = {});
     const Def* raw_app(const Def* callee, Defs args, Debug dbg = {}) { return raw_app(callee, tuple(args, dbg), dbg); }
     const Def* raw_app(const Def* callee, const Def* arg, Debug dbg = {}) {
@@ -127,11 +113,7 @@ public:
 
     //@{ create Units
     const Def* unit(Qualifier q = Qualifier::u) { return unit_[size_t(q)]; }
-    const Def* unit(const Def* def) {
-        if (auto q = get_qualifier(def))
-            return unit(*q);
-        return arity(def, 1);
-    }
+    const Def* unit(const Def* def) { auto q = get_qualifier(def); return q ? unit(*q) : arity(def, 1); }
     const Def* unit_kind(Qualifier q = Qualifier::u) { return variadic(arity(0), star(q)); }
     const Def* unit_kind(const Def* q) { return variadic(arity(0), star(q)); }
     //@}
@@ -141,29 +123,19 @@ public:
     const Def* sigma(Defs defs, Debug dbg = {}) { return sigma(nullptr, defs, dbg); }
     const Def* sigma(const Def* q, Defs, Debug dbg = {});
     /// Nominal sigma types or kinds
-    Sigma* sigma(const Def* type, size_t num_ops, Debug dbg = {}) {
-        return insert<Sigma>(num_ops, type, num_ops, dbg);
-    }
+    Sigma* sigma(const Def* type, size_t num_ops, Debug dbg = {}) { return insert<Sigma>(num_ops, type, num_ops, dbg); }
     /// @em nominal Sigma of type Star
-    Sigma* sigma_type(size_t num_ops, Debug dbg = {}) {
-        return sigma_type(qualifier_u(), num_ops, dbg);
-    }
+    Sigma* sigma_type(size_t num_ops, Debug dbg = {}) { return sigma_type(qualifier_u(), num_ops, dbg); }
     /// @em nominal Sigma of type Star
-    Sigma* sigma_type(const Def* q, size_t num_ops, Debug dbg = {}) {
-        return sigma(star(q), num_ops, dbg);
-    }
+    Sigma* sigma_type(const Def* q, size_t num_ops, Debug dbg = {}) { return sigma(star(q), num_ops, dbg); }
     /// @em nominal Sigma of type Universe
-    Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) {
-        return insert<Sigma>(num_ops, *this, num_ops, dbg);
-    }
+    Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) { return insert<Sigma>(num_ops, *this, num_ops, dbg); }
     //@}
 
     //@{ create Variadic
     const Def* variadic(const Def* arities, const Def* body, Debug dbg = {});
     const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
-    const Def* variadic(u64 a, const Def* body, Debug dbg = {}) {
-        return variadic(arity(Qualifier::u, a, dbg), body, dbg);
-    }
+    const Def* variadic(u64 a, const Def* body, Debug dbg = {}) { return variadic(arity(Qualifier::u, a, dbg), body, dbg); }
     const Def* variadic(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
         return variadic(DefArray(a.size(), [&](auto i) { return arity(Qualifier::u, a[i], dbg); }), body, dbg);
     }
@@ -175,11 +147,7 @@ public:
 
     //@{ create unit values
     const Def* val_unit(Qualifier q = Qualifier::u) { return unit_val_[size_t(q)]; }
-    const Def* val_unit(const Def* def) {
-        if (auto q = get_qualifier(def))
-            return val_unit(*q);
-        return index_zero(arity(def, 1));
-    }
+    const Def* val_unit(const Def* def) { auto q = get_qualifier(def); return q ? val_unit(*q) : index_zero(arity(def, 1)); }
     const Def* val_unit_kind(Qualifier q = Qualifier::u) { return pack(arity(0), unit(q)); }
     const Def* val_unit_kind(const Def* q) { return pack(arity(0), unit(q)); }
     //@}
@@ -205,9 +173,7 @@ public:
     //@}
 
     //@{ create Index
-    const Lit* index(u64 arity, u64 idx, Loc loc = {}) {
-        return index(this->arity(arity), idx, loc);
-    }
+    const Lit* index(u64 arity, u64 idx, Loc loc = {}) { return index(this->arity(arity), idx, loc); }
     const Lit* index(const Arity* arity, u64 index, Loc loc = {});
     const Def* index_zero() const { return index_zero_; }
     const Def* index_zero(const Def* arity, Loc loc = {});
@@ -226,7 +192,7 @@ public:
     const Axiom* arity_recursor_to_arity() const { return arity_recursor_to_arity_; }
     const Axiom* arity_recursor_to_multi() const { return arity_recursor_to_multi_; }
     const Axiom* arity_recursor_to_star() const { return arity_recursor_to_star_; }
-    const Axiom* multi_arity_recursor() const { return multi_arity_recursor_; }
+    const Axiom* multi_recursor() const { return multi_recursor_; }
     const Def* rank() { return rank_; }
     const Def* rank(const Def* type) { return app(app(rank(), type->qualifier()), type); }
     //@}
@@ -242,15 +208,11 @@ public:
     template<class T> const Def* join(const Def* type, Defs ops, Debug dbg = {});
     template<class T> const Def* join(Defs defs, Debug dbg = {}) { return join<T>(type_bound<T, true>(nullptr, defs), defs, dbg); }
     const Def* intersection(const Def* type, Defs defs, Debug dbg = {}) { return join<Intersection>(type, defs, dbg); }
+    const Def* variant     (const Def* type, Defs defs, Debug dbg = {}) { return join<Variant     >(type, defs, dbg); }
     const Def* intersection(Defs defs, Debug dbg = {}) { return join<Intersection>(defs, dbg); }
-    Intersection* intersection(const Def* type, size_t num_ops, Debug dbg = {}) {
-        return insert<Intersection>(num_ops, type, num_ops, dbg);
-    }
-    const Def* variant(const Def* type, Defs defs, Debug dbg = {}) { return join<Variant>(type, defs, dbg); }
-    const Def* variant(Defs defs, Debug dbg = {}) { return join<Variant>(defs, dbg); }
-    Variant* variant(const Def* type, size_t num_ops, Debug dbg = {}) {
-        return insert<Variant>(num_ops, type, num_ops, dbg);
-    }
+    const Def* variant     (Defs defs, Debug dbg = {}) { return join<Variant     >(defs, dbg); }
+    Intersection* intersection(const Def* type, size_t num_ops, Debug dbg = {}) { return insert<Intersection>(num_ops, type, num_ops, dbg); }
+    Variant*      variant     (const Def* type, size_t num_ops, Debug dbg = {}) { return insert<Variant     >(num_ops, type, num_ops, dbg); }
     const Def* pick(const Def* type, const Def* def, Debug dbg = {});
     const Def* match(const Def* def, Defs handlers, Debug dbg = {});
     //@}
@@ -303,9 +265,7 @@ public:
     template<BOp o> const Def* op(const Def* shape, const Def* a, const Def* b, Debug dbg = {}) {
         return app(app(op<o>(), shape), {a, b}, dbg);
     }
-    const Def* op_bnot(const Def* a, Debug dbg = {}) {
-        return op_bnot(infer_shape(*this, a), a, dbg);
-    }
+    const Def* op_bnot(const Def* a, Debug dbg = {}) { return op_bnot(infer_shape(*this, a), a, dbg); }
     const Def* op_bnot(const Def* shape, const Def* a, Debug dbg = {}) {
         return app(app(op<BOp::bxor>(), shape), {variadic(shape, lit_true()), a}, dbg);
     }
@@ -495,7 +455,7 @@ protected:
     const Axiom* index_zero_;
     const Axiom* index_succ_;
     const Axiom* index_eliminator_;
-    const Axiom* multi_arity_recursor_;
+    const Axiom* multi_recursor_;
     const Def* rank_;
     std::array<const Lit*, 4> qualifier_;
     std::array<const Arity*, 4> unit_;
@@ -503,7 +463,7 @@ protected:
     std::array<const Def*, 4> unit_kind_;
     std::array<const Def*, 4> unit_kind_val_;
     std::array<const Kind*, 4> arity_kind_;
-    std::array<const Kind*, 4> multi_arity_kind_;
+    std::array<const Kind*, 4> multi_kind_;
     std::array<const Kind*,  4> star_;
     std::array<const Axiom*, Num<BOp>> BOp_;
     std::array<const Axiom*, Num<NOp>> NOp_;

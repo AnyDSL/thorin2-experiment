@@ -25,7 +25,7 @@ TEST(Arity, Sigma) {
     EXPECT_EQ(a0, w.sigma({a1, a0}));
     EXPECT_EQ(a0, w.sigma({a0, a1}));
 
-    EXPECT_EQ(w.multi_arity_kind(), w.sigma({a2, a3})->type());
+    EXPECT_EQ(w.multi_kind(), w.sigma({a2, a3})->type());
     EXPECT_EQ(w.star(), w.sigma({a2, w.sigma({a3, a2}), a3})->type());
 }
 
@@ -53,7 +53,7 @@ TEST(Arity, Variadic) {
     EXPECT_EQ(unit, w.variadic({a1, a0}, unit));
     EXPECT_EQ(w.unit_kind(), w.variadic({a0, a2}, w.arity_kind()));
     EXPECT_EQ(w.variadic(a2, w.unit_kind()), w.variadic({a2, a0, a2}, w.arity_kind()));
-    EXPECT_EQ(w.multi_arity_kind(), w.variadic(a2, a2)->type());
+    EXPECT_EQ(w.multi_kind(), w.variadic(a2, a2)->type());
 }
 
 TEST(Arity, Pack) {
@@ -75,7 +75,7 @@ TEST(Arity, Subkinding) {
     auto a3 = w.arity(3);
     auto A = w.arity_kind();
     auto vA = w.var(A, 0);
-    auto M = w.multi_arity_kind();
+    auto M = w.multi_kind();
 
     EXPECT_TRUE(A->assignable(a0));
     EXPECT_TRUE(M->assignable(a0));
@@ -147,7 +147,7 @@ TEST(Arity, DependentIndexEliminator) {
     EXPECT_EQ(w.index(2, 0), w.app(w.app(index_is_even, w.arity(8)), w.index(8, 1)));
 }
 
-TEST(Arity, MultiArityRecursors) {
+TEST(Arity, MultiRecursors) {
     World w;
     EXPECT_EQ(w.arity(1), w.rank(w.arity(0)));
     EXPECT_EQ(w.arity(3), w.rank(w.sigma({w.arity(4), w.arity(2), w.arity(3)})));

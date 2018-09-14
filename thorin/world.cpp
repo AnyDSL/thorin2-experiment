@@ -71,12 +71,12 @@ const Def* World::bound(const Def* q, Range<I> defs) {
             continue;
         bool is_arity = def->tag() == Def::Tag::ArityKind;
         bool is_star = def->tag() == Def::Tag::Star;
-        bool is_marity = is_arity || def->tag() == Def::Tag::MultiArityKind;
-        bool max_is_marity = max->tag() == Def::Tag::ArityKind || max->tag() == Def::Tag::MultiArityKind;
+        bool is_marity = is_arity || def->tag() == Def::Tag::MultiKind;
+        bool max_is_marity = max->tag() == Def::Tag::ArityKind || max->tag() == Def::Tag::MultiKind;
         bool max_is_star = max->tag() == Def::Tag::Star;
         if (is_arity && max_is_marity)
             // found at least two arities, must be a multi-arity
-            max = multi_arity_kind(inferred_q);
+            max = multi_kind(inferred_q);
         else if ((is_star || is_marity) && (max_is_star || max_is_marity))
             max = star(inferred_q);
         else {
@@ -129,9 +129,9 @@ World::World(Debug dbg)
     qualifier_type_ = insert<QualifierType>(0, *this);
     for (size_t i = 0; i != 4; ++i) {
         qualifier_[i] = lit(qualifier_type(), s32(i), {qualifier2str(Qualifiers[i])});
-        star_[i]             = insert<Kind>(1, *this, Def::Tag::Star,           qualifier_[i]);
-        arity_kind_[i]       = insert<Kind>(1, *this, Def::Tag::ArityKind,      qualifier_[i]);
-        multi_arity_kind_[i] = insert<Kind>(1, *this, Def::Tag::MultiArityKind, qualifier_[i]);
+        star_[i]       = insert<Kind>(1, *this, Def::Tag::Star,      qualifier_[i]);
+        arity_kind_[i] = insert<Kind>(1, *this, Def::Tag::ArityKind, qualifier_[i]);
+        multi_kind_[i] = insert<Kind>(1, *this, Def::Tag::MultiKind, qualifier_[i]);
         unit_[i] = arity(qualifier_[i], 1);
         unit_val_[i] = index(unit_[i], 0);
     }
@@ -169,8 +169,8 @@ World::World(Debug dbg)
                               "Π[Πa:𝔸. Πi:a. ΠP a i. P (ASucc (ᵁ, a)) (IS (ᵁ, a) i)]." // step case
                               "Πa: 𝔸. Πi:a. (P a i)",
                               normalize_index_eliminator);
-    multi_arity_recursor_ = axiom("Recₘ𝕄", "Π𝔸. Π[Π[𝔸,𝔸]. 𝔸]. Πq: ℚ. Π𝕄q. 𝔸", normalize_multi_arity_recursor);
-    rank_ = app(app(multi_arity_recursor(), arity(0)), fe::parse(*this, "λ[acc:𝔸, curr:𝔸]. ASucc (ᵁ, acc)"));
+    multi_recursor_ = axiom("Recₘ𝕄", "Π𝔸. Π[Π[𝔸,𝔸]. 𝔸]. Πq: ℚ. Π𝕄q. 𝔸", normalize_multi_recursor);
+    rank_ = app(app(multi_recursor(), arity(0)), fe::parse(*this, "λ[acc:𝔸, curr:𝔸]. ASucc (ᵁ, acc)"));
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_end_     = lambda(cn(unit()), {"end"});
@@ -564,7 +564,7 @@ const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, con
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
-    if (assignable(multi_arity_kind(arity->qualifier()), arity)) {
+    if (assignable(multi_kind(arity->qualifier()), arity)) {
         if (auto s = arity->isa<Sigma>()) {
             if (!s->is_nominal())
                 return variadic(s->ops(), flatten(body, s->ops()), dbg);
@@ -614,7 +614,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
     if (defs.size() == 0)
         return unit(type->qualifier());
 
-    if (type == multi_arity_kind()) {
+    if (type == multi_kind()) {
         if (any_equal_of(arity(0), defs))
             return arity(0);
     }

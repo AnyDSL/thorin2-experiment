@@ -135,7 +135,7 @@ TEST(Lexer, Utf8) {
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Qualifier_Type));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Arity_Kind));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Multi_Arity_Kind));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Multi_Kind));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Eof));
 }
 

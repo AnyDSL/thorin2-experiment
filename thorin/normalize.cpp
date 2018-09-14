@@ -188,7 +188,7 @@ const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug d
     return nullptr;
 }
 
-const Def* normalize_multi_arity_recursor(const Def* callee, const Def* arg, Debug dbg) {
+const Def* normalize_multi_recursor(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
     if (!is_arity_kind(callee->type()->op(1)))
         return nullptr;

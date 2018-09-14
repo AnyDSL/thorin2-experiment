@@ -103,7 +103,7 @@ void unique_gid_sort(DefArray* defs);
 class Def : public RuntimeCast<Def>, public Streamable<DefPrinter> {
 public:
     enum class Tag {
-        ArityKind, MultiArityKind, Star, //< kinds
+        ArityKind, MultiKind, Star, //< kinds
         Universe,
         App, Lambda, Param, Pi,
         Extract, Insert, Tuple, Pack, Sigma, Variadic,
@@ -373,9 +373,9 @@ private:
     friend class World;
 };
 
-inline const Def* is_arity_kind      (const Def* def) { return def->tag() == Def::Tag::ArityKind      ? def->as<Kind>()->kind_qualifier() : nullptr; }
-inline const Def* is_multi_arity_kind(const Def* def) { return def->tag() == Def::Tag::MultiArityKind ? def->as<Kind>()->kind_qualifier() : nullptr; }
-inline const Def* is_star            (const Def* def) { return def->tag() == Def::Tag::Star           ? def->as<Kind>()->kind_qualifier() : nullptr; }
+inline const Def* is_arity_kind      (const Def* def) { return def->tag() == Def::Tag::ArityKind ? def->as<Kind>()->kind_qualifier() : nullptr; }
+inline const Def* is_multi_arity_kind(const Def* def) { return def->tag() == Def::Tag::MultiKind ? def->as<Kind>()->kind_qualifier() : nullptr; }
+inline const Def* is_star            (const Def* def) { return def->tag() == Def::Tag::Star      ? def->as<Kind>()->kind_qualifier() : nullptr; }
 
 class Arity : public Def {
 private:

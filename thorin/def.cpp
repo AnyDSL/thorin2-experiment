@@ -199,9 +199,9 @@ Lambda* Def::isa_lambda() const { if (is_nominal()) return const_cast<Lambda*>(i
 
 static inline const char* kind2str(Def::Tag tag) {
     switch (tag) {
-        case Def::Tag::ArityKind:      return "𝔸";
-        case Def::Tag::MultiArityKind: return "𝕄";
-        case Def::Tag::Star:           return "*";
+        case Def::Tag::ArityKind: return "𝔸";
+        case Def::Tag::MultiKind: return "𝕄";
+        case Def::Tag::Star:      return "*";
         default: THORIN_UNREACHABLE;
     }
 }
@@ -574,7 +574,7 @@ bool Kind::assignable(const Def* def) const {
     // TODO
 #if 0
     auto type = def->type();
-    return this == type || ((type->isa<MultiArityKind>() || type->isa<ArityKind>()) && op(0) == type->op(0));
+    return this == type || ((type->isa<Multiind>() || type->isa<ArityKind>()) && op(0) == type->op(0));
 #endif
 }
 

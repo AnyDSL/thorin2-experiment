@@ -52,7 +52,7 @@ TEST(Parser, DeBruijn) {
 TEST(Parser, SimpleVariadic) {
     World w;
     auto S = w.star();
-    auto M = w.multi_arity_kind();
+    auto M = w.multi_kind();
 
     // TODO simplify further once we can parse arity literals
     auto v = w.pi(M, w.pi(w.variadic(w.var(M, 0), S), S));
@@ -95,18 +95,18 @@ TEST(Parser, Kinds) {
     EXPECT_EQ(parse(w, "𝔸ᴬ"), w.arity_kind(Qualifier::a));
     EXPECT_EQ(parse(w, "𝔸ᴸ"), w.arity_kind(Qualifier::l));
     EXPECT_EQ(parse(w, "Πq:ℚ.𝔸q"), w.pi(w.qualifier_type(), w.arity_kind(w.var(w.qualifier_type(), 0))));
-    EXPECT_EQ(parse(w, "𝕄"), w.multi_arity_kind());
-    EXPECT_EQ(parse(w, "𝕄ᵁ"), w.multi_arity_kind());
-    EXPECT_EQ(parse(w, "𝕄ᴿ"), w.multi_arity_kind(Qualifier::r));
-    EXPECT_EQ(parse(w, "𝕄ᴬ"), w.multi_arity_kind(Qualifier::a));
-    EXPECT_EQ(parse(w, "𝕄ᴸ"), w.multi_arity_kind(Qualifier::l));
-    EXPECT_EQ(parse(w, "Πq:ℚ.𝕄q"), w.pi(w.qualifier_type(), w.multi_arity_kind(w.var(w.qualifier_type(), 0))));
+    EXPECT_EQ(parse(w, "𝕄"), w.multi_kind());
+    EXPECT_EQ(parse(w, "𝕄ᵁ"), w.multi_kind());
+    EXPECT_EQ(parse(w, "𝕄ᴿ"), w.multi_kind(Qualifier::r));
+    EXPECT_EQ(parse(w, "𝕄ᴬ"), w.multi_kind(Qualifier::a));
+    EXPECT_EQ(parse(w, "𝕄ᴸ"), w.multi_kind(Qualifier::l));
+    EXPECT_EQ(parse(w, "Πq:ℚ.𝕄q"), w.pi(w.qualifier_type(), w.multi_kind(w.var(w.qualifier_type(), 0))));
 }
 
 TEST(Parser, ComplexVariadics) {
     World w;
     auto S = w.star();
-    auto M = w.multi_arity_kind();
+    auto M = w.multi_kind();
 
     auto v = w.pi(M, w.pi(w.variadic(w.var(M, 0), S),
                           w.variadic(w.var(M, 1),
@@ -159,7 +159,7 @@ TEST(Parser, IntArithOp) {
     World w;
     auto Q = w.qualifier_type();
     auto N = w.type_nat();
-    auto MA = w.multi_arity_kind();
+    auto MA = w.multi_kind();
     auto sig = w.sigma({Q, N, N});
     auto type_i = w.axiom(w.pi(sig, w.star(w.extract(w.var(sig, 0), 0_u64))), {"int"});
     auto dom = w.sigma({w.app(type_i, w.var(sig, 0)), w.app(type_i, w.var(sig, 1))});
@@ -172,7 +172,7 @@ TEST(Parser, Apps) {
     World w;
     auto a5 = w.arity(Qualifier::a, 5);
     auto i0_5 = w.index(a5, 0);
-    auto ma = w.multi_arity_kind(Qualifier::a);
+    auto ma = w.multi_kind(Qualifier::a);
     EXPECT_EQ(parse(w, "(λs: 𝕄ᴬ. λq: ℚ. λi: s. (s, q, i)) 5ₐᴬ ᴿ 0₅ᴬ"), w.tuple({a5, w.qualifier_r(), i0_5}));
     auto ax = w.axiom(w.pi(ma, w.pi(w.qualifier_type(), w.star())), {"ax"});
     EXPECT_EQ(parse(w, "(ax 5ₐᴬ) ᴿ"), w.app(w.app(ax, a5), w.qualifier_r()));
