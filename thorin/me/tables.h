@@ -38,7 +38,6 @@ enum class FFlags : int64_t {
 
 /**
  * The 5 relations are disjoint and are organized as follows:
- *
 @verbatim
                ----
                4321

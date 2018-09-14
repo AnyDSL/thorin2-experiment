@@ -84,11 +84,9 @@ typedef Array<const Def*> DefArray;
 typedef ArrayRef<const Def*> Defs;
 typedef std::vector<const Def*> DefVector;
 
-DefArray qualifiers(Defs defs);
 void gid_sort(DefArray* defs);
 DefArray gid_sorted(Defs defs);
 void unique_gid_sort(DefArray* defs);
-DefArray unique_gid_sorted(Defs defs);
 
 //------------------------------------------------------------------------------
 
