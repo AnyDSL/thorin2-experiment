@@ -65,7 +65,7 @@ const Def* World::bound(const Def* q, Range<I> defs) {
         }
 
         // TODO somehow build into a def->is_subtype_of(other)/similar
-        if (def == type_qualifier() && max == type_qualifier())
+        if (is_type_qualifier(def) && is_type_qualifier(max))
             continue;
         bool is_arity = def->tag() == Def::Tag::KindArity;
         bool is_star = def->tag() == Def::Tag::KindStar;
@@ -181,7 +181,7 @@ World::~World() {
 }
 
 const Arity* World::arity(const Def* q, size_t a, Loc loc) {
-    assert(q->type() == type_qualifier());
+    assert(is_type_qualifier(q->type()));
     auto cur = Def::gid_counter();
     auto result = unify<Arity>(3, kind_arity(q), a, loc);
 
@@ -433,7 +433,7 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
     // implements a least upper bound on qualifiers,
     // could possibly be replaced by something subtyping-generic
     if (is_type_qualifier(first->type())) {
-        assert(type == type_qualifier());
+        assert(is_type_qualifier(type));
         auto accu = T::Lattice::min;
         DefVector qualifiers;
         for (auto def : defs) {
