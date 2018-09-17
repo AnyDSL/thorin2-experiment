@@ -170,7 +170,7 @@ public:
     const Def* insert(const Def* def, u64 index, const Def* value, Debug dbg = {});
     //@}
 
-    //@{ create Index
+    //@{ index eliminator
     const Def* index_zero() const { return index_zero_; }
     const Def* index_zero(const Def* arity, Loc loc = {});
     const Def* index_succ() const { return index_succ_; }
