@@ -129,7 +129,7 @@ const Def* normalize_index_succ(const Def* callee, const Def* arg, Debug dbg) {
         if (auto index = arg->isa<Lit>()) {
             auto idx = get_index(index);
             auto arity = index->type()->as<Arity>();
-            return w.index(w.arity(index->qualifier(), arity->value() + 1), idx + 1, dbg);
+            return w.lit_index(w.arity(index->qualifier(), arity->value() + 1), idx + 1, dbg);
         }
     }
     return nullptr;
@@ -150,7 +150,7 @@ const Def* normalize_index_eliminator(const Def* callee, const Def* arg, Debug d
                 // callee = (E q P base step a) -> apply base to a
                 return w.app(base, arity);
             }
-            pred = w.index(index->type()->as<Arity>()->value()-1, index_val - 1);
+            pred = w.lit_index(index->type()->as<Arity>()->value()-1, index_val - 1);
         } else if (auto app = arg->isa<App>()) {
             if (app->callee() == w.index_zero()) {
                 // callee = (E q P base step a) -> apply base to a

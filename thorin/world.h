@@ -171,8 +171,6 @@ public:
     //@}
 
     //@{ create Index
-    const Lit* index(u64 arity, u64 idx, Loc loc = {}) { return index(this->arity(arity), idx, loc); }
-    const Lit* index(const Arity* arity, u64 index, Loc loc = {});
     const Def* index_zero() const { return index_zero_; }
     const Def* index_zero(const Def* arity, Loc loc = {});
     const Def* index_succ() const { return index_succ_; }
@@ -235,16 +233,17 @@ public:
     //@{ literals
     const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
     const Lit* lit(Qualifier q) const { return qualifier_[size_t(q)]; }
+    const Lit* lit_index(u64 arity, u64 idx, Loc loc = {}) { return lit_index(this->arity(arity), idx, loc); }
+    const Lit* lit_index(const Arity* arity, u64 index, Loc loc = {});
     const Lit* lit_nat(int64_t val, Loc loc = {});
-    const Lit* lit_nat_0() { return lit_nat_0_; }
-    const Lit* lit_nat_1() { return lit_nat_[0]; }
-    const Lit* lit_nat_2() { return lit_nat_[1]; }
-    const Lit* lit_nat_4() { return lit_nat_[2]; }
-    const Lit* lit_nat_8() { return lit_nat_[3]; }
+    const Lit* lit_nat_0 () { return lit_nat_0_; }
+    const Lit* lit_nat_1 () { return lit_nat_[0]; }
+    const Lit* lit_nat_2 () { return lit_nat_[1]; }
+    const Lit* lit_nat_4 () { return lit_nat_[2]; }
+    const Lit* lit_nat_8 () { return lit_nat_[3]; }
     const Lit* lit_nat_16() { return lit_nat_[4]; }
     const Lit* lit_nat_32() { return lit_nat_[5]; }
     const Lit* lit_nat_64() { return lit_nat_[6]; }
-
     const Lit* lit(bool val) { return lit_bool_[size_t(val)]; }
     const Lit* lit_false() { return lit_bool_[0]; }
     const Lit* lit_true()  { return lit_bool_[1]; }

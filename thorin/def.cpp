@@ -594,7 +594,7 @@ bool Variadic::assignable(const Def* def) const {
                 return false;
             for (size_t i = 0; i != size; ++i) {
                 // body should actually not depend on index, but implemented for completeness
-                auto reduced_type = reduce(body(), world().index(*size, i));
+                auto reduced_type = reduce(body(), world().lit_index(*size, i));
                 if (!reduced_type->assignable(def->op(i)))
                     return false;
             }

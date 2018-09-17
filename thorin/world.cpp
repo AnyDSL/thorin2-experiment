@@ -133,7 +133,7 @@ World::World(Debug dbg)
         kind_arity_[i] = insert<Kind>(1, *this, Def::Tag::KindArity, qualifier_[i]);
         kind_multi_[i] = insert<Kind>(1, *this, Def::Tag::KindMulti, qualifier_[i]);
         unit_[i] = arity(qualifier_[i], 1);
-        unit_val_[i] = index(unit_[i], 0);
+        unit_val_[i] = lit_index(unit_[i], 0);
     }
 
     type_bool_ = axiom(kind_star(), {"bool"});
@@ -342,16 +342,16 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
 
 const Def* World::extract(const Def* def, u64 i, Debug dbg) {
     if (auto arity = def->has_constant_arity())
-        return extract(def, index(*arity, i, dbg), dbg);
+        return extract(def, lit_index(*arity, i, dbg), dbg);
     else
         errorf("can only extract with constant on constant arities");
 }
 
 const Def* World::extract(const Def* def, u64 i, u64 a, Debug dbg) {
-    return extract(def, index(a, i, dbg), dbg);
+    return extract(def, lit_index(a, i, dbg), dbg);
 }
 
-const Lit* World::index(const Arity* a, u64 i, Loc loc) {
+const Lit* World::lit_index(const Arity* a, u64 i, Loc loc) {
     auto arity_val = a->value();
     if (i < arity_val) {
         auto cur = Def::gid_counter();
@@ -378,7 +378,7 @@ const Lit* World::index(const Arity* a, u64 i, Loc loc) {
 const Def* World::index_zero(const Def* arity, Loc loc) {
     if (arity->type()->tag() == Def::Tag::KindArity) {
         if (auto a = arity->isa<Arity>())
-            return index(a->value() + 1, 0, loc);
+            return lit_index(a->value() + 1, 0, loc);
         return app(index_zero_, tuple({arity->qualifier(), arity}), {loc});
     } else {
         errorf("expected '{}' to have an 𝔸 type", arity);
@@ -388,7 +388,7 @@ const Def* World::index_zero(const Def* arity, Loc loc) {
 const Def* World::index_succ(const Def* index, Debug dbg) {
     assert(index->type()->type()->tag() == Def::Tag::KindArity);
     if (auto idx = index->isa<Lit>())
-        return this->index(idx->type()->as<Arity>(), get_index(idx) + 1_u64, dbg);
+        return this->lit_index(idx->type()->as<Arity>(), get_index(idx) + 1_u64, dbg);
 
     return app(app(index_succ_, index->type(), dbg), index, dbg);
 }
@@ -399,8 +399,8 @@ const Def* World::insert(const Def* def, const Def* i, const Def* value, Debug d
 }
 
 const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) {
-    auto idx = index(def->arity()->as<Arity>()->value(), i);
-    return insert(def, idx, value, dbg);
+    auto index = lit_index(def->arity()->as<Arity>()->value(), i);
+    return insert(def, index, value, dbg);
 }
 
 template<class T>
@@ -587,10 +587,10 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
                         return unify<Variadic>(2, universe(), this->arity(0), kind_star(body->qualifier()), dbg);
                     return unit(body->type()->qualifier());
                 case 1:
-                    return reduce(body, index(1, 0));
+                    return reduce(body, lit_index(1, 0));
                 default:
                     if (body->free_vars().test(0))
-                        return sigma(DefArray(a, [&](auto i) { return shift_free_vars(reduce(body, index(a, i)), i); }), dbg);
+                        return sigma(DefArray(a, [&](auto i) { return shift_free_vars(reduce(body, lit_index(a, i)), i); }), dbg);
             }
         }
 
@@ -702,9 +702,9 @@ const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
                 return unify<Pack>(1, unit_kind(body->qualifier()), unit(body->qualifier()), dbg);
             return val_unit(body->type()->qualifier());
         }
-        if (a == 1) return reduce(body, index(1, 0));
+        if (a == 1) return reduce(body, lit_index(1, 0));
         if (body->free_vars().test(0))
-            return tuple(DefArray(a, [&](auto i) { return reduce(body, this->index(a, i)); }), dbg);
+            return tuple(DefArray(a, [&](auto i) { return reduce(body, this->lit_index(a, i)); }), dbg);
     }
 
     if (auto extract = body->isa<Extract>()) {

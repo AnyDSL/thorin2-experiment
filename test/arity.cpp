@@ -91,9 +91,9 @@ TEST(Arity, Subkinding) {
 TEST(Arity, PrefixExtract) {
     World w;
     auto a2 = w.arity(2);
-    auto i1_2 = w.index(2, 1);
+    auto i1_2 = w.lit_index(2, 1);
     auto a3 = w.arity(3);
-    auto i2_3 = w.index(3, 2);
+    auto i2_3 = w.lit_index(3, 2);
 
     auto unit = w.unit();
     auto ma = w.sigma({a2, a3, a2});
@@ -142,9 +142,9 @@ TEST(Arity, DependentIndexEliminator) {
     auto step_is_even = fe::parse(w, "λa:𝔸. λi:a. λis_even:2ₐ. (1₂, 0₂)#is_even");
     auto index_is_even = w.app(w.app(w.app(elimu, to_arity2), base_is_even), step_is_even);
 
-    EXPECT_EQ(w.index(2, 1), w.app(w.app(index_is_even, w.arity(3)), w.index(3, 0)));
-    EXPECT_EQ(w.index(2, 1), w.app(w.app(index_is_even, w.arity(8)), w.index(8, 4)));
-    EXPECT_EQ(w.index(2, 0), w.app(w.app(index_is_even, w.arity(8)), w.index(8, 1)));
+    EXPECT_EQ(w.lit_index(2, 1), w.app(w.app(index_is_even, w.arity(3)), w.lit_index(3, 0)));
+    EXPECT_EQ(w.lit_index(2, 1), w.app(w.app(index_is_even, w.arity(8)), w.lit_index(8, 4)));
+    EXPECT_EQ(w.lit_index(2, 0), w.app(w.app(index_is_even, w.arity(8)), w.lit_index(8, 1)));
 }
 
 TEST(Arity, MultiRecursors) {

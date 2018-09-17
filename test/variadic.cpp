@@ -18,8 +18,8 @@ TEST(Variadic, Misc) {
     auto N = w.type_nat();
     auto S = w.kind_star();
 
-    auto p2_4 = w.index(4, 2);
-    auto p2_4b = w.index(4, 2);
+    auto p2_4 = w.lit_index(4, 2);
+    auto p2_4b = w.lit_index(4, 2);
     EXPECT_EQ(p2_4, p2_4b);
     auto v = w.variadic(5, N);
     EXPECT_TRUE(v->arity() == w.arity(5));
@@ -152,7 +152,7 @@ TEST(Variadic, Nested) {
         for (int y = 0; y != 2; ++y) {
             const Def* args[2];
             for (int x = 0; x != 2; ++x)
-                args[x] = w.app(f, {w.index(2, z), w.index(2, y), w.index(2, x)});
+                args[x] = w.app(f, {w.lit_index(2, z), w.lit_index(2, y), w.lit_index(2, x)});
             inner_sigmas[y] = w.sigma(args);
         }
         outer_sigmas[z] = w.sigma(inner_sigmas);

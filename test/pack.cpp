@@ -37,7 +37,7 @@ TEST(Pack, Nested) {
         for (int y = 0; y != 2; ++y) {
             const Def* t[2];
             for (int x = 0; x != 2; ++x)
-                t[x] = w.tuple({w.index(2, z), w.index(2, y), w.index(2, x)});
+                t[x] = w.tuple({w.lit_index(2, z), w.lit_index(2, y), w.lit_index(2, x)});
             inner_tuples[y] = w.tuple(t);
         }
         outer_tuples[z] = w.tuple(inner_tuples);
