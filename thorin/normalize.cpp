@@ -125,7 +125,7 @@ const Def* normalize_index_zero(const Def* callee, const Def* arg, Debug dbg) {
 // Πp:[q: ℚ, a: 𝔸q].Πa.ASucc p
 const Def* normalize_index_succ(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
-    if (arg->is_term() && is_arity_kind(arg->type()->type())) {
+    if (arg->is_term() && is_kind_arity(arg->type()->type())) {
         if (auto index = arg->isa<Lit>()) {
             auto idx = get_index(index);
             auto arity = index->type()->as<Arity>();
@@ -138,7 +138,7 @@ const Def* normalize_index_succ(const Def* callee, const Def* arg, Debug dbg) {
 const Def* normalize_index_eliminator(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
     const Def* pred = nullptr;
-    if (arg->is_term() && is_arity_kind(arg->type()->type())) {
+    if (arg->is_term() && is_kind_arity(arg->type()->type())) {
         // E q P base step a arg
         auto arity = callee->op(1);
         auto elim = callee->op(0);
@@ -190,12 +190,12 @@ const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug d
 
 const Def* normalize_multi_recursor(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
-    if (!is_arity_kind(callee->type()->op(1)))
+    if (!is_kind_arity(callee->type()->op(1)))
         return nullptr;
     // Recₘ𝕄 base step qual arg
     auto ret = callee->op(0)->op(0)->op(1);
     auto step = callee->op(0)->op(1);
-    if (is_arity_kind(arg->type())) {
+    if (is_kind_arity(arg->type())) {
         ret = w.app(step, w.tuple({ret, arg}), dbg);
     } else if (auto sigma = arg->isa<Sigma>()) {
         for (auto arity : sigma->ops())

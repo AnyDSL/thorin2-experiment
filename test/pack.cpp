@@ -20,7 +20,7 @@ TEST(Pack, Multi) {
 
 TEST(Pack, Nested) {
     World w;
-    auto A = w.arity_kind();
+    auto A = w.kind_arity();
     auto N = w.type_nat();
 
     EXPECT_EQ(w.pack(w.sigma({w.arity(3), w.arity(2)}), w.var(N, 1)),

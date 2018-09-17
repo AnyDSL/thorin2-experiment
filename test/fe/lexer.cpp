@@ -26,7 +26,7 @@ TEST(Lexer, Tokens) {
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Colon));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Comma));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Dot));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Star));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Star));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Pi));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Cn));
@@ -134,8 +134,8 @@ TEST(Lexer, Utf8) {
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Pi));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Qualifier_Type));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Arity_Kind));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Multi_Kind));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Arity));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Multi));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Eof));
 }
 

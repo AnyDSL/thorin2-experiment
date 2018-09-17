@@ -13,10 +13,10 @@ TEST(Variadic, Unit) {
 
 TEST(Variadic, Misc) {
     World w;
-    auto A = w.arity_kind();
+    auto A = w.kind_arity();
     auto B = w.type_bool();
     auto N = w.type_nat();
-    auto S = w.star();
+    auto S = w.kind_star();
 
     auto p2_4 = w.index(4, 2);
     auto p2_4b = w.index(4, 2);
@@ -122,7 +122,7 @@ TEST(Variadic, Multi) {
 
 TEST(Variadic, InlineSigmaInterOp) {
     World w;
-    auto star = w.star();
+    auto star = w.kind_star();
     auto pair = w.sigma({star, star});
     EXPECT_TRUE(pair->isa<Variadic>());
 
@@ -133,9 +133,9 @@ TEST(Variadic, InlineSigmaInterOp) {
 
 TEST(Variadic, Nested) {
     World w;
-    auto A = w.arity_kind();
+    auto S = w.kind_star();
+    auto A = w.kind_arity();
     auto N = w.type_nat();
-    auto S = w.star();
 
     EXPECT_EQ(w.variadic(w.sigma({w.arity(3), w.arity(2)}), w.var(S, 1)),
               w.variadic(3, w.variadic(2, w.var(S, 2))));

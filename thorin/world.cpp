@@ -42,7 +42,7 @@ static bool is_qualifier(const Def* def) { return def->type() == def->world().qu
 template<class T, bool infer_qualifier, class I>
 const Def* World::bound(const Def* q, Range<I> defs) {
     if (defs.distance() == 0)
-        return star(q ? q : qualifier(T::Lattice::min));
+        return kind_star(q ? q : lit(T::Lattice::min));
 
     auto first = *defs.begin();
     auto inferred_q = infer_qualifier ? first->qualifier() : q;
@@ -59,7 +59,7 @@ const Def* World::bound(const Def* q, Range<I> defs) {
             if (def->qualifier()->free_vars().any_range(0, i)) {
                 // qualifier is dependent within this type/kind, go to top directly
                 // TODO might want to assert that this will always be a kind?
-                inferred_q = qualifier(T::Lattice::max);
+                inferred_q = lit(T::Lattice::max);
             } else {
                 auto qualifier = shift_free_vars(def->qualifier(), -i);
                 inferred_q = join<T>(qualifier_type(), {inferred_q, qualifier}, {});
@@ -69,26 +69,26 @@ const Def* World::bound(const Def* q, Range<I> defs) {
         // TODO somehow build into a def->is_subtype_of(other)/similar
         if (def == qualifier_type() && max == qualifier_type())
             continue;
-        bool is_arity = def->tag() == Def::Tag::ArityKind;
-        bool is_star = def->tag() == Def::Tag::Star;
-        bool is_marity = is_arity || def->tag() == Def::Tag::MultiKind;
-        bool max_is_marity = max->tag() == Def::Tag::ArityKind || max->tag() == Def::Tag::MultiKind;
-        bool max_is_star = max->tag() == Def::Tag::Star;
-        if (is_arity && max_is_marity)
+        bool is_arity = def->tag() == Def::Tag::KindArity;
+        bool is_star = def->tag() == Def::Tag::KindStar;
+        bool is_multi = is_arity || def->tag() == Def::Tag::KindMulti;
+        bool max_is_multi = max->tag() == Def::Tag::KindArity || max->tag() == Def::Tag::KindMulti;
+        bool max_is_star = max->tag() == Def::Tag::KindStar;
+        if (is_arity && max_is_multi)
             // found at least two arities, must be a multi-arity
-            max = multi_kind(inferred_q);
-        else if ((is_star || is_marity) && (max_is_star || max_is_marity))
-            max = star(inferred_q);
+            max = kind_multi(inferred_q);
+        else if ((is_star || is_multi) && (max_is_star || max_is_multi))
+            max = kind_star(inferred_q);
         else {
             max = universe();
             break;
         }
     }
 
-    if (max->tag() == Def::Tag::Star) {
+    if (max->tag() == Def::Tag::KindStar) {
         if (!infer_qualifier) {
             assert(inferred_q == q);
-            return star(q ? q : qualifier(T::Lattice::min));
+            return kind_star(q ? q : lit(T::Lattice::min));
         }
         if (q == nullptr) {
             // no provided qualifier, so we use the inferred one
@@ -108,7 +108,7 @@ const Def* World::bound(const Def* q, Range<I> defs) {
                 }
             }
 #endif
-            return star(q);
+            return kind_star(q);
         }
     }
     return max;
@@ -129,15 +129,15 @@ World::World(Debug dbg)
     qualifier_type_ = insert<QualifierType>(0, *this);
     for (size_t i = 0; i != 4; ++i) {
         qualifier_[i] = lit(qualifier_type(), s32(i), {qualifier2str(Qualifiers[i])});
-        star_[i]       = insert<Kind>(1, *this, Def::Tag::Star,      qualifier_[i]);
-        arity_kind_[i] = insert<Kind>(1, *this, Def::Tag::ArityKind, qualifier_[i]);
-        multi_kind_[i] = insert<Kind>(1, *this, Def::Tag::MultiKind, qualifier_[i]);
+        kind_star_ [i] = insert<Kind>(1, *this, Def::Tag::KindStar,  qualifier_[i]);
+        kind_arity_[i] = insert<Kind>(1, *this, Def::Tag::KindArity, qualifier_[i]);
+        kind_multi_[i] = insert<Kind>(1, *this, Def::Tag::KindMulti, qualifier_[i]);
         unit_[i] = arity(qualifier_[i], 1);
         unit_val_[i] = index(unit_[i], 0);
     }
 
-    type_bool_ = axiom(star(), {"bool"});
-    type_nat_  = axiom(star(), {"nat"});
+    type_bool_ = axiom(kind_star(), {"bool"});
+    type_nat_  = axiom(kind_star(), {"nat"});
 
     lit_bool_[0] = lit(type_bool(), {false});
     lit_bool_[1] = lit(type_bool(), {true});
@@ -185,7 +185,7 @@ World::~World() {
 const Arity* World::arity(const Def* q, size_t a, Loc loc) {
     assert(q->type() == qualifier_type());
     auto cur = Def::gid_counter();
-    auto result = unify<Arity>(3, arity_kind(q), a, loc);
+    auto result = unify<Arity>(3, kind_arity(q), a, loc);
 
     if (result->gid() >= cur)
         result->debug().set(std::to_string(a) + "ₐ");
@@ -376,7 +376,7 @@ const Lit* World::index(const Arity* a, u64 i, Loc loc) {
 }
 
 const Def* World::index_zero(const Def* arity, Loc loc) {
-    if (arity->type()->tag() == Def::Tag::ArityKind) {
+    if (arity->type()->tag() == Def::Tag::KindArity) {
         if (auto a = arity->isa<Arity>())
             return index(a->value() + 1, 0, loc);
         return app(index_zero_, tuple({arity->qualifier(), arity}), {loc});
@@ -386,7 +386,7 @@ const Def* World::index_zero(const Def* arity, Loc loc) {
 }
 
 const Def* World::index_succ(const Def* index, Debug dbg) {
-    assert(index->type()->type()->tag() == Def::Tag::ArityKind);
+    assert(index->type()->type()->tag() == Def::Tag::KindArity);
     if (auto idx = index->isa<Lit>())
         return this->index(idx->type()->as<Arity>(), get_index(idx) + 1_u64, dbg);
 
@@ -447,8 +447,8 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
                 qualifiers.emplace_back(def);
             }
         }
-        if (accu == T::Lattice::max) return qualifier(T::Lattice::max);
-        if (accu != T::Lattice::min) qualifiers.emplace_back(qualifier(accu));
+        if (accu == T::Lattice::max) return lit(T::Lattice::max);
+        if (accu != T::Lattice::min) qualifiers.emplace_back(lit(accu));
         if (qualifiers.size() == 1) return qualifiers.front();
         SortedDefSet set(qualifiers.begin(), qualifiers.end());
         return unify<T>(set.size(), qualifier_type(), set, dbg);
@@ -489,7 +489,7 @@ class QualifierJoinVisitor {
 public:
     QualifierJoinVisitor(World& world, size_t ignore_offset = 1)
         : world_(world)
-        , qualifier_(world.qualifier_u())
+        , qualifier_(world.lit(Qualifier::u))
         , ignore_offset_(ignore_offset)
     {}
 
@@ -508,7 +508,7 @@ public:
     const Def* visit_nonfree_var(const Var* def, size_t offset, const Def*) { return set_visited(def, offset); }
     std::optional<const Def*> stop_recursion(const Def* def, size_t offset, const Def*) {
         set_visited(def, offset);
-        if (qualifier_ == world_.qualifier_l())
+        if (qualifier_ == world_.lit(Qualifier::l))
             return qualifier_;
         // TODO can we avoid recursing in more cases? probably not...
         return std::nullopt;
@@ -549,7 +549,7 @@ const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, con
                    domain, body, inferred_q, q);
         q = inferred_q;
     } else if (q == nullptr)
-        q = qualifier_u();
+        q = lit(Qualifier::u);
     auto type = pi(q, domain, body->type(), dbg);
     // TODO check/infer qualifier from free variables/params
 
@@ -564,7 +564,7 @@ const Def* World::lambda(const Def* q, const Def* domain, const Def* filter, con
 }
 
 const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
-    if (assignable(multi_kind(arity->qualifier()), arity)) {
+    if (assignable(kind_multi(arity->qualifier()), arity)) {
         if (auto s = arity->isa<Sigma>()) {
             if (!s->is_nominal())
                 return variadic(s->ops(), flatten(body, s->ops()), dbg);
@@ -584,7 +584,7 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
             switch (a) {
                 case 0:
                     if (body->is_kind())
-                        return unify<Variadic>(2, universe(), this->arity(0), star(body->qualifier()), dbg);
+                        return unify<Variadic>(2, universe(), this->arity(0), kind_star(body->qualifier()), dbg);
                     return unit(body->type()->qualifier());
                 case 1:
                     return reduce(body, index(1, 0));
@@ -614,7 +614,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
     if (defs.size() == 0)
         return unit(type->qualifier());
 
-    if (type == multi_kind()) {
+    if (type == kind_multi()) {
         if (any_equal_of(arity(0), defs))
             return arity(0);
     }

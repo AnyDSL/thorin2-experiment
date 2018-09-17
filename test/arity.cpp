@@ -11,7 +11,7 @@ TEST(Arity, Successor) {
     auto a0 = w.arity(0);
     EXPECT_EQ(w.arity(1), w.arity_succ(a0));
     EXPECT_EQ(w.arity(42), w.arity_succ(w.arity(41)));
-    EXPECT_TRUE(w.arity_succ(w.var(w.arity_kind(), 0))->isa<App>());
+    EXPECT_TRUE(w.arity_succ(w.var(w.kind_arity(), 0))->isa<App>());
 }
 
 TEST(Arity, Sigma) {
@@ -25,8 +25,8 @@ TEST(Arity, Sigma) {
     EXPECT_EQ(a0, w.sigma({a1, a0}));
     EXPECT_EQ(a0, w.sigma({a0, a1}));
 
-    EXPECT_EQ(w.multi_kind(), w.sigma({a2, a3})->type());
-    EXPECT_EQ(w.star(), w.sigma({a2, w.sigma({a3, a2}), a3})->type());
+    EXPECT_EQ(w.kind_multi(), w.sigma({a2, a3})->type());
+    EXPECT_EQ(w.kind_star (), w.sigma({a2, w.sigma({a3, a2}), a3})->type());
 }
 
 TEST(Arity, DependentSigma) {
@@ -51,9 +51,9 @@ TEST(Arity, Variadic) {
 
     EXPECT_EQ(unit, w.variadic({a0, a1, a2}, unit));
     EXPECT_EQ(unit, w.variadic({a1, a0}, unit));
-    EXPECT_EQ(w.unit_kind(), w.variadic({a0, a2}, w.arity_kind()));
-    EXPECT_EQ(w.variadic(a2, w.unit_kind()), w.variadic({a2, a0, a2}, w.arity_kind()));
-    EXPECT_EQ(w.multi_kind(), w.variadic(a2, a2)->type());
+    EXPECT_EQ(w.unit_kind(), w.variadic({a0, a2}, w.kind_arity()));
+    EXPECT_EQ(w.variadic(a2, w.unit_kind()), w.variadic({a2, a0, a2}, w.kind_arity()));
+    EXPECT_EQ(w.kind_multi(), w.variadic(a2, a2)->type());
 }
 
 TEST(Arity, Pack) {
@@ -73,9 +73,9 @@ TEST(Arity, Subkinding) {
     World w;
     auto a0 = w.arity(0);
     auto a3 = w.arity(3);
-    auto A = w.arity_kind();
+    auto A = w.kind_arity();
     auto vA = w.var(A, 0);
-    auto M = w.multi_kind();
+    auto M = w.kind_multi();
 
     EXPECT_TRUE(A->assignable(a0));
     EXPECT_TRUE(M->assignable(a0));
@@ -84,7 +84,7 @@ TEST(Arity, Subkinding) {
     EXPECT_TRUE(A->assignable(vA));
     EXPECT_TRUE(M->assignable(vA));
 
-    auto sig = w.sigma({M, w.variadic(w.var(M, 0), w.star())});
+    auto sig = w.sigma({M, w.variadic(w.var(M, 0), w.kind_star())});
     EXPECT_TRUE(sig->assignable(w.tuple({a0, w.val_unit_kind()})));
 }
 
@@ -108,9 +108,9 @@ TEST(Arity, PrefixExtract) {
 
 TEST(Arity, DependentArityEliminator) {
     World w;
-    auto lam_bool = w.lambda(w.arity_kind(), w.type_bool());
-    auto step_negate = w.lambda(w.arity_kind(), w.lambda(w.type_bool(), w.op_bnot(w.var(w.type_bool(), 0))));
-    auto arity_is_even = w.app(w.app(w.app(w.app(w.arity_eliminator(), w.qualifier_u()), lam_bool), w.lit_true()), step_negate);
+    auto lam_bool = w.lambda(w.kind_arity(), w.type_bool());
+    auto step_negate = w.lambda(w.kind_arity(), w.lambda(w.type_bool(), w.op_bnot(w.var(w.type_bool(), 0))));
+    auto arity_is_even = w.app(w.app(w.app(w.app(w.arity_eliminator(), w.lit(Qualifier::u)), lam_bool), w.lit_true()), step_negate);
     EXPECT_EQ(w.lit_true(), w.app(arity_is_even, w.arity(0)));
     EXPECT_EQ(w.lit_false(), w.app(arity_is_even, w.arity(3)));
 }
@@ -118,15 +118,15 @@ TEST(Arity, DependentArityEliminator) {
 TEST(Arity, ArityRecursors) {
     World w;
     auto double_step = fe::parse(w, "λcurr:𝔸. λacc:𝔸. ASucc (ᵁ, ASucc (ᵁ, acc))");
-    auto arity_double = w.app(w.app(w.app(w.arity_recursor_to_arity(), w.qualifier_u()), w.arity(0)), double_step);
+    auto arity_double = w.app(w.app(w.app(w.arity_recursor_to_arity(), w.lit(Qualifier::u)), w.arity(0)), double_step);
     EXPECT_EQ(w.arity(0), w.app(arity_double, w.arity(0)));
     EXPECT_EQ(w.arity(8), w.app(arity_double, w.arity(4)));
     auto quad_step = fe::parse(w, "λcurr:𝔸. λacc:𝕄. «ASucc (ᵁ, curr); ASucc (ᵁ, curr)»)");
-    auto arity_quad = w.app(w.app(w.app(w.arity_recursor_to_multi(), w.qualifier_u()), w.arity(0)), quad_step);
+    auto arity_quad = w.app(w.app(w.app(w.arity_recursor_to_multi(), w.lit(Qualifier::u)), w.arity(0)), quad_step);
     EXPECT_EQ(w.arity(0), w.app(arity_quad, w.arity(0)));
     EXPECT_EQ(w.variadic(w.arity(3), w.arity(3)), w.app(arity_quad, w.arity(3)));
     auto nest_step = fe::parse(w, "λcurr:𝔸. λacc:*. «ASucc (ᵁ, curr); acc»)");
-    auto arity_nest = w.app(w.app(w.app(w.arity_recursor_to_star(), w.qualifier_u()), w.type_nat()), nest_step);
+    auto arity_nest = w.app(w.app(w.app(w.arity_recursor_to_star(), w.lit(Qualifier::u)), w.type_nat()), nest_step);
     EXPECT_EQ(w.type_nat(), w.app(arity_nest, w.arity(0)));
     EXPECT_EQ(w.type_nat(), w.app(arity_nest, w.arity(1)));
     EXPECT_EQ(w.variadic(w.arity(3), w.variadic(w.arity(2), w.type_nat())), w.app(arity_nest, w.arity(3)));
@@ -135,7 +135,7 @@ TEST(Arity, ArityRecursors) {
 TEST(Arity, DependentIndexEliminator) {
     World w;
     auto elim = w.index_eliminator();
-    auto u = w.qualifier_u();
+    auto u = w.lit(Qualifier::u);
     auto elimu = w.app(elim, u);
     auto to_arity2 = fe::parse(w, "λa:𝔸. λi:a. 2ₐ");
     auto base_is_even = fe::parse(w, "λa:𝔸. 1₂");

@@ -8,7 +8,7 @@ using namespace thorin::fe;
 
 TEST(Sigma, Assign) {
     World w;
-    auto sig = w.sigma({w.star(), w.var(w.star(), 0)})->as<Sigma>();
+    auto sig = w.sigma({w.kind_star(), w.var(w.kind_star(), 0)})->as<Sigma>();
     EXPECT_TRUE(sig->is_dependent());
     EXPECT_TRUE(sig->assignable(w.tuple({w.type_nat(), w.lit_nat(42)})));
     EXPECT_FALSE(sig->assignable(w.tuple({w.type_nat(), w.lit_false()})));
@@ -25,40 +25,40 @@ TEST(Sigma, ExtractAndSingleton) {
     EXPECT_EQ(w.app(fst, {n23, n42}), w.lit_nat(23));
     EXPECT_EQ(w.app(snd, {n23, n42}), w.lit_nat(42));
 
-    auto poly = w.axiom(w.pi(w.star(), w.star()), {"Poly"});
-    auto sigma = w.sigma({w.star(), w.app(poly, w.var(w.star(), 0))}, {"sig"})->as<Sigma>();
+    auto poly = w.axiom(w.pi(w.kind_star(), w.kind_star()), {"Poly"});
+    auto sigma = w.sigma({w.kind_star(), w.app(poly, w.var(w.kind_star(), 0))}, {"sig"})->as<Sigma>();
     EXPECT_TRUE(sigma->is_dependent());
     auto sigma_val = w.axiom(sigma,{"val"});
     auto fst_sigma = w.extract(sigma_val, 0_s);
-    EXPECT_EQ(fst_sigma->type(), w.star());
+    EXPECT_EQ(fst_sigma->type(), w.kind_star());
     auto snd_sigma = w.extract(sigma_val, 1);
     snd_sigma->type()->dump();
     auto single_sigma = w.singleton(sigma_val);
     std::cout << single_sigma << ": " << single_sigma->type() << std::endl;
-    auto single_pi = w.singleton(w.axiom(w.pi(w.star(), w.star()), {"pival"}));
+    auto single_pi = w.singleton(w.axiom(w.pi(w.kind_star(), w.kind_star()), {"pival"}));
     std::cout << single_pi << ": " << single_pi->type() << std::endl;
 }
 
 TEST(Tuple, TypeExtract) {
     World w;
     auto arity2 = w.arity(2);
-    auto nat = w.axiom(w.star(), {"Nat"});
+    auto nat = w.axiom(w.kind_star(), {"Nat"});
 
     auto tup = w.tuple({arity2, nat});
     auto ex_tup = w.extract(tup, w.var(arity2, 0));
-    EXPECT_EQ(ex_tup->type(), w.star());
+    EXPECT_EQ(ex_tup->type(), w.kind_star());
 
-    auto ex_var_tup = w.extract(w.var(w.sigma({w.arity_kind(), w.star()}), 1), w.var(arity2, 0))->type();
-    EXPECT_EQ(ex_var_tup, w.star());
+    auto ex_var_tup = w.extract(w.var(w.sigma({w.kind_arity(), w.kind_star()}), 1), w.var(arity2, 0))->type();
+    EXPECT_EQ(ex_var_tup, w.kind_star());
 
-    auto sig = w.sigma({w.pi(w.star(), w.star()), w.star()});
+    auto sig = w.sigma({w.pi(w.kind_star(), w.kind_star()), w.kind_star()});
     EXPECT_THROW(w.extract(w.var(sig, 1), w.var(arity2, 0))->type(), TypeError);
 }
 
 TEST(Tuple, TypeExtractFreeVars) {
     World w;
 
-    EXPECT_EQ(parse(w, "\\0::[x:nat, y:nat, \\4::*]#2₃")->type(), w.var(w.star(), 2));
+    EXPECT_EQ(parse(w, "\\0::[x:nat, y:nat, \\4::*]#2₃")->type(), w.var(w.kind_star(), 2));
 }
 
 TEST(Sigma, EtaConversion) {
@@ -77,7 +77,7 @@ TEST(Sigma, EtaConversion) {
 // TODO add a test for passing around dependent sigma types, e.g. like the following
 // TEST(Parser, NestedDependentBinders) {
 //     WorldBase w;
-//     auto S = w.star();
+//     auto S = w.kind_star();
 //     auto N = w.axiom(S, {"nat"});
 //     auto dtyp = w.axiom(w.pi(N, S), {"dt"});
 //     auto npair = w.sigma({N, N});

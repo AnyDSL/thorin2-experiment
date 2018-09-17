@@ -59,32 +59,27 @@ public:
     //@{ create universe and kinds
     const Universe* universe() const { return universe_; }
     const Kind* kind(Def::Tag tag, const Def* q) {
-        assert(tag == Def::Tag::ArityKind || tag == Def::Tag::MultiKind || tag == Def::Tag::Star);
+        assert(tag == Def::Tag::KindArity || tag == Def::Tag::KindMulti || tag == Def::Tag::KindStar);
         return unify<Kind>(1, *this, tag, q);
     }
-    const Kind* arity_kind(Qualifier q = Qualifier::u) const { return arity_kind_[size_t(q)]; }
-    const Kind* multi_kind(Qualifier q = Qualifier::u) const { return multi_kind_[size_t(q)]; }
-    const Kind* star      (Qualifier q = Qualifier::u) const { return       star_[size_t(q)]; }
-    const Kind* arity_kind(const Def* def) { auto q = get_qualifier(def); return q ? arity_kind(*q) : kind(Def::Tag::ArityKind, def); }
-    const Kind* multi_kind(const Def* def) { auto q = get_qualifier(def); return q ? multi_kind(*q) : kind(Def::Tag::MultiKind, def); }
-    const Kind* star      (const Def* def) { auto q = get_qualifier(def); return q ?       star(*q) : kind(Def::Tag::     Star, def); }
+    const Kind* kind_arity(Qualifier q = Qualifier::u) const { return kind_arity_[size_t(q)]; }
+    const Kind* kind_multi(Qualifier q = Qualifier::u) const { return kind_multi_[size_t(q)]; }
+    const Kind* kind_star (Qualifier q = Qualifier::u) const { return kind_star_ [size_t(q)]; }
+    const Kind* kind_arity(const Def* def) { auto q = get_qualifier(def); return q ? kind_arity(*q) : kind(Def::Tag::KindArity, def); }
+    const Kind* kind_multi(const Def* def) { auto q = get_qualifier(def); return q ? kind_multi(*q) : kind(Def::Tag::KindMulti, def); }
+    const Kind* kind_star (const Def* def) { auto q = get_qualifier(def); return q ? kind_star (*q) : kind(Def::Tag::KindStar,  def); }
     //@}
 
     //@{ create qualifier
     const QualifierType* qualifier_type() const { return qualifier_type_; }
-    const Lit* qualifier(Qualifier q) const { return qualifier_[size_t(q)]; }
-    const Lit* qualifier_u() const { return qualifier(Qualifier::u); }
-    const Lit* qualifier_r() const { return qualifier(Qualifier::r); }
-    const Lit* qualifier_a() const { return qualifier(Qualifier::a); }
-    const Lit* qualifier_l() const { return qualifier(Qualifier::l); }
     //@}
 
     //@{ create Pi
     const Pi* pi(const Def* domain, const Def* codomain, Debug dbg = {}) {
-        return pi(qualifier_u(), domain, codomain, dbg);
+        return pi(lit(Qualifier::u), domain, codomain, dbg);
     }
     const Pi* pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg = {});
-    const Pi* cn(const Def* domain, Debug dbg = {}) { return pi(domain, bottom(star()), dbg); }
+    const Pi* cn(const Def* domain, Debug dbg = {}) { return pi(domain, bottom(kind_star()), dbg); }
     const Pi* cn(Defs domain, Debug dbg = {}) { return cn(sigma(domain), dbg); }
     //@}
 
@@ -117,8 +112,8 @@ public:
     //@{ create Units
     const Def* unit(Qualifier q = Qualifier::u) { return unit_[size_t(q)]; }
     const Def* unit(const Def* def) { auto q = get_qualifier(def); return q ? unit(*q) : arity(def, 1); }
-    const Def* unit_kind(Qualifier q = Qualifier::u) { return variadic(arity(0), star(q)); }
-    const Def* unit_kind(const Def* q) { return variadic(arity(0), star(q)); }
+    const Def* unit_kind(Qualifier q = Qualifier::u) { return variadic(arity(0), kind_star(q)); }
+    const Def* unit_kind(const Def* q) { return variadic(arity(0), kind_star(q)); }
     //@}
 
     //@{ create Sigma
@@ -128,9 +123,9 @@ public:
     /// Nominal sigma types or kinds
     Sigma* sigma(const Def* type, size_t num_ops, Debug dbg = {}) { return insert<Sigma>(num_ops, type, num_ops, dbg); }
     /// @em nominal Sigma of type Star
-    Sigma* sigma_type(size_t num_ops, Debug dbg = {}) { return sigma_type(qualifier_u(), num_ops, dbg); }
+    Sigma* sigma_type(size_t num_ops, Debug dbg = {}) { return sigma_type(lit(Qualifier::u), num_ops, dbg); }
     /// @em nominal Sigma of type Star
-    Sigma* sigma_type(const Def* q, size_t num_ops, Debug dbg = {}) { return sigma(star(q), num_ops, dbg); }
+    Sigma* sigma_type(const Def* q, size_t num_ops, Debug dbg = {}) { return sigma(kind_star(q), num_ops, dbg); }
     /// @em nominal Sigma of type Universe
     Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) { return insert<Sigma>(num_ops, *this, num_ops, dbg); }
     //@}
@@ -187,7 +182,7 @@ public:
 
     //@{ create Arity
     const Arity* arity(const Def* q, u64 a, Loc loc = {});
-    const Arity* arity(Qualifier q, u64 a, Loc loc = {}) { return arity(qualifier(q), a, loc); }
+    const Arity* arity(Qualifier q, u64 a, Loc loc = {}) { return arity(lit(q), a, loc); }
     const Arity* arity(u64 a, Loc loc = {}) { return arity(Qualifier::u, a, loc); }
     const Axiom* arity_succ() { return arity_succ_; }
     const Def* arity_succ(const Def* arity, Debug dbg = {});
@@ -221,7 +216,6 @@ public:
     //@}
 
     //@{ misc factory methods
-    const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
     const Def* singleton(const Def* def, Debug dbg = {});
     const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
     const Var* var(const Def* type, u64 index, Debug dbg = {}) { return unify<Var>(0, type, index, dbg); }
@@ -238,7 +232,9 @@ public:
     const Axiom* type_nat() { return type_nat_; }
     //@}
 
-    //@{ values for bool and nat
+    //@{ literals
+    const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
+    const Lit* lit(Qualifier q) const { return qualifier_[size_t(q)]; }
     const Lit* lit_nat(int64_t val, Loc loc = {});
     const Lit* lit_nat_0() { return lit_nat_0_; }
     const Lit* lit_nat_1() { return lit_nat_[0]; }
@@ -465,9 +461,9 @@ protected:
     std::array<const Def*, 4> unit_val_;
     std::array<const Def*, 4> unit_kind_;
     std::array<const Def*, 4> unit_kind_val_;
-    std::array<const Kind*, 4> arity_kind_;
-    std::array<const Kind*, 4> multi_kind_;
-    std::array<const Kind*,  4> star_;
+    std::array<const Kind*, 4> kind_arity_;
+    std::array<const Kind*, 4> kind_multi_;
+    std::array<const Kind*, 4> kind_star_;
     std::array<const Axiom*, Num<BOp>> BOp_;
     std::array<const Axiom*, Num<NOp>> NOp_;
     const Axiom* type_bool_;

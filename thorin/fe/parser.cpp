@@ -42,9 +42,9 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Loc>>& defs) {
     else if (ahead().isa(TT::D_bracket_l))  def = parse_sigma();
     else if (ahead().isa(TT::D_quote_l))    def = parse_variadic();
     else if (ahead().isa(TT::Lambda))       def = parse_lambda();
-    else if (ahead().isa(TT::Star)
-            || ahead().isa(TT::Arity_Kind)
-            || ahead().isa(TT::Multi_Kind)) def = parse_kind();
+    else if (ahead().isa(TT::Kind_Star)
+            || ahead().isa(TT::Kind_Arity)
+            || ahead().isa(TT::Kind_Multi)) def = parse_kind();
     else if (ahead().isa(TT::Backslash))    def = parse_debruijn();
     else if (ahead().isa(TT::Identifier))   def = parse_identifier();
     else if (ahead().isa(TT::D_paren_l))    def = parse_tuple();
@@ -52,11 +52,11 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Loc>>& defs) {
     else if (ahead().isa(TT::D_brace_l))    def = parse_variant();
     else if (ahead().isa(TT::Literal))      def = parse_literal();
     else if (accept(TT::Qualifier_Type))    def = world_.qualifier_type();
-    else if (accept(TT::Q_u))               def = world_.qualifier_u();
-    else if (accept(TT::Q_r))               def = world_.qualifier_r();
-    else if (accept(TT::Q_a))               def = world_.qualifier_a();
-    else if (accept(TT::Q_l))               def = world_.qualifier_l();
-    else if (accept(TT::Multi_Kind))        def = world_.multi_kind();
+    else if (accept(TT::Q_u))               def = world_.lit(Qualifier::u);
+    else if (accept(TT::Q_r))               def = world_.lit(Qualifier::r);
+    else if (accept(TT::Q_a))               def = world_.lit(Qualifier::a);
+    else if (accept(TT::Q_l))               def = world_.lit(Qualifier::l);
+    else if (accept(TT::Kind_Multi))        def = world_.kind_multi();
 
     if (def == nullptr)
         error("expected some expression");
@@ -89,9 +89,9 @@ const Def* Parser::parse_debruijn() {
                     case TT::D_bracket_l:    type = parse_sigma(); break;
                     case TT::D_quote_l:      type = parse_variadic(); break;
                     case TT::Qualifier_Type: type = world_.qualifier_type(); break;
-                    case TT::Star:
-                    case TT::Arity_Kind:
-                    case TT::Multi_Kind:     type = parse_kind(); break;
+                    case TT::Kind_Star:
+                    case TT::Kind_Arity:
+                    case TT::Kind_Multi:     type = parse_kind(); break;
                     case TT::Literal:
                         if (ahead().literal().tag == Literal::Tag::Lit_arity) {
                             type = parse_literal();
@@ -183,14 +183,14 @@ const Def* Parser::parse_lambda() {
 }
 
 const Def* Parser::parse_optional_qualifier() {
-    const Def* q = world_.qualifier_u();
+    const Def* q = world_.lit(Qualifier::u);
     switch (ahead().tag()) {
-        case TT::Backslash:   q = parse_debruijn();   break;
-        case TT::Identifier:  q = parse_identifier(); break;
-        case TT::Q_u: next(); q = world_.qualifier_u(); break;
-        case TT::Q_r: next(); q = world_.qualifier_r(); break;
-        case TT::Q_a: next(); q = world_.qualifier_a(); break;
-        case TT::Q_l: next(); q = world_.qualifier_l(); break;
+        case TT::Backslash:   q = parse_debruijn();         break;
+        case TT::Identifier:  q = parse_identifier();       break;
+        case TT::Q_u: next(); q = world_.lit(Qualifier::u); break;
+        case TT::Q_r: next(); q = world_.lit(Qualifier::r); break;
+        case TT::Q_a: next(); q = world_.lit(Qualifier::a); break;
+        case TT::Q_l: next(); q = world_.lit(Qualifier::l); break;
         default: break;
     }
 
@@ -202,9 +202,9 @@ const Def* Parser::parse_kind() {
     eat(kind_tag);
     const Def* qualifier = parse_optional_qualifier();
     switch (kind_tag) {
-        case TT::Star:       return world_.star      (qualifier);
-        case TT::Arity_Kind: return world_.arity_kind(qualifier);
-        case TT::Multi_Kind: return world_.multi_kind(qualifier);
+        case TT::Kind_Star:  return world_.kind_star (qualifier);
+        case TT::Kind_Arity: return world_.kind_arity(qualifier);
+        case TT::Kind_Multi: return world_.kind_multi(qualifier);
         default: THORIN_UNREACHABLE;
     }
 }

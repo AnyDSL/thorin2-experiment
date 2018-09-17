@@ -22,22 +22,22 @@ TEST(Nominal, Option) {
 
     // could replace None by unit and make it structural
     auto none = w.sigma_type(0, {"None"});
-    // auto some = w.lambda(w.pi(w.star(), w.star()), {"Some"});
-    // some->set(w.sigma({w.var(0, w.star())}));
-    auto o = w.lambda(w.pi(w.star(), w.star()), {"Option"});
+    // auto some = w.lambda(w.pi(w.kind_star(), w.kind_star()), {"Some"});
+    // some->set(w.sigma({w.var(0, w.kind_star())}));
+    auto o = w.lambda(w.pi(w.kind_star(), w.kind_star()), {"Option"});
     auto option_nominal = o->set(w.variant({none, o->param()}));
-    // option_nominal->set(w.variant({none, w.app(some, w.var(0, w.star()))}));
+    // option_nominal->set(w.variant({none, w.app(some, w.var(0, w.kind_star()))}));
     auto app = w.app(option_nominal, nat);
     EXPECT_TRUE(app->isa<App>());
     EXPECT_EQ(app->op(1), nat);
-    auto option = w.lambda(w.star(), w.variant({w.unit(), w.var(w.star(), 0)}), {"Option"});
+    auto option = w.lambda(w.kind_star(), w.variant({w.unit(), w.var(w.kind_star(), 0)}), {"Option"});
     EXPECT_EQ(w.app(option, nat), w.variant({w.unit(), nat}));
 }
 
 TEST(Nominal, PolymorphicList) {
     World w;
     auto nat = w.type_nat();
-    auto star = w.star();
+    auto star = w.kind_star();
 
     // could replace Nil by unit and make it structural
     auto nil = w.sigma_type(0, {"Nil"});
@@ -54,7 +54,7 @@ TEST(Nominal, PolymorphicList) {
 
 TEST(Nominal, Nat) {
     World w;
-    auto star = w.star();
+    auto star = w.kind_star();
 
     auto variant = w.variant(star, 2, {"Nat"});
     variant->set(0, w.sigma_type(0, {"0"}));
@@ -66,7 +66,7 @@ TEST(Nominal, Nat) {
 
 TEST(Nominal, SigmaFreeVars) {
     World w;
-    auto S = w.star();
+    auto S = w.kind_star();
     auto sig = w.sigma_type(3);
     auto v0 = w.var(S, 0);
     auto v1 = w.var(S, 1);
@@ -82,7 +82,7 @@ TEST(Nominal, SigmaFreeVars) {
 TEST(Nominal, PolymorphicListVariantNominal) {
     World w;
     auto N = w.type_nat();
-    auto S = w.star();
+    auto S = w.kind_star();
 
     auto cons_or_nil = w.variant(S, 2, {"cons_or_nil"});
     auto list = w.lambda(w.pi(S, S), {"list"});
@@ -102,7 +102,7 @@ TEST(Nominal, PolymorphicListVariantNominal) {
 TEST(Nominal, Module) {
     World w;
 
-    auto S = w.star();
+    auto S = w.kind_star();
     auto B = w.type_bool();
     auto N = w.type_nat();
 

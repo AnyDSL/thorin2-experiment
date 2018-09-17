@@ -28,18 +28,18 @@ TEST(Qualifiers, Lattice) {
     EXPECT_EQ(lub(L, A), L);
     EXPECT_EQ(lub(L, R), L);
 
-    EXPECT_EQ(*get_qualifier(w.qualifier(U)), U);
-    EXPECT_EQ(*get_qualifier(w.qualifier(R)), R);
-    EXPECT_EQ(*get_qualifier(w.qualifier(A)), A);
-    EXPECT_EQ(*get_qualifier(w.qualifier(L)), L);
+    EXPECT_EQ(*get_qualifier(w.lit(U)), U);
+    EXPECT_EQ(*get_qualifier(w.lit(R)), R);
+    EXPECT_EQ(*get_qualifier(w.lit(A)), A);
+    EXPECT_EQ(*get_qualifier(w.lit(L)), L);
 }
 
 TEST(Qualifiers, Variants) {
     World w;
-    auto u = w.qualifier_u();
-    auto r = w.qualifier_r();
-    auto a = w.qualifier_a();
-    auto l = w.qualifier_l();
+    auto u = w.lit(Qualifier::u);
+    auto r = w.lit(Qualifier::r);
+    auto a = w.lit(Qualifier::a);
+    auto l = w.lit(Qualifier::l);
     auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
 
     EXPECT_EQ(u, u->qualifier());
@@ -68,10 +68,10 @@ TEST(Qualifiers, Variants) {
 
 TEST(Qualifiers, Kinds) {
     World w;
-    auto u = w.qualifier_u();
-    auto r = w.qualifier_r();
-    auto a = w.qualifier_a();
-    auto l = w.qualifier_l();
+    auto u = w.lit(Qualifier::u);
+    auto r = w.lit(Qualifier::r);
+    auto a = w.lit(Qualifier::a);
+    auto l = w.lit(Qualifier::l);
     auto v = w.var(w.qualifier_type(), 0);
     EXPECT_TRUE(w.qualifier_type()->has_values());
     EXPECT_TRUE(w.qualifier_type()->is_kind());
@@ -84,32 +84,32 @@ TEST(Qualifiers, Kinds) {
     EXPECT_TRUE(l->is_value());
     auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
 
-    auto anat = w.axiom(w.star(a), {"anat"});
-    auto rnat = w.axiom(w.star(r), {"rnat"});
-    auto vtype = w.lit(w.star(v), {0}, {"rnat"});
-    EXPECT_EQ(w.sigma({anat, w.star()})->qualifier(), a);
+    auto anat = w.axiom(w.kind_star(a), {"anat"});
+    auto rnat = w.axiom(w.kind_star(r), {"rnat"});
+    auto vtype = w.lit(w.kind_star(v), {0}, {"rnat"});
+    EXPECT_EQ(w.sigma({anat, w.kind_star()})->qualifier(), a);
     EXPECT_EQ(w.sigma({anat, rnat})->qualifier(), l);
     EXPECT_EQ(w.sigma({vtype, rnat})->qualifier(), lub({v, r}));
-    EXPECT_EQ(w.sigma({anat, w.star(l)})->qualifier(), a);
+    EXPECT_EQ(w.sigma({anat, w.kind_star(l)})->qualifier(), a);
 
-    EXPECT_EQ(a, w.variant({w.star(u), w.star(a)})->qualifier());
-    EXPECT_EQ(l, w.variant({w.star(r), w.star(l)})->qualifier());
+    EXPECT_EQ(a, w.variant({w.kind_star(u), w.kind_star(a)})->qualifier());
+    EXPECT_EQ(l, w.variant({w.kind_star(r), w.kind_star(l)})->qualifier());
 }
 
 TEST(Substructural, TypeCheckLambda) {
     World w;
     EXPECT_THROW(parse(w, "λq:ℚ. λt:*q. λa:t. (a, a, ())")->check(), TypeError);
 
-    auto a = w.qualifier_a();
-    w.axiom(w.star(a), {"atype"});
+    auto a = w.lit(Qualifier::a);
+    w.axiom(w.kind_star(a), {"atype"});
     EXPECT_THROW(parse(w, "λa:atype. (a, a, ())")->check(), TypeError);
     EXPECT_NO_THROW(parse(w, "λa:atype. λi:3ₐ. (a, a, ())#i")->check());
 
-    w.axiom(w.star(w.qualifier_r()), {"rtype"});
+    w.axiom(w.kind_star(w.lit(Qualifier::r)), {"rtype"});
     EXPECT_THROW(parse(w, "λr:rtype. ()")->check(), TypeError);
     EXPECT_THROW(parse(w, "λr:rtype. (42ₐ, 12ₐ)")->check(), TypeError);
 
-    w.axiom(w.star(w.qualifier_l()), {"ltype"});
+    w.axiom(w.kind_star(w.lit(Qualifier::l)), {"ltype"});
     EXPECT_THROW(parse(w, "λl:ltype. ()")->check(), TypeError);
     EXPECT_THROW(parse(w, "λl:ltype. (42ₐ, 12ₐ)")->check(), TypeError);
     EXPECT_THROW(parse(w, "λl:ltype. (l, 42ₐ, l)")->check(), TypeError);
@@ -118,16 +118,16 @@ TEST(Substructural, TypeCheckLambda) {
 
 TEST(Substructural, TypeCheckPack) {
     World w;
-    w.axiom(w.arity_kind(w.qualifier_a()), {"aarity"});
+    w.axiom(w.kind_arity(w.lit(Qualifier::a)), {"aarity"});
     EXPECT_THROW(parse(w, "‹i:aarity; (i, (), i)›")->check(), TypeError);
     EXPECT_THROW(parse(w, "λa:𝔸ᴬ.‹i:a; (i, i, ())›")->check(), TypeError);
     EXPECT_NO_THROW(parse(w, "λi:3ₐ. λa:𝔸ᴬ.‹j:a; (j, j, ())#i›")->check());
 
-    w.axiom(w.arity_kind(w.qualifier_r()), {"rarity"});
+    w.axiom(w.kind_arity(w.lit(Qualifier::r)), {"rarity"});
     EXPECT_THROW(parse(w, "‹r:rarity; ()›")->check(), TypeError);
     EXPECT_THROW(parse(w, "‹r:rarity; (42ₐ, 12ₐ)›")->check(), TypeError);
 
-    w.axiom(w.arity_kind(w.qualifier_l()), {"larity"});
+    w.axiom(w.kind_arity(w.lit(Qualifier::l)), {"larity"});
     EXPECT_THROW(parse(w, "‹l:larity; ()›")->check(), TypeError);
     EXPECT_THROW(parse(w, "‹l:larity; (42ₐ, 12ₐ)›")->check(), TypeError);
     EXPECT_THROW(parse(w, "‹l:larity; (l, 42ₐ, l)›")->check(), TypeError);
@@ -159,7 +159,7 @@ TEST(Substructural, Misc) {
     auto a = w.affine();
     //auto l = w.linear();
     //auto r = w.relevant();
-    //auto Star = w.star();
+    //auto Star = w.kind_star();
     auto Unit = w.unit();
     auto Nat = w.type_sw64();
     //auto n42 = w.axiom(Nat, {"42"});
@@ -195,8 +195,8 @@ TEST(Substructural, Misc) {
     EXPECT_FALSE(is_error(w.app(a_id, n0)));
 
     // λᴬT:*.λx:ᴬT.x
-    auto aT1 = w.var(w.star(A), 0, {"T"});
-    auto aT2 = w.var(w.star(A), 1, {"T"});
+    auto aT1 = w.var(w.kind_star(A), 0, {"T"});
+    auto aT2 = w.var(w.kind_star(A), 1, {"T"});
     auto x = w.var(aT2, 0, {"x"});
     auto poly_aid = w.lambda(aT2->type(), w.lambda(aT1, x));
     std::cout << poly_aid << " : " << poly_aid->type() << endl;
@@ -209,7 +209,7 @@ TEST(Substructural, Misc) {
 
 TEST(Substructural, UnlimitedRefs) {
     World w;
-    auto Star = w.star();
+    auto Star = w.kind_star();
     auto Nat = w.type_nat();
 
     w.axiom(w.pi(Star, Star), {"Ref"});
@@ -226,10 +226,10 @@ TEST(Substructural, UnlimitedRefs) {
 
 TEST(Substructural, AffineRefs) {
     World w;
-    auto a = w.qualifier_a();
-    auto Star = w.star();
+    auto a = w.lit(Qualifier::a);
+    auto Star = w.kind_star();
 
-    w.axiom(w.pi(Star, w.star(a)), {"ARef"});
+    w.axiom(w.pi(Star, w.kind_star(a)), {"ARef"});
     EXPECT_TRUE(parse(w, "ARef(\\0::*)")->has_values());
     w.axiom(parse(w, "ΠT: *. ΠT. ARef(T)"), {"NewARef"});
     w.axiom(parse(w, "ΠT: *. ΠARef(T). [T, ARef(T)]"), {"ReadARef"});
@@ -241,13 +241,13 @@ TEST(Substructural, AffineRefs) {
 
 TEST(Substructural, AffineCapabilityRefs) {
     World w;
-    auto a = w.qualifier_a();
-    auto Star = w.star();
+    auto a = w.lit(Qualifier::a);
+    auto Star = w.kind_star();
     auto Nat = w.type_nat();
     auto n42 = w.lit(Nat, 42);
 
-    w.axiom(w.pi(w.sigma({Star, Star}), w.star(a)), {"CRef"});
-    w.axiom(w.pi(Star, w.star(a)), {"ACap"});
+    w.axiom(w.pi(w.sigma({Star, Star}), w.kind_star(a)), {"CRef"});
+    w.axiom(w.pi(Star, w.kind_star(a)), {"ACap"});
 
     auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C:*, CRef(T, C), ACap(C)]"), {"NewCRef"});
     auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, CRef(T, C), ACap(C)]. [T, ACap(C)]"), {"ReadCRef"});
@@ -269,8 +269,8 @@ TEST(Substructural, AffineCapabilityRefs) {
 
 TEST(Substructural, AffineFractionalCapabilityRefs) {
     World w;
-    auto a = w.qualifier_a();
-    auto Star = w.star();
+    auto a = w.lit(Qualifier::a);
+    auto Star = w.kind_star();
     auto Nat = w.type_nat();
     auto n42 = w.lit(Nat, 42);
     auto n0 = w.lit(Nat, 0);
@@ -281,7 +281,7 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
     auto WriteOrRead = w.variant({Write, Read});
     auto Wr = w.axiom(Write, {"Wr"});
     auto Rd = w.axiom(w.pi(WriteOrRead, Read), {"Rd"});
-    w.axiom(w.pi(w.sigma({Star, WriteOrRead}), w.star(a)), {"FCap"});
+    w.axiom(w.pi(w.sigma({Star, WriteOrRead}), w.kind_star(a)), {"FCap"});
 
     auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C:*, FRef(T, C), FCap(C, Wr)]"), {"NewFRef"});
     auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, F:{Write, Read}, FRef(T, C), FCap(C, F)]. [T, FCap(C, F)]"), {"ReadFRef"});

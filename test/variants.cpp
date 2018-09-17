@@ -9,7 +9,7 @@ TEST(Variants, negative_test) {
     w.enable_expensive_checks();
     auto B = w.type_bool();
     auto N = w.type_nat();
-    auto variant = w.variant(w.star(), {N, B});
+    auto variant = w.variant(w.kind_star(), {N, B});
     auto x = w.axiom(variant, {"x"});
     auto handle_N = w.lambda(N, w.var(N, 0));
     auto handle_B_B = w.lambda(w.sigma({B, B}), w.lit_nat(0));
@@ -21,7 +21,7 @@ TEST(Variants, positive_tests) {
     auto B = w.type_bool();
     auto N = w.type_nat();
     // Test variant types and matches
-    auto variant = w.variant(w.star(), {N, B});
+    auto variant = w.variant(w.kind_star(), {N, B});
     auto x = w.axiom(variant, {"x"});
     auto assumed_var = w.axiom(variant, {"someval"});
     auto handle_N = w.lambda(N, w.var(N, 0));
@@ -37,18 +37,18 @@ TEST(Variants, positive_tests) {
     match->dump(); // match someval with ...
     match->type()->dump();
     // TODO don't want to allow this, does not have a real intersection interpretation, should be empty
-    w.intersection(w.star(), {w.pi(N, N), w.pi(B, B)})->dump();
+    w.intersection(w.kind_star(), {w.pi(N, N), w.pi(B, B)})->dump();
 }
 
 TEST(Variants, identities) {
     World w;
     auto B = w.type_bool();
     auto N = w.type_nat();
-    auto F = w.bottom(w.star());
-    EXPECT_EQ(w.variant(w.star(), {N}), N);
-    EXPECT_EQ(w.variant(w.star(), {N, F}), N);
-    EXPECT_EQ(w.variant(w.star(), {N, F, F}), N);
-    EXPECT_EQ(w.variant(w.star(), {F}), F);
-    EXPECT_EQ(w.variant(w.star(), {F, F}), F);
-    EXPECT_EQ(w.variant(w.star(), {N, B, F}), w.variant(w.star(), {B, N}));
+    auto F = w.bottom(w.kind_star());
+    EXPECT_EQ(w.variant(w.kind_star(), {N}), N);
+    EXPECT_EQ(w.variant(w.kind_star(), {N, F}), N);
+    EXPECT_EQ(w.variant(w.kind_star(), {N, F, F}), N);
+    EXPECT_EQ(w.variant(w.kind_star(), {F}), F);
+    EXPECT_EQ(w.variant(w.kind_star(), {F, F}), F);
+    EXPECT_EQ(w.variant(w.kind_star(), {N, B, F}), w.variant(w.kind_star(), {B, N}));
 }

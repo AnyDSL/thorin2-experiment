@@ -6,11 +6,12 @@ using namespace thorin;
 
 TEST(Pi, Kinds) {
     World w;
-    EXPECT_EQ(w.pi(w.star(), w.star())->type(), w.universe());
-    EXPECT_EQ(w.pi(w.star(), w.arity_kind())->type(), w.universe());
-    EXPECT_EQ(w.pi(w.type_nat(), w.type_nat())->type(), w.star());
-    EXPECT_EQ(w.pi(w.type_nat(), w.arity(2))->type(), w.star());
-    EXPECT_EQ(w.pi(w.type_nat(), w.sigma({w.arity(2), w.arity(3)}))->type(), w.star());
+    EXPECT_EQ(w.pi(w.kind_star(), w.kind_star ())->type(), w.universe());
+    EXPECT_EQ(w.pi(w.kind_star(), w.kind_arity())->type(), w.universe());
+    EXPECT_EQ(w.pi(w.kind_star(), w.kind_multi())->type(), w.universe());
+    EXPECT_EQ(w.pi(w.type_nat(), w.type_nat())->type(), w.kind_star());
+    EXPECT_EQ(w.pi(w.type_nat(), w.arity(2))->type(), w.kind_star());
+    EXPECT_EQ(w.pi(w.type_nat(), w.sigma({w.arity(2), w.arity(3)}))->type(), w.kind_star());
 }
 
 TEST(Lambda, PolyId) {
@@ -26,13 +27,13 @@ TEST(Lambda, PolyId) {
     auto bb = w.var(w.type_nat(), 0);
     EXPECT_TRUE(bb->free_vars().test(0));
     EXPECT_TRUE(w.lambda(w.type_nat(), bb)->free_vars().none());
-    EXPECT_TRUE(w.pi(w.star(), w.pi(w.var(w.star(), 0), w.var(w.star(), 1)))->free_vars().none());
+    EXPECT_TRUE(w.pi(w.kind_star(), w.pi(w.var(w.kind_star(), 0), w.var(w.kind_star(), 1)))->free_vars().none());
 
     // λT:*.λx:T.x
-    auto T_1 = w.var(w.star(), 0, {"T"});
+    auto T_1 = w.var(w.kind_star(), 0, {"T"});
     EXPECT_TRUE(T_1->free_vars().test(0));
     EXPECT_FALSE(T_1->free_vars().test(1));
-    auto T_2 = w.var(w.star(), 1, {"T"});
+    auto T_2 = w.var(w.kind_star(), 1, {"T"});
     EXPECT_TRUE(T_2->free_vars().test(1));
     EXPECT_TRUE(T_2->free_vars().any_begin(1));
     auto x = w.var(T_2, 0, {"x"});
@@ -52,8 +53,8 @@ TEST(Lambda, PolyId) {
 TEST(Lambda, PolyIdPredicative) {
     World w;
     // λT:*.λx:T.x
-    auto T_1 = w.var(w.star(), 0, {"T"});
-    auto T_2 = w.var(w.star(), 1, {"T"});
+    auto T_1 = w.var(w.kind_star(), 0, {"T"});
+    auto T_2 = w.var(w.kind_star(), 1, {"T"});
     auto x = w.var(T_2, 0, {"x"});
     auto poly_id = w.lambda(T_2->type(), w.lambda(T_1, x))->as<Lambda>();
 

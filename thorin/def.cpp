@@ -199,9 +199,9 @@ Lambda* Def::isa_lambda() const { if (is_nominal()) return const_cast<Lambda*>(i
 
 static inline const char* kind2str(Def::Tag tag) {
     switch (tag) {
-        case Def::Tag::ArityKind: return "𝔸";
-        case Def::Tag::MultiKind: return "𝕄";
-        case Def::Tag::Star:      return "*";
+        case Def::Tag::KindArity: return "𝔸";
+        case Def::Tag::KindMulti: return "𝕄";
+        case Def::Tag::KindStar:  return "*";
         default: THORIN_UNREACHABLE;
     }
 }
@@ -256,14 +256,14 @@ const Def* Def::qualifier() const {
         case Sort::Term:     return type()->type()->kind_qualifier();
         case Sort::Type:     return type()->kind_qualifier();
         case Sort::Kind:     return kind_qualifier();
-        case Sort::Universe: return world().qualifier_u();
+        case Sort::Universe: return world().lit(Qualifier::u);
     }
     THORIN_UNREACHABLE;
 }
 
 const Def* Def::kind_qualifier() const {
     assert(is_kind() || is_universe());
-    return world().qualifier_u();
+    return world().lit(Qualifier::u);
 }
 
 const Def* Kind::kind_qualifier() const { return op(0); }
@@ -278,15 +278,15 @@ const Def* Intersection::kind_qualifier() const {
 const Def* Pi::kind_qualifier() const {
     assert(is_kind());
     // TODO ensure that no Pi kinds with substructural qualifiers can exist -> polymorphic/dependent functions must always be unlimited
-    return world().qualifier_u();
+    return world().lit(Qualifier::u);
 }
 
-const Def* QualifierType::kind_qualifier() const { return world().qualifier_u(); }
+const Def* QualifierType::kind_qualifier() const { return world().lit(Qualifier::u); }
 
 const Def* Sigma::kind_qualifier() const {
     assert(is_kind());
     auto& w = world();
-    auto unlimited = w.qualifier_u();
+    auto unlimited = w.lit(Qualifier::u);
     if (num_ops() == 0)
         return unlimited;
     auto qualifiers = DefArray(num_ops(), [&](auto i) {
@@ -302,7 +302,7 @@ const Def* Singleton::kind_qualifier() const {
 
 const Def* Variadic::kind_qualifier() const {
     assert(is_kind());
-    return body()->has_values() ? shift_free_vars(body()->qualifier(), 1) : world().qualifier_u();
+    return body()->has_values() ? shift_free_vars(body()->qualifier(), 1) : world().lit(Qualifier::u);
 }
 
 const Def* Variant::kind_qualifier() const {
@@ -314,7 +314,7 @@ const Def* Variant::kind_qualifier() const {
 
 bool Def::is_substructural() const {
     auto q = qualifier();
-    return q != world().qualifier_u();
+    return q != world().lit(Qualifier::u);
 }
 
 //------------------------------------------------------------------------------
@@ -496,8 +496,8 @@ bool Def::subtype_of(const Def* def) const {
 }
 
 bool Kind::vsubtype_of(const Def* def) const {
-    return (is_arity_kind(this)       && (is_multi_arity_kind(def) || is_star(def)) && op(0) == def->op(0))
-        || (is_multi_arity_kind(this) && (is_star(def) && op(0) == def->op(0)));
+    return (is_kind_arity(this) && (is_kind_multi(def) || is_kind_star(def)) && op(0) == def->op(0))
+        || (is_kind_multi(this) && (is_kind_star (def) && op(0) == def->op(0)));
 }
 
 bool Pi::vsubtype_of(const Def* def) const {
@@ -574,7 +574,7 @@ bool Kind::assignable(const Def* def) const {
     // TODO
 #if 0
     auto type = def->type();
-    return this == type || ((type->isa<Multiind>() || type->isa<ArityKind>()) && op(0) == type->op(0));
+    return this == type || ((type->isa<Multiind>() || type->isa<KindArity>()) && op(0) == type->op(0));
 #endif
 }
 
