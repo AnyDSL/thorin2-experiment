@@ -74,9 +74,10 @@ TEST(Qualifiers, Kinds) {
     auto l = w.lit(Qualifier::l);
     auto v = w.var(w.type_qualifier(), 0);
     EXPECT_TRUE(w.type_qualifier()->has_values());
-    EXPECT_TRUE(w.type_qualifier()->is_kind());
+    EXPECT_TRUE(w.type_qualifier()->is_type());
+    EXPECT_TRUE(w.kind_qualifier()->is_kind());
     EXPECT_EQ(u->type(), w.type_qualifier());
-    EXPECT_TRUE(u->is_type());
+    EXPECT_FALSE(u->is_type());
     EXPECT_TRUE(u->is_value());
     EXPECT_FALSE(u->has_values());
     EXPECT_TRUE(r->is_value());

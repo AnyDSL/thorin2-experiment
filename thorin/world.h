@@ -62,6 +62,7 @@ public:
         assert(tag == Def::Tag::KindArity || tag == Def::Tag::KindMulti || tag == Def::Tag::KindStar);
         return unify<Kind>(1, *this, tag, q);
     }
+    const Axiom* kind_qualifier() const { return kind_qualifier_; }
     const Kind* kind_arity(Qualifier q = Qualifier::u) const { return kind_arity_[size_t(q)]; }
     const Kind* kind_multi(Qualifier q = Qualifier::u) const { return kind_multi_[size_t(q)]; }
     const Kind* kind_star (Qualifier q = Qualifier::u) const { return kind_star_ [size_t(q)]; }
@@ -210,7 +211,6 @@ public:
     //@}
 
     //@{ misc factory methods
-    const TypeQualifier* type_qualifier() const { return type_qualifier_; }
     const Def* singleton(const Def* def, Debug dbg = {});
     const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
     const Var* var(const Def* type, u64 index, Debug dbg = {}) { return unify<Var>(0, type, index, dbg); }
@@ -222,9 +222,10 @@ public:
     const Top* top(const Def* type) { return unify<Top>(0, type); }
     //@}
 
-    //@{ bool and nat types
+    //@{ standard types
     const Axiom* type_bool() { return type_bool_; }
     const Axiom* type_nat() { return type_nat_; }
+    const Axiom* type_qualifier() { return type_qualifier_; }
     //@}
 
     //@{ literals
@@ -441,7 +442,8 @@ protected:
     SymbolMap<const Axiom*> axioms_;
     SymbolMap<const Def*> externals_;
     const Universe* universe_;
-    const TypeQualifier* type_qualifier_;
+    const Axiom* kind_qualifier_;
+    const Axiom* type_qualifier_;
     const Axiom* arity_succ_;
     const Axiom* arity_eliminator_;
     const Axiom* arity_recursor_to_arity_;

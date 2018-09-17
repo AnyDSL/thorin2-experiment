@@ -109,7 +109,7 @@ public:
         Extract, Insert, Tuple, Pack, Sigma, Variadic,
         Match, Variant,
         Pick, Intersection,
-        Arity, TypeQualifier,
+        Arity,
         Lit, Axiom,
         Bottom, Top,
         Singleton,
@@ -725,20 +725,6 @@ public:
     friend class World;
 };
 
-class TypeQualifier : public Def {
-private:
-    TypeQualifier(World& world);
-
-public:
-    const Def* arity() const override;
-    bool has_values() const override;
-    const Def* kind_qualifier() const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-    DefPrinter& stream(DefPrinter&) const override;
-
-    friend class World;
-};
-
 bool is_type_qualifier(const Def*);
 
 class Universe : public Def {
@@ -813,7 +799,7 @@ private:
 };
 
 inline std::optional<Qualifier> get_qualifier(const Def* def) {
-    if (auto lit = def->isa<Lit>(); lit && def->type()->isa<TypeQualifier>())
+    if (auto lit = def->isa<Lit>(); lit && is_type_qualifier(def->type()))
         return {Qualifier(lit->box().get_s32())};
     return {};
 }

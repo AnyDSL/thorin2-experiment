@@ -113,7 +113,7 @@ DefPrinter& DefPrinter::recurse(const Def* def) {
 //------------------------------------------------------------------------------
 
 DefPrinter& Def::qualifier_stream(DefPrinter& p) const {
-    if (!has_values() || tag() == Tag::TypeQualifier)
+    if (!has_values() || is_type_qualifier(this))
         return p;
     if (type()->is_kind()) {
         auto q = type()->op(0);
@@ -259,10 +259,6 @@ DefPrinter& Pick::stream(DefPrinter& p) const {
     return p << ")";
 #endif
     return p << "TODO";
-}
-
-DefPrinter& TypeQualifier::stream(DefPrinter& p) const {
-    return p << name();
 }
 
 DefPrinter& Sigma::stream(DefPrinter& p) const {

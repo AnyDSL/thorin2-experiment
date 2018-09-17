@@ -94,7 +94,7 @@ Def::Sort Def::sort() const {
 bool Def::maybe_affine() const {
     if (!is_value())
         return false;
-    if (type()->isa<TypeQualifier>())
+    if (is_type_qualifier(type()))
         return false;
     const Def* q = qualifier();
     assert(q != nullptr);
@@ -212,10 +212,6 @@ Kind::Kind(World& world, Tag tag, const Def* qualifier)
     : Def(tag, world.universe(), {qualifier}, {kind2str(tag)})
 {}
 
-TypeQualifier::TypeQualifier(World& world)
-    : Def(Tag::TypeQualifier, world.universe(), 0, {"ℚ"})
-{}
-
 Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
     : Sigma(world.universe(), num_ops, dbg)
 {}
@@ -238,7 +234,6 @@ bool Intersection::has_values() const {
 }
 bool Lit::has_values() const { return is_type_with_values(this); }
 bool Pi::has_values() const { return true; }
-bool TypeQualifier::has_values() const { return true; }
 bool Sigma::has_values() const { return true; }
 bool Singleton::has_values() const { return op(0)->is_value(); }
 bool Var::has_values() const { return is_type_with_values(this); }
@@ -282,8 +277,6 @@ const Def* Pi::kind_qualifier() const {
     // TODO ensure that no Pi kinds with substructural qualifiers can exist -> polymorphic/dependent functions must always be unlimited
     return world().lit(Qualifier::u);
 }
-
-const Def* TypeQualifier::kind_qualifier() const { return world().lit(Qualifier::u); }
 
 const Def* Sigma::kind_qualifier() const {
     assert(is_kind());
@@ -338,7 +331,6 @@ const Def* Kind          ::arity() const { return world().arity(1); }
 const Def* Lit           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
 const Def* Param         ::arity() const { return destructing_type()->arity(); }
 const Def* Pi            ::arity() const { return world().arity(1); }
-const Def* TypeQualifier ::arity() const { return world().arity(1); }
 const Def* Sigma         ::arity() const { return world().arity(num_ops()); }
 const Def* Singleton     ::arity() const { return op(0)->arity(); }
 const Def* Top           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
@@ -436,7 +428,6 @@ const Def* Pick          ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(ops.size() == 1);
     return to.pick(ops.front(), t, debug());
 }
-const Def* TypeQualifier ::rebuild(World& to, const Def*  , Defs    ) const { return to.type_qualifier(); }
 const Def* Sigma         ::rebuild(World& to, const Def* t, Defs ops) const {
     assert(!is_nominal());
     return to.sigma(t->qualifier(), ops, debug());

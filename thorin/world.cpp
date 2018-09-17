@@ -124,7 +124,8 @@ World::World(Debug dbg)
     , cur_page_(root_page_.get())
 {
     universe_ = insert<Universe>(0, *this);
-    type_qualifier_ = insert<TypeQualifier>(0, *this);
+    kind_qualifier_ = axiom(universe(), {"kind𝕄"});
+    type_qualifier_ = axiom(kind_qualifier(), {"𝕄"});
     for (size_t i = 0; i != 4; ++i) {
         qualifier_[i] = lit(type_qualifier(), s32(i), {qualifier2str(Qualifiers[i])});
         kind_star_ [i] = insert<Kind>(1, *this, Def::Tag::KindStar,  qualifier_[i]);
