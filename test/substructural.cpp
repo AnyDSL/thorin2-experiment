@@ -40,7 +40,7 @@ TEST(Qualifiers, Variants) {
     auto r = w.lit(Qualifier::r);
     auto a = w.lit(Qualifier::a);
     auto l = w.lit(Qualifier::l);
-    auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
+    auto lub = [&](Defs defs) { return w.variant(w.type_qualifier(), defs); };
 
     EXPECT_EQ(u, u->qualifier());
     EXPECT_EQ(u, r->qualifier());
@@ -58,7 +58,7 @@ TEST(Qualifiers, Variants) {
     EXPECT_EQ(l, lub({a, r}));
     EXPECT_EQ(l, lub({u, l, r, r}));
 
-    auto v = w.var(w.qualifier_type(), 0);
+    auto v = w.var(w.type_qualifier(), 0);
     EXPECT_EQ(u, v->qualifier());
     EXPECT_EQ(v, lub({v}));
     EXPECT_EQ(v, lub({u, v, u}));
@@ -72,17 +72,17 @@ TEST(Qualifiers, Kinds) {
     auto r = w.lit(Qualifier::r);
     auto a = w.lit(Qualifier::a);
     auto l = w.lit(Qualifier::l);
-    auto v = w.var(w.qualifier_type(), 0);
-    EXPECT_TRUE(w.qualifier_type()->has_values());
-    EXPECT_TRUE(w.qualifier_type()->is_kind());
-    EXPECT_EQ(u->type(), w.qualifier_type());
+    auto v = w.var(w.type_qualifier(), 0);
+    EXPECT_TRUE(w.type_qualifier()->has_values());
+    EXPECT_TRUE(w.type_qualifier()->is_kind());
+    EXPECT_EQ(u->type(), w.type_qualifier());
     EXPECT_TRUE(u->is_type());
     EXPECT_TRUE(u->is_value());
     EXPECT_FALSE(u->has_values());
     EXPECT_TRUE(r->is_value());
     EXPECT_TRUE(a->is_value());
     EXPECT_TRUE(l->is_value());
-    auto lub = [&](Defs defs) { return w.variant(w.qualifier_type(), defs); };
+    auto lub = [&](Defs defs) { return w.variant(w.type_qualifier(), defs); };
 
     auto anat = w.axiom(w.kind_star(a), {"anat"});
     auto rnat = w.axiom(w.kind_star(r), {"rnat"});

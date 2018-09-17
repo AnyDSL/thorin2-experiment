@@ -133,7 +133,7 @@ TEST(Lexer, Utf8) {
     Lexer lexer(is, "stdin");
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Pi));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Qualifier_Type));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Type_Qualifier));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Arity));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Multi));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Eof));

@@ -36,8 +36,6 @@ static bool any_equal_of(const Def* def, Defs defs) {
     return std::any_of(defs.begin(), defs.end(), [&](auto d){ return d == def; });
 }
 
-static bool is_qualifier(const Def* def) { return def->type() == def->world().qualifier_type(); }
-
 // TODO Rewrite this. This code is ugly as hell.
 template<class T, bool infer_qualifier, class I>
 const Def* World::bound(const Def* q, Range<I> defs) {
@@ -62,12 +60,12 @@ const Def* World::bound(const Def* q, Range<I> defs) {
                 inferred_q = lit(T::Lattice::max);
             } else {
                 auto qualifier = shift_free_vars(def->qualifier(), -i);
-                inferred_q = join<T>(qualifier_type(), {inferred_q, qualifier}, {});
+                inferred_q = join<T>(type_qualifier(), {inferred_q, qualifier}, {});
             }
         }
 
         // TODO somehow build into a def->is_subtype_of(other)/similar
-        if (def == qualifier_type() && max == qualifier_type())
+        if (def == type_qualifier() && max == type_qualifier())
             continue;
         bool is_arity = def->tag() == Def::Tag::KindArity;
         bool is_star = def->tag() == Def::Tag::KindStar;
@@ -126,9 +124,9 @@ World::World(Debug dbg)
     , cur_page_(root_page_.get())
 {
     universe_ = insert<Universe>(0, *this);
-    qualifier_type_ = insert<QualifierType>(0, *this);
+    type_qualifier_ = insert<TypeQualifier>(0, *this);
     for (size_t i = 0; i != 4; ++i) {
-        qualifier_[i] = lit(qualifier_type(), s32(i), {qualifier2str(Qualifiers[i])});
+        qualifier_[i] = lit(type_qualifier(), s32(i), {qualifier2str(Qualifiers[i])});
         kind_star_ [i] = insert<Kind>(1, *this, Def::Tag::KindStar,  qualifier_[i]);
         kind_arity_[i] = insert<Kind>(1, *this, Def::Tag::KindArity, qualifier_[i]);
         kind_multi_[i] = insert<Kind>(1, *this, Def::Tag::KindMulti, qualifier_[i]);
@@ -183,7 +181,7 @@ World::~World() {
 }
 
 const Arity* World::arity(const Def* q, size_t a, Loc loc) {
-    assert(q->type() == qualifier_type());
+    assert(q->type() == type_qualifier());
     auto cur = Def::gid_counter();
     auto result = unify<Arity>(3, kind_arity(q), a, loc);
 
@@ -434,15 +432,15 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
 
     // implements a least upper bound on qualifiers,
     // could possibly be replaced by something subtyping-generic
-    if (is_qualifier(first)) {
-        assert(type == qualifier_type());
+    if (is_type_qualifier(first->type())) {
+        assert(type == type_qualifier());
         auto accu = T::Lattice::min;
         DefVector qualifiers;
         for (auto def : defs) {
             if (auto q = get_qualifier(def)) {
                 accu = T::Lattice::join(accu, *q);
             } else {
-                assert(is_qualifier(def));
+                assert(is_type_qualifier(def->type()));
                 assert(def);
                 qualifiers.emplace_back(def);
             }
@@ -451,7 +449,7 @@ const Def* World::join(const Def* type, Defs ops, Debug dbg) {
         if (accu != T::Lattice::min) qualifiers.emplace_back(lit(accu));
         if (qualifiers.size() == 1) return qualifiers.front();
         SortedDefSet set(qualifiers.begin(), qualifiers.end());
-        return unify<T>(set.size(), qualifier_type(), set, dbg);
+        return unify<T>(set.size(), type_qualifier(), set, dbg);
     }
 
     return unify<T>(defs.size(), type, defs, dbg);

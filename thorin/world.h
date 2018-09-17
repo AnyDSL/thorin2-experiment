@@ -70,10 +70,6 @@ public:
     const Kind* kind_star (const Def* def) { auto q = get_qualifier(def); return q ? kind_star (*q) : kind(Def::Tag::KindStar,  def); }
     //@}
 
-    //@{ create qualifier
-    const QualifierType* qualifier_type() const { return qualifier_type_; }
-    //@}
-
     //@{ create Pi
     const Pi* pi(const Def* domain, const Def* codomain, Debug dbg = {}) {
         return pi(lit(Qualifier::u), domain, codomain, dbg);
@@ -214,6 +210,7 @@ public:
     //@}
 
     //@{ misc factory methods
+    const TypeQualifier* type_qualifier() const { return type_qualifier_; }
     const Def* singleton(const Def* def, Debug dbg = {});
     const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
     const Var* var(const Def* type, u64 index, Debug dbg = {}) { return unify<Var>(0, type, index, dbg); }
@@ -444,7 +441,7 @@ protected:
     SymbolMap<const Axiom*> axioms_;
     SymbolMap<const Def*> externals_;
     const Universe* universe_;
-    const QualifierType* qualifier_type_;
+    const TypeQualifier* type_qualifier_;
     const Axiom* arity_succ_;
     const Axiom* arity_eliminator_;
     const Axiom* arity_recursor_to_arity_;

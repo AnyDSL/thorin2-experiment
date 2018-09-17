@@ -150,7 +150,7 @@ Token Lexer::lex() {
         if (accept(U'Π')) return {loc(), TT::Pi};
         if (accept(U'𝔸')) return {loc(), TT::Kind_Arity};
         if (accept(U'𝕄')) return {loc(), TT::Kind_Multi};
-        if (accept(U'ℚ')) return {loc(), TT::Qualifier_Type};
+        if (accept(U'ℚ')) return {loc(), TT::Type_Qualifier};
         if (accept(U'ᵁ')) return {loc(), TT::Q_u};
         if (accept(U'ᴿ')) return {loc(), TT::Q_r};
         if (accept(U'ᴬ')) return {loc(), TT::Q_a};

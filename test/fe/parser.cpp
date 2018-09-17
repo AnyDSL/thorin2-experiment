@@ -67,7 +67,7 @@ TEST(Parser, Arities) {
     EXPECT_EQ(parse(w, "1ₐᴿ"), w.arity(w.lit(Qualifier::r), 1));
     EXPECT_EQ(parse(w, "2ₐᴬ"), w.arity(w.lit(Qualifier::a), 2));
     EXPECT_EQ(parse(w, "3ₐᴸ"), w.arity(w.lit(Qualifier::l), 3));
-    EXPECT_EQ(parse(w, "Πq:ℚ.42ₐq"), w.pi(w.qualifier_type(), w.arity(w.var(w.qualifier_type(), 0), 42)));
+    EXPECT_EQ(parse(w, "Πq:ℚ.42ₐq"), w.pi(w.type_qualifier(), w.arity(w.var(w.type_qualifier(), 0), 42)));
 }
 
 TEST(Parser, Indices) {
@@ -78,7 +78,7 @@ TEST(Parser, Indices) {
     EXPECT_EQ(parse(w, "4₅ᴿ"), w.lit_index(w.arity(w.lit(Qualifier::r), 5), 4));
     EXPECT_EQ(parse(w, "4₅ᴬ"), w.lit_index(w.arity(w.lit(Qualifier::a), 5), 4));
     EXPECT_EQ(parse(w, "4₅ᴸ"), w.lit_index(w.arity(w.lit(Qualifier::l), 5), 4));
-    EXPECT_EQ(parse(w, "λq:ℚ.4₅q"), w.lambda(w.qualifier_type(), w.lit_index(w.arity(w.var(w.qualifier_type(), 0), 5), 4)));
+    EXPECT_EQ(parse(w, "λq:ℚ.4₅q"), w.lambda(w.type_qualifier(), w.lit_index(w.arity(w.var(w.type_qualifier(), 0), 5), 4)));
 }
 
 TEST(Parser, Kinds) {
@@ -88,19 +88,19 @@ TEST(Parser, Kinds) {
     EXPECT_EQ(parse(w, "*ᴿ"), w.kind_star(Qualifier::r));
     EXPECT_EQ(parse(w, "*ᴬ"), w.kind_star(Qualifier::a));
     EXPECT_EQ(parse(w, "*ᴸ"), w.kind_star(Qualifier::l));
-    EXPECT_EQ(parse(w, "Πq:ℚ.*q"), w.pi(w.qualifier_type(), w.kind_star(w.var(w.qualifier_type(), 0))));
+    EXPECT_EQ(parse(w, "Πq:ℚ.*q"), w.pi(w.type_qualifier(), w.kind_star(w.var(w.type_qualifier(), 0))));
     EXPECT_EQ(parse(w, "𝔸 "), w.kind_arity());
     EXPECT_EQ(parse(w, "𝔸ᵁ"), w.kind_arity());
     EXPECT_EQ(parse(w, "𝔸ᴿ"), w.kind_arity(Qualifier::r));
     EXPECT_EQ(parse(w, "𝔸ᴬ"), w.kind_arity(Qualifier::a));
     EXPECT_EQ(parse(w, "𝔸ᴸ"), w.kind_arity(Qualifier::l));
-    EXPECT_EQ(parse(w, "Πq:ℚ.𝔸q"), w.pi(w.qualifier_type(), w.kind_arity(w.var(w.qualifier_type(), 0))));
+    EXPECT_EQ(parse(w, "Πq:ℚ.𝔸q"), w.pi(w.type_qualifier(), w.kind_arity(w.var(w.type_qualifier(), 0))));
     EXPECT_EQ(parse(w, "𝕄 "), w.kind_multi());
     EXPECT_EQ(parse(w, "𝕄ᵁ"), w.kind_multi());
     EXPECT_EQ(parse(w, "𝕄ᴿ"), w.kind_multi(Qualifier::r));
     EXPECT_EQ(parse(w, "𝕄ᴬ"), w.kind_multi(Qualifier::a));
     EXPECT_EQ(parse(w, "𝕄ᴸ"), w.kind_multi(Qualifier::l));
-    EXPECT_EQ(parse(w, "Πq:ℚ.𝕄q"), w.pi(w.qualifier_type(), w.kind_multi(w.var(w.qualifier_type(), 0))));
+    EXPECT_EQ(parse(w, "Πq:ℚ.𝕄q"), w.pi(w.type_qualifier(), w.kind_multi(w.var(w.type_qualifier(), 0))));
 }
 
 TEST(Parser, ComplexVariadics) {
@@ -157,7 +157,7 @@ TEST(Parser, NestedDependentBinders) {
 
 TEST(Parser, IntArithOp) {
     World w;
-    auto Q = w.qualifier_type();
+    auto Q = w.type_qualifier();
     auto N = w.type_nat();
     auto MA = w.kind_multi();
     auto sig = w.sigma({Q, N, N});
@@ -174,7 +174,7 @@ TEST(Parser, Apps) {
     auto i0_5 = w.lit_index(a5, 0);
     auto ma = w.kind_multi(Qualifier::a);
     EXPECT_EQ(parse(w, "(λs: 𝕄ᴬ. λq: ℚ. λi: s. (s, q, i)) 5ₐᴬ ᴿ 0₅ᴬ"), w.tuple({a5, w.lit(Qualifier::r), i0_5}));
-    auto ax = w.axiom(w.pi(ma, w.pi(w.qualifier_type(), w.kind_star())), {"ax"});
+    auto ax = w.axiom(w.pi(ma, w.pi(w.type_qualifier(), w.kind_star())), {"ax"});
     EXPECT_EQ(parse(w, "(ax 5ₐᴬ) ᴿ"), w.app(w.app(ax, a5), w.lit(Qualifier::r)));
     EXPECT_EQ(parse(w, "ax 5ₐᴬ ᴿ"), w.app(w.app(ax, a5), w.lit(Qualifier::r)));
 }

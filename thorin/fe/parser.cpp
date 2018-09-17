@@ -51,7 +51,7 @@ void Parser::parse_curried_defs(std::vector<std::pair<const Def*, Loc>>& defs) {
     else if (ahead().isa(TT::D_angle_l))    def = parse_pack();
     else if (ahead().isa(TT::D_brace_l))    def = parse_variant();
     else if (ahead().isa(TT::Literal))      def = parse_literal();
-    else if (accept(TT::Qualifier_Type))    def = world_.qualifier_type();
+    else if (accept(TT::Type_Qualifier))    def = world_.type_qualifier();
     else if (accept(TT::Q_u))               def = world_.lit(Qualifier::u);
     else if (accept(TT::Q_r))               def = world_.lit(Qualifier::r);
     else if (accept(TT::Q_a))               def = world_.lit(Qualifier::a);
@@ -88,7 +88,7 @@ const Def* Parser::parse_debruijn() {
                     case TT::Pi:             type = parse_pi(); break;
                     case TT::D_bracket_l:    type = parse_sigma(); break;
                     case TT::D_quote_l:      type = parse_variadic(); break;
-                    case TT::Qualifier_Type: type = world_.qualifier_type(); break;
+                    case TT::Type_Qualifier: type = world_.type_qualifier(); break;
                     case TT::Kind_Star:
                     case TT::Kind_Arity:
                     case TT::Kind_Multi:     type = parse_kind(); break;

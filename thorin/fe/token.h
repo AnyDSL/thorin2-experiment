@@ -31,7 +31,7 @@ namespace thorin::fe {
     f(Kind_Arity,       "\\kind_arity") \
     f(Kind_Multi,       "\\kind_multi") \
     f(Kind_Star,        "*") \
-    f(Qualifier_Type,   "\\qualifier_type") \
+    f(Type_Qualifier,   "\\type_qualifier") \
 
 #define THORIN_OP_TOKENS(f) \
     f(D_brace_r,          "}") \
