@@ -42,7 +42,7 @@ inline Lambda* drop(Lambda* lambda, Defs args) {
 
 inline Lambda* clone(Lambda* lambda) {
     Scope scope(lambda);
-    size_t num = get_constant_arity(lambda->domain()).value_or(1);
+    size_t num = get_constant_arity(lambda->domain()->arity()).value_or(1);
     return mangle(scope, DefArray(num), {});
 }
 

@@ -108,9 +108,9 @@ public:
 
     //@{ create Units
     const Def* unit(Qualifier q = Qualifier::u) { return unit_[size_t(q)]; }
-    const Def* unit(const Def* def) { auto q = get_qualifier(def); return q ? unit(*q) : arity(def, 1); }
-    const Def* unit_kind(Qualifier q = Qualifier::u) { return variadic(arity(0), kind_star(q)); }
-    const Def* unit_kind(const Def* q) { return variadic(arity(0), kind_star(q)); }
+    const Def* unit(const Def* def) { auto q = get_qualifier(def); return q ? unit(*q) : lit_arity(def, 1); }
+    const Def* unit_kind(Qualifier q = Qualifier::u) { return variadic(lit_arity(0), kind_star(q)); }
+    const Def* unit_kind(const Def* q) { return variadic(lit_arity(0), kind_star(q)); }
     //@}
 
     //@{ create Sigma
@@ -130,9 +130,9 @@ public:
     //@{ create Variadic
     const Def* variadic(const Def* arities, const Def* body, Debug dbg = {});
     const Def* variadic(Defs arities, const Def* body, Debug dbg = {});
-    const Def* variadic(u64 a, const Def* body, Debug dbg = {}) { return variadic(arity(Qualifier::u, a, dbg), body, dbg); }
+    const Def* variadic(u64 a, const Def* body, Debug dbg = {}) { return variadic(lit_arity(Qualifier::u, a, dbg), body, dbg); }
     const Def* variadic(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
-        return variadic(DefArray(a.size(), [&](auto i) { return arity(Qualifier::u, a[i], dbg); }), body, dbg);
+        return variadic(DefArray(a.size(), [&](auto i) { return lit_arity(Qualifier::u, a[i], dbg); }), body, dbg);
     }
     //@}
 
@@ -142,17 +142,17 @@ public:
 
     //@{ create unit values
     const Def* val_unit(Qualifier q = Qualifier::u) { return unit_val_[size_t(q)]; }
-    const Def* val_unit(const Def* def) { auto q = get_qualifier(def); return q ? val_unit(*q) : index_zero(arity(def, 1)); }
-    const Def* val_unit_kind(Qualifier q = Qualifier::u) { return pack(arity(0), unit(q)); }
-    const Def* val_unit_kind(const Def* q) { return pack(arity(0), unit(q)); }
+    const Def* val_unit(const Def* def) { auto q = get_qualifier(def); return q ? val_unit(*q) : index_zero(lit_arity(def, 1)); }
+    const Def* val_unit_kind(Qualifier q = Qualifier::u) { return pack(lit_arity(0), unit(q)); }
+    const Def* val_unit_kind(const Def* q) { return pack(lit_arity(0), unit(q)); }
     //@}
 
     //@{ create Pack
     const Def* pack(const Def* arities, const Def* body, Debug dbg = {});
     const Def* pack(Defs arities, const Def* body, Debug dbg = {});
-    const Def* pack(u64 a, const Def* body, Debug dbg = {}) { return pack(arity(Qualifier::u, a, dbg), body, dbg); }
+    const Def* pack(u64 a, const Def* body, Debug dbg = {}) { return pack(lit_arity(Qualifier::u, a, dbg), body, dbg); }
     const Def* pack(ArrayRef<u64> a, const Def* body, Debug dbg = {}) {
-        return pack(DefArray(a.size(), [&](auto i) { return arity(Qualifier::u, a[i], dbg); }), body, dbg);
+        return pack(DefArray(a.size(), [&](auto i) { return lit_arity(Qualifier::u, a[i], dbg); }), body, dbg);
     }
     //@}
 
@@ -176,9 +176,6 @@ public:
     //@}
 
     //@{ create Arity
-    const Arity* arity(const Def* q, u64 a, Loc loc = {});
-    const Arity* arity(Qualifier q, u64 a, Loc loc = {}) { return arity(lit(q), a, loc); }
-    const Arity* arity(u64 a, Loc loc = {}) { return arity(Qualifier::u, a, loc); }
     const Axiom* arity_succ() { return arity_succ_; }
     const Def* arity_succ(const Def* arity, Debug dbg = {});
     const Axiom* arity_eliminator() const { return arity_eliminator_; }
@@ -231,8 +228,11 @@ public:
     //@{ literals
     const Lit* lit(const Def* type, Box box, Debug dbg = {}) { return unify<Lit>(0, type, box, dbg); }
     const Lit* lit(Qualifier q) const { return qualifier_[size_t(q)]; }
-    const Lit* lit_index(u64 arity, u64 idx, Loc loc = {}) { return lit_index(this->arity(arity), idx, loc); }
-    const Lit* lit_index(const Arity* arity, u64 index, Loc loc = {});
+    const Lit* lit_arity(const Def* q, u64 a, Loc loc = {});
+    const Lit* lit_arity(Qualifier q, u64 a, Loc loc = {}) { return lit_arity(lit(q), a, loc); }
+    const Lit* lit_arity(u64 a, Loc loc = {}) { return lit_arity(Qualifier::u, a, loc); }
+    const Lit* lit_index(u64 arity, u64 idx, Loc loc = {}) { return lit_index(lit_arity(arity), idx, loc); }
+    const Lit* lit_index(const Lit* arity, u64 index, Loc loc = {});
     const Lit* lit_nat(int64_t val, Loc loc = {});
     const Lit* lit_nat_0 () { return lit_nat_0_; }
     const Lit* lit_nat_1 () { return lit_nat_[0]; }
@@ -455,7 +455,7 @@ protected:
     const Axiom* multi_recursor_;
     const Def* rank_;
     std::array<const Lit*, 4> qualifier_;
-    std::array<const Arity*, 4> unit_;
+    std::array<const Lit*, 4> unit_;
     std::array<const Def*, 4> unit_val_;
     std::array<const Def*, 4> unit_kind_;
     std::array<const Def*, 4> unit_kind_val_;

@@ -11,12 +11,12 @@ namespace thorin {
 
 std::array<const Def*, 2> shrink_shape(const Def* def) {
     auto& w = def->world();
-    if (def->isa<Arity>())
-        return {{def, w.arity(1)}};
+    if (get_constant_arity(def))
+        return {{def, w.lit_arity(1)}};
     if (auto sigma = def->isa<Sigma>())
         return {{sigma->op(0), shift_free_vars(w.sigma(sigma->ops().skip_front()), -1)}};
     auto variadic = def->as<Variadic>();
-    return {{variadic->arity(), w.variadic(variadic->arity()->as<Arity>()->value() - 1, variadic->body())}};
+    return {{variadic->arity(), w.variadic(*get_constant_arity(variadic->arity()) - 1, variadic->body())}};
 }
 
 std::array<const Def*, 2> split(const Def* def) {
@@ -107,9 +107,8 @@ const Def* normalize_tuple(const Def* callee, Defs args, Debug dbg) {
 const Def* normalize_arity_succ(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
     auto [qualifier, arg_arity] = split(arg);
-    if (auto arity = arg_arity->isa<Arity>()) {
-        auto arity_val = arity->value();
-        return w.arity(qualifier, arity_val + 1, dbg);
+    if (auto arity = get_constant_arity(arg_arity)) {
+        return w.lit_arity(qualifier, *arity + 1, dbg);
     }
     return nullptr;
 }
@@ -117,7 +116,7 @@ const Def* normalize_arity_succ(const Def* callee, const Def* arg, Debug dbg) {
 const Def* normalize_index_zero(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
     auto arg_arity = arg->op(1);
-    if (arg_arity->isa<Arity>())
+    if (get_constant_arity(arg_arity))
         return w.index_zero(arg_arity, dbg);
     return nullptr;
 }
@@ -128,8 +127,8 @@ const Def* normalize_index_succ(const Def* callee, const Def* arg, Debug dbg) {
     if (arg->is_term() && is_kind_arity(arg->type()->type())) {
         if (auto index = arg->isa<Lit>()) {
             auto idx = get_index(index);
-            auto arity = index->type()->as<Arity>();
-            return w.lit_index(w.arity(index->qualifier(), arity->value() + 1), idx + 1, dbg);
+            auto arity = get_constant_arity(index->type());
+            return w.lit_index(w.lit_arity(index->qualifier(), *arity + 1), idx + 1, dbg);
         }
     }
     return nullptr;
@@ -150,7 +149,7 @@ const Def* normalize_index_eliminator(const Def* callee, const Def* arg, Debug d
                 // callee = (E q P base step a) -> apply base to a
                 return w.app(base, arity);
             }
-            pred = w.lit_index(index->type()->as<Arity>()->value()-1, index_val - 1);
+            pred = w.lit_index(*get_constant_arity(index->type())-1, index_val - 1);
         } else if (auto app = arg->isa<App>()) {
             if (app->callee() == w.index_zero()) {
                 // callee = (E q P base step a) -> apply base to a
@@ -173,13 +172,10 @@ const Def* normalize_index_eliminator(const Def* callee, const Def* arg, Debug d
 const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
     const Def* pred = nullptr;
-    if (auto arity = arg->isa<Arity>()) {
-        auto arity_val = arity->value();
-        if (arity_val == 0) {
-            // callee = (E q P base step) OR (E q base step) -> get base
-            return callee->op(0)->op(1);
-        }
-        pred = w.arity(arity_val - 1);
+    if (auto arity = get_constant_arity(arg)) {
+        if (*arity == 0)
+            return callee->op(0)->op(1); // callee = (E q P base step) OR (E q base step) -> get base
+        pred = w.lit_arity(*arity - 1);
     } else if (auto arity_app = arg->isa<App>(); arity_app->callee() == w.arity_succ()) {
         pred = arity_app->arg();
     }
@@ -201,7 +197,7 @@ const Def* normalize_multi_recursor(const Def* callee, const Def* arg, Debug dbg
         for (auto arity : sigma->ops())
             ret = w.app(step, w.tuple({ret, arity}), dbg);
     } else if (auto variadic = arg->isa<Variadic>()) {
-        if (auto rank = get_constant_arity(variadic)) {
+        if (auto rank = get_constant_arity(variadic->arity())) {
             // body of variadic must be homogeneous because of normalization and may not depend on var 0
             auto arity = shift_free_vars(variadic->body(), -1);
             for (size_t i = 0; i != rank; ++i)

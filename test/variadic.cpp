@@ -22,7 +22,7 @@ TEST(Variadic, Misc) {
     auto p2_4b = w.lit_index(4, 2);
     EXPECT_EQ(p2_4, p2_4b);
     auto v = w.variadic(5, N);
-    EXPECT_TRUE(v->arity() == w.arity(5));
+    EXPECT_TRUE(v->arity() == w.lit_arity(5));
 
     auto t = w.tuple({w.lit_nat_2(), w.lit_nat_4()});
     EXPECT_TRUE(t->type()->isa<Variadic>());
@@ -42,8 +42,8 @@ TEST(Variadic, Misc) {
                             w.pi(w.variadic(w.var(A, 1), w.app(list, w.extract(ts_var(1), w.var(w.var(A, 2), 0)))),
                                  w.app(list, w.variadic(w.var(A, 2), w.extract(ts_var(2), w.var(w.var(A, 3), 0))))))), {"zip"});
 
-    EXPECT_EQ(w.app(w.app(w.app(zip, w.arity(2)), w.tuple({B, N})), {lb, ln})->type(), w.app(list, sbn));
-    EXPECT_EQ(w.app(w.app(w.app(zip, w.arity(1)), B), lb)->type(), w.app(list, B));
+    EXPECT_EQ(w.app(w.app(w.app(zip, w.lit_arity(2)), w.tuple({B, N})), {lb, ln})->type(), w.app(list, sbn));
+    EXPECT_EQ(w.app(w.app(w.app(zip, w.lit_arity(1)), B), lb)->type(), w.app(list, B));
 
     // Πa: A,Ts: [    a; *].Πlist[[    a;             Ts#i        ]]. [a; list[                Ts#i        ]]
     // Π   A,    [<0:A>; *].Πlist[[<1:A>; <1:[<2:A>; *]>#<0:<2:A>>]]. [<2:A>; list[<2:[<3:A>; *]>#<0:<3:A>>]]
@@ -51,7 +51,7 @@ TEST(Variadic, Misc) {
                               w.pi(w.app(list, w.variadic(w.var(A, 1), w.extract(ts_var(1), w.var(w.var(A, 2), 0)))),
                                    w.variadic(w.var(A, 2), w.app(list, w.extract(ts_var(2), w.var(w.var(A, 3), 0))))))), {"unzip"});
     auto l = w.axiom(w.app(list, sbn), {"l"});
-    EXPECT_EQ(w.app(w.app(w.app(unzip, w.arity(2)), w.tuple({B, N})), l)->type(), w.sigma({lb->type(), ln->type()}));
+    EXPECT_EQ(w.app(w.app(w.app(unzip, w.lit_arity(2)), w.tuple({B, N})), l)->type(), w.sigma({lb->type(), ln->type()}));
 
     EXPECT_EQ(w.pi(w.variadic(3, N), B), w.pi(w.sigma({N, N, N}), B));
 }
@@ -66,7 +66,7 @@ TEST(Variadic, LEA) {
     EXPECT_EQ(w.op_lea(ps2, 0_s)->type(), w.type_ptr(B, w.lit_nat_2()));
     EXPECT_EQ(w.op_lea(ps2, 1_s)->type(), w.type_ptr(N, w.lit_nat_2()));
 
-    auto v3n = w.variadic(w.arity(3), N);
+    auto v3n = w.variadic(w.lit_arity(3), N);
     auto pv3n = w.axiom(w.type_ptr(v3n, w.lit_nat_2()), {"ptr_v3n"});
     EXPECT_EQ(w.op_lea(pv3n, 0_s)->type(), w.type_ptr(N, w.lit_nat_2()));
     EXPECT_EQ(w.op_lea(pv3n, 1_s)->type(), w.type_ptr(N, w.lit_nat_2()));
@@ -99,7 +99,7 @@ TEST(Variadic, Multi) {
     EXPECT_EQ(w.lambda(w.variadic(3, w.variadic(8, w.variadic(5, N))), e3),
               w.lambda(w.sigma({w.variadic({8, 5}, N), w.variadic({8, 5}, N), w.variadic({8, 5}, N)}), f3));
 
-    auto A = w.arity_kind();
+    auto A = w.kind_arity();
     auto arity_tuple = [&](auto i) { return w.variadic(w.var(A, i), A); };
     auto a = [&](auto i) { return w.var(A, i); };
     auto build_variadic = w.variadic(a(1), w.extract(w.var(arity_tuple(2), 1), w.var(a(2), 0)));
@@ -110,12 +110,12 @@ TEST(Variadic, Multi) {
     EXPECT_TRUE(arity_tuple_to_type->free_vars().none());
     EXPECT_TRUE(arity_tuple_to_type->type()->free_vars().none());
 
-    auto args = w.tuple({w.arity(3), w.arity(4)});
-    EXPECT_EQ(w.app(w.app(arity_tuple_to_type, w.arity(2)), args), w.sigma({w.arity(3), w.arity(4)}));
+    auto args = w.tuple({w.lit_arity(3), w.lit_arity(4)});
+    EXPECT_EQ(w.app(w.app(arity_tuple_to_type, w.lit_arity(2)), args), w.sigma({w.lit_arity(3), w.lit_arity(4)}));
 
     auto l = w.lambda(A, w.lambda(arity_tuple(0),
                                   w.variadic(w.variadic(a(1), w.extract(w.var(arity_tuple(2), 1), w.var(a(2), 0))), N)));
-    EXPECT_EQ(w.app(w.app(l, w.arity(2)), args), w.variadic({3, 4}, N));
+    EXPECT_EQ(w.app(w.app(l, w.lit_arity(2)), args), w.variadic({3, 4}, N));
 
 }
 #endif
@@ -137,15 +137,15 @@ TEST(Variadic, Nested) {
     auto A = w.kind_arity();
     auto N = w.type_nat();
 
-    EXPECT_EQ(w.variadic(w.sigma({w.arity(3), w.arity(2)}), w.var(S, 1)),
+    EXPECT_EQ(w.variadic(w.sigma({w.lit_arity(3), w.lit_arity(2)}), w.var(S, 1)),
               w.variadic(3, w.variadic(2, w.var(S, 2))));
-    EXPECT_EQ(w.variadic(w.variadic(w.arity(3), w.arity(2)), w.var(S, 1)),
+    EXPECT_EQ(w.variadic(w.variadic(w.lit_arity(3), w.lit_arity(2)), w.var(S, 1)),
               w.variadic(2, w.variadic(2, w.variadic(2, w.var(S, 3)))));
     EXPECT_EQ(w.variadic(w.variadic(3, w.var(A, 1)), N),
               w.variadic(w.var(A, 0), w.variadic(w.var(A, 1), w.variadic(w.var(A, 2), N))));
 
-    auto f = w.axiom(w.pi(w.variadic(3, w.arity(2)), S), {"f"});
-    auto v = w.variadic(w.variadic(3, w.arity(2)), w.app(f, w.var(w.variadic(3, w.arity(2)), 0)));
+    auto f = w.axiom(w.pi(w.variadic(3, w.lit_arity(2)), S), {"f"});
+    auto v = w.variadic(w.variadic(3, w.lit_arity(2)), w.app(f, w.var(w.variadic(3, w.lit_arity(2)), 0)));
     const Def* outer_sigmas[2];
     for (int z = 0; z != 2; ++z) {
         const Def* inner_sigmas[2];
@@ -164,9 +164,9 @@ TEST(Variadic, Nested) {
 TEST(XLA, Misc) {
     World w;
     auto N = w.type_nat();
-    auto a3 = w.arity(3);
-    auto a4 = w.arity(4);
-    auto a5 = w.arity(5);
+    auto a3 = w.lit_arity(3);
+    auto a4 = w.lit_arity(4);
+    auto a5 = w.lit_arity(5);
 
     Env env;
     auto arr = parse(w, "λ[s:𝕄, t:*]. [s;t]");

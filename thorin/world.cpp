@@ -25,7 +25,7 @@ const Def* infer_shape(World& world, const Def* def) {
             arities.emplace_back(cur->as<Variadic>()->arity());
         return world.sigma(arities);
     }
-    return world.arity(1);
+    return world.lit_arity(1);
 }
 
 static bool all_equal_of(Defs defs) {
@@ -131,7 +131,7 @@ World::World(Debug dbg)
         kind_star_ [i] = insert<Kind>(1, *this, Def::Tag::KindStar,  qualifier_[i]);
         kind_arity_[i] = insert<Kind>(1, *this, Def::Tag::KindArity, qualifier_[i]);
         kind_multi_[i] = insert<Kind>(1, *this, Def::Tag::KindMulti, qualifier_[i]);
-        unit_[i] = arity(qualifier_[i], 1);
+        unit_[i] = lit_arity(qualifier_[i], 1);
         unit_val_[i] = lit_index(unit_[i], 0);
     }
 
@@ -169,7 +169,7 @@ World::World(Debug dbg)
                               "Πa: 𝔸. Πi:a. (P a i)",
                               normalize_index_eliminator);
     multi_recursor_ = axiom("Recₘ𝕄", "Π𝔸. Π[Π[𝔸,𝔸]. 𝔸]. Πq: ℚ. Π𝕄q. 𝔸", normalize_multi_recursor);
-    rank_ = app(app(multi_recursor(), arity(0)), fe::parse(*this, "λ[acc:𝔸, curr:𝔸]. ASucc (ᵁ, acc)"));
+    rank_ = app(app(multi_recursor(), lit_arity(0)), fe::parse(*this, "λ[acc:𝔸, curr:𝔸]. ASucc (ᵁ, acc)"));
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_end_     = lambda(cn(unit()), {"end"});
@@ -181,10 +181,10 @@ World::~World() {
         def->~Def();
 }
 
-const Arity* World::arity(const Def* q, size_t a, Loc loc) {
+const Lit* World::lit_arity(const Def* q, u64 a, Loc loc) {
     assert(is_type_qualifier(q->type()));
     auto cur = Def::gid_counter();
-    auto result = unify<Arity>(3, kind_arity(q), a, loc);
+    auto result = lit(kind_arity(q), {a}, loc);
 
     if (result->gid() >= cur)
         result->debug().set(std::to_string(a) + "ₐ");
@@ -193,9 +193,8 @@ const Arity* World::arity(const Def* q, size_t a, Loc loc) {
 }
 
 const Def* World::arity_succ(const Def* a, Debug dbg) {
-    if (auto a_lit = a->isa<Arity>()) {
-        return arity(a->qualifier(), a_lit->value() + 1, dbg);
-    }
+    if (auto arity = get_constant_arity(a))
+        return lit_arity(a->qualifier(), *arity + 1, dbg);
     return app(arity_succ_, tuple({a->qualifier(), a}), dbg);
 }
 
@@ -255,7 +254,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     if (def->isa<Unknown>() || index->isa<Unknown>())
         return unify<Extract>(2, unknown(), def, index, dbg);
 
-    if (index->type() == arity(1)) return def;
+    if (index->type() == lit_arity(1)) return def;
     if (!def->is_value())
         errorf("can only extract from values, but '{}' is not a value", def);
 
@@ -324,7 +323,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     // not the same exact arity, but as long as it types, we can use indices from constant arity tuples, even of non-index type
     // can only extract if we can iteratively extract with each index in the multi-index
     // can only do that if we know how many elements there are
-    if (auto i_arity = get_constant_arity(index)) {
+    if (auto i_arity = get_constant_arity(index->arity())) {
         if (i_arity > 1) {
             auto extracted = def;
             for (size_t i = 0; i < i_arity; ++i) {
@@ -340,7 +339,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
 }
 
 const Def* World::extract(const Def* def, u64 i, Debug dbg) {
-    if (auto arity = get_constant_arity(def))
+    if (auto arity = get_constant_arity(def->arity()))
         return extract(def, lit_index(*arity, i, dbg), dbg);
     else
         errorf("can only extract with constant on constant arities");
@@ -350,9 +349,9 @@ const Def* World::extract(const Def* def, u64 i, u64 a, Debug dbg) {
     return extract(def, lit_index(a, i, dbg), dbg);
 }
 
-const Lit* World::lit_index(const Arity* a, u64 i, Loc loc) {
-    auto arity_val = a->value();
-    if (i < arity_val) {
+const Lit* World::lit_index(const Lit* a, u64 i, Loc loc) {
+    auto arity = *get_constant_arity(a);
+    if (i < arity) {
         auto cur = Def::gid_counter();
         auto result = lit(a, i, loc);
 
@@ -361,7 +360,7 @@ const Lit* World::lit_index(const Arity* a, u64 i, Loc loc) {
             auto b = s.size();
 
             // append utf-8 subscripts in reverse order
-            for (size_t aa = arity_val; aa > 0; aa /= 10)
+            for (size_t aa = arity; aa > 0; aa /= 10)
                 ((s += char(char(0x80) + char(aa % 10))) += char(0x82)) += char(0xe2);
 
             std::reverse(s.begin() + b, s.end());
@@ -376,8 +375,8 @@ const Lit* World::lit_index(const Arity* a, u64 i, Loc loc) {
 
 const Def* World::index_zero(const Def* arity, Loc loc) {
     if (arity->type()->tag() == Def::Tag::KindArity) {
-        if (auto a = arity->isa<Arity>())
-            return lit_index(a->value() + 1, 0, loc);
+        if (auto a = get_constant_arity(arity))
+            return lit_index(*a + 1, 0, loc);
         return app(index_zero_, tuple({arity->qualifier(), arity}), {loc});
     } else {
         errorf("expected '{}' to have an 𝔸 type", arity);
@@ -385,9 +384,9 @@ const Def* World::index_zero(const Def* arity, Loc loc) {
 }
 
 const Def* World::index_succ(const Def* index, Debug dbg) {
-    assert(index->type()->type()->tag() == Def::Tag::KindArity);
+    assert(is_kind_arity(index->type()->type()));
     if (auto idx = index->isa<Lit>())
-        return this->lit_index(idx->type()->as<Arity>(), get_index(idx) + 1_u64, dbg);
+        return this->lit_index(idx->type()->as<Lit>(), get_index(idx) + 1_u64, dbg);
 
     return app(app(index_succ_, index->type(), dbg), index, dbg);
 }
@@ -398,7 +397,7 @@ const Def* World::insert(const Def* def, const Def* i, const Def* value, Debug d
 }
 
 const Def* World::insert(const Def* def, size_t i, const Def* value, Debug dbg) {
-    auto index = lit_index(def->arity()->as<Arity>()->value(), i);
+    auto index = lit_index(*get_constant_arity(def->arity()), i);
     return insert(def, index, value, dbg);
 }
 
@@ -570,7 +569,7 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
             else
                 errorf("can't have nominal sigma arities");
         } else if (auto v = arity->isa<Variadic>()) {
-            if (auto a = get_constant_arity(v)) {
+            if (auto a = get_constant_arity(v->arity())) {
                 assert(!v->body()->free_vars().test(0));
                 assert(a != 1);
                 auto result = flatten(body, DefArray(*a, shift_free_vars(v->body(), *a-1)));
@@ -578,18 +577,17 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
                     result = variadic(shift_free_vars(v->body(), i-1), result, dbg);
                 return result;
             }
-        } else if (auto a_literal = arity->isa<Arity>()) {
-            auto a = a_literal->value();
-            switch (a) {
+        } else if (auto a = get_constant_arity(arity)) {
+            switch (*a) {
                 case 0:
                     if (body->is_kind())
-                        return unify<Variadic>(2, universe(), this->arity(0), kind_star(body->qualifier()), dbg);
+                        return unify<Variadic>(2, universe(), lit_arity(0), kind_star(body->qualifier()), dbg);
                     return unit(body->type()->qualifier());
                 case 1:
                     return reduce(body, lit_index(1, 0));
                 default:
                     if (body->free_vars().test(0))
-                        return sigma(DefArray(a, [&](auto i) { return shift_free_vars(reduce(body, lit_index(a, i)), i); }), dbg);
+                        return sigma(DefArray(*a, [&](auto i) { return shift_free_vars(reduce(body, lit_index(*a, i)), i); }), dbg);
             }
         }
 
@@ -614,8 +612,8 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
         return unit(type->qualifier());
 
     if (type == kind_multi()) {
-        if (any_equal_of(arity(0), defs))
-            return arity(0);
+        if (any_equal_of(lit_arity(0), defs))
+            return lit_arity(0);
     }
 
     if (defs.size() == 1) {
@@ -627,7 +625,7 @@ const Def* World::sigma(const Def* q, Defs defs, Debug dbg) {
 
     if (defs.front()->free_vars().none_end(defs.size() - 1) && all_equal_of(defs)) {
         assert(q == nullptr || defs.front()->qualifier() == q);
-        return variadic(arity(Qualifier::u, defs.size(), dbg), shift_free_vars(defs.front(), -1), dbg);
+        return variadic(lit_arity(Qualifier::u, defs.size(), dbg), shift_free_vars(defs.front(), -1), dbg);
     }
 
     BitSet substructural;
@@ -684,7 +682,7 @@ const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
         return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
 
     if (auto v = arity->isa<Variadic>()) {
-        if (auto a = get_constant_arity(v)) {
+        if (auto a = get_constant_arity(v->arity())) {
             assert(!v->body()->free_vars().test(0));
             assert(a != 1);
             auto result = flatten(body, DefArray(*a, shift_free_vars(v->body(), *a-1)));
@@ -694,16 +692,18 @@ const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
         }
     }
 
-    if (auto a_literal = arity->isa<Arity>()) {
-        auto a = a_literal->value();
-        if (a == 0) {
-            if (body->is_type())
-                return unify<Pack>(1, unit_kind(body->qualifier()), unit(body->qualifier()), dbg);
-            return val_unit(body->type()->qualifier());
+    if (auto a = get_constant_arity(arity)) {
+        switch (*a) {
+            case 0:
+                if (body->is_type())
+                    return unify<Pack>(1, unit_kind(body->qualifier()), unit(body->qualifier()), dbg);
+                return val_unit(body->type()->qualifier());
+            case 1:
+                return reduce(body, lit_index(1, 0));
+            default:
+                if (body->free_vars().test(0))
+                    return tuple(DefArray(*a, [&](auto i) { return reduce(body, this->lit_index(*a, i)); }), dbg);
         }
-        if (a == 1) return reduce(body, lit_index(1, 0));
-        if (body->free_vars().test(0))
-            return tuple(DefArray(a, [&](auto i) { return reduce(body, this->lit_index(a, i)); }), dbg);
     }
 
     if (auto extract = body->isa<Extract>()) {
@@ -738,7 +738,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
             if (auto extract = defs[i]->isa<Extract>()) {
                 if (same == nullptr) {
                     same = extract->scrutinee();
-                    if (same->arity() != arity(size))
+                    if (same->arity() != lit_arity(size))
                         return (const Def*)nullptr;
                 }
 
@@ -756,7 +756,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
 
     if (size != 0) {
         if (all_equal_of(defs))
-            return pack(arity(Qualifier::u, size, dbg), shift_free_vars(defs.front(), 1), dbg);
+            return pack(lit_arity(Qualifier::u, size, dbg), shift_free_vars(defs.front(), 1), dbg);
         else if (auto same = eta_property())
             return same;
     }

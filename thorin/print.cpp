@@ -163,10 +163,6 @@ DefPrinter& App::stream(DefPrinter& p) const {
 #endif
 }
 
-DefPrinter& Arity::stream(DefPrinter& p) const {
-    return p << name();
-}
-
 DefPrinter& Axiom::stream(DefPrinter& p) const {
     return qualifier_stream(p) << name();
 }

@@ -226,7 +226,6 @@ bool is_type_with_values(const Def* def) {
     return def->is_type() && !def->type()->has_values();
 }
 
-bool Arity::has_values() const { return true; }
 bool App::has_values() const { return is_type_with_values(this); }
 bool Axiom::has_values() const { return is_type_with_values(this); }
 bool Intersection::has_values() const {
@@ -322,20 +321,19 @@ bool Def::is_substructural() const {
 // TODO assumption: all callees of non-folded apps that yield a type are (originally) axioms
 
 const Def* Def           ::arity() const { return is_value() ? destructing_type()->arity() : nullptr; }
-const Def* Arity         ::arity() const { return world().arity(1); }
-const Def* App           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
-const Def* Axiom         ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
-const Def* Bottom        ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
+const Def* App           ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
+const Def* Axiom         ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
+const Def* Bottom        ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
 // const Def* Intersection::arity() const { return TODO; }
-const Def* Kind          ::arity() const { return world().arity(1); }
-const Def* Lit           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
+const Def* Kind          ::arity() const { return world().lit_arity(1); }
+const Def* Lit           ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
 const Def* Param         ::arity() const { return destructing_type()->arity(); }
-const Def* Pi            ::arity() const { return world().arity(1); }
-const Def* Sigma         ::arity() const { return world().arity(num_ops()); }
+const Def* Pi            ::arity() const { return world().lit_arity(1); }
+const Def* Sigma         ::arity() const { return world().lit_arity(num_ops()); }
 const Def* Singleton     ::arity() const { return op(0)->arity(); }
-const Def* Top           ::arity() const { return is_value() ? destructing_type()->arity() : world().arity(1); }
+const Def* Top           ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
 const Def* Universe      ::arity() const { THORIN_UNREACHABLE; }
-const Def* Unknown       ::arity() const { return world().arity(1); } // TODO is this correct?
+const Def* Unknown       ::arity() const { return world().lit_arity(1); } // TODO is this correct?
 const Def* Var           ::arity() const { return is_value() ? destructing_type()->arity() : nullptr; }
 const Def* Variant       ::arity() const { return world().variant(DefArray(num_ops(), [&](auto i) { return op(i)->arity(); })); }
 
@@ -368,7 +366,6 @@ uint64_t Def::vhash() const {
     return seed;
 }
 
-uint64_t Arity::vhash() const { return hash_combine(Def::vhash(), value()); }
 uint64_t Lit  ::vhash() const { return hash_combine(Def::vhash(), box().get_u64()); }
 uint64_t Var  ::vhash() const { return hash_combine(Def::vhash(), index()); }
 
@@ -391,7 +388,6 @@ bool Def::equal(const Def* other) const {
     return result;
 }
 
-bool Arity::equal(const Def* other) const { return Def::equal(other) && this->value() == other->as<Arity>()->value(); }
 bool Lit  ::equal(const Def* other) const { return Def::equal(other) && this->box().get_u64() == other->as<Lit>()->box().get_u64(); }
 bool Var  ::equal(const Def* other) const { return Def::equal(other) && this->index() == other->as<Var>()->index(); }
 
@@ -403,7 +399,6 @@ bool Var  ::equal(const Def* other) const { return Def::equal(other) && this->in
 
 // TODO rebuild ts
 const Def* App           ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops[1], debug()); }
-const Def* Arity         ::rebuild(World& to, const Def* t, Defs    ) const { return to.arity(t->op(0), value(), debug()); }
 const Def* Axiom         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
 const Def* Bottom        ::rebuild(World& to, const Def* t, Defs    ) const { return to.bottom(t); }
 const Def* Extract       ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
@@ -510,8 +505,8 @@ bool Sigma::vsubtype_of(const Def* def) const {
                 return true;
             }
         } else if (auto other = def->isa<Variadic>()) {
-            if (auto size = get_constant_arity(other); num_ops() == size) {
-                for (u64 i = 0; i != size; ++i) {
+            if (auto size = get_constant_arity(other->arity()); size && num_ops() == *size) {
+                for (u64 i = 0; i != *size; ++i) {
                     // variadic body must not depend on index
                     auto body = shift_free_vars(other->body(), -1);
                     return std::all_of(ops().begin(), ops().end(), [&] (auto op) { return op->subtype_of(body); });
@@ -540,7 +535,7 @@ bool Sigma::assignable(const Def* def) const {
         return true;
     Defs defs = def->ops(); // only correct when def is a tuple
     if (auto pack = def->isa<Pack>()) {
-        if (auto arity = get_constant_arity(pack)) {
+        if (auto arity = get_constant_arity(pack->arity())) {
             if (num_ops() != arity)
                 return false;
             defs = DefArray(num_ops(), [&](auto i) { return w.extract(def, i); });
@@ -577,10 +572,10 @@ bool Variadic::assignable(const Def* def) const {
     }
     // only need this because we don't normalize every variadic of constant arity to a sigma
     if (def->isa<Tuple>()) {
-        if (auto size = get_constant_arity(this)) {
-            if (size != def->num_ops())
+        if (auto size = get_constant_arity(arity())) {
+            if (*size != def->num_ops())
                 return false;
-            for (size_t i = 0; i != size; ++i) {
+            for (size_t i = 0; i != *size; ++i) {
                 // body should actually not depend on index, but implemented for completeness
                 auto reduced_type = reduce(body(), world().lit_index(*size, i));
                 if (!reduced_type->assignable(def->op(i)))

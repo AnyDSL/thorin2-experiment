@@ -10,8 +10,8 @@ TEST(Pi, Kinds) {
     EXPECT_EQ(w.pi(w.kind_star(), w.kind_arity())->type(), w.universe());
     EXPECT_EQ(w.pi(w.kind_star(), w.kind_multi())->type(), w.universe());
     EXPECT_EQ(w.pi(w.type_nat(), w.type_nat())->type(), w.kind_star());
-    EXPECT_EQ(w.pi(w.type_nat(), w.arity(2))->type(), w.kind_star());
-    EXPECT_EQ(w.pi(w.type_nat(), w.sigma({w.arity(2), w.arity(3)}))->type(), w.kind_star());
+    EXPECT_EQ(w.pi(w.type_nat(), w.lit_arity(2))->type(), w.kind_star());
+    EXPECT_EQ(w.pi(w.type_nat(), w.sigma({w.lit_arity(2), w.lit_arity(3)}))->type(), w.kind_star());
 }
 
 TEST(Lambda, PolyId) {

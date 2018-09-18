@@ -249,10 +249,10 @@ const Def* Parser::parse_literal() {
         auto index_arity = next().literal();
         assert(index_arity.tag == Literal::Tag::Lit_index_arity);
         const Def* qualifier = parse_optional_qualifier();
-        return world_.lit_index(world_.arity(qualifier, index_arity.box.get_u64()), literal.box.get_u64(), tracker.loc());
+        return world_.lit_index(world_.lit_arity(qualifier, index_arity.box.get_u64()), literal.box.get_u64(), tracker.loc());
     } else if (literal.tag == Literal::Tag::Lit_arity) {
         const Def* qualifier = parse_optional_qualifier();
-        return world_.arity(qualifier, literal.box.get_u64(), tracker.loc());
+        return world_.lit_arity(qualifier, literal.box.get_u64(), tracker.loc());
     }
 
     expect(TT::ColonColon, "literal");

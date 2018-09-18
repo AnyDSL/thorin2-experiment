@@ -61,24 +61,24 @@ TEST(Parser, SimpleVariadic) {
 
 TEST(Parser, Arities) {
     World w;
-    EXPECT_EQ(parse(w, "0ₐ"), w.arity(0));
-    EXPECT_EQ(parse(w, "42ₐ"), w.arity(42));
-    EXPECT_EQ(parse(w, "0ₐᵁ"), w.arity(0));
-    EXPECT_EQ(parse(w, "1ₐᴿ"), w.arity(w.lit(Qualifier::r), 1));
-    EXPECT_EQ(parse(w, "2ₐᴬ"), w.arity(w.lit(Qualifier::a), 2));
-    EXPECT_EQ(parse(w, "3ₐᴸ"), w.arity(w.lit(Qualifier::l), 3));
-    EXPECT_EQ(parse(w, "Πq:ℚ.42ₐq"), w.pi(w.type_qualifier(), w.arity(w.var(w.type_qualifier(), 0), 42)));
+    EXPECT_EQ(parse(w, "0ₐ"), w.lit_arity(0));
+    EXPECT_EQ(parse(w, "42ₐ"), w.lit_arity(42));
+    EXPECT_EQ(parse(w, "0ₐᵁ"), w.lit_arity(0));
+    EXPECT_EQ(parse(w, "1ₐᴿ"), w.lit_arity(w.lit(Qualifier::r), 1));
+    EXPECT_EQ(parse(w, "2ₐᴬ"), w.lit_arity(w.lit(Qualifier::a), 2));
+    EXPECT_EQ(parse(w, "3ₐᴸ"), w.lit_arity(w.lit(Qualifier::l), 3));
+    EXPECT_EQ(parse(w, "Πq:ℚ.42ₐq"), w.pi(w.type_qualifier(), w.lit_arity(w.var(w.type_qualifier(), 0), 42)));
 }
 
 TEST(Parser, Indices) {
     World w;
     EXPECT_EQ(parse(w, "0₁"), w.lit_index(1, 0));
     EXPECT_EQ(parse(w, "42₁₉₀"), w.lit_index(190, 42));
-    EXPECT_EQ(parse(w, "4₅ᵁ"), w.lit_index(w.arity(w.lit(Qualifier::u), 5), 4));
-    EXPECT_EQ(parse(w, "4₅ᴿ"), w.lit_index(w.arity(w.lit(Qualifier::r), 5), 4));
-    EXPECT_EQ(parse(w, "4₅ᴬ"), w.lit_index(w.arity(w.lit(Qualifier::a), 5), 4));
-    EXPECT_EQ(parse(w, "4₅ᴸ"), w.lit_index(w.arity(w.lit(Qualifier::l), 5), 4));
-    EXPECT_EQ(parse(w, "λq:ℚ.4₅q"), w.lambda(w.type_qualifier(), w.lit_index(w.arity(w.var(w.type_qualifier(), 0), 5), 4)));
+    EXPECT_EQ(parse(w, "4₅ᵁ"), w.lit_index(w.lit_arity(w.lit(Qualifier::u), 5), 4));
+    EXPECT_EQ(parse(w, "4₅ᴿ"), w.lit_index(w.lit_arity(w.lit(Qualifier::r), 5), 4));
+    EXPECT_EQ(parse(w, "4₅ᴬ"), w.lit_index(w.lit_arity(w.lit(Qualifier::a), 5), 4));
+    EXPECT_EQ(parse(w, "4₅ᴸ"), w.lit_index(w.lit_arity(w.lit(Qualifier::l), 5), 4));
+    EXPECT_EQ(parse(w, "λq:ℚ.4₅q"), w.lambda(w.type_qualifier(), w.lit_index(w.lit_arity(w.var(w.type_qualifier(), 0), 5), 4)));
 }
 
 TEST(Parser, Kinds) {
@@ -170,7 +170,7 @@ TEST(Parser, IntArithOp) {
 
 TEST(Parser, Apps) {
     World w;
-    auto a5 = w.arity(Qualifier::a, 5);
+    auto a5 = w.lit_arity(Qualifier::a, 5);
     auto i0_5 = w.lit_index(a5, 0);
     auto ma = w.kind_multi(Qualifier::a);
     EXPECT_EQ(parse(w, "(λs: 𝕄ᴬ. λq: ℚ. λi: s. (s, q, i)) 5ₐᴬ ᴿ 0₅ᴬ"), w.tuple({a5, w.lit(Qualifier::r), i0_5}));

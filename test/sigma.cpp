@@ -41,7 +41,7 @@ TEST(Sigma, ExtractAndSingleton) {
 
 TEST(Tuple, TypeExtract) {
     World w;
-    auto arity2 = w.arity(2);
+    auto arity2 = w.lit_arity(2);
     auto nat = w.axiom(w.kind_star(), {"Nat"});
 
     auto tup = w.tuple({arity2, nat});
@@ -67,7 +67,7 @@ TEST(Sigma, EtaConversion) {
     auto N = w.type_nat();
     auto B = w.type_bool();
 
-    EXPECT_EQ(w.extract(w.tuple({v, v, v}), w.var(w.arity(3), 17)), v);
+    EXPECT_EQ(w.extract(w.tuple({v, v, v}), w.var(w.lit_arity(3), 17)), v);
     EXPECT_EQ(parse(w, "‹\\42::𝔸 ; \\23::«\\43::𝔸; nat»#\\0::\\43::𝔸›"), parse(w, "\\22::«\\42::𝔸; nat»"));
 
     auto t = w.axiom(w.sigma({N, B}), {"t"});

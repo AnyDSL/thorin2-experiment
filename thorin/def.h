@@ -109,7 +109,6 @@ public:
         Extract, Insert, Tuple, Pack, Sigma, Variadic,
         Match, Variant,
         Pick, Intersection,
-        Arity,
         Lit, Axiom,
         Bottom, Top,
         Singleton,
@@ -374,34 +373,6 @@ private:
 inline const Def* is_kind_arity(const Def* def) { return def->tag() == Def::Tag::KindArity ? def->as<Kind>()->kind_qualifier() : nullptr; }
 inline const Def* is_kind_multi(const Def* def) { return def->tag() == Def::Tag::KindMulti ? def->as<Kind>()->kind_qualifier() : nullptr; }
 inline const Def* is_kind_star (const Def* def) { return def->tag() == Def::Tag::KindStar  ? def->as<Kind>()->kind_qualifier() : nullptr; }
-
-class Arity : public Def {
-private:
-    struct Extra { u64 arity_; };
-
-    Arity(const Kind* type, u64 arity, Debug dbg)
-        : Def(Tag::Arity, type, Defs(), dbg)
-    {
-        assert(type->tag() == Tag::KindArity);
-        extra().arity_ = arity;
-    }
-
-public:
-    const Kind* type() const { return Def::type()->as<Kind>(); }
-    u64 value() const { return extra().arity_; }
-    const Def* arity() const override;
-    bool has_values() const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-    DefPrinter& stream(DefPrinter&) const override;
-
-private:
-    uint64_t vhash() const override;
-    bool equal(const Def*) const override;
-    Extra& extra() { return reinterpret_cast<Extra&>(*extra_ptr()); }
-    const Extra& extra() const { return reinterpret_cast<const Extra&>(*extra_ptr()); }
-
-    friend class World;
-};
 
 //------------------------------------------------------------------------------
 
@@ -797,14 +768,14 @@ private:
     friend class World;
 };
 
-inline std::optional<s64> get_constant_arity(const Def* def) {
-    if (auto arity = def->arity()->isa<Arity>())
-        return arity->value();
+inline std::optional<u64> get_constant_arity(const Def* def) {
+    if (auto lit = def->isa<Lit>(); lit && is_kind_arity(lit->type()))
+        return {lit->box().get_u64()};
     else return {};
 }
 
 inline std::optional<Qualifier> get_qualifier(const Def* def) {
-    if (auto lit = def->isa<Lit>(); lit && is_type_qualifier(def->type()))
+    if (auto lit = def->isa<Lit>(); lit && is_type_qualifier(lit->type()))
         return {Qualifier(lit->box().get_s32())};
     return {};
 }
