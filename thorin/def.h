@@ -110,7 +110,7 @@ public:
         Match, Variant,
         Pick, Intersection,
         Lit, Axiom,
-        Bottom, Top,
+        Bot, Top,
         Singleton,
         Unknown,
         Var,
@@ -795,13 +795,15 @@ inline bool is_fzero(int64_t w, const Lit* lit) {
     return (lit->box().get_u64() & ~(1_u64 << (u64(w)-1_u64))) == 0_u64;
 }
 
-class Bottom : public Def {
+class BotTop : public Def {
 private:
-    Bottom(const Def* type)
-        : Def(Tag::Bottom, type, Defs(), {"⊥"})
+    BotTop(const Def* type, bool b)
+        : Def(b ? Tag::Top : Tag::Bot, type, Defs(), b ? Debug{"⊤"} : Debug{"⊥"})
     {}
 
 public:
+    bool is_bot() const { return tag() == Tag::Bot; }
+    bool is_top() const { return tag() == Tag::Top; }
     const Def* arity() const override;
     const Def* rebuild(World&, const Def*, Defs) const override;
     DefPrinter& stream(DefPrinter&) const override;
@@ -809,19 +811,8 @@ public:
     friend class World;
 };
 
-class Top : public Def {
-private:
-    Top(const Def* type)
-        : Def(Tag::Top, type, Defs(), {"⊤"})
-    {}
-
-public:
-    const Def* arity() const override;
-    const Def* rebuild(World&, const Def*, Defs) const override;
-    DefPrinter& stream(DefPrinter&) const override;
-
-    friend class World;
-};
+inline bool is_bot(const Def* def) { return def->isa<BotTop>() && def->as<BotTop>()->is_bot(); }
+inline bool is_top(const Def* def) { return def->isa<BotTop>() && def->as<BotTop>()->is_top(); }
 
 //------------------------------------------------------------------------------
 

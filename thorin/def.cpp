@@ -323,7 +323,7 @@ bool Def::is_substructural() const {
 const Def* Def           ::arity() const { return is_value() ? destructing_type()->arity() : nullptr; }
 const Def* App           ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
 const Def* Axiom         ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
-const Def* Bottom        ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
+const Def* BotTop        ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
 // const Def* Intersection::arity() const { return TODO; }
 const Def* Kind          ::arity() const { return world().lit_arity(1); }
 const Def* Lit           ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
@@ -331,7 +331,6 @@ const Def* Param         ::arity() const { return destructing_type()->arity(); }
 const Def* Pi            ::arity() const { return world().lit_arity(1); }
 const Def* Sigma         ::arity() const { return world().lit_arity(num_ops()); }
 const Def* Singleton     ::arity() const { return op(0)->arity(); }
-const Def* Top           ::arity() const { return is_value() ? destructing_type()->arity() : world().lit_arity(1); }
 const Def* Universe      ::arity() const { THORIN_UNREACHABLE; }
 const Def* Unknown       ::arity() const { return world().lit_arity(1); } // TODO is this correct?
 const Def* Var           ::arity() const { return is_value() ? destructing_type()->arity() : nullptr; }
@@ -366,8 +365,8 @@ uint64_t Def::vhash() const {
     return seed;
 }
 
-uint64_t Lit  ::vhash() const { return hash_combine(Def::vhash(), box().get_u64()); }
-uint64_t Var  ::vhash() const { return hash_combine(Def::vhash(), index()); }
+uint64_t Lit::vhash() const { return hash_combine(Def::vhash(), box().get_u64()); }
+uint64_t Var::vhash() const { return hash_combine(Def::vhash(), index()); }
 
 //------------------------------------------------------------------------------
 
@@ -400,7 +399,7 @@ bool Var  ::equal(const Def* other) const { return Def::equal(other) && this->in
 // TODO rebuild ts
 const Def* App           ::rebuild(World& to, const Def*  , Defs ops) const { return to.app(ops[0], ops[1], debug()); }
 const Def* Axiom         ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }
-const Def* Bottom        ::rebuild(World& to, const Def* t, Defs    ) const { return to.bottom(t); }
+const Def* BotTop        ::rebuild(World& to, const Def* t, Defs    ) const { return to.bot_top(t, is_top()); }
 const Def* Extract       ::rebuild(World& to, const Def*  , Defs ops) const { return to.extract(ops[0], ops[1], debug()); }
 const Def* Insert        ::rebuild(World& to, const Def*  , Defs ops) const { return to.insert(ops[0], ops[1], ops[2], debug()); }
 const Def* Intersection  ::rebuild(World& to, const Def* t, Defs ops) const { return to.intersection(t, ops, debug()); }
@@ -423,7 +422,6 @@ const Def* Sigma         ::rebuild(World& to, const Def* t, Defs ops) const {
     return to.sigma(t->qualifier(), ops, debug());
 }
 const Def* Singleton     ::rebuild(World& to, const Def*  , Defs ops) const { return to.singleton(ops[0]); }
-const Def* Top           ::rebuild(World& to, const Def* t, Defs    ) const { return to.top(t); }
 const Def* Tuple         ::rebuild(World& to, const Def*  , Defs ops) const { return to.tuple(ops, debug()); }
 const Def* Universe      ::rebuild(World& to, const Def*  , Defs    ) const { return to.universe(); }
 const Def* Unknown       ::rebuild(World&   , const Def*  , Defs    ) const { THORIN_UNREACHABLE; }

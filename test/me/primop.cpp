@@ -49,7 +49,7 @@ TEST(Primop, ConstFolding) {
     EXPECT_EQ(w.op<IOp::ashr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(u8(-1)));
     EXPECT_EQ(w.op<IOp::lshr>(w.lit_i(u8(-1)), w.lit_i(1_u8)), w.lit_i(127_u8));
 
-    EXPECT_EQ(w.op<WOp::add>(WFlags::nuw, w.lit_i(0xff_u8), w.lit_i(1_u8)), w.bottom(w.type_i(8)));
+    EXPECT_EQ(w.op<WOp::add>(WFlags::nuw, w.lit_i(0xff_u8), w.lit_i(1_u8)), w.bot(w.type_i(8)));
 }
 
 template<class T>
@@ -171,8 +171,8 @@ TEST(Primop, Normalize) {
 
     //auto m = w.axiom(w.type_mem(), {"m"});
     // TODO why are those things not equal?
-    //EXPECT_EQ(w.op<MOp::sdiv>(m, l3, l0), w.tuple({m, w.bottom(w.type_i(8))}));
-    //EXPECT_EQ(w.op<MOp::sdiv>(m, a, l0), w.bottom(w.type_i(8)));
+    //EXPECT_EQ(w.op<MOp::sdiv>(m, l3, l0), w.tuple({m, w.bot(w.type_i(8))}));
+    //EXPECT_EQ(w.op<MOp::sdiv>(m, a, l0), w.bot(w.type_i(8)));
 }
 
 TEST(Primop, Ptr) {

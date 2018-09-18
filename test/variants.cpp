@@ -44,7 +44,7 @@ TEST(Variants, identities) {
     World w;
     auto B = w.type_bool();
     auto N = w.type_nat();
-    auto F = w.bottom(w.kind_star());
+    auto F = w.bot(w.kind_star());
     EXPECT_EQ(w.variant(w.kind_star(), {N}), N);
     EXPECT_EQ(w.variant(w.kind_star(), {N, F}), N);
     EXPECT_EQ(w.variant(w.kind_star(), {N, F, F}), N);

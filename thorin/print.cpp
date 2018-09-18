@@ -65,7 +65,7 @@ DefPrinter& DefPrinter::recurse(const Lambda* lambda) {
     while (!lambdas_.empty()) {
         auto lambda = pop(lambdas_);
 
-        if (lambda->codomain()->isa<Bottom>())
+        if (is_bot(lambda->codomain()))
             streamf(*this, "{} := cn {} {{", lambda->unique_name(), str(lambda->domain())).indent();
         else
             streamf(*this, "{} := λ{} -> {} {{", lambda->unique_name(), str(lambda->domain()), str(lambda->codomain())).indent();
@@ -167,8 +167,7 @@ DefPrinter& Axiom::stream(DefPrinter& p) const {
     return qualifier_stream(p) << name();
 }
 
-DefPrinter& Bottom::stream(DefPrinter& p) const { return streamf(p, "{{⊥: {}}}", p.str(type())); }
-DefPrinter& Top   ::stream(DefPrinter& p) const { return streamf(p, "{{⊤: {}}}", p.str(type())); }
+DefPrinter& BotTop::stream(DefPrinter& p) const { return streamf(p, "{{⊥: {}}}", p.str(type())); }
 
 DefPrinter& Extract::stream(DefPrinter& p) const {
     return streamf(p, "{}#{}", p.str(scrutinee()), p.str(index()));
@@ -212,7 +211,7 @@ DefPrinter& Param::stream(DefPrinter& p) const {
 }
 
 DefPrinter& Lambda::stream(DefPrinter& p) const {
-    if (codomain()->isa<Bottom>())
+    if (is_bot(codomain()))
         return streamf(p, "{} := cn {} {{ {} }}", unique_name(), p.str(domain()), body());
     return streamf(p, "{} := λ{} -> {} {{ {} }}", unique_name(), p.str(domain()), p.str(codomain()), body());
 #if 0
@@ -242,7 +241,7 @@ DefPrinter& Pi::stream(DefPrinter& p) const {
     domain()->name_stream(p);
     return codomain()->name_stream(p << ".");
 #endif
-    if (codomain()->isa<Bottom>())
+    if (is_bot(codomain()))
         return streamf(p, "Cn {}", p.str(domain()));
     return streamf(p, "Π{} -> {}", p.str(domain()), p.str(codomain()));
 }

@@ -260,8 +260,8 @@ const Def* normalize_NOp(const Def* callee, const Def* arg, Debug dbg) {
             case NOp::nadd: return world.lit(world.type_nat(), {int64_t(na + nb)});
             case NOp::nsub: return world.lit(world.type_nat(), {int64_t(na - nb)});
             case NOp::nmul: return world.lit(world.type_nat(), {int64_t(na * nb)});
-            case NOp::ndiv: return nb ? (const Def*)world.lit(world.type_nat(), {int64_t(na / nb)}) : world.bottom(world.type_nat());
-            case NOp::nmod: return nb ? (const Def*)world.lit(world.type_nat(), {int64_t(na % nb)}) : world.bottom(world.type_nat());
+            case NOp::ndiv: return nb ? (const Def*)world.lit(world.type_nat(), {int64_t(na / nb)}) : world.bot(world.type_nat());
+            case NOp::nmod: return nb ? (const Def*)world.lit(world.type_nat(), {int64_t(na % nb)}) : world.bot(world.type_nat());
         }
     }
 

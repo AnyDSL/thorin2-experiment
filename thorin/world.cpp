@@ -405,8 +405,7 @@ template<class T>
 static const SortedDefSet set_flatten(Defs defs) {
     SortedDefSet flat_defs;
     for (auto def : defs) {
-        if (def->template isa<Bottom>())
-            continue;
+        if (is_bot(def)) continue;
         if (def->isa<T>())
             for (auto inner : def->ops())
                 flat_defs.insert(inner);
@@ -419,7 +418,7 @@ static const SortedDefSet set_flatten(Defs defs) {
 template<class T>
 const Def* World::join(const Def* type, Defs ops, Debug dbg) {
     auto defs = set_flatten<T>(ops);
-    if (defs.empty()) return bottom(type);
+    if (defs.empty()) return bot(type);
     auto first = *defs.begin();
     if (defs.size() == 1) {
         if (first->type() == type) {

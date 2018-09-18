@@ -76,7 +76,7 @@ public:
         return pi(lit(Qualifier::u), domain, codomain, dbg);
     }
     const Pi* pi(const Def* q, const Def* domain, const Def* codomain, Debug dbg = {});
-    const Pi* cn(const Def* domain, Debug dbg = {}) { return pi(domain, bottom(kind_star()), dbg); }
+    const Pi* cn(const Def* domain, Debug dbg = {}) { return pi(domain, bot(kind_star()), dbg); }
     const Pi* cn(Defs domain, Debug dbg = {}) { return cn(sigma(domain), dbg); }
     //@}
 
@@ -136,10 +136,6 @@ public:
     }
     //@}
 
-    //@{ create Tuple
-    const Def* tuple(Defs defs, Debug dbg = {});
-    //@}
-
     //@{ create unit values
     const Def* val_unit(Qualifier q = Qualifier::u) { return unit_val_[size_t(q)]; }
     const Def* val_unit(const Def* def) { auto q = get_qualifier(def); return q ? val_unit(*q) : index_zero(lit_arity(def, 1)); }
@@ -175,9 +171,9 @@ public:
     const Axiom* index_eliminator() const { return index_eliminator_; };
     //@}
 
-    //@{ create Arity
+    //@{ arity eliminator and recursors
     const Axiom* arity_succ() { return arity_succ_; }
-    const Def* arity_succ(const Def* arity, Debug dbg = {});
+    const Def*   arity_succ(const Def* arity, Debug dbg = {});
     const Axiom* arity_eliminator() const { return arity_eliminator_; }
     const Axiom* arity_recursor_to_arity() const { return arity_recursor_to_arity_; }
     const Axiom* arity_recursor_to_multi() const { return arity_recursor_to_multi_; }
@@ -209,14 +205,16 @@ public:
 
     //@{ misc factory methods
     const Def* singleton(const Def* def, Debug dbg = {});
+    const Def* tuple(Defs defs, Debug dbg = {});
     const Var* var(Defs types, u64 index, Debug dbg = {}) { return var(sigma(types), index, dbg); }
     const Var* var(const Def* type, u64 index, Debug dbg = {}) { return unify<Var>(0, type, index, dbg); }
     Unknown* unknown(Loc loc = {});
     //@}
 
     //@{ top/bottom
-    const Bottom* bottom(const Def* type) { return unify<Bottom>(0, type); }
-    const Top* top(const Def* type) { return unify<Top>(0, type); }
+    const BotTop* bot_top(const Def* type, bool b) { return unify<BotTop>(0, type, b); }
+    const BotTop* bot(const Def* type) { return bot_top(type, false); }
+    const BotTop* top(const Def* type) { return bot_top(type,  true); }
     //@}
 
     //@{ standard types
