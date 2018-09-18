@@ -339,11 +339,6 @@ const Def* Unknown       ::arity() const { return world().arity(1); } // TODO is
 const Def* Var           ::arity() const { return is_value() ? destructing_type()->arity() : nullptr; }
 const Def* Variant       ::arity() const { return world().variant(DefArray(num_ops(), [&](auto i) { return op(i)->arity(); })); }
 
-std::optional<size_t> Def::has_constant_arity() const {
-    if (auto a = arity()->isa<Arity>())
-        return a->value();
-    else return {};
-}
 //------------------------------------------------------------------------------
 
 /*
@@ -515,7 +510,7 @@ bool Sigma::vsubtype_of(const Def* def) const {
                 return true;
             }
         } else if (auto other = def->isa<Variadic>()) {
-            if (auto size = other->has_constant_arity(); num_ops() == size) {
+            if (auto size = get_constant_arity(other); num_ops() == size) {
                 for (u64 i = 0; i != size; ++i) {
                     // variadic body must not depend on index
                     auto body = shift_free_vars(other->body(), -1);
@@ -545,7 +540,7 @@ bool Sigma::assignable(const Def* def) const {
         return true;
     Defs defs = def->ops(); // only correct when def is a tuple
     if (auto pack = def->isa<Pack>()) {
-        if (auto arity = pack->has_constant_arity()) {
+        if (auto arity = get_constant_arity(pack)) {
             if (num_ops() != arity)
                 return false;
             defs = DefArray(num_ops(), [&](auto i) { return w.extract(def, i); });
@@ -582,7 +577,7 @@ bool Variadic::assignable(const Def* def) const {
     }
     // only need this because we don't normalize every variadic of constant arity to a sigma
     if (def->isa<Tuple>()) {
-        if (auto size = has_constant_arity()) {
+        if (auto size = get_constant_arity(this)) {
             if (size != def->num_ops())
                 return false;
             for (size_t i = 0; i != size; ++i) {

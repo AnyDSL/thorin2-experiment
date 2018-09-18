@@ -324,7 +324,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
     // not the same exact arity, but as long as it types, we can use indices from constant arity tuples, even of non-index type
     // can only extract if we can iteratively extract with each index in the multi-index
     // can only do that if we know how many elements there are
-    if (auto i_arity = index->has_constant_arity()) {
+    if (auto i_arity = get_constant_arity(index)) {
         if (i_arity > 1) {
             auto extracted = def;
             for (size_t i = 0; i < i_arity; ++i) {
@@ -340,7 +340,7 @@ const Def* World::extract(const Def* def, const Def* index, Debug dbg) {
 }
 
 const Def* World::extract(const Def* def, u64 i, Debug dbg) {
-    if (auto arity = def->has_constant_arity())
+    if (auto arity = get_constant_arity(def))
         return extract(def, lit_index(*arity, i, dbg), dbg);
     else
         errorf("can only extract with constant on constant arities");
@@ -570,7 +570,7 @@ const Def* World::variadic(const Def* arity, const Def* body, Debug dbg) {
             else
                 errorf("can't have nominal sigma arities");
         } else if (auto v = arity->isa<Variadic>()) {
-            if (auto a = v->has_constant_arity()) {
+            if (auto a = get_constant_arity(v)) {
                 assert(!v->body()->free_vars().test(0));
                 assert(a != 1);
                 auto result = flatten(body, DefArray(*a, shift_free_vars(v->body(), *a-1)));
@@ -684,7 +684,7 @@ const Def* World::pack(const Def* arity, const Def* body, Debug dbg) {
         return pack(sigma->ops(), flatten(body, sigma->ops()), dbg);
 
     if (auto v = arity->isa<Variadic>()) {
-        if (auto a = v->has_constant_arity()) {
+        if (auto a = get_constant_arity(v)) {
             assert(!v->body()->free_vars().test(0));
             assert(a != 1);
             auto result = flatten(body, DefArray(*a, shift_free_vars(v->body(), *a-1)));

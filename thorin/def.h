@@ -219,7 +219,6 @@ public:
 
     //@{ misc getters
     virtual const Def* arity() const;
-    std::optional<u64> has_constant_arity() const;
     const BitSet& free_vars() const { return free_vars_; }
     uint32_t fields() const { return uint32_t(num_ops_) << 8_u32 | uint32_t(tag()); }
     uint32_t gid() const { return gid_; }
@@ -797,6 +796,12 @@ private:
 
     friend class World;
 };
+
+inline std::optional<s64> get_constant_arity(const Def* def) {
+    if (auto arity = def->arity()->isa<Arity>())
+        return arity->value();
+    else return {};
+}
 
 inline std::optional<Qualifier> get_qualifier(const Def* def) {
     if (auto lit = def->isa<Lit>(); lit && is_type_qualifier(def->type()))

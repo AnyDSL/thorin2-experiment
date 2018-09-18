@@ -201,7 +201,7 @@ const Def* normalize_multi_recursor(const Def* callee, const Def* arg, Debug dbg
         for (auto arity : sigma->ops())
             ret = w.app(step, w.tuple({ret, arity}), dbg);
     } else if (auto variadic = arg->isa<Variadic>()) {
-        if (auto rank = variadic->has_constant_arity()) {
+        if (auto rank = get_constant_arity(variadic)) {
             // body of variadic must be homogeneous because of normalization and may not depend on var 0
             auto arity = shift_free_vars(variadic->body(), -1);
             for (size_t i = 0; i != rank; ++i)
