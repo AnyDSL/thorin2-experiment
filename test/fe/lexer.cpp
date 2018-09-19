@@ -9,7 +9,7 @@ using namespace thorin;
 using namespace thorin::fe;
 
 TEST(Lexer, Tokens) {
-    std::string str ="{ } ( ) « » ‹ › [ ] : , . * \\pi \\lambda cn bool";
+    std::string str ="{ } ( ) « » ‹ › [ ] : , . * *A *M *Q \\pi \\lambda cn bool";
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
@@ -27,6 +27,9 @@ TEST(Lexer, Tokens) {
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Comma));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Dot));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Star));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Arity));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Multi));
+    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Qualifier));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Pi));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Cn));
@@ -127,15 +130,13 @@ TEST(Lexer, Literals) {
 }
 
 TEST(Lexer, Utf8) {
-    std::string str = u8"\ufeffΠ λ ℚ 𝔸 𝕄";
+    std::string str = u8"\ufeffΠ λ ℚ" ;
     std::istringstream is(str, std::ios::binary);
 
     Lexer lexer(is, "stdin");
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Pi));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Lambda));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Type_Qualifier));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Arity));
-    EXPECT_TRUE(lexer.lex().isa(Token::Tag::Kind_Multi));
     EXPECT_TRUE(lexer.lex().isa(Token::Tag::Eof));
 }
 

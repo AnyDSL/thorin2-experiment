@@ -28,8 +28,9 @@ namespace thorin::fe {
     f(Literal,          "literal")
 
 #define THORIN_SORT_TOKENS(f) \
-    f(Kind_Arity,       "\\kind_arity") \
-    f(Kind_Multi,       "\\kind_multi") \
+    f(Kind_Arity,       "*A") \
+    f(Kind_Multi,       "*M") \
+    f(Kind_Qualifier,   "*Q") \
     f(Kind_Star,        "*") \
     f(Type_Qualifier,   "\\type_qualifier") \
 

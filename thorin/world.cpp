@@ -124,8 +124,8 @@ World::World(Debug dbg)
     , cur_page_(root_page_.get())
 {
     universe_ = insert<Universe>(0, *this);
-    kind_qualifier_ = axiom(universe(), {"kind𝕄"});
-    type_qualifier_ = axiom(kind_qualifier(), {"𝕄"});
+    kind_qualifier_ = axiom(universe(), {"*Q"});
+    type_qualifier_ = axiom(kind_qualifier(), {"ℚ"});
     for (size_t i = 0; i != 4; ++i) {
         qualifier_[i] = lit(type_qualifier(), s32(i), {qualifier2str(Qualifiers[i])});
         kind_star_ [i] = insert<Kind>(1, *this, Def::Tag::KindStar,  qualifier_[i]);
@@ -145,8 +145,8 @@ World::World(Debug dbg)
     for (size_t j = 0; j != lit_nat_.size(); ++j)
         lit_nat_[j] = lit_nat(1 << int64_t(j));
 
-    auto type_BOp  = fe::parse(*this, "Πs: 𝕄. Π[«s; bool», «s; bool»]. «s; bool»");
-    auto type_NOp  = fe::parse(*this, "Πs: 𝕄. Π[«s;  nat», «s;  nat»]. «s;  nat»");
+    auto type_BOp  = fe::parse(*this, "Πs: *M. Π[«s; bool», «s; bool»]. «s; bool»");
+    auto type_NOp  = fe::parse(*this, "Πs: *M. Π[«s;  nat», «s;  nat»]. «s;  nat»");
 
 #define CODE(T, o) \
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});
@@ -154,22 +154,22 @@ World::World(Debug dbg)
     THORIN_N_OP(CODE)
 #undef CODE
 
-    arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: 𝔸q].𝔸q", normalize_arity_succ); // {"Sₐ"}
-    index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸q].ASucc p", normalize_index_zero); // {"0ⁱ"}
-    index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: 𝔸q].Πa.ASucc p", normalize_index_succ); // {"Sⁱ"}
+    arity_succ_ = axiom("ASucc", "Π[q: ℚ, a: *Aq].*Aq", normalize_arity_succ); // {"Sₐ"}
+    index_zero_ = axiom("I0",    "Πp:[q: ℚ, *Aq].ASucc p", normalize_index_zero); // {"0ⁱ"}
+    index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: *Aq].Πa.ASucc p", normalize_index_succ); // {"Sⁱ"}
 
-    arity_eliminator_ = axiom("Elimₐ",  "Πq: ℚ. ΠP: [Π𝔸q.*q]. ΠP(0ₐq). Π[Πa: 𝔸q. ΠP a.P(ASucc (q,a))]. Πa: 𝔸q. P a",
+    arity_eliminator_ = axiom("Elimₐ",  "Πq: ℚ. ΠP: [Π*Aq.*q]. ΠP(0ₐq). Π[Πa: *Aq. ΠP a.P(ASucc (q,a))]. Πa: *Aq. P a",
                               normalize_arity_eliminator);
-    arity_recursor_to_arity_ = axiom("Recₐ𝔸", "Πq: ℚ. Π𝔸q. Π[Π𝔸q. Π𝔸q. 𝔸q]. Π𝔸q. 𝔸q", normalize_arity_eliminator);
-    arity_recursor_to_multi_ = axiom("Recₐ𝕄", "Πq: ℚ. Π𝕄q. Π[Π𝔸q. Π𝕄q. 𝕄q]. Π𝔸q. 𝕄q", normalize_arity_eliminator);
-    arity_recursor_to_star_  = axiom("Recₐ*", "Πq: ℚ. Π*q. Π[Π𝔸q. Π*q. *q]. Π𝔸q. *q", normalize_arity_eliminator);
-    index_eliminator_ = axiom("ElimI", "Πq: ℚ. ΠP: [Πa: 𝔸. Πa. *q]." // P := dependent return type
-                              "Π[Πa: 𝔸. P (ASucc (ᵁ, a)) (I0 (ᵁ, a))]." // base case
-                              "Π[Πa: 𝔸. Πi: a. ΠP a i. P (ASucc (ᵁ, a)) (IS (ᵁ, a) i)]." // step case
-                              "Πa: 𝔸. Πi: a. (P a i)",
+    arity_recursor_to_arity_ = axiom("Recₐ*A", "Πq: ℚ. Π*Aq. Π[Π*Aq. Π*Aq. *Aq]. Π*Aq. *Aq", normalize_arity_eliminator);
+    arity_recursor_to_multi_ = axiom("Recₐ*M", "Πq: ℚ. Π*Mq. Π[Π*Aq. Π*Mq. *Mq]. Π*Aq. *Mq", normalize_arity_eliminator);
+    arity_recursor_to_star_  = axiom("Recₐ* ", "Πq: ℚ. Π* q. Π[Π*Aq. Π* q. * q]. Π*Aq. * q", normalize_arity_eliminator);
+    index_eliminator_ = axiom("ElimI", "Πq: ℚ. ΠP: [Πa: *A. Πa. *q]." // P := dependent return type
+                              "Π[Πa: *A. P (ASucc (ᵁ, a)) (I0 (ᵁ, a))]." // base case
+                              "Π[Πa: *A. Πi: a. ΠP a i. P (ASucc (ᵁ, a)) (IS (ᵁ, a) i)]." // step case
+                              "Πa: *A. Πi: a. (P a i)",
                               normalize_index_eliminator);
-    multi_recursor_ = axiom("Recₘ𝕄", "Π𝔸. Π[Π[𝔸,𝔸]. 𝔸]. Πq: ℚ. Π𝕄q. 𝔸", normalize_multi_recursor);
-    rank_ = app(app(multi_recursor(), lit_arity(0)), fe::parse(*this, "λ[acc: 𝔸, curr: 𝔸]. ASucc (ᵁ, acc)"));
+    multi_recursor_ = axiom("Recₘ*M", "Π*A. Π[Π[*A,*A]. *A]. Πq: ℚ. Π*Mq. *A", normalize_multi_recursor);
+    rank_ = app(app(multi_recursor(), lit_arity(0)), fe::parse(*this, "λ[acc: *A, curr: *A]. ASucc (ᵁ, acc)"));
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_end_     = lambda(cn(unit()), {"end"});
@@ -379,7 +379,7 @@ const Def* World::index_zero(const Def* arity, Loc loc) {
             return lit_index(*a + 1, 0, loc);
         return app(index_zero_, tuple({arity->qualifier(), arity}), {loc});
     } else {
-        errorf("expected '{}' to have an 𝔸 type", arity);
+        errorf("expected '{}' to have an *A type", arity);
     }
 }
 

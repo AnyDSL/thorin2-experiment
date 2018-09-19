@@ -201,8 +201,8 @@ Lambda* Def::isa_lambda() const { if (is_nominal()) return const_cast<Lambda*>(i
 
 static inline const char* kind2str(Def::Tag tag) {
     switch (tag) {
-        case Def::Tag::KindArity: return "𝔸";
-        case Def::Tag::KindMulti: return "𝕄";
+        case Def::Tag::KindArity: return "*A";
+        case Def::Tag::KindMulti: return "*M";
         case Def::Tag::KindStar:  return "*";
         default: THORIN_UNREACHABLE;
     }

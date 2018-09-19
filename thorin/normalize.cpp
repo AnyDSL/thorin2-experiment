@@ -121,7 +121,7 @@ const Def* normalize_index_zero(const Def* callee, const Def* arg, Debug dbg) {
     return nullptr;
 }
 
-// Πp:[q: ℚ, a: 𝔸q].Πa.ASucc p
+// Πp: [q: ℚ, a: *Aq]. Πa. ASucc p
 const Def* normalize_index_succ(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
     if (arg->is_term() && is_kind_arity(arg->type()->type())) {
@@ -168,7 +168,7 @@ const Def* normalize_index_eliminator(const Def* callee, const Def* arg, Debug d
     return nullptr;
 }
 
-/// normalize any arity eliminator E, dependent as well as recursors to 𝔸, 𝕄, *
+/// normalize any arity eliminator E, dependent as well as recursors to *A, *M, *
 const Def* normalize_arity_eliminator(const Def* callee, const Def* arg, Debug dbg) {
     auto& w = callee->world();
     const Def* pred = nullptr;
@@ -188,7 +188,7 @@ const Def* normalize_multi_recursor(const Def* callee, const Def* arg, Debug dbg
     auto& w = callee->world();
     if (!is_kind_arity(callee->type()->op(1)))
         return nullptr;
-    // Recₘ𝕄 base step qual arg
+    // Recₘ*M base step qual arg
     auto ret = callee->op(0)->op(0)->op(1);
     auto step = callee->op(0)->op(1);
     if (is_kind_arity(arg->type())) {

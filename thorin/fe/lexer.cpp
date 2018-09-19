@@ -132,7 +132,12 @@ Token Lexer::lex() {
         if (accept(',')) return {loc(), TT::Comma};
         if (accept('.')) return {loc(), TT::Dot};
         if (accept(';')) return {loc(), TT::Semicolon};
-        if (accept('*')) return {loc(), TT::Kind_Star};
+        if (accept('*')) {
+            if (accept('A')) return {loc(), TT::Kind_Arity};
+            if (accept('M')) return {loc(), TT::Kind_Multi};
+            if (accept('Q')) return {loc(), TT::Kind_Qualifier};
+            return {loc(), TT::Kind_Star};
+        }
 
         if (accept('\\')) {
             if (accept("lambda")) return {loc(), TT::Lambda};
@@ -148,8 +153,6 @@ Token Lexer::lex() {
         // greek letters
         if (accept(U'λ')) return {loc(), TT::Lambda};
         if (accept(U'Π')) return {loc(), TT::Pi};
-        if (accept(U'𝔸')) return {loc(), TT::Kind_Arity};
-        if (accept(U'𝕄')) return {loc(), TT::Kind_Multi};
         if (accept(U'ℚ')) return {loc(), TT::Type_Qualifier};
         if (accept(U'ᵁ')) return {loc(), TT::Q_u};
         if (accept(U'ᴿ')) return {loc(), TT::Q_r};

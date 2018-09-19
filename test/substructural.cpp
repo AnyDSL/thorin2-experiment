@@ -99,56 +99,56 @@ TEST(Qualifiers, Kinds) {
 
 TEST(Substructural, TypeCheckLambda) {
     World w;
-    EXPECT_THROW(parse(w, "λq:ℚ. λt:*q. λa:t. (a, a, ())")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λq: ℚ. λt: *q. λa: t. (a, a, ())")->check(), TypeError);
 
     auto a = w.lit(Qualifier::a);
     w.axiom(w.kind_star(a), {"atype"});
-    EXPECT_THROW(parse(w, "λa:atype. (a, a, ())")->check(), TypeError);
-    EXPECT_NO_THROW(parse(w, "λa:atype. λi:3ₐ. (a, a, ())#i")->check());
+    EXPECT_THROW(parse(w, "λa: atype. (a, a, ())")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "λa: atype. λi: 3ₐ. (a, a, ())#i")->check());
 
     w.axiom(w.kind_star(w.lit(Qualifier::r)), {"rtype"});
-    EXPECT_THROW(parse(w, "λr:rtype. ()")->check(), TypeError);
-    EXPECT_THROW(parse(w, "λr:rtype. (42ₐ, 12ₐ)")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λr: rtype. ()")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λr: rtype. (42ₐ, 12ₐ)")->check(), TypeError);
 
     w.axiom(w.kind_star(w.lit(Qualifier::l)), {"ltype"});
-    EXPECT_THROW(parse(w, "λl:ltype. ()")->check(), TypeError);
-    EXPECT_THROW(parse(w, "λl:ltype. (42ₐ, 12ₐ)")->check(), TypeError);
-    EXPECT_THROW(parse(w, "λl:ltype. (l, 42ₐ, l)")->check(), TypeError);
-    EXPECT_NO_THROW(parse(w, "λl:ltype. λi:3ₐ. (l, (), l)#i")->check());
+    EXPECT_THROW(parse(w, "λl: ltype. ()")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λl: ltype. (42ₐ, 12ₐ)")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λl: ltype. (l, 42ₐ, l)")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "λl: ltype. λi:3ₐ. (l, (), l)#i")->check());
 }
 
 TEST(Substructural, TypeCheckPack) {
     World w;
     w.axiom(w.kind_arity(w.lit(Qualifier::a)), {"aarity"});
-    EXPECT_THROW(parse(w, "‹i:aarity; (i, (), i)›")->check(), TypeError);
-    EXPECT_THROW(parse(w, "λa:𝔸ᴬ.‹i:a; (i, i, ())›")->check(), TypeError);
-    EXPECT_NO_THROW(parse(w, "λi:3ₐ. λa:𝔸ᴬ.‹j:a; (j, j, ())#i›")->check());
+    EXPECT_THROW(parse(w, "‹i: aarity; (i, (), i)›")->check(), TypeError);
+    EXPECT_THROW(parse(w, "λa: *Aᴬ.‹i:a; (i, i, ())›")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "λi:3ₐ. λa: *Aᴬ.‹j: a; (j, j, ())#i›")->check());
 
     w.axiom(w.kind_arity(w.lit(Qualifier::r)), {"rarity"});
-    EXPECT_THROW(parse(w, "‹r:rarity; ()›")->check(), TypeError);
-    EXPECT_THROW(parse(w, "‹r:rarity; (42ₐ, 12ₐ)›")->check(), TypeError);
+    EXPECT_THROW(parse(w, "‹r: rarity; ()›")->check(), TypeError);
+    EXPECT_THROW(parse(w, "‹r: rarity; (42ₐ, 12ₐ)›")->check(), TypeError);
 
     w.axiom(w.kind_arity(w.lit(Qualifier::l)), {"larity"});
-    EXPECT_THROW(parse(w, "‹l:larity; ()›")->check(), TypeError);
-    EXPECT_THROW(parse(w, "‹l:larity; (42ₐ, 12ₐ)›")->check(), TypeError);
-    EXPECT_THROW(parse(w, "‹l:larity; (l, 42ₐ, l)›")->check(), TypeError);
-    EXPECT_NO_THROW(parse(w, "‹l:larity; λi:3ₐ. (l, (), l)#i›")->check());
+    EXPECT_THROW(parse(w, "‹l: larity; ()›")->check(), TypeError);
+    EXPECT_THROW(parse(w, "‹l: larity; (42ₐ, 12ₐ)›")->check(), TypeError);
+    EXPECT_THROW(parse(w, "‹l: larity; (l, 42ₐ, l)›")->check(), TypeError);
+    EXPECT_NO_THROW(parse(w, "‹l: larity; λi: 3ₐ. (l, (), l)#i›")->check());
 }
 
 TEST(Substructural, TypeCheckSigma) {
     World w;
 
-    EXPECT_THROW(parse(w, "[i:2ₐᴿ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
-    EXPECT_THROW(parse(w, "[i:2ₐᴬ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
-    EXPECT_THROW(parse(w, "[i:2ₐᴸ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
+    EXPECT_THROW(parse(w, "[i: 2ₐᴿ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
+    EXPECT_THROW(parse(w, "[i: 2ₐᴬ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
+    EXPECT_THROW(parse(w, "[i: 2ₐᴸ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
 }
 
 TEST(Substructural, TypeCheckPi) {
     World w;
 
-    EXPECT_THROW(parse(w, "ΠT:*ᴿ. ΠT. *"), TypeError);
-    EXPECT_THROW(parse(w, "ΠT:*ᴬ. ΠT. *"), TypeError);
-    EXPECT_THROW(parse(w, "ΠT:*ᴸ. ΠT. *"), TypeError);
+    EXPECT_THROW(parse(w, "ΠT: *ᴿ. ΠT. *"), TypeError);
+    EXPECT_THROW(parse(w, "ΠT: *ᴬ. ΠT. *"), TypeError);
+    EXPECT_THROW(parse(w, "ΠT: *ᴸ. ΠT. *"), TypeError);
 }
 
 #if 0
@@ -195,14 +195,14 @@ TEST(Substructural, Misc) {
     //auto a_id_app = w.app(a_id, n0);
     EXPECT_FALSE(is_error(w.app(a_id, n0)));
 
-    // λᴬT:*.λx:ᴬT.x
+    // λᴬT: *.λx: ᴬT.x
     auto aT1 = w.var(w.kind_star(A), 0, {"T"});
     auto aT2 = w.var(w.kind_star(A), 1, {"T"});
     auto x = w.var(aT2, 0, {"x"});
     auto poly_aid = w.lambda(aT2->type(), w.lambda(aT1, x));
     std::cout << poly_aid << " : " << poly_aid->type() << endl;
 
-    // λx:ᴬNat.x
+    // λx: ᴬNat.x
     auto anid2 = w.app(poly_aid, ANat);
     std::cout << anid2 << " : " << anid2->type() << endl;
 }
@@ -250,8 +250,8 @@ TEST(Substructural, AffineCapabilityRefs) {
     w.axiom(w.pi(w.sigma({Star, Star}), w.kind_star(a)), {"CRef"});
     w.axiom(w.pi(Star, w.kind_star(a)), {"ACap"});
 
-    auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C:*, CRef(T, C), ACap(C)]"), {"NewCRef"});
-    auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, CRef(T, C), ACap(C)]. [T, ACap(C)]"), {"ReadCRef"});
+    auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C: *, CRef(T, C), ACap(C)]"), {"NewCRef"});
+    auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C: *, CRef(T, C), ACap(C)]. [T, ACap(C)]"), {"ReadCRef"});
     w.axiom(parse(w, "ΠT: *. Π[C: *, CRef(T, C)]. T"), {"AliasReadCRef"});
     w.axiom(parse(w, "ΠT: *. Π[C: *, CRef(T, C), ACap(C), T]. ACap(C)"), {"WriteCRef"});
     w.axiom(parse(w, "ΠT: *. Π[C: *, CRef(T, C), ACap(C)]. []"), {"FreeCRef"});
@@ -284,15 +284,15 @@ TEST(Substructural, AffineFractionalCapabilityRefs) {
     auto Rd = w.axiom(w.pi(WriteOrRead, Read), {"Rd"});
     w.axiom(w.pi(w.sigma({Star, WriteOrRead}), w.kind_star(a)), {"FCap"});
 
-    auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C:*, FRef(T, C), FCap(C, Wr)]"), {"NewFRef"});
-    auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C:*, F:{Write, Read}, FRef(T, C), FCap(C, F)]. [T, FCap(C, F)]"), {"ReadFRef"});
+    auto NewRef = w.axiom(parse(w, "ΠT: *. ΠT. [C: *, FRef(T, C), FCap(C, Wr)]"), {"NewFRef"});
+    auto ReadRef = w.axiom(parse(w, "ΠT: *. Π[C: *, F: {Write, Read}, FRef(T, C), FCap(C, F)]. [T, FCap(C, F)]"), {"ReadFRef"});
     ReadRef->dump_rec();
     auto WriteRef = w.axiom(parse(w, "ΠT: *. Π[C: *, FRef(T, C), FCap(C, Wr), T]. FCap(C, Wr)"), {"WriteFRef"});
     WriteRef->dump_rec();
     auto FreeRef = w.axiom(parse(w, "ΠT: *. Π[C: *, FRef(T, C), FCap(C, Wr)]. []"), {"FreeFRef"});
     FreeRef->dump_rec();
-    auto SplitFCap = w.axiom(parse(w, "Π[C:*, F:{Write, Read}, FCap(C, F)]. [FCap(C, Rd(F)), FCap(C, Rd(F))]"), {"SplitFCap"});
-    auto JoinFCap = w.axiom(parse(w, "Π[C:*, F:{Write, Read}, FCap(C, Rd(F)), FCap(C, Rd(F))]. FCap(C, F)"), {"JoinFCap"});
+    auto SplitFCap = w.axiom(parse(w, "Π[C: *, F: {Write, Read}, FCap(C, F)]. [FCap(C, Rd(F)), FCap(C, Rd(F))]"), {"SplitFCap"});
+    auto JoinFCap = w.axiom(parse(w, "Π[C: *, F: {Write, Read}, FCap(C, Rd(F)), FCap(C, Rd(F))]. FCap(C, F)"), {"JoinFCap"});
 
     auto ref42 = w.app(w.app(NewRef, Nat), n42, {"&42"});
     auto phantom = w.extract(ref42, 0_s);

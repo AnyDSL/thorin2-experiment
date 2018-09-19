@@ -117,15 +117,15 @@ TEST(Arity, DependentArityEliminator) {
 
 TEST(Arity, ArityRecursors) {
     World w;
-    auto double_step = fe::parse(w, "λcurr:𝔸. λacc:𝔸. ASucc (ᵁ, ASucc (ᵁ, acc))");
+    auto double_step = fe::parse(w, "λcurr: *A. λacc: *A. ASucc (ᵁ, ASucc (ᵁ, acc))");
     auto arity_double = w.app(w.app(w.app(w.arity_recursor_to_arity(), w.lit(Qualifier::u)), w.lit_arity(0)), double_step);
     EXPECT_EQ(w.lit_arity(0), w.app(arity_double, w.lit_arity(0)));
     EXPECT_EQ(w.lit_arity(8), w.app(arity_double, w.lit_arity(4)));
-    auto quad_step = fe::parse(w, "λcurr:𝔸. λacc:𝕄. «ASucc (ᵁ, curr); ASucc (ᵁ, curr)»)");
+    auto quad_step = fe::parse(w, "λcurr: *A. λacc: *M. «ASucc (ᵁ, curr); ASucc (ᵁ, curr)»)");
     auto arity_quad = w.app(w.app(w.app(w.arity_recursor_to_multi(), w.lit(Qualifier::u)), w.lit_arity(0)), quad_step);
     EXPECT_EQ(w.lit_arity(0), w.app(arity_quad, w.lit_arity(0)));
     EXPECT_EQ(w.variadic(w.lit_arity(3), w.lit_arity(3)), w.app(arity_quad, w.lit_arity(3)));
-    auto nest_step = fe::parse(w, "λcurr:𝔸. λacc:*. «ASucc (ᵁ, curr); acc»)");
+    auto nest_step = fe::parse(w, "λcurr: *A. λacc:*. «ASucc (ᵁ, curr); acc»)");
     auto arity_nest = w.app(w.app(w.app(w.arity_recursor_to_star(), w.lit(Qualifier::u)), w.type_nat()), nest_step);
     EXPECT_EQ(w.type_nat(), w.app(arity_nest, w.lit_arity(0)));
     EXPECT_EQ(w.type_nat(), w.app(arity_nest, w.lit_arity(1)));
@@ -137,9 +137,9 @@ TEST(Arity, DependentIndexEliminator) {
     auto elim = w.index_eliminator();
     auto u = w.lit(Qualifier::u);
     auto elimu = w.app(elim, u);
-    auto to_arity2 = fe::parse(w, "λa:𝔸. λi:a. 2ₐ");
-    auto base_is_even = fe::parse(w, "λa:𝔸. 1₂");
-    auto step_is_even = fe::parse(w, "λa:𝔸. λi:a. λis_even:2ₐ. (1₂, 0₂)#is_even");
+    auto to_arity2 = fe::parse(w, "λa: *A. λi:a. 2ₐ");
+    auto base_is_even = fe::parse(w, "λa: *A. 1₂");
+    auto step_is_even = fe::parse(w, "λa: *A. λi:a. λis_even:2ₐ. (1₂, 0₂)#is_even");
     auto index_is_even = w.app(w.app(w.app(elimu, to_arity2), base_is_even), step_is_even);
 
     EXPECT_EQ(w.lit_index(2, 1), w.app(w.app(index_is_even, w.lit_arity(3)), w.lit_index(3, 0)));

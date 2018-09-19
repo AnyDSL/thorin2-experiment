@@ -169,9 +169,9 @@ TEST(XLA, Misc) {
     auto a5 = w.lit_arity(5);
 
     Env env;
-    auto arr = parse(w, "λ[s:𝕄, t:*]. [s;t]");
+    auto arr = parse(w, "λ[s: *M, t:*]. [s;t]");
     env["arr"] = arr;
-    auto op = w.axiom(parse(w, "Π[s:𝕄, t:*]. Π[x: arr(s, t), y: arr(s, t)]. arr(s, t).", env), {"op"});
+    auto op = w.axiom(parse(w, "Π[s: *M, t:*]. Π[x: arr(s, t), y: arr(s, t)]. arr(s, t).", env), {"op"});
     auto s = w.sigma({a4, a3, a5});
     auto a = w.app(arr, {s, N});
     auto lhs = w.axiom(a, {"lhs"});
@@ -179,7 +179,7 @@ TEST(XLA, Misc) {
     w.app(w.app(op, {s, N}), {lhs, rhs})->dump();
     w.app(w.app(op, {s, N}), {lhs, rhs})->type()->dump();
 
-    auto reduce = w.axiom(parse(w, "Π[s:𝕄, t:*, Π[t, t].t]. Π[x: arr(s, t), t]. t"), {"reduce"});
+    auto reduce = w.axiom(parse(w, "Π[s: *M, t:*, Π[t, t].t]. Π[x: arr(s, t), t]. t"), {"reduce"});
     reduce->type()->dump();
 }
 #endif
