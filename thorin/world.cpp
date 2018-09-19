@@ -158,18 +158,18 @@ World::World(Debug dbg)
     index_zero_ = axiom("I0",    "Πp:[q: ℚ, 𝔸q].ASucc p", normalize_index_zero); // {"0ⁱ"}
     index_succ_ = axiom("IS",    "Πp:[q: ℚ, a: 𝔸q].Πa.ASucc p", normalize_index_succ); // {"Sⁱ"}
 
-    arity_eliminator_ = axiom("Elimₐ",  "Πq: ℚ. ΠP: [Π𝔸q.*q]. ΠP(0ₐq). Π[Πa:𝔸q. ΠP a.P(ASucc (q,a))]. Πa: 𝔸q. P a",
+    arity_eliminator_ = axiom("Elimₐ",  "Πq: ℚ. ΠP: [Π𝔸q.*q]. ΠP(0ₐq). Π[Πa: 𝔸q. ΠP a.P(ASucc (q,a))]. Πa: 𝔸q. P a",
                               normalize_arity_eliminator);
     arity_recursor_to_arity_ = axiom("Recₐ𝔸", "Πq: ℚ. Π𝔸q. Π[Π𝔸q. Π𝔸q. 𝔸q]. Π𝔸q. 𝔸q", normalize_arity_eliminator);
     arity_recursor_to_multi_ = axiom("Recₐ𝕄", "Πq: ℚ. Π𝕄q. Π[Π𝔸q. Π𝕄q. 𝕄q]. Π𝔸q. 𝕄q", normalize_arity_eliminator);
     arity_recursor_to_star_  = axiom("Recₐ*", "Πq: ℚ. Π*q. Π[Π𝔸q. Π*q. *q]. Π𝔸q. *q", normalize_arity_eliminator);
     index_eliminator_ = axiom("ElimI", "Πq: ℚ. ΠP: [Πa: 𝔸. Πa. *q]." // P := dependent return type
-                              "Π[Πa:𝔸. P (ASucc (ᵁ, a)) (I0 (ᵁ, a))]." // base case
-                              "Π[Πa:𝔸. Πi:a. ΠP a i. P (ASucc (ᵁ, a)) (IS (ᵁ, a) i)]." // step case
-                              "Πa: 𝔸. Πi:a. (P a i)",
+                              "Π[Πa: 𝔸. P (ASucc (ᵁ, a)) (I0 (ᵁ, a))]." // base case
+                              "Π[Πa: 𝔸. Πi: a. ΠP a i. P (ASucc (ᵁ, a)) (IS (ᵁ, a) i)]." // step case
+                              "Πa: 𝔸. Πi: a. (P a i)",
                               normalize_index_eliminator);
     multi_recursor_ = axiom("Recₘ𝕄", "Π𝔸. Π[Π[𝔸,𝔸]. 𝔸]. Πq: ℚ. Π𝕄q. 𝔸", normalize_multi_recursor);
-    rank_ = app(app(multi_recursor(), lit_arity(0)), fe::parse(*this, "λ[acc:𝔸, curr:𝔸]. ASucc (ᵁ, acc)"));
+    rank_ = app(app(multi_recursor(), lit_arity(0)), fe::parse(*this, "λ[acc: 𝔸, curr: 𝔸]. ASucc (ᵁ, acc)"));
 
     cn_br_      = axiom("br",      "cn[bool, cn[], cn[]]");
     cn_end_     = lambda(cn(unit()), {"end"});
