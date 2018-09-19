@@ -39,8 +39,8 @@ World::World(Debug dbg)
     auto type_WOp  = fe::parse(*this, "Π[f: nat, w: nat]. Πs: *M. Π[   «s;   int w», «s;   int w»].     «s;   int w» ");
     auto type_IOp  = fe::parse(*this, "Π         w: nat . Πs: *M. Π[   «s;   int w», «s;   int w»].     «s;   int w» ");
     auto type_FOp  = fe::parse(*this, "Π[f: nat, w: nat]. Πs: *M. Π[   «s; float w», «s; float w»].     «s; float w» ");
-    auto type_ICmp = fe::parse(*this, "Π         w: nat . Πs: *M. Π[   «s;   int w», «s;   int w»].     «s;    bool»");
-    auto type_FCmp = fe::parse(*this, "Π[f: nat, w: nat]. Πs: *M. Π[   «s; float w», «s; float w»].     «s;    bool»");
+    auto type_ICmp = fe::parse(*this, "Π         w: nat . Πs: *M. Π[   «s;   int w», «s;   int w»].     «s;    bool» ");
+    auto type_FCmp = fe::parse(*this, "Π[f: nat, w: nat]. Πs: *M. Π[   «s; float w», «s; float w»].     «s;    bool» ");
 
 #define CODE(T, o) \
     T ## _[size_t(T::o)] = axiom(type_ ## T, normalize_ ## T<T::o>, {op2str(T::o)});

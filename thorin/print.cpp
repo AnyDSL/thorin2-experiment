@@ -7,7 +7,7 @@ namespace thorin {
 //------------------------------------------------------------------------------
 
 static bool descend(const Def* def) {
-    return def->num_ops() != 0 && get_axiom(def) == nullptr;
+    return def->num_ops() != 0 && get_axiom(def) == nullptr && def->isa<Kind>() == nullptr;
 }
 
 inline stream_list<Defs, std::function<void(const Def*)>> DefPrinter::list(Defs defs) {
