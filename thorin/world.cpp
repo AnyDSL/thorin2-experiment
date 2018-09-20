@@ -760,7 +760,7 @@ const Def* World::tuple(Defs defs, Debug dbg) {
             return same;
     }
 
-    return unify<Tuple>(size, type->as<SigmaBase>(), defs, dbg);
+    return unify<Tuple>(size, type, defs, dbg);
 }
 
 Unknown* World::unknown(Loc loc) {

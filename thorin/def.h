@@ -454,26 +454,16 @@ using Lambda2Lambda = LambdaMap<Lambda*>;
 
 //------------------------------------------------------------------------------
 
-class SigmaBase : public Def {
-protected:
-    SigmaBase(Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(tag, type, ops, dbg)
-    {}
-    SigmaBase(Tag tag, const Def* type, size_t num_ops, Debug dbg)
-        : Def(tag, type, num_ops, dbg)
-    {}
-};
-
-class Sigma : public SigmaBase {
+class Sigma : public Def {
 private:
     /// Nominal Sigma kind
     Sigma(World&, size_t num_ops, Debug dbg);
     /// Nominal Sigma type, \a type is some Star/Universe
     Sigma(const Def* type, size_t num_ops, Debug dbg)
-        : SigmaBase(Tag::Sigma, type, num_ops, dbg)
+        : Def(Tag::Sigma, type, num_ops, dbg)
     {}
     Sigma(const Def* type, Defs ops, Debug dbg)
-        : SigmaBase(Tag::Sigma, type, ops, dbg)
+        : Def(Tag::Sigma, type, ops, dbg)
     {}
 
 public:
@@ -498,10 +488,10 @@ private:
     friend class World;
 };
 
-class Variadic : public SigmaBase {
+class Variadic : public Def {
 private:
     Variadic(const Def* type, const Def* arity, const Def* body, Debug dbg)
-        : SigmaBase(Tag::Variadic, type, {arity, body}, dbg)
+        : Def(Tag::Variadic, type, {arity, body}, dbg)
     {}
 
 public:
@@ -519,17 +509,10 @@ public:
     friend class World;
 };
 
-class TupleBase : public Def {
-protected:
-    TupleBase(Tag tag, const Def* type, Defs ops, Debug dbg)
-        : Def(tag, type, ops, dbg)
-    {}
-};
-
-class Tuple : public TupleBase {
+class Tuple : public Def {
 private:
-    Tuple(const SigmaBase* type, Defs ops, Debug dbg)
-        : TupleBase(Tag::Tuple, type, ops, dbg)
+    Tuple(const Def* type, Defs ops, Debug dbg)
+        : Def(Tag::Tuple, type, ops, dbg)
     {}
 
 public:
@@ -540,10 +523,10 @@ public:
     friend class World;
 };
 
-class Pack : public TupleBase {
+class Pack : public Def {
 private:
     Pack(const Def* type, const Def* body, Debug dbg)
-        : TupleBase(Tag::Pack, type, {body}, dbg)
+        : Def(Tag::Pack, type, {body}, dbg)
         {}
 
 public:
