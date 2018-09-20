@@ -316,7 +316,7 @@ const Def* normalize_Cast(const Def* callee, const Def* arg, Debug dbg) {
 // instantiate templates
 #define CODE(T, o) template const Def* normalize_ ## T<T::o>(const Def*, const Def*, Debug);
     THORIN_W_OP (CODE)
-    THORIN_M_OP (CODE)
+    THORIN_Z_OP (CODE)
     THORIN_I_OP (CODE)
     THORIN_F_OP (CODE)
     THORIN_I_CMP(CODE)
