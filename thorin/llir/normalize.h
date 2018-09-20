@@ -1,14 +1,14 @@
-#ifndef THORIN_ME_NORMALIZE_H
-#define THORIN_ME_NORMALIZE_H
+#ifndef THORIN_LLIR_NORMALIZE_H
+#define THORIN_LLIR_NORMALIZE_H
 
-#include "thorin/me/tables.h"
+#include "thorin/llir/tables.h"
 #include "thorin/util/debug.h"
 
 namespace thorin {
 
 class Def;
 
-namespace me {
+namespace llir {
 
 template<WOp > const Def* normalize_WOp (const Def*, const Def*, Debug);
 template<ZOp > const Def* normalize_ZOp (const Def*, const Def*, Debug);

@@ -1,9 +1,9 @@
 #include "thorin/normalize.h"
-#include "thorin/me/world.h"
-#include "thorin/me/fold.h"
+#include "thorin/llir/world.h"
+#include "thorin/llir/fold.h"
 #include "thorin/transform/reduce.h"
 
-namespace thorin::me {
+namespace thorin::llir {
 
 /*
  * helpers

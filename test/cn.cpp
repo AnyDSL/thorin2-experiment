@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 
+#include "thorin/llir/world.h"
 #include "thorin/analyses/scope.h"
 #include "thorin/fe/parser.h"
-#include "thorin/me/world.h"
 #include "thorin/util/log.h"
 
-namespace thorin::me {
+namespace thorin::llir {
 
 TEST(Cn, Simple) {
     World w;

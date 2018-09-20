@@ -1,9 +1,9 @@
-#include "thorin/me/world.h"
+#include "thorin/llir/world.h"
 
-#include "thorin/me/normalize.h"
+#include "thorin/llir/normalize.h"
 #include "thorin/fe/parser.h"
 
-namespace thorin::me {
+namespace thorin::llir {
 
 //------------------------------------------------------------------------------
 /*

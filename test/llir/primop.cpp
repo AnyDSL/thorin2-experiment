@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "thorin/me/world.h"
+#include "thorin/llir/world.h"
 
-namespace thorin::me {
+namespace thorin::llir {
 
 TEST(Primop, Types) {
     World w;
@@ -210,5 +210,31 @@ TEST(Primop, Print2) {
 
     _4->dump_rec();
 }
+
+TEST(Variadic, LEA) {
+    World w;
+    auto B = w.type_bool();
+    auto N = w.type_nat();
+
+    auto s2 = w.sigma({B, N});
+    auto ps2 = w.axiom(w.type_ptr(s2, w.lit_nat_2()), {"ptr_s2"});
+    EXPECT_EQ(w.op_lea(ps2, 0_s)->type(), w.type_ptr(B, w.lit_nat_2()));
+    EXPECT_EQ(w.op_lea(ps2, 1_s)->type(), w.type_ptr(N, w.lit_nat_2()));
+
+    auto v3n = w.variadic(w.lit_arity(3), N);
+    auto pv3n = w.axiom(w.type_ptr(v3n, w.lit_nat_2()), {"ptr_v3n"});
+    EXPECT_EQ(w.op_lea(pv3n, 0_s)->type(), w.type_ptr(N, w.lit_nat_2()));
+    EXPECT_EQ(w.op_lea(pv3n, 1_s)->type(), w.type_ptr(N, w.lit_nat_2()));
+    EXPECT_EQ(w.op_lea(pv3n, 2_s)->type(), w.type_ptr(N, w.lit_nat_2()));
+
+    // TODO allow assignability/conversion from values of nominal type to structural type
+#if 0
+    auto n2 = w.sigma_type(2, {"n2"})->set(0, B)->set(1, N);
+    auto pn2 = w.axiom(w.type_ptr(n2, w.lit_nat_4()), {"ptr_n2"});
+    EXPECT_EQ(w.op_lea(pn2, 0_s)->type(), w.type_ptr(B, w.lit_nat_2()));
+    EXPECT_EQ(w.op_lea(pn2, 1_s)->type(), w.type_ptr(N, w.lit_nat_2()));
+#endif
+}
+
 
 }

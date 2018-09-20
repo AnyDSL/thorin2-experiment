@@ -19,12 +19,12 @@ add_library(thorin
     thorin/tables.h
     thorin/world.cpp
     thorin/world.h
-    thorin/me/fold.h
-    thorin/me/normalize.cpp
-    thorin/me/normalize.h
-    thorin/me/tables.h
-    thorin/me/world.cpp
-    thorin/me/world.h
+    thorin/llir/fold.h
+    thorin/llir/normalize.cpp
+    thorin/llir/normalize.h
+    thorin/llir/tables.h
+    thorin/llir/world.cpp
+    thorin/llir/world.h
     thorin/analyses/cfg.cpp
     thorin/analyses/cfg.h
     thorin/analyses/domfrontier.cpp
@@ -102,7 +102,7 @@ if(BUILD_TESTING)
         test/variants.cpp
         test/fe/lexer.cpp
         test/fe/parser.cpp
-        test/me/primop.cpp
+        test/llir/primop.cpp
     )
     set_target_properties(thorin-gtest PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
     target_include_directories(thorin-gtest PRIVATE . half/include)
