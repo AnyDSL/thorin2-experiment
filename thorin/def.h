@@ -456,9 +456,8 @@ using Lambda2Lambda = LambdaMap<Lambda*>;
 
 class Sigma : public Def {
 private:
-    /// Nominal Sigma kind
-    Sigma(World&, size_t num_ops, Debug dbg);
-    /// Nominal Sigma type, \a type is some Star/Universe
+    /// Nominal Sigma type.
+    /// @a type is some @p Kind or @p Universe
     Sigma(const Def* type, size_t num_ops, Debug dbg)
         : Def(Tag::Sigma, type, num_ops, dbg)
     {}

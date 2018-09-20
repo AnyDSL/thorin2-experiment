@@ -212,10 +212,6 @@ Kind::Kind(World& world, Tag tag, const Def* qualifier)
     : Def(tag, world.universe(), {qualifier}, {kind2str(tag)})
 {}
 
-Sigma::Sigma(World& world, size_t num_ops, Debug dbg)
-    : Sigma(world.universe(), num_ops, dbg)
-{}
-
 //------------------------------------------------------------------------------
 
 /*

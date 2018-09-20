@@ -124,7 +124,7 @@ public:
     /// @em nominal Sigma of type Star
     Sigma* sigma_type(const Def* q, size_t num_ops, Debug dbg = {}) { return sigma(kind_star(q), num_ops, dbg); }
     /// @em nominal Sigma of type Universe
-    Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) { return insert<Sigma>(num_ops, *this, num_ops, dbg); }
+    Sigma* sigma_kind(size_t num_ops, Debug dbg = {}) { return insert<Sigma>(num_ops, universe(), num_ops, dbg); }
     //@}
 
     //@{ create Variadic
