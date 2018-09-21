@@ -84,8 +84,10 @@ template<class T, class = void> struct is_stream_list : std::false_type {};
 template<class T> struct is_stream_list<T, std::void_t<typename T::stream_list_tag>> : std::true_type {};
 
 namespace detail {
-    template<class S, class T> typename std::enable_if<!is_stream_list<T>::value && !is_ranged<T>::value &&  std::is_base_of<Streamable<S>, T>::value, void>::type stream(S& s, const std::string&, const T* val) { val->stream(s); }
-    template<class S, class T> typename std::enable_if<!is_stream_list<T>::value && !is_ranged<T>::value &&  std::is_base_of<Streamable<S>, T>::value, void>::type stream(S& s, const std::string&, T* val) { val->stream(s); }
+    template<class S, class T> typename std::enable_if<!is_stream_list<T>::value && !is_ranged<T>::value && std::is_base_of<Streamable<S>, T>::value, void>::type stream(S& s, const std::string&, const T* val) { val->stream(s); }
+    template<class S, class T> typename std::enable_if<!is_stream_list<T>::value && !is_ranged<T>::value && std::is_base_of<Streamable<S>, T>::value, void>::type stream(S& s, const std::string&, T* val) { val->stream(s); }
+    template<class S, class T> typename std::enable_if<!is_stream_list<T>::value && !is_ranged<T>::value && std::is_base_of<Streamable<S>, T>::value, void>::type stream(S& s, const std::string&, const std::unique_ptr<T>& val) { val->stream(s); }
+    template<class S, class T> typename std::enable_if<!is_stream_list<T>::value && !is_ranged<T>::value && std::is_base_of<Streamable<S>, T>::value, void>::type stream(S& s, const std::string&, const std::unique_ptr<const T>& val) { val->stream(s); }
     template<class S, class T> typename std::enable_if<!is_stream_list<T>::value && !is_ranged<T>::value, void>::type stream(S& s, const std::string&, const T& val) { s << val; }
     template<class S, class T> typename std::enable_if<!is_stream_list<T>::value &&  is_ranged<T>::value, void>::type stream(S& s, const std::string& spec_fmt, const T& list) {
         const char* cur_sep = "";
