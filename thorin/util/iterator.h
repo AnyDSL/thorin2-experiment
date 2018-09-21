@@ -210,6 +210,7 @@ namespace detail {
 }
 
 template<class T> struct is_ranged : decltype(detail::is_range_based_iterable<T>(0)) {};
+template<class T> inline constexpr bool is_ranged_v = is_ranged<T>::value;
 
 //------------------------------------------------------------------------------
 
