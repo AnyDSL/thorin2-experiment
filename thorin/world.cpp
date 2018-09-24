@@ -463,9 +463,12 @@ const Pi* World::pi(const Def* q, const Def* domain, const Def* codomain, Debug 
             errorf("codomain '{}' of type '{}' of function type cannot be a value", codomain, codomain->type());
         else if (domain->is_value())
             errorf("domain '{}' of type '{}' of function type cannot be a value", domain, domain->type());
+#if 0
+        // TODO this test is broken if the function is a continuation, i.e., its codomain is bottom
         else if (domain->has_values() && domain->is_substructural() && !codomain->has_values())
             errorf("substructural domain '{}' of type '{}' not allowed for function type with codomain {}",
                 domain, domain->type(), codomain);
+#endif
     }
 
     auto type = type_bound<Variant, false>(q, {domain, codomain});

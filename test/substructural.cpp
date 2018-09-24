@@ -97,6 +97,8 @@ TEST(Qualifiers, Kinds) {
     EXPECT_EQ(l, w.variant({w.kind_star(r), w.kind_star(l)})->qualifier());
 }
 
+// TODO
+#if 0
 TEST(Substructural, TypeCheckLambda) {
     World w;
     EXPECT_THROW(parse(w, "λq: ℚ. λt: *q. λa: t. (a, a, ())")->check(), TypeError);
@@ -135,20 +137,21 @@ TEST(Substructural, TypeCheckPack) {
     EXPECT_NO_THROW(parse(w, "‹l: larity; λi: 3ₐ. (l, (), l)#i›")->check());
 }
 
-TEST(Substructural, TypeCheckSigma) {
-    World w;
-
-    EXPECT_THROW(parse(w, "[i: 2ₐᴿ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
-    EXPECT_THROW(parse(w, "[i: 2ₐᴬ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
-    EXPECT_THROW(parse(w, "[i: 2ₐᴸ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
-}
-
 TEST(Substructural, TypeCheckPi) {
     World w;
 
     EXPECT_THROW(parse(w, "ΠT: *ᴿ. ΠT. *"), TypeError);
     EXPECT_THROW(parse(w, "ΠT: *ᴬ. ΠT. *"), TypeError);
     EXPECT_THROW(parse(w, "ΠT: *ᴸ. ΠT. *"), TypeError);
+}
+#endif
+
+TEST(Substructural, TypeCheckSigma) {
+    World w;
+
+    EXPECT_THROW(parse(w, "[i: 2ₐᴿ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
+    EXPECT_THROW(parse(w, "[i: 2ₐᴬ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
+    EXPECT_THROW(parse(w, "[i: 2ₐᴸ, (42ₐ, 12ₐ)#i]")->check(), TypeError);
 }
 
 #if 0

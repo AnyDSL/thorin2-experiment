@@ -92,6 +92,9 @@ void Extract::check(TypeCheck& tc, DefVector& types) const {
     tc.occurrences.emplace(this, occ);
 }
 
+void check_bound_occurrences(TypeCheck&, const Def*, const Def*, const Def*) {}
+/*
+ * TODO this is currently broken
 void check_bound_occurrences(TypeCheck& tc, const Def* def, const Def* domain_qualifier, const Def* body) {
     auto occ = tc.occurrences[body];
     auto dom_qual = domain_qualifier;
@@ -119,7 +122,7 @@ void check_bound_occurrences(TypeCheck& tc, const Def* def, const Def* domain_qu
     }
     tc.occurrences.emplace(def, occ);
 }
-
+*/
 void Lambda::check(TypeCheck& tc, DefVector& types) const {
     // do Pi type check inline to reuse built up environment
     fcheck(tc, type()->type(), types);
