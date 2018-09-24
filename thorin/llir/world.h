@@ -16,6 +16,9 @@ class World : public ::thorin::World {
 public:
     World(Debug dbg = {});
 
+    // import from base World
+    using ::thorin::World::op;
+
     //@{ types and type constructors
     const Axiom* type_i() { return type_i_; }
     const Axiom* type_f() { return type_f_; }
