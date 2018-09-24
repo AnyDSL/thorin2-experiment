@@ -43,9 +43,9 @@ public:
         static_assert(std::is_integral<I>());
         return lit(type_i(sizeof(I)*8), {val}, dbg);
     }
-    template<class R> const Lit* lit_f(R val, Debug dbg = {}) {
-        static_assert(std::is_floating_point<R>() || std::is_same<R, f16>());
-        return lit(type_f(sizeof(R)*8), {val}, dbg);
+    template<class F> const Lit* lit_f(F val, Debug dbg = {}) {
+        static_assert(std::is_floating_point<F>() || std::is_same<F, f16>());
+        return lit(type_f(sizeof(F)*8), {val}, dbg);
     }
     //@}
 
