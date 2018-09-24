@@ -36,13 +36,13 @@ public:
     //@}
 
     //@{ @p Lit%erals
-    template<class I> const Lit* lit_i(I val) {
+    template<class I> const Lit* lit_i(I val, Debug dbg = {}) {
         static_assert(std::is_integral<I>());
-        return lit(type_i(sizeof(I)*8), {val});
+        return lit(type_i(sizeof(I)*8), {val}, dbg);
     }
-    template<class R> const Lit* lit_f(R val) {
+    template<class R> const Lit* lit_f(R val, Debug dbg = {}) {
         static_assert(std::is_floating_point<R>() || std::is_same<R, f16>());
-        return lit(type_f(sizeof(R)*8), {val});
+        return lit(type_f(sizeof(R)*8), {val}, dbg);
     }
     //@}
 
